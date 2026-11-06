@@ -80,7 +80,7 @@
     {
       "name": "ppt-master",
       "source": "github:hugohe3/ppt-master/skills/ppt-master@82468e8d888a00db79969e6090bc33e87bf016a0",
-      "sha256": "8eb565169806abf2feb3ab12e658eb09c8851a7fdca32cba6c1e1d8d1abe7c2a",
+      "sha256": "1f19d257561745c6c815a1f523456babf7cd4b36c9de0a64e8f68a687667f85d",
       "author": "Hugo He",
       "license": "MIT",
       "url": "https://github.com/hugohe3/ppt-master"

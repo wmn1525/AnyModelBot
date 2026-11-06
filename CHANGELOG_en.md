@@ -4,6 +4,14 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.26 - 2026-11-06
+
+### Improved
+
+- Synced the upstream Chinese website copy with clearer setup steps after download, where to find ready-made assistants, and the requirement to keep the computer and app online for tasks sent from a phone.
+- Updated the READMEs to explain OKINTO sign-in, model selection and image generation using the current interface.
+- Updated the PPT assistant skill checksum after the branding copy change so package integrity checks pass.
+
 ## 0.1.25 - 2026-11-05
 
 ### Fixed
