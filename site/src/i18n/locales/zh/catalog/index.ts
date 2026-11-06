@@ -13,7 +13,7 @@ export default {
   "cta": "下载 AnyModelBot",
   "strip": {
     "title": "也可以直接用现成的 Bot",
-    "lead": "发现页里有备好的 Bot，每个都有自己的界面。",
+    "lead": "完成首次设置后，在侧边栏点「发现」，就能找到这些 Bot。每个 Bot 都有自己的界面。",
     "all": "查看全部 Bot"
   }
 };
