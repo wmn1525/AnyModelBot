@@ -79,13 +79,12 @@ function UpdateNotice({ update }) {
   </div>`;
 }
 
-export function Sidebar({ bots, botsError, reloadBots, selectedId, view, previews, pending, working, needs = { n: 0, bots: {} }, username, account, update, onNew, onSelect, onNeeds, onDeleted, onOpenSettings, onBotSettings, onGuide, groups = [], groupsLoaded = true, groupId, onNewGroup, onSelectGroup, onEditGroup, onDeletedGroup, catalog = [], catalogId, onDiscover, onOpenCatalog }) {
+export function Sidebar({ bots, botsError, reloadBots, selectedId, view, previews, pending, working, needs = { n: 0, bots: {} }, username, account, update, onNew, onSelect, onNeeds, onDeleted, onOpenSettings, onBotSettings, onGuide, groups = [], groupsLoaded = true, groupId, onNewGroup, onSelectGroup, onEditGroup, onDeletedGroup, catalog = [], catalogId, onDiscover, onOpenCatalog, searchQuery = "", searchOpen = false, onSearchQuery, onOpenSearch, onCloseSearch }) {
   const lang = useLang();
   const seen = useStore(catalogSeen);
   const fold = useStore(catalogFold);
   const latest = latestOf(catalog);
   const hasNew = catalog.some((e) => !e.instanceId && !seen.includes(e.id));
-  const [q, setQ] = useState("");
   const [ctx, setCtx] = useState(null); // 行的操作菜单：右键 { bot, x, y }，或者"更多"按钮 { bot, el }
   const [groupCtx, setGroupCtx] = useState(null); // 群聊行的操作菜单：{ group, x, y } 或 { group, el }
   const [newMenu, setNewMenu] = useState(null); // 新建菜单的锚点
@@ -128,9 +127,8 @@ export function Sidebar({ bots, botsError, reloadBots, selectedId, view, preview
   const draft = useStore(newBotDraft);
   const botRows = useListPresence(bots);
   const groupRows = useListPresence(groupsLoaded ? groups : null);
-  const needle = q.trim().toLowerCase();
-  const list = botRows.filter(({ item: b }) => !needle || b.name.toLowerCase().includes(needle) || (previews[b.id]?.text || "").toLowerCase().includes(needle));
-  const shownGroups = groupRows.filter(({ item: g }) => !needle || g.name.toLowerCase().includes(needle));
+  const list = botRows;
+  const shownGroups = groupRows;
   // 新行可能在列表下面看不见的地方：滚过去
   const entered = [...botRows, ...groupRows].filter((r) => r.state === "enter").map((r) => r.item.id).join();
   useEffect(() => {
@@ -146,12 +144,12 @@ export function Sidebar({ bots, botsError, reloadBots, selectedId, view, preview
     </div>
     <label class="side-search">
       <${Icon} name="search" size="sm" />
-      <input ref=${searchRef} type="search" placeholder=${t("common.search")} aria-label=${t("sidebar.search")} value=${q} onInput=${(e) => setQ(e.target.value)}
-        onKeyDown=${(e) => e.key === "Escape" && !e.isComposing && e.keyCode !== 229 && q && (e.stopPropagation(), setQ(""))} />
+      <input ref=${searchRef} type="search" placeholder=${t("search.placeholder")} aria-label=${t("search.title")} data-global-search-entry maxLength="200" value=${searchQuery} onFocus=${() => onOpenSearch?.(false)} onInput=${(e) => { onSearchQuery?.(e.target.value); onOpenSearch?.(false); }}
+        onKeyDown=${(e) => { if (e.key === "Escape" && !e.isComposing && searchOpen) { e.preventDefault(); e.stopPropagation(); onCloseSearch?.(); } }} />
     </label>
     <nav class="side-list" aria-label=${t("sidebar.list")}>
       <${NeedsRow} count=${needs.n} on=${view === "needs"} onClick=${onNeeds} />
-      ${catalog.length > 0 && !needle && html`<button type="button" class=${`thread${view === "discover" ? " sel" : ""}`} aria-current=${view === "discover" ? "page" : undefined} onClick=${onDiscover}>
+      ${catalog.length > 0 && html`<button type="button" class=${`thread${view === "discover" ? " sel" : ""}`} aria-current=${view === "discover" ? "page" : undefined} onClick=${onDiscover}>
         <span class="thread-icon"><${Icon} name="spark" size="md" /></span>
         <span class="body"><span class="line"><span class="title">${t("botapp.sidebar.discover")}</span>${hasNew && html`<span class="thread-new-dot" title=${t("botapp.sidebar.new")}></span>`}</span></span>
       </button>
@@ -159,7 +157,6 @@ export function Sidebar({ bots, botsError, reloadBots, selectedId, view, preview
       ${botsError && html`<div class="side-empty"><span>${t("sidebar.loadFailed")}</span><button type="button" class="btn" onClick=${reloadBots}>${t("common.retry")}</button></div>`}
       ${!bots && !botsError && [0, 1, 2].map((k) => html`<div class="thread" key=${k}><${Skeleton} w="38px" circle /><span class="thread-skel"><${Skeleton} w="50%" /><${Skeleton} w="75%" /></span></div>`)}
       ${bots && !bots.length && view !== "new" && html`<div class="side-empty"><span>${t("sidebar.empty")}</span><button type="button" class="btn primary" onClick=${onNew}>${t("sidebar.create")}</button></div>`}
-      ${bots && needle && !list.length && !shownGroups.length && html`<p class="hint">${t("sidebar.noMatch")}</p>`}
       ${list.map(({ item: b, state: rowState }) => {
         const sel = (view === "chat" || view === "bot-settings" || view === "app") && b.id === selectedId;
         // 等你的：「需要你」里这个机器人的件数和最早那件（没有时退回待审批数）
@@ -207,7 +204,7 @@ export function Sidebar({ bots, botsError, reloadBots, selectedId, view, preview
             onClick=${(e) => { const el = e.currentTarget; setGroupCtx((c) => (c && c.el && c.group.id === g.id ? null : { group: g, el })); }} />
         </div>`;
       })}
-      ${latest.length > 0 && !needle && html`<button type="button" class="side-group text" aria-expanded=${!fold} onClick=${() => setCatalogFold(!fold)}>
+      ${latest.length > 0 && html`<button type="button" class="side-group text" aria-expanded=${!fold} onClick=${() => setCatalogFold(!fold)}>
         <span class="text t-label">${t("botapp.sidebar.latest")}</span><${Icon} name=${fold ? "chevRight" : "chevDown"} size="sm" />
       </button>
       ${!fold && latest.map((e) => html`<button type="button" key=${"c" + e.id} class=${`thread bot-hover${view === "preview" && catalogId === e.id ? " sel" : ""}`} aria-current=${view === "preview" && catalogId === e.id ? "page" : undefined} onClick=${() => onOpenCatalog(e)}>

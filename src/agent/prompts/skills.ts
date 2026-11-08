@@ -55,6 +55,7 @@ Do not ask about the subject, style, purpose or model yourself: if they are not 
 6. Videos take minutes and cost much more than images: only make a video when the user asks for one, and do not generate extra variants unless asked.
 
 ## Errors
+- For multi-step projects pass a stable \`request_id\` for each image/video operation. Save the exact arguments. After a timeout or restart, reuse that ID and the exact same inputs to retrieve the existing result; do not create a new paid video task. If submission status is unknown, report it and verify upstream before retrying. Changed inputs or an explicitly requested new take need a new ID.
 - 这把 Key 不能用这个模型 (model_not_found): this account cannot use that model; pick another one from \`media_models\`.
 - Any other 4xx names the problem: fix the body according to the model's page instead of sending the same request again. If the balance is empty, tell the user to top up on OKINTO New API.
 `;

@@ -8,6 +8,7 @@ import "../styles/catalog.css";
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const c = dict(lang).catalog;
+const requirements: Partial<Record<string, string>> = c.requirements;
 ---
 <Base lang={lang} path="/bots" title={c.title} description={c.description}>
   <div class="container page">
@@ -23,6 +24,7 @@ const c = dict(lang).catalog;
             <h2>{textOf(b.name, lang)}</h2>
             <p class="cb-summary">{textOf(b.summary, lang)}</p>
             <ul class="ticks" role="list">{textOf(b.about, lang).map((line) => <li>{line}</li>)}</ul>
+            <p class="cb-requirements">{[c.minimumVersion.replace("{version}", b.minAppVersion), requirements[b.id]].filter(Boolean).join(" ")}</p>
             <h3>{c.tryLabel}</h3>
             <ul class="cb-try" role="list">{textOf(b.starters, lang).map((line) => <li>{line}</li>)}</ul>
           </div>

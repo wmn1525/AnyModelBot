@@ -9,18 +9,20 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
+import { openPromise } from "yauzl";
 
 export const CUA_VERSION = "0.37.0";
 const BASE = `https://github.com/trycua/cua/releases/download/cua-driver-rs-v${CUA_VERSION}/`;
 // 官方发布页的 SHA256（固定版本，校验失败即中止构建）
 export const ASSETS = {
-  "darwin-arm64": { file: `cua-driver-rs-${CUA_VERSION}-darwin-arm64.tar.gz`, sha256: "1e9b8c58cc830e080ada881ec76286529f5f1264fe9ecc371b0ae95cff98928b" },
-  "darwin-x64": { file: `cua-driver-rs-${CUA_VERSION}-darwin-x86_64.tar.gz`, sha256: "2f9f0d652b2a571d210a3280028774cd640f805284868e8beef160a83fc07bfd" },
-  "linux-arm64": { file: `cua-driver-rs-${CUA_VERSION}-linux-arm64.tar.gz`, sha256: "b20393b9b0c317daa05934cd6ee131b4250e34abb5967c596494634f3114fa89" },
-  "linux-x64": { file: `cua-driver-rs-${CUA_VERSION}-linux-x86_64.tar.gz`, sha256: "d9421e143df6da3c695f5007f4db25fa619473d62965927e880c1dbfeeab1bf2" },
-  "win32-arm64": { file: `cua-driver-rs-${CUA_VERSION}-windows-arm64.zip`, sha256: "612818fb1ebea702b5934c1d982a815375f25ac0e1b1389249c9f20f21354b70" },
-  "win32-x64": { file: `cua-driver-rs-${CUA_VERSION}-windows-x86_64.zip`, sha256: "109ab57e5c0a6e13a73e2ce2daf01b338027366eb1a20c6e0b413a10610bc8e2" },
+  "darwin-arm64": { id: 658174709, file: `cua-driver-rs-${CUA_VERSION}-darwin-arm64.tar.gz`, sha256: "1e9b8c58cc830e080ada881ec76286529f5f1264fe9ecc371b0ae95cff98928b" },
+  "darwin-x64": { id: 658175096, file: `cua-driver-rs-${CUA_VERSION}-darwin-x86_64.tar.gz`, sha256: "2f9f0d652b2a571d210a3280028774cd640f805284868e8beef160a83fc07bfd" },
+  "linux-arm64": { id: 658175310, file: `cua-driver-rs-${CUA_VERSION}-linux-arm64.tar.gz`, sha256: "b20393b9b0c317daa05934cd6ee131b4250e34abb5967c596494634f3114fa89" },
+  "linux-x64": { id: 658175444, file: `cua-driver-rs-${CUA_VERSION}-linux-x86_64.tar.gz`, sha256: "d9421e143df6da3c695f5007f4db25fa619473d62965927e880c1dbfeeab1bf2" },
+  "win32-arm64": { id: 658175589, file: `cua-driver-rs-${CUA_VERSION}-windows-arm64.zip`, sha256: "612818fb1ebea702b5934c1d982a815375f25ac0e1b1389249c9f20f21354b70" },
+  "win32-x64": { id: 658175745, file: `cua-driver-rs-${CUA_VERSION}-windows-x86_64.zip`, sha256: "109ab57e5c0a6e13a73e2ce2daf01b338027366eb1a20c6e0b413a10610bc8e2" },
 };
 const KEEP = ["cua-driver", "cua-driver.exe", "LICENSE", "THIRD_PARTY_NOTICES.md"];
 
@@ -42,21 +44,43 @@ async function download(asset) {
       return dest;
     }
   }
-  const res = await fetch(BASE + asset.file, { redirect: "follow" });
-  if (!res.ok) throw new Error(`下载失败 ${asset.file}: HTTP ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  const got = crypto.createHash("sha256").update(buf).digest("hex");
-  if (got !== asset.sha256) throw new Error(`SHA256 不匹配 ${asset.file}: 期望 ${asset.sha256}，实际 ${got}`);
+  const buf = await downloadDriverBytes(asset);
   fs.writeFileSync(dest, buf);
   return dest;
 }
 
-function extract(archive, into) {
+export async function downloadDriverBytes(asset) {
+  const read = async (url, headers) => {
+    const res = await fetch(url, { redirect: "follow", headers, signal: AbortSignal.timeout(120_000) });
+    if (!res.ok) throw new Error(`下载失败 ${asset.file}: HTTP ${res.status}`);
+    return Buffer.from(await res.arrayBuffer());
+  };
+  let buf;
+  try {
+    buf = await read(BASE + asset.file);
+  } catch (e) {
+    console.warn(`${asset.file}: ${e.message}; retrying via GitHub release asset API`);
+    buf = await read(`https://api.github.com/repos/trycua/cua/releases/assets/${asset.id}`, { accept: "application/octet-stream", "user-agent": "AnyModelBot-build" });
+  }
+  const got = crypto.createHash("sha256").update(buf).digest("hex");
+  if (got !== asset.sha256) throw new Error(`SHA256 不匹配 ${asset.file}: 期望 ${asset.sha256}，实际 ${got}`);
+  return buf;
+}
+
+export async function extractDriver(archive, into) {
   if (archive.endsWith(".zip")) {
+    // Git Bash 的 tar 可能是 GNU tar，不能解 ZIP；不用依赖 runner 上的 unzip/bsdtar。
+    // 只写固定白名单的文件名，不让归档里的路径或其他组件进入产物。
+    const zip = await openPromise(archive, { lazyEntries: true });
     try {
-      execFileSync("unzip", ["-q", "-o", archive, "-d", into], { stdio: "inherit" });
-    } catch {
-      execFileSync("tar", ["-xf", archive, "-C", into], { stdio: "inherit" }); // Windows 自带 bsdtar 也能解 zip
+      for await (const entry of zip.eachEntry()) {
+        const name = path.posix.basename(entry.fileName);
+        const dest = path.join(into, name);
+        if (entry.fileName.endsWith("/") || !KEEP.includes(name) || fs.existsSync(dest)) continue;
+        await pipeline(await zip.openReadStreamPromise(entry), fs.createWriteStream(dest));
+      }
+    } finally {
+      zip.close();
     }
   } else execFileSync("tar", ["-xzf", archive, "-C", into], { stdio: "inherit" });
 }
@@ -77,7 +101,7 @@ export async function fetchOne(key) {
   if (sha256(archive) !== asset.sha256) throw new Error(`SHA256 不匹配 ${asset.file}`);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cua-x-"));
   try {
-    extract(archive, tmp);
+    await extractDriver(archive, tmp);
     const found = findFiles(tmp, KEEP);
     const bin = found.get(key.startsWith("win32") ? "cua-driver.exe" : "cua-driver");
     if (!bin) throw new Error(`${asset.file} 里没有 cua-driver 可执行文件`);
@@ -107,7 +131,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   try {
     for (const k of list) await fetchOne(k);
   } catch (e) {
-    console.error(String(e?.message ?? e));
+    const message = [String(e?.message ?? e), e?.cause?.message].filter(Boolean).join(": ");
+    console.error(message);
+    if (process.env.GITHUB_ACTIONS) console.error(`::error::${message.replaceAll("%", "%25").replaceAll("\r", "%0D").replaceAll("\n", "%0A")}`);
     process.exit(1);
   }
 }

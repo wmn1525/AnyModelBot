@@ -21,6 +21,8 @@
 | 数据 | 存放位置（数据目录内） | 会离开设备吗 | 去向 |
 | :--- | :--- | :--- | :--- |
 | 对话与会话 | `anymodel.db`（SQLite） | 回答需要的那部分会 | 作为模型请求的上下文，经 Modelflare 发给你选定的供应商 |
+| 导入的技能 | `skills/<机器人 ID>/`；启用项复制到 `dsh/<机器人 ID>/skills/` | 名称和说明、使用时读取的正文与资料会 | 作为上下文发给所选模型；导入仅上传到你使用的 AnyModelBot 实例，不访问 GitHub |
+| 聊天搜索索引 | `anymodel.db` 的 `message_search` 及其全文索引 | 不会 | 在实例内搜索已保存的消息，不调用模型 |
 | 记忆 | `memory/`（Markdown：`bots/`、`groups/`、`team/`） | 被用到时会 | 作为上下文进入模型请求；写入前会过滤看起来像密钥的内容 |
 | 机器人工作区文件 | `workspaces/<机器人>/`（含收到的文件 `inbox/`、生成的图片和视频 `media/`） | 机器人读取并发给模型时会 | 同上 |
 | Modelflare 登录凭据 | `modelflare-account.json`（权限 600；桌面版用系统钥匙串加密） | 只在刷新令牌时发给 modelflare.dev | Modelflare |
@@ -83,7 +85,7 @@
 - 飞书渠道：与飞书开放平台保持长连接。
 - Telegram、Slack、Discord 渠道：接入后与 `api.telegram.org`、`slack.com`、`discord.com` 及其文件地址通信，用来收发消息和你发来的文件。
 - Windows 上开启代理模式且系统里没有可用的 PowerShell 7 时，从微软官方发布地址下载 PowerShell 7（可用 `AMB_PWSH_AUTO_INSTALL=0` 关闭，详见[开发文档](./development.md)）。
-- 发现页的 Bot 目录：启动时和之后每 6 小时从 `anymodel.bot/catalog/` 读取列表，打开或使用某个 Bot 时下载它的包。这些请求只下载，不上传你的数据，下载的内容都要验证签名和哈希（可用 `AMB_CATALOG=off` 关闭）。
+- 仅当你显式设置 `AMB_CATALOG_URL` 使用远程 Bot 目录时，才会读取远程列表并按需下载经过签名和哈希校验的包，不上传你的数据。默认的官方 Bot 目录、界面、示例数据和技能均随应用内置，打开和安装不发起这些网络请求。
 
 ## 电脑操作与截图
 

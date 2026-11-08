@@ -1,4 +1,32 @@
 export default {
+  skills: {
+    "head": "스킬",
+    "note": "이 봇에 작업 방법을 추가합니다. 변경 사항은 진행 중인 작업이 끝난 후 적용됩니다.",
+    "import": "ZIP 가져오기",
+    "importSub": "ZIP당 스킬 1개, 최대 20 MB",
+    "empty": "아직 가져온 스킬이 없습니다",
+    "enable": "{name} 활성화",
+    "files": "파일 {count}개 · {size} KB",
+    "instructions": "스킬 설명 보기",
+    "add": "스킬 추가",
+    "addBody": "추가하면 봇이 관련 작업에 이 스킬을 사용할 수 있습니다.",
+    "replace": "스킬 교체",
+    "replaceBody": "같은 이름의 스킬이 설치되어 있습니다. 교체하면 파일이 갱신되고 활성화 상태는 유지됩니다.",
+    "removeTitle": "스킬 “{name}”을 삭제할까요?",
+    "removeBody": "이 봇의 스킬만 삭제합니다. 작업 공간의 파일은 유지됩니다.",
+    "errors": {
+      "invalid_zip": "ZIP을 읽을 수 없습니다. 손상되지 않고 암호화되지 않은 ZIP 파일을 선택하세요.",
+      "too_large": "스킬 패키지가 너무 큽니다. ZIP 최대 20 MB, 압축 해제 후 64 MB 및 2,000개 항목, SKILL.md 최대 256 KB입니다.",
+      "unsafe_path": "ZIP에 지원하지 않는 경로, 중복 이름 또는 심볼릭 링크가 있습니다.",
+      "missing_skill": "SKILL.md가 없습니다. 스킬 설명이 포함된 ZIP을 선택하세요.",
+      "multiple_skills": "ZIP에 SKILL.md가 여러 개 있습니다. 스킬별로 ZIP을 만들어 가져오세요.",
+      "invalid_skill": "SKILL.md 형식이 잘못되었습니다. 올바른 name, description 및 본문이 필요합니다.",
+      "reserved_name": "내장 스킬 또는 봇에 포함된 스킬이 이 이름을 사용하고 있습니다.",
+      "conflict": "설치된 스킬이 변경되었습니다. ZIP을 다시 선택하고 교체를 확인하세요.",
+      "not_found": "스킬을 찾을 수 없습니다. 목록을 새로 고치세요.",
+      "too_many": "봇당 최대 100개 스킬을 가져올 수 있습니다. 사용하지 않는 스킬을 먼저 삭제하세요."
+    }
+  },
   "back": "대화로 돌아가기",
   "backTitle": "대화로 돌아가기(Esc)",
   "title": "봇 설정",

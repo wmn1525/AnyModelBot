@@ -5,6 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { normalizeSettings, type BotSettings } from "../agent/settings.js";
 import { normalizeAppRef, type BotAppRef } from "../botkit/format.js";
 import type { Schedule } from "../tasks/schedule.js";
+import { ChatSearch } from "./chat-search.js";
 
 /**
  * SQLite 存储（node:sqlite，无原生模块，Electron 下也无需 rebuild）。
@@ -628,6 +629,7 @@ const COLUMNS: Array<[string, string, string]> = [
 
 export class Store {
   readonly db: DatabaseSync;
+  readonly chatSearch: ChatSearch;
 
   constructor(file: string) {
     if (file !== ":memory:") {
@@ -647,6 +649,7 @@ export class Store {
       const cols = (this.db.prepare(`PRAGMA table_info(${table})`).all() as Row[]).map((r) => String(r.name));
       if (!cols.includes(col)) this.db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
     }
+    this.chatSearch = new ChatSearch(this.db, (row) => this.toMessage(row));
     this.migrateComputerUseAuto();
     this.migrateAccess();
   }

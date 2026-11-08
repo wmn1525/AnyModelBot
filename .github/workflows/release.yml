@@ -206,6 +206,23 @@ jobs:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
         run: npm ci --no-audit --no-fund
 
+      - name: Use bundled Electron checksums
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs"), path = require("node:path"), os = require("node:os");
+          const { version } = require("electron/package.json");
+          const checksums = require("electron/checksums.json");
+          const artifact = `electron-v${version}-${process.platform}-${process.arch}.zip`;
+          if (!/^[a-f0-9]{64}$/i.test(checksums[artifact] || "")) throw new Error(`Missing bundled checksum: ${artifact}`);
+          const homeDir = os.homedir();
+          const cache = process.platform === "darwin" ? path.join(homeDir, "Library", "Caches", "electron")
+            : process.platform === "win32" ? path.join(process.env.LOCALAPPDATA || path.join(homeDir, "AppData", "Local"), "electron", "Cache")
+            : path.join(process.env.XDG_CACHE_HOME || path.join(homeDir, ".cache"), "electron");
+          fs.mkdirSync(cache, { recursive: true });
+          fs.writeFileSync(path.join(cache, `SHASUMS256.txt-${version}`), Object.entries(checksums).map(([file, hash]) => `${hash} *${file}`).join("\n") + "\n");
+          console.log(`Using bundled SHA256 checksums for ${artifact}`);
+          NODE
+
       - name: Validate all target languages
         run: npm run i18n:check
 
@@ -238,6 +255,14 @@ jobs:
 
       - name: Fetch cua-driver
         run: node scripts/fetch-cua-driver.mjs --target "${{ matrix.os }}/${{ matrix.arch }}"
+
+      # GitHub's Intel runners intermittently drop Apple's HTTP/3 connections.
+      # https://github.com/actions/runner-images/issues/14924
+      - name: Use TCP for Apple services on the Intel runner
+        if: matrix.name == 'mac-x64'
+        run: |
+          printf '%s\n' 'block return out quick proto udp from any to any port 443' | sudo pfctl -f -
+          sudo pfctl -E
 
       - name: Package ${{ matrix.file }}
         env:
@@ -281,6 +306,9 @@ jobs:
 
       - name: Verify packaged OKINTO identity and login integration
         run: node scripts/verify-okinto-bundle.mjs "${{ matrix.app }}"
+
+      - name: Check bundled official bots offline
+        run: node scripts/verify-builtin-catalog.mjs "${{ matrix.app }}"
 
       # The packaged executable in Node mode (as the app runs DSH): SDK client and DSH from dsh.asar, native
       # modules from resources/dsh/node_modules, and one agent turn through a mock model.

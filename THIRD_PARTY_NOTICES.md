@@ -83,6 +83,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - qrcode 1.5.4 — MIT
 - qrcode-terminal 0.12.0 — Apache-2.0（见包内 LICENSE）
 - ws 8.22.0 — MIT
+- yauzl 3.4.0 — MIT
+- yaml 2.9.1 — ISC
 
 传递依赖的许可证随各自包保存在 node_modules 中。桌面版另含 Electron（MIT）及 Chromium 等组件，其许可证位于安装目录的 LICENSE 与 LICENSES.chromium.html。
 

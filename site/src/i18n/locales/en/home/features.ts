@@ -6,6 +6,14 @@ export default {
     "h3": "And there's more.",
     "items": [
       {
+        "title": "Import your own skills",
+        "body": "Import a ZIP in Bot settings to add workflows for reports, documents and more. Enable, disable or replace each skill."
+      },
+      {
+        "title": "Search chat history",
+        "body": "Find local messages by bot, conversation, channel or date, then jump to the original. Search makes no model calls."
+      },
+      {
         "title": "Images and video",
         "body": "Just ask and it generates. It checks the model with you only when a run would cost over $0.5."
       },

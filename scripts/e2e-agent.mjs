@@ -567,5 +567,9 @@ try {
   }
   fs.writeFileSync(path.join(out, "summary.json"), JSON.stringify(summary, null, 2));
   say("summary:", JSON.stringify({ ok: summary.ok, chat: summary.chat, error: summary.error }).slice(0, 800));
+  if (!summary.ok && process.env.GITHUB_ACTIONS) {
+    const reason = summary.error || JSON.stringify({ chat: summary.chat, privatePwsh: summary.privatePwsh?.checks, heal: summary.healChecks, diagnosticStage: summary.testAgent?.stuckAt });
+    console.error(`::error::${reason.slice(0, 6000).replaceAll("%", "%25").replaceAll("\r", "%0D").replaceAll("\n", "%0A")}`);
+  }
   process.exit(summary.ok ? 0 : 1);
 }

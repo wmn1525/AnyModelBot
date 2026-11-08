@@ -10,6 +10,7 @@ import { usd } from "../lib/links.js";
 import { perms, fullWarning, confirmPermission } from "../lib/perms.js";
 import { t } from "../lib/i18n.js";
 import { RuleEditor } from "../components/rules.js";
+import { Skills } from "../components/skills.js";
 
 /** 免打扰的起止：整点 */
 const HOURS = Array.from({ length: 24 }, (_, h) => {
@@ -192,6 +193,7 @@ export function BotSettingsScreen({ bot, section, models, modelsError, reloadMod
 
       ${!s && html`<div class="list"><div class="row"><${Skeleton} w="45%" /></div><div class="row"><${Skeleton} w="35%" /></div></div>`}
       ${s && html`
+        <${Skills} botId=${bot.id} />
         <div class="list-head">${t("botSettings.perm.head")}</div>
         <div class="list">
           <${Row} id="permission" name=${t("botSettings.perm.name")} sub=${perms()[s.permission]?.note ?? ""}

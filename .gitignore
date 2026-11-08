@@ -18,3 +18,6 @@ test-results/
 
 # 目录 Bot 的打包产物（amb-bot pack）
 dist-catalog/
+# 本机目录签名密钥、备份回执与发布状态；不能进入 Git
+.runtime/
+catalog.lock.json

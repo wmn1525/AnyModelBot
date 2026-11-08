@@ -5,6 +5,14 @@ export default {
   "more": "Didn’t find it? Dig into the docs",
   "items": [
     {
+      "q": "How do I import my own skills?",
+      "a": "Go to Bot settings → Skills → Import ZIP, preview it, then add it. Each ZIP contains one SKILL.md and can be up to 20 MB; scripts and references are preserved. Importing does not contact GitHub. Software and network requirements depend on the skill. Import the same name again to confirm replacement."
+    },
+    {
+      "q": "How do I find an older conversation?",
+      "a": "Search chat history from the sidebar, or press Ctrl/Cmd+Shift+F for global search and Ctrl/Cmd+F for the current chat. Filter by bot, conversation, channel or date, then select a result to jump to the message. Search only covers records stored on this device and makes no model calls."
+    },
+    {
       "q": "How is it different from Grok Bot, OpenAI dots or Claude Duet?",
       "a": "They are the same kind of always-on personal AI agent: it works for you in the background and checks in when a decision is yours. The difference: AnyModelBot is open source (MIT) and runs on your own computer or server. It works with GPT, Claude, Gemini, Grok and more; the app is free and models are billed per use, with no single vendor's subscription. The README on GitHub has a full comparison table. Grok Bot, dots and Claude Duet are products of xAI, OpenAI and Anthropic respectively; AnyModelBot is not affiliated with them."
     },

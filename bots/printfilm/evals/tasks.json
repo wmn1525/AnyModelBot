@@ -1,0 +1,42 @@
+[
+  {
+    "id": "short-script",
+    "prompt": "创建一部关于月球邮局的短视频项目，只完成可编辑的文案和分镜，不调用生图或生视频。",
+    "changed": true,
+    "contains": [
+      "月球"
+    ],
+    "files": [
+      {
+        "match": "app/printfilm/projects/.*/episodes/.*\\.json",
+        "minBytes": 300
+      }
+    ]
+  },
+  {
+    "id": "drama-outline",
+    "prompt": "创建一部三集短剧：一个钟表匠修好了能倒流一分钟的钟。保存完整三集大纲、各集正文和角色资产。只做文字创作，不生成付费媒体。",
+    "changed": true,
+    "files": [
+      {
+        "match": "app/printfilm/projects/.*/project\\.json",
+        "minBytes": 500
+      },
+      {
+        "match": "app/printfilm/projects/.*/episodes/.*\\.json",
+        "minBytes": 500
+      }
+    ]
+  },
+  {
+    "id": "canvas",
+    "prompt": "创建自由画布项目，保存一个邮差角色和雨夜街道场景，再添加一个画面资产，把前两个资产连接为画面的参考。仅保存资产与画布，不生成媒体。",
+    "changed": true,
+    "files": [
+      {
+        "match": "app/printfilm/projects/.*/project\\.json",
+        "minBytes": 600
+      }
+    ]
+  }
+]

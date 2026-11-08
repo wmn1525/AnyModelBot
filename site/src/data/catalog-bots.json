@@ -1,6 +1,7 @@
 [
   {
     "id": "company-research",
+    "minAppVersion": "0.1.20",
     "avatar": "data",
     "name": {
       "zh-CN": "尽调助手",
@@ -73,6 +74,7 @@
   },
   {
     "id": "ppt-master",
+    "minAppVersion": "0.1.20",
     "avatar": "design",
     "name": {
       "zh-CN": "PPT 大师",
@@ -144,7 +146,81 @@
     }
   },
   {
+    "id": "printfilm",
+    "minAppVersion": "0.1.23",
+    "avatar": "design",
+    "name": {
+      "zh-CN": "影视创作室",
+      "en": "Film Studio",
+      "ja": "映像スタジオ",
+      "ko": "영상 스튜디오",
+      "ru": "Киностудия"
+    },
+    "summary": {
+      "zh-CN": "短视频与分集短剧：剧本、资产、分镜、配音、剪辑与成片",
+      "en": "Short videos and dramas: scripts, assets, storyboards, voices and finished films",
+      "ja": "短編動画・連続ドラマの脚本、素材、絵コンテ、音声、完成映像",
+      "ko": "숏폼과 드라마의 대본, 자산, 스토리보드, 음성, 완성 영상",
+      "ru": "Видео и сериалы: сценарии, материалы, раскадровка, озвучка и готовые фильмы"
+    },
+    "about": {
+      "zh-CN": [
+        "移植 PRINTFILM 的编剧、分镜、资产设定与 FFmpeg 合成能力",
+        "模型调用使用 Modelflare，项目与素材保存在你的设备",
+        "支持逐镜修改、素材版本、共享资产库和中断恢复"
+      ],
+      "en": [
+        "Ports PRINTFILM scriptwriting, storyboards, asset design and FFmpeg composition",
+        "Models run through Modelflare; projects and media stay on your device",
+        "Edit individual shots, keep takes, reuse assets and resume interrupted work"
+      ],
+      "ja": [
+        "PRINTFILM の脚本・絵コンテ・素材設計・FFmpeg 合成を移植",
+        "モデルは Modelflare を利用し、プロジェクトと素材は端末に保存",
+        "ショット編集、テイク履歴、共有素材、制作再開に対応"
+      ],
+      "ko": [
+        "PRINTFILM의 대본, 스토리보드, 자산 설계, FFmpeg 합성 기능 이식",
+        "모델은 Modelflare로 호출하며 프로젝트와 미디어는 내 기기에 저장",
+        "샷별 편집, 테이크 기록, 공유 자산, 중단 작업 복구 지원"
+      ],
+      "ru": [
+        "Перенос сценариев, раскадровки, дизайна материалов и сборки FFmpeg из PRINTFILM",
+        "Модели через Modelflare; проекты и медиа хранятся на вашем устройстве",
+        "Редактирование кадров, версии, общая библиотека и продолжение работы"
+      ]
+    },
+    "starters": {
+      "zh-CN": [
+        "把我的创意做成完整短视频，先给我看文案和分镜",
+        "创建一部三集短剧，先规划故事、角色与分集",
+        "打开自由画布，创建一个角色和场景资产"
+      ],
+      "en": [
+        "Turn my idea into a complete short video; show me the script and storyboard first",
+        "Create a three-episode drama; plan the story, cast and episodes first",
+        "Open a free canvas and create a character and scene asset"
+      ],
+      "ja": [
+        "アイデアを短編動画に。まず脚本と絵コンテを見せて",
+        "全3話のドラマを作成。まず物語・登場人物・各話を構成して",
+        "自由キャンバスで人物と背景素材を作成して"
+      ],
+      "ko": [
+        "아이디어를 완전한 숏폼 영상으로 만들고 먼저 대본과 스토리보드를 보여 줘",
+        "3부작 드라마의 이야기, 등장인물, 에피소드를 먼저 기획해 줘",
+        "자유 캔버스를 열고 등장인물과 장면 자산을 만들어 줘"
+      ],
+      "ru": [
+        "Сделай из моей идеи короткий фильм; сначала покажи сценарий и раскадровку",
+        "Создай драму из трёх эпизодов; начни с истории, персонажей и плана",
+        "Открой свободный холст и создай персонажа и сцену"
+      ]
+    }
+  },
+  {
     "id": "us-stock-research",
+    "minAppVersion": "0.1.20",
     "avatar": "finance",
     "name": {
       "zh-CN": "美股研报",

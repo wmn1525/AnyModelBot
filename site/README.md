@@ -263,6 +263,7 @@ docker compose -f deploy/compose.yml --env-file deploy/.env up -d --build
 
 ## 数据从哪来
 
+- **现成的 Bot**：首页的 `CatalogStrip` 和 `/bots` 共用 `src/data/catalog-bots.json`，由 `npm run sync` 从 `../bots/*/bot.json` 同步名称、简介、说明、示例提问和最低应用版本。影视创作室的入口为 `/bots#printfilm`，其他语言沿用各自的路径前缀。新增或修改 Bot 时，同步更新五种语言 README 的 Bot 列表；依赖和使用条件写在 `src/i18n/locales/<语言>/catalog/index.ts` 的 `requirements` 中。Bot 配置和下架列表变更也会触发官网 CI 检查。
 - **价格**：构建时请求 `https://api.okinto.com/api/pricing`，由 `src/lib/pricing.ts` 解析并写入 `src/data/pricing.snapshot.json`。价格单位、分档表达式支持范围与失败策略见上面的构建说明。
 - **GitHub 星数**：线上的 builder 每 2 分钟向 GitHub 取一次，写到 `/srv/site/live/stars.json`，不用重新构建；页面打开时取站内的 `/stars.json`（`src/scripts/stars.ts`，缓存 1 分钟），所以数字最多晚 3 分钟左右。`scripts/fetch-github-stars.ts` 在 `npm run build` 时另取一次写进 `src/data/github.json`，作为页面的初始值和 `/stars.json` 取不到时的备用值；取不到就沿用上一个值，不影响构建。不在浏览器里请求 GitHub：不把访客 IP 发给第三方。
 - **机器人**：`scripts/sync-from-app.ts` 从 `../ui/design/bots/*.webp` 复制精灵图、从 `../THIRD_PARTY_NOTICES.md` 同步许可（Docker 构建上下文里没有应用目录，用已提交的副本）；几何（`src/lib/bots.ts`）与 `../ui/components/avatar.js` 的 `BOT_CHARS` 不一致时会警告。头像样式 `src/styles/bots.css` 移植自 `../ui/design/components/avatar.css`。

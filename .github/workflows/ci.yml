@@ -46,6 +46,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: node scripts/verify-builtin-catalog.mjs --app-root .
       # README 自检（scripts/check-readme.mjs）：素材是否存在与体积、中英结构一致、链接与锚点、禁用词、alt
       - run: npm run docs:check
       - run: npm run i18n:status
@@ -74,7 +75,7 @@ jobs:
           fi
           files=$(git diff --name-only "$BASE" HEAD)
           echo "$files"
-          if echo "$files" | grep -qE '^(src/agent/|src/magpie/|electron/|dsh-runtime/|scripts/(prepare|bundle|verify)-dsh(-bundle)?\.mjs$|scripts/e2e-agent\.mjs$|scripts/ci/|\.github/workflows/ci\.yml$)'; then
+          if echo "$files" | grep -qE '^(src/agent/|src/magpie/|electron/|dsh-runtime/|scripts/(prepare|bundle|verify)-dsh(-bundle)?\.mjs$|scripts/fetch-cua-driver\.mjs$|scripts/e2e-agent\.mjs$|scripts/ci/|\.github/workflows/ci\.yml$)'; then
             echo "agent=true" >> "$GITHUB_OUTPUT"
           else
             echo "agent=false" >> "$GITHUB_OUTPUT"
@@ -115,13 +116,12 @@ jobs:
           cache-dependency-path: vendor/magpie/go.sum
 
       - run: npm ci --no-audit --no-fund
+      - run: node scripts/fetch-cua-driver.mjs --target win32/x64
       - run: npm run build
       - run: node scripts/prepare-dsh.mjs
       # The installers ship this packed layout (resources/dsh/dsh.asar + native node_modules), checked below.
       - run: node scripts/bundle-dsh.mjs
       - run: node scripts/build-magpie.mjs --target windows/amd64
-      - run: node scripts/fetch-cua-driver.mjs --target win32/x64
-
       # Electron 44 downloads its binary on the first require("electron"), not at npm install time.
       - name: Fetch the Electron binary
         run: |

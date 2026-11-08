@@ -114,9 +114,11 @@ A bot is more than a chat window: it has a persona, a default model, its own wor
 - **You decide who it is.** A persona is just text, and templates are only a starting point. The six avatars change how a bot looks, not what it can do.
 - **Real file work.** Bots read and write files, run commands in a sandbox, and send the results back to the chat as files.
 - **Three permission presets per bot.** *Read-only*, *Workspace* (the default: write inside the bot's own folder, ask before anything outside) and *Full access* (no sandbox; recursive deletes still ask first).
+- **Import skills.** In **Bot settings → Skills**, import a ZIP containing `SKILL.md` (one skill per ZIP, up to 20 MB), then preview and add it. View, enable, disable or delete skills; import the same name again to confirm replacement. Changes take effect after current work finishes. [Skill guide](./docs/skills_en.md).
 - **Approval cards, not surprises.** Out-of-bounds actions stop and wait for your answer.
 - **Told after a restart.** A message still in progress when the app quit or crashed is flagged in its conversation at the next start, so you can send it again; nothing is redone on its own.
 - **Group chats.** Create a group and add a few bots. Whoever you @ answers; with no @, the bot that answered last carries on. Bots can also @ another member to hand off. Each bot keeps its own model, workspace and memory, and costs are tracked per bot.
+- **Search chat history.** Search all messages saved on your device from the sidebar, filter by bot, conversation, channel or date, and jump to the original message. `Ctrl/Cmd+Shift+F` opens global search; `Ctrl/Cmd+F` searches the current chat. Searches do not call a model.
 - **Slash commands** such as `/model` and `/reset` work in the app and in every chat channel. In a chat channel, `/bot` switches to another bot.
 
 ## 🧩 Ready-made bots
@@ -125,6 +127,7 @@ If you don't want to write a persona, use a ready-made bot from Discover. Each h
 
 - **Company Research:** Local company diligence with parallel research, curation, and sourced reports
 - **PPT Master:** Turn documents or topics into editable PPTX decks, or edit decks you have
+- **Film Studio:** Short videos and dramas: scripts, assets, storyboards, voices and finished films
 - **US Stock Research:** Research US-listed companies from SEC filings, with every number traceable
 
 See the [bots page on our website](https://api.okinto.com) for details.

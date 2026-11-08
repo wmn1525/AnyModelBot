@@ -29,6 +29,8 @@ export default {
   "requestDone": "このリクエストは対応済みか、有効期限が切れています",
   "submitFailed": "送信できませんでした",
   "conversationNotFound": "会話が見つかりません",
+  "messageNotFound": "このメッセージは存在しないか、表示可能な履歴にありません",
+  "badMessageSearch": "検索条件が無効です。キーワードと期間を確認するか、検索し直してください",
   "fileNotFound": "ファイルが見つかりません",
   "nameRequired": "名前を入力してください",
   "budgetRange": "予算は $0～$100,000 の範囲にしてください",

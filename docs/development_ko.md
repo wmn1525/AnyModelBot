@@ -259,3 +259,11 @@ README 자료 목록과 녹화 규격은 [docs/assets/README.md](./assets/README
 ## 라이선스
 
 MIT이며 `LICENSE`를 참고하세요. magpie(MIT, 수정한 화면 스타일 포함), Tencent openclaw-weixin(MIT) 등 제3자 구성 요소는 `THIRD_PARTY_NOTICES.md` 및 설정 → 앱 정보에 나열합니다.
+
+## 사용자 스킬과 대화 기록 검색
+
+사용법과 ZIP 형식은 [스킬 안내](./skills_ko.md)를 참고하세요. `src/skills/archive.ts`는 경로, 압축 해제 제한, `SKILL.md`를 검증하고 `service.ts`는 봇별 패키지, 활성화 상태, 버전 식별값을 저장합니다. `src/web/skills.ts`는 미리보기와 관리 API를 제공합니다. DSH가 대기 상태일 때 활성화된 스킬을 배치하므로 진행 중인 대화, 하위 에이전트, 백그라운드 명령을 중단하지 않습니다. 카탈로그 Bot 업데이트 시 `src/botkit/installer.ts`가 이름 충돌을 확인합니다.
+
+`src/store/chat-search.ts`는 SQLite 메시지 검색 색인, 필터, 페이지 나누기, 원래 메시지의 주변 문맥을 담당합니다. 전체 검색은 `ui/screens/message-search.js`, 현재 대화 검색은 `ui/components/chat-search.js`에 있습니다. 검색은 로컬 DB를 직접 읽으며 모델을 호출하지 않습니다.
+
+관련 테스트는 `test/skills*.test.ts`와 `test/chat-search*.test.ts`입니다. 브라우저 검증용 Chromium 경로는 `AMB_TEST_CHROME`으로 지정할 수 있습니다. DSH가 있으면 스킬 발견, 로딩, 자료 읽기, 작업 중 비활성화도 검증합니다.

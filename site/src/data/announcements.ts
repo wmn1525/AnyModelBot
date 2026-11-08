@@ -47,6 +47,13 @@ export const RELEASE = {
   days: 30,
   /** 各版本的一句话亮点（可选），没有就显示"AnyModelBot {version} 已发布" */
   highlights: {
+    "0.1.24": {
+      zh: "ZIP 技能导入和聊天记录搜索",
+      en: "Import ZIP skills and search chat history",
+      ja: "ZIP スキルのインポートとチャット履歴検索",
+      ko: "ZIP 스킬 가져오기와 대화 기록 검색",
+      ru: "Импорт навыков из ZIP и поиск по переписке",
+    },
     "0.1.10": {
       zh: "机器人能收微信里的图片和文件了",
       en: "Bots can now see the images and files you send",

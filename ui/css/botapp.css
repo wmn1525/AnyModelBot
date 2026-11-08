@@ -18,9 +18,13 @@
 
 .botapp { --botapp-side-w: var(--panel-w); height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
 .botapp.with-side { grid-template-columns: minmax(0, 1fr) var(--botapp-side-w); }
-.botapp-main { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
-.botapp-stage { position: relative; min-height: 0; display: grid; }
+.botapp-main { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.botapp-main > .notice { flex: none; }
+/* 提示条数量会变；界面始终填满顶栏和输入区之间的剩余空间。 */
+.botapp-stage { position: relative; flex: 1; min-width: 0; min-height: 0; display: grid; overflow: hidden; }
 .botapp-frame { width: 100%; height: 100%; border: 0; background: transparent; }
+/* 聊天页的输入区悬浮在消息上；这里要占位，避免盖住 Bot 的内容和信息侧栏。 */
+.botapp-dock { position: relative; flex: none; padding: var(--space-3) var(--space-4) var(--space-4); pointer-events: auto; }
 .botapp-loading { display: grid; place-items: center; }
 .botapp-sample { font-size: var(--fs-sm); color: var(--fg-2); }
 .botapp-side { min-height: 0; min-width: 0; overflow: auto; background: var(--well); }

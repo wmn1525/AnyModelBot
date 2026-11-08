@@ -1,0 +1,40 @@
+.kit-page { grid-template-columns: minmax(0, 1fr); }
+.pf-shell { display: grid; gap: var(--space-5); min-width: 0; }
+.pf-shell > *, .pf-form > *, .pf-toolbar > *, .pf-stat { min-width: 0; max-width: 100%; }
+.pf-form .field { min-width: 0; max-width: 100%; }
+.pf-stat { overflow-wrap: anywhere; }
+.pf-shell .btn { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.pf-toolbar, .pf-tabs, .pf-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.pf-toolbar { justify-content: space-between; }
+.pf-tabs { border-bottom: 1px solid var(--line); padding-bottom: var(--space-2); }
+.pf-tabs button[aria-selected="true"] { background: var(--well); color: var(--fg); font-weight: 600; }
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--space-4); }
+.pf-form, .pf-card, .pf-stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); min-width: 0; }
+.pf-shell .kit-empty { overflow-wrap: anywhere; }
+.pf-card { border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--space-4); background: var(--bg); }
+.pf-card h2, .pf-card h3, .pf-card p { margin: 0; overflow-wrap: anywhere; }
+.pf-form textarea { min-height: 8rem; resize: vertical; width: 100%; }
+.pf-form label { display: grid; gap: var(--space-1); }
+.pf-form input[type="checkbox"] { width: auto; }
+.pf-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-4); }
+.pf-preview { display: grid; gap: var(--space-2); background: var(--well); border-radius: var(--r-md); padding: var(--space-2); overflow: hidden; }
+.pf-preview img, .pf-preview video { width: 100%; max-height: 26rem; object-fit: contain; }
+.pf-preview audio { width: 100%; }
+.pf-shot-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.pf-meta { color: var(--fg-2); font-size: var(--fs-sm); }
+.pf-error { color: var(--fg); overflow-wrap: anywhere; }
+.pf-script { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.pf-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.pf-stat { background: var(--well); border-radius: var(--r-md); padding: var(--space-3); }
+.pf-stat strong { display: block; font-size: var(--fs-xl); }
+.pf-canvas-scroll { overflow: auto; max-height: 40rem; border: 1px solid var(--line); border-radius: var(--r-md); }
+.pf-canvas { position: relative; width: 1400px; height: 900px; background: var(--well); touch-action: none; }
+.pf-canvas svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.pf-canvas line { stroke: var(--fg-2); stroke-width: 2; }
+.pf-node { position: absolute; width: 180px; min-height: 80px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg); padding: var(--space-3); cursor: grab; text-align: start; touch-action: none; }
+.pf-node[aria-pressed="true"] { outline: 2px solid var(--fg); }
+.pf-node small { display: block; overflow-wrap: anywhere; }
+.pf-list { display: grid; gap: var(--space-2); }
+.pf-list > article { border-bottom: 1px solid var(--line); padding: var(--space-3) 0; }
+.pf-empty { padding: var(--space-5); }
+@media (max-width: 700px) { .pf-columns { grid-template-columns: 1fr; } .pf-summary { gap: var(--space-2); } }

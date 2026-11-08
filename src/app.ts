@@ -57,6 +57,7 @@ import { ConnectionService } from "./agent/connections.js";
 import { UpdateChecker } from "./update-check.js";
 import { COMPACT_ENDPOINT, serverCompactionEnabled, type CompactEndpoint } from "./agent/server-compaction.js";
 import type { BotSettings } from "./agent/settings.js";
+import { UserSkills } from "./skills/service.js";
 import { TaskService } from "./tasks/service.js";
 import { RuleEvents } from "./tasks/rule-events.js";
 import { lockDataDir, type DataDirLock } from "./store/lock.js";
@@ -194,6 +195,7 @@ export class App {
   /** 目录 Bot：目录同步和实例（docs/bot-framework.md）。目录为空时对现有功能没有影响 */
   readonly catalog: BotCatalog;
   readonly botInstaller: BotInstaller;
+  readonly userSkills: UserSkills;
   web: WebServer | undefined;
   private catalogSweep: NodeJS.Timeout | undefined;
   desktop: DesktopHooks | undefined;
@@ -232,6 +234,7 @@ export class App {
       log: logFilePath(),
     });
     this.store = new Store(path.join(config.dataDir, "anymodel.db"));
+    this.userSkills = new UserSkills(config.dataDir, this.store);
     this.outbox = new Outbox(this.store);
     this.delivery = new Delivery({ store: this.store, outbox: this.outbox, timeZone: opts.timeZone, ...opts.deliveryLimits });
     this.access = new AccessControl(this.store, { notify: (to, text, id) => this.reach(to, text, id) });
@@ -646,6 +649,7 @@ export class App {
     this.tasks.dropBot(botId);
     // 渠道账号是全局的，不跟着机器人停：之后它们的消息交给别的机器人（core/routes.ts）
     await this.agent.stopBot(botId);
+    if (bot) this.userSkills.cleanup(botId);
     if (bot?.settings.budget.enabled && this.account.signedIn) {
       await this.account.setBotBudget(botId, bot.name, { ...bot.settings.budget, enabled: false }).catch((e) => log.warn("remove bot key failed", { message: (e as Error).message }));
     }

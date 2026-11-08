@@ -21,6 +21,14 @@ export async function api(path, opts = {}) {
   return data;
 }
 
+/** 技能 ZIP 直接发送二进制，避免 base64 占用额外内存。 */
+export async function uploadSkillZip(path, file) {
+  const res = await fetch("/amb/api" + path, { method: "POST", headers: { "content-type": "application/zip", "x-amb-lang": getLang() }, body: file });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(data.error || `HTTP ${res.status}`, res.status, data);
+  return data;
+}
+
 /** 按空行切事件；回调 (event, data)。 */
 export function sseParser(onEvent) {
   let buf = "";

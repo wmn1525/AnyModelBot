@@ -22,7 +22,9 @@ COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 COPY electron ./electron
 COPY ui/locales/manifest.json ./ui/locales/manifest.json
-RUN npx tsc -p tsconfig.build.json
+COPY bots ./bots
+COPY scripts/build-catalog.ts ./scripts/build-catalog.ts
+RUN npm run build
 
 # ---- DSH 代理运行时（MIT，npm 固定版本）----
 FROM node:22-bookworm-slim AS dsh

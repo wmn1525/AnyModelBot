@@ -66,6 +66,7 @@ export function apply(ctx) {
     description: 'Generate or edit an image with an image model on Modelflare. It generates right away; only a high estimated cost (or a bot set to always ask) makes the app ask the user to confirm the model first, who may pick another one or cancel. The image is saved in the workspace under media/; deliver it with the present tool when the user should receive it. Write the prompt in detail (subject, style, composition, text in the image).',
     parameters: {
       prompt: { type: 'string', required: true, description: 'What the image should show, in detail. Shown to the user when asked; keep it in sync with the prompt inside body.' },
+      request_id: { type: 'string', description: 'Stable identifier for one generation. Keep it and all inputs unchanged when recovering a request; a completed image is reused. Never change it automatically after an ambiguous submission.' },
       model: { type: 'string', description: 'Image model id. Omit to use the default model.' },
       body: BODY,
       endpoint: { type: 'string', enum: ['generations', 'edits'], description: 'For OpenAI Images models only: "edits" when the docs say reference images go to /v1/images/edits. Default generations.' },
@@ -80,6 +81,7 @@ export function apply(ctx) {
     description: 'Generate a short video with a video model on Modelflare. It generates right away; only a high estimated cost (or a bot set to always ask) makes the app ask the user to confirm the model first, who may pick another one or cancel. It can take several minutes. The video is saved in the workspace under media/; deliver it with the present tool. Only use it when the user asks for a video: video generation costs much more than images.',
     parameters: {
       prompt: { type: 'string', required: true, description: 'What the video should show, in detail. Shown to the user when asked; keep it in sync with the prompt inside body.' },
+      request_id: { type: 'string', description: 'Stable identifier for one generation. Reuse it with exactly the same inputs to resume polling/download after a timeout or restart without creating another paid video task. Use a new ID only for a deliberate new take.' },
       model: { type: 'string', description: 'Video model id. Omit to use the default model.' },
       body: BODY,
       seconds: { type: 'number', description: 'Optional length in seconds for a plain request without body.' },

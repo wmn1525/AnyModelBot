@@ -1,6 +1,6 @@
 /**
- * 客户端的目录：启动时和之后每 6 小时拉一次签名的 index.json（带 ETag），验签通过才替换本地缓存；
- * 界面和技能按 sha256 下载，校验后解到 <data>/catalog/bundles/<sha256>/。
+ * 官方目录直接读安装包中的 index.json；界面和技能从内置包校验、解压到数据目录，全程不联网。
+ * 显式配置远程目录时才每 6 小时同步签名索引，按需下载并校验 sha256。
  * 没配置目录地址或公钥时目录就是空的，App 的行为和没有这个功能时一样。
  * 开发时可以把本机目录登记进来（amb-bot dev），不经过下载和签名。
  */
@@ -21,7 +21,7 @@ export interface CatalogEntry extends BotManifest {
   ui: { sha256: string; size: number };
   /** 运行包：persona.md、skills/ */
   runtime: { sha256: string; size: number };
-  /** 约束检查的截图（发现页缩略图），按 sha256 下载 */
+  /** 约束检查的截图（发现页缩略图），按 sha256 读取 */
   thumbs?: { light?: string; dark?: string };
   featured?: boolean;
   publishedAt: number;
@@ -40,6 +40,8 @@ export interface CatalogIndex {
 export interface CatalogOptions {
   dataDir: string;
   appVersion: string;
+  /** 安装包内的可信目录（index.json、bundles/、thumbs/）；存在时不连接远程目录。 */
+  bundledDir?: string;
   /** index.json 的地址；同目录下有 index.json.sig、bundles/、thumbs/ */
   url?: string;
   publicKey?: string;
@@ -60,7 +62,8 @@ export class BotCatalog extends EventEmitter {
 
   constructor(readonly o: CatalogOptions) {
     super();
-    this.loadCache();
+    if (o.bundledDir) this.index = this.parseIndex(fs.readFileSync(path.join(o.bundledDir, "index.json")));
+    else this.loadCache();
     this.loadDev();
   }
 
@@ -75,7 +78,10 @@ export class BotCatalog extends EventEmitter {
   }
   /** 没有地址或公钥就不联网：不会有未验签的目录 */
   get remoteEnabled(): boolean {
-    return !!(this.o.url && this.o.publicKey);
+    return !this.o.bundledDir && !!(this.o.url && this.o.publicKey);
+  }
+  get enabled(): boolean {
+    return !!this.o.bundledDir || this.remoteEnabled || this.devEntries.size > 0;
   }
 
   private parseIndex(buf: Buffer): CatalogIndex {
@@ -143,6 +149,10 @@ export class BotCatalog extends EventEmitter {
   }
 
   start(): void {
+    if (this.o.bundledDir) {
+      this.emit("changed");
+      return;
+    }
     if (!this.remoteEnabled || this.timer) return;
     void this.sync();
     this.timer = setInterval(() => void this.sync(), SYNC_INTERVAL_MS);
@@ -202,11 +212,23 @@ export class BotCatalog extends EventEmitter {
   }
 
   private async download(url: string, expect: string, limit: number): Promise<Buffer> {
+    if (!this.remoteEnabled) throw new Error("remote catalog is disabled");
     const res = await this.doFetch(url);
     if (!res.ok) throw new Error(`download HTTP ${res.status}: ${url}`);
     const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length > limit) throw new Error(`download too large: ${url}`);
-    if (sha256(buf) !== expect) throw new Error(`sha256 mismatch: ${url}`);
+    this.checkAsset(buf, expect, limit);
+    return buf;
+  }
+
+  private checkAsset(buf: Buffer, expect: string, limit: number): void {
+    if (buf.length > limit) throw new Error(`catalog asset too large: ${expect}`);
+    if (sha256(buf) !== expect) throw new Error(`sha256 mismatch: ${expect}`);
+  }
+
+  private async asset(rel: string, hash: string, limit: number): Promise<Buffer> {
+    if (!this.o.bundledDir) return this.download(`${this.base}${rel}`, hash, limit);
+    const buf = fs.readFileSync(path.join(this.o.bundledDir, rel));
+    this.checkAsset(buf, hash, limit);
     return buf;
   }
 
@@ -214,13 +236,14 @@ export class BotCatalog extends EventEmitter {
     return path.join(this.dir, "bundles", hash);
   }
 
-  /** 同一个包只下载一次（并发的请求共用一次） */
+  /** 同一个包只准备一次（并发请求共用一次读取和解压） */
   private ensureBundle(hash: string, limit: number): Promise<void> {
+    if (!/^[0-9a-f]{64}$/.test(hash)) return Promise.reject(new Error("invalid bundle hash"));
     if (fs.existsSync(this.bundleDir(hash))) return Promise.resolve();
     let p = this.loading.get(hash);
     if (!p) {
       p = (async () => {
-        const buf = await this.download(`${this.base}bundles/${hash}.ambot`, hash, limit);
+        const buf = await this.asset(`bundles/${hash}.ambot`, hash, limit);
         fs.mkdirSync(path.join(this.dir, "bundles"), { recursive: true });
         unpackTo(buf, this.bundleDir(hash));
       })().finally(() => this.loading.delete(hash));
@@ -243,20 +266,20 @@ export class BotCatalog extends EventEmitter {
     return this.bundleDir(e.runtime.sha256);
   }
 
-  /** 已经下载过的界面目录，没有就是 undefined（静态路由用，不触发下载） */
+  /** 已经解压的界面目录，没有就是 undefined（静态路由用，不触发读取或下载） */
   uiDirIfPresent(hash: string): string | undefined {
     const d = this.bundleDir(hash);
     return /^[0-9a-f]{64}$/.test(hash) && fs.existsSync(d) ? d : undefined;
   }
 
-  /** 发现页缩略图：按 sha256 下载并缓存；只接受目录里登记过的哈希 */
+  /** 发现页缩略图：读取内置文件或显式远程目录并缓存；只接受目录里登记过的哈希 */
   async thumb(hash: string): Promise<string | undefined> {
     if (!/^[0-9a-f]{64}$/.test(hash)) return undefined;
     const known = this.index?.bots.some((e) => e.thumbs?.light === hash || e.thumbs?.dark === hash);
     const f = path.join(this.dir, "thumbs", `${hash}.png`);
     if (fs.existsSync(f)) return f;
-    if (!known || !this.remoteEnabled) return undefined;
-    const buf = await this.download(`${this.base}thumbs/${hash}.png`, hash, LIMITS.uiBundleBytes);
+    if (!known || !this.enabled) return undefined;
+    const buf = await this.asset(`thumbs/${hash}.png`, hash, LIMITS.uiBundleBytes);
     fs.mkdirSync(path.dirname(f), { recursive: true });
     fs.writeFileSync(f, buf);
     return f;

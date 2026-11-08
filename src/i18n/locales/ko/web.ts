@@ -29,6 +29,8 @@ export default {
   "requestDone": "이미 처리되었거나 만료된 요청입니다",
   "submitFailed": "제출하지 못했습니다",
   "conversationNotFound": "대화를 찾을 수 없습니다",
+  "messageNotFound": "메시지가 없거나 볼 수 있는 대화 기록에 포함되지 않습니다",
+  "badMessageSearch": "검색 조건이 올바르지 않습니다. 검색어와 기간을 확인하거나 다시 검색하세요",
   "fileNotFound": "파일을 찾을 수 없습니다",
   "nameRequired": "이름을 입력해야 합니다",
   "budgetRange": "예산은 $0~$100,000 사이여야 합니다",

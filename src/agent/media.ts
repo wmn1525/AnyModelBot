@@ -17,6 +17,7 @@ import { t } from "../i18n/index.js";
 import { imagePayload, imageSources } from "./image-response.js";
 import { displayModel } from "../account/newapi-types.js";
 import { parsePlaygroundModel } from "../account/newapi-types.js";
+import { MediaJournal, mediaFingerprint, type MediaReceipt } from "./media-journal.js";
 
 const log = logger("agent.media");
 
@@ -274,6 +275,7 @@ export function docSection(full: string, docsUrl: string, kind: MediaKind, model
 }
 
 export class MediaService {
+  private runningRequests = new Set<string>();
   private catalogCache: { at: number; data: Catalog } | undefined;
   private docsCache: { at: number; text: string } | undefined;
 
@@ -446,7 +448,63 @@ export class MediaService {
     const prompt = String(args.prompt ?? "").trim();
     const body = parseBody(args.body);
     const resolved = body ? (this.inline(botId, body) as Record<string, unknown>) : undefined;
-    return model.kind === "image" ? this.image(botId, model, prompt, resolved, args) : this.video(botId, model, prompt, resolved, args);
+    if (args.request_id === undefined) return model.kind === "image" ? this.image(botId, model, prompt, resolved, args) : this.video(botId, model, prompt, resolved, args);
+    const resumed = await this.recover(botId, model.kind, { ...args, model: model.id });
+    if (resumed !== undefined) return resumed;
+    const journal = new MediaJournal(this.o.workspace(botId), args.request_id);
+    const receipt: MediaReceipt = { fingerprint: this.fingerprint(model.kind, model.id, prompt, resolved, args), kind: model.kind, model: model.id,
+      baseUrl: this.o.baseUrl(), status: "submitting", updatedAt: new Date().toISOString() };
+    if (this.runningRequests.has(journal.file)) throw new MediaError("同一媒体任务正在执行，请等待结果");
+    this.runningRequests.add(journal.file);
+    try {
+      journal.write(receipt); // Persist before POST: an ambiguous submission must never be retried automatically.
+      const result = model.kind === "image" ? await this.image(botId, model, prompt, resolved, args) : await this.video(botId, model, prompt, resolved, args, journal, receipt);
+      journal.write({ ...receipt, status: "done", result });
+      return result;
+    } finally {
+      this.runningRequests.delete(journal.file);
+    }
+  }
+
+  private fingerprint(kind: MediaKind, model: string, prompt: string, body: unknown, args: Record<string, unknown>): string {
+    return mediaFingerprint([kind, model, this.o.baseUrl(), prompt, body, args.endpoint, args.size, args.seconds]);
+  }
+
+  /** Only retrieves already submitted work; never starts a billable request. */
+  async recover(botId: string, op: string, args: Record<string, unknown>): Promise<string | undefined> {
+    if (args.request_id === undefined || (op !== "image" && op !== "video")) return undefined;
+    const journal = new MediaJournal(this.o.workspace(botId), args.request_id);
+    if (this.runningRequests.has(journal.file)) throw new MediaError("同一媒体任务正在执行，请等待结果");
+    const receipt = journal.read();
+    if (!receipt) return undefined;
+    const body = parseBody(args.body);
+    const resolved = body ? this.inline(botId, body) : undefined;
+    const fingerprint = this.fingerprint(op, receipt.model, String(args.prompt ?? "").trim(), resolved, args);
+    if (receipt.fingerprint !== fingerprint || receipt.baseUrl !== this.o.baseUrl() || receipt.kind !== op || (args.model && args.model !== receipt.model)) throw new MediaError("request_id 已用于不同的输入或模型；修改内容后必须使用新的任务标识");
+    if (receipt.status === "done" && typeof receipt.result === "string") {
+      const files = receipt.result.match(/media\/[\w.-]+\.(?:png|jpg|jpeg|gif|webp|mp4|webm)/g) ?? [];
+      const root = fs.realpathSync(this.o.workspace(botId));
+      const present = files.length && files.every((f) => {
+        try {
+          const real = fs.realpathSync(path.join(root, f));
+          const st = fs.statSync(real);
+          return real.startsWith(root + path.sep) && st.isFile() && st.size > 0 && st.nlink === 1;
+        } catch { return false; }
+      });
+      if (present) return receipt.result;
+      if (op !== "video" || !receipt.taskId) throw new MediaError("已完成任务的本地文件已丢失；没有重新生成或扣费");
+      receipt.status = "pending"; // Recover the original content, never POST another job.
+    }
+    if (receipt.status === "failed") throw new MediaError("原视频任务已失败；用户明确重试时请创建新的任务标识");
+    if (receipt.status !== "pending" || !receipt.taskId || op !== "video") throw new MediaError("上次提交结果未知，已阻止重复扣费；请先在供应商任务记录中核实，不要自动换标识重试");
+    this.runningRequests.add(journal.file);
+    try {
+      const result = await this.finishVideo(botId, receipt.model, receipt.taskId, journal, receipt);
+      journal.write({ ...receipt, status: "done", result });
+      return result;
+    } finally {
+      this.runningRequests.delete(journal.file);
+    }
   }
 
   /** 把请求体里的 "workspace:路径" 换成 data URL、"workspace-base64:路径" 换成纯 Base64；只认工作区里的文件 */
@@ -543,7 +601,7 @@ export class MediaService {
     return "已用 " + displayModel(model.id) + " 生成 " + files.length + " 张图片，保存在工作区：" + files.join("、") + "。要发给用户，请用 present 工具交付这些文件。";
   }
 
-  private async video(botId: string, model: MediaModel, prompt: string, body: Record<string, unknown> | undefined, args: Record<string, unknown>): Promise<string> {
+  private async video(botId: string, model: MediaModel, prompt: string, body: Record<string, unknown> | undefined, args: Record<string, unknown>, journal?: MediaJournal, receipt?: MediaReceipt): Promise<string> {
     const key = this.key(botId);
     const seconds = Number(args.seconds);
     const size = typeof args.size === "string" && /^\d{2,5}x\d{2,5}$/.test(args.size) ? args.size : undefined;
@@ -553,6 +611,15 @@ export class MediaService {
     const created = (await (await this.call(key, "POST", "/videos", req)).json()) as { id?: string; task_id?: string };
     const id = created.id || created.task_id;
     if (!id) throw new MediaError("OKINTO 没有返回视频任务编号");
+    if (journal && receipt) {
+      Object.assign(receipt, { taskId: id, status: "pending" });
+      journal.write(receipt);
+    }
+    return this.finishVideo(botId, model.id, id, journal, receipt);
+  }
+
+  private async finishVideo(botId: string, modelId: string, id: string, journal?: MediaJournal, receipt?: MediaReceipt): Promise<string> {
+    const key = this.key(botId);
     const deadline = Date.now() + (this.o.videoTimeoutMs ?? 20 * 60_000);
     for (;;) {
       const t = (await (await this.call(key, "GET", `/videos/${encodeURIComponent(id)}`, undefined, 30_000)).json()) as {
@@ -560,16 +627,19 @@ export class MediaService {
         error?: { message?: string } | null;
         error_message?: string;
       };
-      if (t.status === "completed") break;
-      if (t.status === "failed") throw new MediaError(`视频生成失败：${t.error?.message || t.error_message || "未知原因"}`);
-      if (Date.now() > deadline) throw new MediaError(`视频任务 ${id} 超时还没完成，可以稍后再试`);
+      if (t.status === "completed" || t.status === "succeeded") break;
+      if (t.status === "failed" || t.status === "cancelled") {
+        if (journal && receipt) journal.write({ ...receipt, status: "failed" });
+        throw new MediaError(`视频生成失败：${t.error?.message || t.error_message || "未知原因"}`);
+      }
+      if (Date.now() > deadline) throw new MediaError(`视频任务 ${id} 还未完成；保留相同 request_id 和输入稍后取回，不要重新生成`);
       await new Promise((r) => setTimeout(r, this.o.pollMs ?? 5000));
     }
     const content = await this.call(key, "GET", `/videos/${encodeURIComponent(id)}/content`, undefined, 600_000);
     const d = await this.readBody(content);
     const file = this.save(botId, "video", d.data, d.mime || "video/mp4");
-    log.info("video generated", { bot: botId, model: model.id });
-    return `已用 ${model.id} 生成视频，保存在工作区：${file}。要发给用户，请用 present 工具交付这个文件。`;
+    log.info("video generated", { bot: botId, model: modelId });
+    return `已用 ${modelId} 生成视频，保存在工作区：${file}。要发给用户，请用 present 工具交付这个文件。`;
   }
 }
 

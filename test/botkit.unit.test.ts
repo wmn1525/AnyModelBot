@@ -12,11 +12,14 @@ import { checkStatic } from "../src/botkit/check.js";
 import { runEvals } from "../src/botkit/evals.js";
 import { localized, parseManifest, versionGte } from "../src/botkit/format.js";
 import { BotInstaller, CatalogError, instanceId } from "../src/botkit/installer.js";
-import { packCatalog, whoUsesSkill } from "../src/botkit/pack.js";
+import { packBuiltinCatalog, packCatalog, whoUsesSkill } from "../src/botkit/pack.js";
 import { prune, unsupportedKeywords, validate } from "../src/botkit/schema.js";
 import { generateCatalogKeys, signCatalog, verifyCatalog } from "../src/botkit/sign.js";
 import { botPrompt } from "../src/agent/prompts/system.js";
 import { Store } from "../src/store/db.js";
+import { UserSkills } from "../src/skills/service.js";
+import { readSkillZip } from "../src/skills/archive.js";
+import { skillZip, skillMd } from "./skill-fixture.js";
 import { botAppCsp, serveBotAppStatic } from "../src/web/botapp.js";
 // @ts-expect-error 前端模块是无类型的原生 ES 模块
 import { safeExternalUrl } from "../ui/lib/bot-bridge.js";
@@ -327,13 +330,15 @@ describe("目录", () => {
   });
   afterEach(() => site.close());
 
-  it("默认连线上的目录；AMB_CATALOG=off 时不联网，目录是空的", async () => {
-    const on = catalogConfig({});
+  it("默认只用内置目录；远程目录必须显式指定，off 关闭两者", async () => {
+    expect(catalogConfig({}, repo)).toEqual({ bundledDir: path.join(repo, "dist", "catalog") });
+    const on = catalogConfig({ AMB_CATALOG_URL: "https://anymodel.bot/catalog/index.json" });
     expect(on.url).toBe("https://anymodel.bot/catalog/index.json");
+    expect(on.bundledDir).toBeUndefined();
     expect(on.publicKey).toMatch(/^[A-Za-z0-9+/]+=*$/);
     const data = Buffer.from("x");
-    expect(verifyCatalog(data, signCatalog(data, generateCatalogKeys().privateKey), on.publicKey)).toBe(false);
-    expect(catalogConfig({ AMB_CATALOG: "off" })).toEqual({ url: "", publicKey: "" });
+    expect(verifyCatalog(data, signCatalog(data, generateCatalogKeys().privateKey), on.publicKey!)).toBe(false);
+    expect(catalogConfig({ AMB_CATALOG: "off", AMB_CATALOG_URL: "https://anymodel.bot/catalog/index.json" })).toEqual({});
     expect(new BotCatalog({ dataDir: tmp, appVersion: "0.1.0", ...catalogConfig({ AMB_CATALOG: "off" }) }).remoteEnabled).toBe(false);
   });
   it("没配置地址或公钥时不联网，目录是空的", async () => {
@@ -522,6 +527,45 @@ describe("目录", () => {
       expect(stopped).toContain(id);
       inst.markCustomized(id);
       expect(await inst.update(id)).toBe("customized");
+    });
+    it("线上实例迁移到内置包：同版本内容变化也更新，保留项目并先显示旧界面", async () => {
+      const old = await inst.install("fixture-bot", "zh-CN");
+      write(ws(), "app/state.json", JSON.stringify({ title: "my project", items: [] }));
+      const dir = path.join(repo, "bots", "fixture-bot");
+      write(dir, "ui/app.css", "/* updated bundled UI */");
+      write(dir, "persona.md", "Bundled persona");
+      write(dir, "skills/own/SKILL.md", "---\nname: own\n---\nBundled skill\n");
+      const bundledDir = path.join(tmp, "builtin");
+      expect(packBuiltinCatalog({ root: repo, outDir: bundledDir }).failures).toEqual([]);
+      const network = vi.fn<typeof fetch>().mockRejectedValue(new Error("offline"));
+      const local = new BotCatalog({ dataDir: data, appVersion: "9.9.9", bundledDir, fetch: () => network });
+      const installer = new BotInstaller({ ...inst.o, catalog: local });
+      expect(installer.info(old)).toMatchObject({ base: `/amb/botapp/b/${old.app!.ui}/`, updateAvailable: true });
+      expect(await installer.update(id)).toBe("updated");
+      const updated = store.getBot(id)!;
+      expect(updated.app!.version).toBe(old.app!.version);
+      expect(updated.app!.ui).toBe(local.get("fixture-bot")!.ui.sha256);
+      expect(installer.info(updated).base).toBe(`/amb/botapp/b/${updated.app!.ui}/`);
+      expect(updated.systemPrompt).toBe("Bundled persona");
+      expect(fs.readFileSync(skills("own", "SKILL.md"), "utf8")).toContain("Bundled skill");
+      expect(JSON.parse(fs.readFileSync(ws("app/state.json"), "utf8")).title).toBe("my project");
+      expect(await installer.update(id)).toBe("current");
+      expect(network).not.toHaveBeenCalled();
+    });
+    it("目录升级不能覆盖用户导入的同名技能，即使尚未部署到运行目录", async () => {
+      await inst.install("fixture-bot", "zh-CN");
+      const user = new UserSkills(data, store);
+      const pkg = await readSkillZip(skillZip([{ path: "SKILL.md", text: skillMd("custom-skill", "user instructions") }]));
+      user.install(id, pkg, null);
+      const dir = path.join(repo, "bots", "fixture-bot");
+      write(dir, "bot.json", fs.readFileSync(path.join(dir, "bot.json"), "utf8").replace('"version": "1.0.0"', '"version": "1.1.0"'));
+      write(dir, "skills/custom-skill/SKILL.md", "catalog instructions");
+      pack(2000);
+      await c.sync();
+      await expect(inst.update(id)).rejects.toMatchObject({ code: "skill_conflict" });
+      expect(user.detail(id, "custom-skill").instructions).toContain("user instructions");
+      expect(store.getBot(id)!.app!.version).toBe("1.0.0");
+      expect(fs.existsSync(skills("own", "SKILL.md"))).toBe(true);
     });
     it("下架：普通下架只记下来；安全原因停掉进程、删掉技能，数据不动", async () => {
       await inst.install("fixture-bot", "zh-CN");

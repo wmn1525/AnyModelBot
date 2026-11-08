@@ -54,7 +54,7 @@ const catalogBots = fs.readdirSync(path.join(app, "bots"), { withFileTypes: true
   .sort()
   .map((id) => JSON.parse(fs.readFileSync(path.join(app, "bots", id, "bot.json"), "utf8")))
   .filter((m) => !removed.includes(m.id))
-  .map(({ id, avatar, name, summary, about, starters }) => ({ id, avatar, name, summary, about, starters }));
+  .map(({ id, minAppVersion, avatar, name, summary, about, starters }) => ({ id, minAppVersion, avatar, name, summary, about, starters }));
 fs.writeFileSync(path.join(site, "src/data/catalog-bots.json"), `${JSON.stringify(catalogBots, null, 2)}\n`);
 
 export function botCharsHash(src: string) {

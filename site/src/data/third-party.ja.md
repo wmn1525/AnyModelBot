@@ -79,6 +79,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - qrcode 1.5.4 — MIT
 - qrcode-terminal 0.12.0 — Apache-2.0（パッケージ内の LICENSE 参照）
 - ws 8.22.0 — MIT
+- yauzl 3.4.0 — MIT
+- yaml 2.9.1 — ISC
 
 間接依存のライセンスは node_modules の各パッケージに保持されています。デスクトップアプリには Electron（MIT）や Chromium なども含まれます。それらのライセンスはインストール先の LICENSE と LICENSES.chromium.html にあります。
 

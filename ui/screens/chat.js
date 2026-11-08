@@ -20,6 +20,8 @@ import { prefs } from "../lib/prefs.js";
 import { t, useLang } from "../lib/i18n.js";
 import { notify, plainSnippet } from "../lib/notify.js";
 import { reducedMotion, usePresence } from "../design/motion.js";
+import { ConversationFind, HistoryBar, HistoryPageButton, useMessageHistory } from "../components/chat-search.js";
+import { chatView, saveChatView, useChatDraft } from "../lib/chat-view.js";
 
 // 文案跟着界面语言：渲染时再取（写成函数，不在模块顶层缓存翻译）
 const commands = () => [
@@ -210,10 +212,14 @@ export function ErrorNotice({ text, onRetry, onFixKey, source = "" }) {
     ${onRetry && html`<button type="button" class="btn" onClick=${onRetry}>${t("common.retry")}</button>`}`}>${auth ? (source ? t("chat.error.officialKeyInvalid", { name: source }) : t("chat.error.authInvalid")) : text}<//>`;
 }
 
-export function ChatScreen({ bot, models, modelsError, reloadModels, defaultModel, infoOpen, onToggleInfo, onWorking, onOpenSettings, onOpenBotSettings, onBotUpdated, pending = 0, serverBusy = false, account, onAccount }) {
+export function ChatScreen({ bot, models, modelsError, reloadModels, defaultModel, infoOpen, onToggleInfo, onWorking, onOpenSettings, onOpenBotSettings, onBotUpdated, pending = 0, serverBusy = false, account, onAccount, initialFocus, onBackToSearch, visible = true }) {
+  const viewId = `${bot.id}:web:console`;
+  const savedView = useRef(chatView(viewId));
+  const restoreView = useRef(true);
   const [items, setItems] = useState(null);
   const [convModel, setConvModel] = useState("");
-  const [text, setText] = useState("");
+  const [text, setText] = useChatDraft(viewId);
+  const [findOpen, setFindOpen] = useState(false);
   // generating：正在跟着一条消息（本页发出的，或切回 / 刷新后接上的）；stopping：按了停止，等服务端收尾
   const [generating, setGenerating] = useState(false);
   const [stopping, setStopping] = useState(false);
@@ -229,7 +235,8 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
   const [canOpen, setCanOpen] = useState(false); // 桌面版：交付的文件用系统程序打开
   const lang = useLang();
   const scroller = useRef(null);
-  const stick = useRef(true);
+  const stick = useRef(savedView.current.atBottom);
+  const history = useMessageHistory({ scope: { conversation: viewId }, scroller, stick, initialFocus, visible });
   const ta = useRef(null);
   const plusRef = useRef(null);
   const modelRef = useRef(null);
@@ -273,7 +280,7 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
   }, [fillReq && fillReq.at]);
 
   // ended：刚接着的那条消息结束了 { since, ms }，存下的回复照样显示"用时"（和一直停在这页时一样）
-  const load = useCallback(async (ended) => {
+  const load = useCallback(async (ended = undefined) => {
     try {
       const d = await api(`/bots/${encodeURIComponent(bot.id)}/chat`);
       if (!mounted.current) return;
@@ -303,7 +310,7 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
   useEffect(() => {
     mounted.current = true;
     load();
-    requestAnimationFrame(() => ta.current?.focus());
+    requestAnimationFrame(() => { ta.current?.focus({ preventScroll: true }); autoGrow(ta.current); });
     return () => {
       mounted.current = false;
       following.current?.ac.abort();
@@ -351,19 +358,26 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
   // 只有用户本来就在底部附近时才跟随新内容；否则亮出"回到底部"
   useLayoutEffect(() => {
     const el = scroller.current;
-    if (!el) return;
+    if (!el || !visible || history.context || items === null) return;
+    if (restoreView.current) {
+      restoreView.current = false;
+      if (!savedView.current.atBottom) { el.scrollTop = savedView.current.top; return; }
+    }
     if (stick.current) el.scrollTop = el.scrollHeight;
     else setUnseen(true);
-  }, [items]);
+  }, [items, history.context, visible]);
   const onScroll = () => {
     const el = scroller.current;
+    if (!visible || !el?.getClientRects().length) return;
     const near = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM;
-    stick.current = near;
-    setAtBottom(near);
+    stick.current = history.context ? false : near;
+    setAtBottom(history.context ? false : near);
+    if (!history.context) saveChatView(viewId, { top: el.scrollTop, atBottom: near });
     setScrolled(el.scrollTop > 2);
     if (near) setUnseen(false);
   };
   const toBottom = () => {
+    history.clear();
     stick.current = true;
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: reducedMotion() ? "auto" : "smooth" });
     setUnseen(false);
@@ -475,6 +489,7 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
 
   const send = async (raw) => {
     const msg = (raw ?? text).trim();
+    if (msg) { history.clear(); setFindOpen(false); }
     if (msg && (generating || following.current) && !msg.startsWith("/") && raw === undefined) return steer(msg);
     if (!msg || generating || following.current) return;
     if (raw === undefined) {
@@ -669,9 +684,10 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
   const files = (it) => html`<${DeliveredFiles} files=${it.files} conv=${convId.current || `${bot.id}:web:console`} canOpen=${canOpen} onLoad=${onMedia} />`;
   const rows = useMemo(() => {
     const out = [];
+    const shownItems = history.context ? toItems(history.context.messages) : items;
     let prev = null;
-    const lastAi = (items || []).findLast((x) => x.kind === "msg" && x.role === "assistant" && !x.live)?.id;
-    for (const it of items || []) {
+    const lastAi = (shownItems || []).findLast((x) => x.kind === "msg" && x.role === "assistant" && !x.live)?.id;
+    for (const it of shownItems || []) {
       if (it.at && (!prev?.at || new Date(it.at).toDateString() !== new Date(prev.at).toDateString() || it.at - prev.at > 15 * 60_000)) {
         out.push(html`<div class="time-sep" key=${"t" + it.id}>${fmtSep(it.at)}</div>`);
         prev = null;
@@ -682,7 +698,7 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
       if (it.kind === "msg") {
         // 回复：工作状态行（处理过程折叠在里面）、模型说的话（回合中间说的在前）、交付的文件
         const shown = it.role === "user" ? it.text : shownText(it);
-        out.push(html`<div class=${`${cls}${it.id === lastAi ? " last" : ""}`} key=${it.id}>
+        out.push(html`<div class=${`${cls}${it.id === lastAi ? " last" : ""}`} data-message-id=${it.mid} key=${it.id}>
           ${it.role === "user"
             ? html`<div class="msg"><${Linkified} text=${it.text} /></div><${MsgActions} text=${it.text} at=${it.at} />`
             : html`${(it.live || it.workedMs || it.steps) && html`<${WorkLine} live=${it.live} stopping=${it.live && stopping} text=${it.text} startedAt=${it.startedAt} workedMs=${it.workedMs}
@@ -697,7 +713,7 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
       } else if (it.kind === "media-demo") {
         out.push(html`<div class=${cls} key=${it.id}><${MediaDemo} onLoad=${onMedia} /></div>`);
       } else if (it.kind === "error") {
-        out.push(html`<div class=${cls} key=${it.id}>
+        out.push(html`<div class=${cls} data-message-id=${it.mid} key=${it.id}>
           ${(it.activity?.length || it.steps) && html`<${WorkLine} workedMs=${it.workedMs} steps=${it.activity} count=${it.steps} load=${it.mid ? loadActivity(it.mid) : undefined} />`}
           ${it.interim?.length > 0 && html`<div class="msg"><${Markdown} text=${it.interim.join("\n\n")} /></div>`}
           ${files(it)}
@@ -709,9 +725,9 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
       prev = it;
     }
     return out;
-  }, [items, generating, stopping, chipsAfter, lang, canOpen]);
+  }, [items, history.context, generating, stopping, chipsAfter, lang, canOpen]);
 
-  const empty = items && items.length === 0;
+  const empty = !history.context && items && items.length === 0;
   const showGuide = isActive(g) && !g.seen.includes("intro") && !g.trim && !!guideStep(g);
   // 头像跟着对话走：等你批准 > 还没出字（思考）/ 出字了（回复）> 你在输入（在听）
   const replying = generating && (items || []).some((x) => x.live && x.text);
@@ -720,18 +736,25 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
   // 点发送 / 停止不抢输入框的焦点：光标留在原处，接着就能打下一句（键盘 Tab 过去照样能按）
   const keepFocus = (e) => e.preventDefault();
   const permMap = perms();
-  return html`<section class=${`chat${scrolled ? " scrolled" : ""}`} data-screen="chat" aria-label=${t("chat.aria", { name: bot.name })}>
+  return html`<section class=${`chat${scrolled ? " scrolled" : ""}${findOpen || history.context || history.loading || history.error ? " has-chat-tools" : ""}`} data-screen="chat" aria-label=${t("chat.aria", { name: bot.name })}>
     <header class="chat-head">
+      ${onBackToSearch && html`<${IconButton} icon="chevLeft" label=${t("search.backResults")} onClick=${onBackToSearch} />`}
       <button type="button" class="head-bot bot-hover" data-guide="info" aria-pressed=${infoOpen} title=${t("chat.infoPanel")} onClick=${onToggleInfo}>
         <${BotAvatar} bot=${bot} size=${22} state=${face} cue=${cue} />
         <span class="name">${bot.name}</span>
       </button>
       <span class="grow"></span>
+      <${IconButton} icon="search" iconSize="md" label=${t("search.findInChat")} onClick=${() => setFindOpen(true)} />
       <${IconButton} icon="compose" iconSize="md" label=${t("chat.newConvCmd")} disabled=${generating} onClick=${() => send("/new")} />
       <${IconButton} icon="panel" iconSize="md" label=${t("chat.infoPanel")} on=${infoOpen} aria-pressed=${infoOpen} onClick=${onToggleInfo} />
     </header>
+    <div class="chat-tools" hidden=${!(findOpen || history.context || history.loading || history.error)}>
+      <${ConversationFind} scope=${{ conversation: viewId }} onMatch=${history.show} scroller=${scroller} open=${findOpen} onOpen=${() => setFindOpen(true)} onClose=${() => { setFindOpen(false); history.clearHighlight(); }} />
+      <${HistoryBar} history=${history} onLatest=${toBottom} />
+    </div>
     <div class="chat-scroll" ref=${scroller} onScroll=${onScroll}>
       <div class=${`chat-col${items ? " ready" : ""}`} role="log" aria-live="polite" aria-busy=${generating}>
+        <${HistoryPageButton} history=${history} direction="before" />
         ${loadErr && html`<${Notice} tone="red" action=${html`<button type="button" class="btn" onClick=${() => load()}>${t("common.retry")}</button>`}>${t("chat.error.loadHistory", { error: loadErr })}<//>`}
         ${items === null && html`<div class="chat-skel"><${Skeleton} w="40%" /><${Skeleton} w="28%" /></div>`}
         ${empty && html`<div class=${`chat-empty${showGuide ? " with-guide" : ""}`}>
@@ -749,6 +772,7 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
           <${PwshHint} />
         </div>`}
         ${rows}
+        <${HistoryPageButton} history=${history} direction="after" />
       </div>
     </div>
     ${toBottomBtn.mounted && html`<button type="button" class=${`to-bottom${toBottomBtn.leaving ? " leaving" : ""}`} aria-label=${t("chat.toBottom")} onClick=${toBottom}><${Icon} name="down" size="md" />${unseen && html`<span class="new"></span>`}</button>`}

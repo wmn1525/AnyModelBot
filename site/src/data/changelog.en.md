@@ -4,6 +4,16 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.28 - 2026-11-08
+
+### Improvements and fixes
+
+- Synced upstream through 184efc2: bundled Due Diligence, PPT Master, Film Studio and US Equity Research for offline first opening and installation, while preserving existing projects and data during upgrades.
+- Added ZIP skill import, preview, enable/disable, replacement and removal, managed per bot.
+- Added local chat history search with bot, conversation, channel and date filters and links to the original messages.
+- Fixed catalog bot content sizing and scrolling, and added media task tracking and recovery.
+- Included driver download retries, Electron checksum caching and Intel Mac Apple networking fixes; retained OKINTO sign-in, grouped models and image generation.
+
 ## 0.1.26 - 2026-11-06
 
 ### Improved
@@ -120,6 +130,7 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 ### Improved and fixed
 
 - Translation files are organized by module. Release checks validate missing content, placeholders, plurals and documentation links. Russian plurals, localized amounts and dates, Japanese and Korean input methods, and mobile line breaks are improved.
+- Feishu and Notion authorization errors follow the current language. Refused connections to a local proxy now include actionable guidance while retaining the original error.
 - Refined the website's sky effects, download page and mobile layouts, with localized sharing images, search-engine language annotations and 404 pages.
 
 ## 0.1.16 - 2026-11-02
@@ -140,6 +151,8 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 - **Switch bots from a chat:** Send `/bot` in a chat app to see your bots, and `/bot name` once to switch. That chat stays with the new bot, so you don't repeat it on every message. Each bot also knows about the others, so it can answer when you ask.
 - **Telegram, Slack and Discord:** Paste a token to connect. No public address needed, and images and files work both ways.
 - **Notion:** Connect with one-click authorization or a token. Bots can search, read, create and edit pages, and query databases. They can't delete pages.
+- **Read Feishu messages:** Authorize with a QR code, then ask any bot to "check my second Feishu". It reads chats and searches messages as you, read-only.
+- **Add Feishu by scanning:** When adding a Feishu chat account, scan a QR code to create the app instead of entering an App ID and Secret.
 
 ### Improved
 

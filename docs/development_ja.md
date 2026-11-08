@@ -259,3 +259,11 @@ README の素材一覧と収録仕様は [docs/assets/README.md](./assets/README
 ## ライセンス
 
 MIT です。`LICENSE` を参照してください。magpie（MIT、改変した画面スタイルを含む）、Tencent openclaw-weixin（MIT）等の第三者コンポーネントは `THIRD_PARTY_NOTICES.md` と設定 → このアプリについてに掲載しています。
+
+## ユーザースキルとチャット履歴検索
+
+操作方法と ZIP 形式は[スキルの使い方](./skills_ja.md)を参照してください。`src/skills/archive.ts` がパス、展開サイズ、`SKILL.md` を検証し、`service.ts` がボットごとにパッケージ、有効状態、版の識別子を保存します。`src/web/skills.ts` がプレビューと管理 API を提供します。DSH が待機状態になってから有効なスキルを配置し、実行中の会話、サブエージェント、バックグラウンドコマンドを中断しません。カタログ Bot の更新時は `src/botkit/installer.ts` が名前の衝突を確認します。
+
+`src/store/chat-search.ts` は SQLite の検索索引、絞り込み、ページ分割、元のメッセージの前後関係を扱います。全体検索は `ui/screens/message-search.js`、現在のチャット内検索は `ui/components/chat-search.js` にあります。ローカル DB を直接読み、モデルは呼び出しません。
+
+関連テストは `test/skills*.test.ts` と `test/chat-search*.test.ts` です。ブラウザー検証用 Chromium は `AMB_TEST_CHROME` で指定できます。DSH があれば、スキルの発見、読み込み、資料の参照、作業中の無効化も検証します。

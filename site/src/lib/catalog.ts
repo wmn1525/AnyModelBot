@@ -5,6 +5,7 @@ import type { Lang } from "../i18n";
 type Localized<T> = Record<string, T>;
 export interface CatalogBot {
   id: string;
+  minAppVersion: string;
   avatar: string;
   name: Localized<string>;
   summary: Localized<string>;

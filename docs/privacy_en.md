@@ -21,6 +21,8 @@ This document explains what AnyModelBot stores where, what leaves your device, a
 | Data | Where it lives (inside the data directory) | Does it leave the device? | Where it goes |
 | :--- | :--- | :--- | :--- |
 | Conversations and sessions | `anymodel.db` (SQLite) | The part a reply needs | Sent as model context through Modelflare to the provider you chose |
+| Imported skills | `skills/<bot ID>/`; enabled copies in `dsh/<bot ID>/skills/` | Names, descriptions and content loaded during use do | Context for the selected model; import uploads only to your AnyModelBot instance and does not contact GitHub |
+| Chat search index | `message_search` and its full-text index in `anymodel.db` | No | Searches saved messages inside the instance without model calls |
 | Memory | `memory/` (Markdown: `bots/`, `groups/`, `team/`) | When it is used | Included as context in model requests; anything that looks like a secret is filtered before it is written |
 | Bot workspace files | `workspaces/<bot>/` (including received files in `inbox/` and generated images and video in `media/`) | When a bot reads them and sends them to a model | Same as above |
 | Modelflare sign-in credential | `modelflare-account.json` (mode 600; encrypted with the system keychain in the desktop app) | Only to modelflare.dev when refreshing tokens | Modelflare |
@@ -83,7 +85,7 @@ Besides model requests, the app goes online to:
 - Feishu channel: keep a long connection to the Feishu Open Platform.
 - Telegram, Slack and Discord channels: once connected, talk to `api.telegram.org`, `slack.com`, `discord.com` and their file hosts to send and receive messages and the files you send.
 - On Windows, with agent mode on and no working PowerShell 7 on the system, download PowerShell 7 from Microsoft's official release location (turn this off with `AMB_PWSH_AUTO_INSTALL=0`; see the [development guide](./development_en.md)).
-- The bot catalog in Discover: at startup and every 6 hours, the app reads the list from `anymodel.bot/catalog/`, and it downloads a bot's package when you open or use it. These requests only download; your data isn't uploaded, and everything downloaded is checked against a signature and hashes (set `AMB_CATALOG=off` to turn this off).
+- Only when you explicitly set `AMB_CATALOG_URL` to use a remote bot catalog does the app fetch its list and download packages on demand, verifying signatures and hashes without uploading your data. By default, the official bot catalog, UIs, sample data and skills ship with the app; opening and installing them makes no such network requests.
 
 ## Computer use and screenshots
 

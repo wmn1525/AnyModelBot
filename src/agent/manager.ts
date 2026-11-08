@@ -732,6 +732,20 @@ export class AgentManager {
     try {
       if (op === "models") return { text: await media.listText(botId, args.kind) };
       if (op === "docs") return { text: await media.docs(args.model) };
+      if (args.request_id !== undefined && media.recover) {
+        const conv = this.resolveConversation(botId, String(b?.sessionId ?? ""));
+        const turn = this.turnsInProgress.get(conv);
+        if (turn) turn.media++;
+        try {
+          const recovered = await media.recover(botId, op, args);
+          if (recovered !== undefined) {
+            if (turn && (turn.abort.signal.aborted || this.turnsInProgress.get(conv) !== turn)) this.orphanedMedia(botId, op === "image" ? "image" : "video", recovered);
+            return { text: recovered };
+          }
+        } finally {
+          if (turn) turn.media--;
+        }
+      }
       const plan = await media.prepare(botId, op, args);
       const sessionId = String(b?.sessionId ?? "");
       const conv = this.resolveConversation(botId, sessionId);

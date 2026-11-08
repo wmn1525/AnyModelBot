@@ -1,5 +1,33 @@
 // botSettings · zh-CN：机器人设置（screens/bot-settings.js）
 export default {
+  skills: {
+    "head": "技能",
+    "note": "为这个机器人添加做事方法。改动会在当前任务结束后生效。",
+    "import": "导入 ZIP",
+    "importSub": "每个 ZIP 包含一个技能，最大 20 MB",
+    "empty": "还没有导入技能",
+    "enable": "启用 {name}",
+    "files": "{count} 个文件 · {size} KB",
+    "instructions": "查看技能说明",
+    "add": "添加技能",
+    "addBody": "添加后，机器人会在合适的任务中使用这个技能。",
+    "replace": "替换技能",
+    "replaceBody": "已安装同名技能。替换会更新技能文件，并保留当前的启用状态。",
+    "removeTitle": "删除技能「{name}」？",
+    "removeBody": "只删除这个机器人的技能，工作区里的文件会保留。",
+    "errors": {
+      "invalid_zip": "无法读取 ZIP，请选择完整、未加密的 ZIP 文件。",
+      "too_large": "技能包过大：ZIP 最多 20 MB，解压后最多 64 MB、2000 个文件，SKILL.md 最多 256 KB。",
+      "unsafe_path": "ZIP 中包含不支持的文件路径、重复文件名或符号链接。",
+      "missing_skill": "没有找到 SKILL.md，请选择包含技能说明的 ZIP。",
+      "multiple_skills": "ZIP 中包含多个 SKILL.md，请将需要的技能单独打包导入。",
+      "invalid_skill": "SKILL.md 格式不正确：需要有效的 name、description 和正文。",
+      "reserved_name": "这个名称已被内置技能或机器人自带技能占用。",
+      "conflict": "同名技能已经变化，请重新选择 ZIP 后确认替换。",
+      "not_found": "找不到这个技能，请刷新列表。",
+      "too_many": "每个机器人最多导入 100 个技能，请先删除不用的技能。"
+    }
+  },
   back: "返回对话",
   backTitle: "返回对话（Esc）",
   title: "机器人设置",

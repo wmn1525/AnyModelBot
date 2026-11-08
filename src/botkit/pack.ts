@@ -45,11 +45,11 @@ export interface PackResult {
   failures: Array<{ dir: string; issues: Issue[] }>;
 }
 
-/** 有 Bot 没过检查时什么都不写（failures 里说明原因） */
-export function packCatalog(o: { root: string; outDir: string; privateKey: string; now?: number }): PackResult {
+/** 两种分发共用检查和包格式；内置目录不依赖发布机器的签名密钥或 lock。 */
+function prepareCatalog(o: { root: string; now?: number; lock?: Record<string, CatalogEntry> }) {
   const now = o.now ?? Date.now();
   const cfg = readCatalogConfig(o.root);
-  const lock = readLock(o.root);
+  const lock = o.lock ?? {};
   const failures: PackResult["failures"] = [];
   const bots: CatalogEntry[] = [];
   const blobs: Array<[string, Buffer]> = [];
@@ -76,7 +76,7 @@ export function packCatalog(o: { root: string; outDir: string; privateKey: strin
     const prev = lock[manifest.id];
     bots.push({ ...manifest, ui: { sha256: uiHash, size: ui.length }, runtime: { sha256: rtHash, size: runtime.length }, ...(Object.keys(thumbs).length ? { thumbs } : {}), publishedAt: prev && prev.version === manifest.version ? prev.publishedAt : now });
   }
-  if (failures.length) return { index: { version: 1, publishedAt: now, bots: [] }, failures };
+  if (failures.length) return { index: { version: 1 as const, publishedAt: now, bots: [] }, failures, blobs: [] };
   // 目录删了的 Bot 只要在 lock 里，就继续留在 index：下架记录要能传到用过的客户端
   for (const [id, prev] of Object.entries(lock)) if (!bots.some((b) => b.id === id) && cfg.removed?.[id]) bots.push(prev);
   for (const b of bots) {
@@ -87,13 +87,35 @@ export function packCatalog(o: { root: string; outDir: string; privateKey: strin
     else delete b.featured;
   }
   const index: CatalogIndex = { version: 1, publishedAt: now, bots };
+  return { index, failures, blobs };
+}
+
+function writeCatalog(outDir: string, index: CatalogIndex, blobs: Array<[string, Buffer]>): Buffer {
   const data = Buffer.from(JSON.stringify(index));
-  fs.mkdirSync(path.join(o.outDir, "bundles"), { recursive: true });
-  fs.mkdirSync(path.join(o.outDir, "thumbs"), { recursive: true });
-  for (const [rel, buf] of blobs) fs.writeFileSync(path.join(o.outDir, rel), buf);
-  fs.writeFileSync(path.join(o.outDir, "index.json"), data);
+  fs.mkdirSync(path.join(outDir, "bundles"), { recursive: true });
+  fs.mkdirSync(path.join(outDir, "thumbs"), { recursive: true });
+  for (const [rel, buf] of blobs) fs.writeFileSync(path.join(outDir, rel), buf);
+  fs.writeFileSync(path.join(outDir, "index.json"), data);
+  return data;
+}
+
+/** 有 Bot 没过检查时什么都不写（failures 里说明原因） */
+export function packCatalog(o: { root: string; outDir: string; privateKey: string; now?: number }): PackResult {
+  const { index, failures, blobs } = prepareCatalog({ ...o, lock: readLock(o.root) });
+  if (failures.length) return { index, failures };
+  const data = writeCatalog(o.outDir, index, blobs);
   fs.writeFileSync(path.join(o.outDir, "index.json.sig"), signCatalog(data, o.privateKey));
-  fs.writeFileSync(path.join(o.root, "catalog.lock.json"), `${JSON.stringify(Object.fromEntries(bots.map((b) => [b.id, b])), null, 2)}\n`);
+  fs.writeFileSync(path.join(o.root, "catalog.lock.json"), `${JSON.stringify(Object.fromEntries(index.bots.map((b) => [b.id, b])), null, 2)}\n`);
+  return { index, failures };
+}
+
+/** 随 App 发布的可信资源：保留逐包哈希校验，不需要线上目录的私钥，不改发布 lock。 */
+export function packBuiltinCatalog(o: { root: string; outDir: string }): PackResult {
+  const { index, failures, blobs } = prepareCatalog({ root: o.root, now: 0 });
+  if (failures.length) return { index, failures };
+  // 新版本不能夹带上次构建已经删除的 Bot 包。
+  fs.rmSync(o.outDir, { recursive: true, force: true });
+  writeCatalog(o.outDir, index, blobs);
   return { index, failures };
 }
 

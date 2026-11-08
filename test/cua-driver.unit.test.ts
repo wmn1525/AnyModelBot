@@ -3,11 +3,48 @@ import { PassThrough, Writable } from "node:stream";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import crypto from "node:crypto";
+import { describe, expect, it, vi } from "vitest";
 import { cuaConfig, cuaMcpEnv, cuaRoots, CUA_INPUT_TOOLS, CUA_READ_TOOLS, CUA_TOOLS, detectCua, linuxDesktopApps, uniqueApps, windowsAppsFrom, type CuaProbe } from "../src/agent/cua-driver.js";
 import { Store } from "../src/store/db.js";
+import { skillZip } from "./skill-fixture.js";
+// @ts-expect-error 构建脚本是无类型的原生 ES 模块
+import { downloadDriverBytes, extractDriver } from "../scripts/fetch-cua-driver.mjs";
 
 const proxy = path.join(__dirname, "..", "dsh-runtime", "plugins", "amb-cua-mcp.mjs");
+
+it("falls back to the official asset API on a gateway error and still checks SHA256", async () => {
+  const data = Buffer.from("official driver archive");
+  const asset = { id: 123, file: "driver.zip", sha256: crypto.createHash("sha256").update(data).digest("hex") };
+  const request = vi.fn().mockResolvedValueOnce(new Response(null, { status: 504 })).mockResolvedValueOnce(new Response(data));
+  vi.stubGlobal("fetch", request);
+  try {
+    expect(await downloadDriverBytes(asset)).toEqual(data);
+    expect(request).toHaveBeenNthCalledWith(2, "https://api.github.com/repos/trycua/cua/releases/assets/123", expect.objectContaining({ headers: expect.objectContaining({ accept: "application/octet-stream" }) }));
+    request.mockReset().mockResolvedValueOnce(new Response(Buffer.from("tampered")));
+    await expect(downloadDriverBytes(asset)).rejects.toThrow("SHA256");
+    expect(request).toHaveBeenCalledOnce();
+  } finally { vi.unstubAllGlobals(); }
+});
+
+it("extracts Windows driver ZIPs without system unzip or tar, keeping only shipped files", async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "amb-cua-zip-"));
+  try {
+    const archive = path.join(tmp, "driver.zip");
+    const out = path.join(tmp, "out");
+    fs.mkdirSync(out);
+    fs.writeFileSync(archive, skillZip([
+      { path: "release/cua-driver.exe", text: "driver" },
+      { path: "release/LICENSE", text: "MIT" },
+      { path: "release/THIRD_PARTY_NOTICES.md", text: "notices" },
+      { path: "release/cua-perception.exe", text: "not shipped" },
+      { path: "release/cua_driver_sdk.dll", text: "not needed" },
+    ]));
+    await extractDriver(archive, out);
+    expect(fs.readdirSync(out).sort()).toEqual(["LICENSE", "THIRD_PARTY_NOTICES.md", "cua-driver.exe"]);
+    expect(fs.readFileSync(path.join(out, "cua-driver.exe"), "utf8")).toBe("driver");
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
 
 describe("cua-driver detection", () => {
   const probe = (o: Partial<CuaProbe> & { files?: string[] } = {}): CuaProbe => {

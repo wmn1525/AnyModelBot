@@ -1,5 +1,33 @@
 // botSettings · en: bot settings (screens/bot-settings.js)
 export default {
+  skills: {
+    "head": "Skills",
+    "note": "Add workflows to this bot. Changes take effect after its current work finishes.",
+    "import": "Import ZIP",
+    "importSub": "One skill per ZIP, up to 20 MB",
+    "empty": "No imported skills yet",
+    "enable": "Enable {name}",
+    "files": "{count} files · {size} KB",
+    "instructions": "View skill instructions",
+    "add": "Add skill",
+    "addBody": "Once added, the bot can use this skill for relevant tasks.",
+    "replace": "Replace skill",
+    "replaceBody": "A skill with this name is already installed. Replacing it updates its files and keeps its enabled or disabled state.",
+    "removeTitle": "Delete skill “{name}”?",
+    "removeBody": "Only this bot’s skill will be deleted. Files in its workspace will be kept.",
+    "errors": {
+      "invalid_zip": "Could not read the ZIP. Choose a complete, unencrypted ZIP file.",
+      "too_large": "Skill package too large: up to 20 MB zipped, 64 MB unpacked, 2,000 entries, and 256 KB for SKILL.md.",
+      "unsafe_path": "The ZIP contains unsupported paths, duplicate names, or symbolic links.",
+      "missing_skill": "No SKILL.md found. Choose a ZIP containing skill instructions.",
+      "multiple_skills": "The ZIP contains multiple SKILL.md files. Import each skill as a separate ZIP.",
+      "invalid_skill": "Invalid SKILL.md: a valid name, description, and instruction body are required.",
+      "reserved_name": "This name is reserved for a built-in skill or a skill supplied by the bot.",
+      "conflict": "The installed skill has changed. Select the ZIP again to confirm replacement.",
+      "not_found": "Skill not found. Refresh the list.",
+      "too_many": "A bot can have up to 100 imported skills. Delete unused skills first."
+    }
+  },
   back: "Back to chat",
   backTitle: "Back to chat (Esc)",
   title: "Bot settings",

@@ -170,6 +170,10 @@ export function BotAppScreen({ catalogId, bot, onInstalled, onBotUpdated, onOpen
       const q = `file?path=${encodeURIComponent(path)}`;
       return api(b ? `/bots/${encodeURIComponent(b.id)}/app/${q}` : `/catalog/${encodeURIComponent(catalogId)}/${q}`);
     };
+    const mediaHandles = new Set();
+    const mediaAbort = new AbortController();
+    let loadingMedia = 0;
+    let mediaSeq = 0;
     const br = attachBridge(el, {
       init: () => envOf(),
       readFile: ({ path }) => fileApi(path),
@@ -177,6 +181,29 @@ export function BotAppScreen({ catalogId, bot, onInstalled, onBotUpdated, onOpen
         const b = live.current.bot;
         if (!b) throw new Error("no_instance");
         return api(`/bots/${encodeURIComponent(b.id)}/app/image?path=${encodeURIComponent(path)}`);
+      },
+      readMedia: async ({ path }) => {
+        const b = live.current.bot;
+        if (!b) throw new Error("no_instance");
+        if (mediaHandles.size + loadingMedia >= 4) throw new Error("media_preview_limit");
+        loadingMedia++;
+        try {
+          const r = await fetch(`/amb/api/bots/${encodeURIComponent(b.id)}/app/media?path=${encodeURIComponent(path)}`, { signal: mediaAbort.signal });
+          if (!r.ok) throw new Error("media_not_found");
+          const blob = await r.blob();
+          if (mediaAbort.signal.aborted) throw new Error("media_preview_closed");
+          // Blob URLs from this origin cannot be fetched by an opaque sandbox.
+          // Structured-clone the Blob; kit.js creates its URL inside the iframe.
+          const handle = String(++mediaSeq);
+          mediaHandles.add(handle);
+          return { blob, handle, size: blob.size };
+        } finally {
+          loadingMedia--;
+        }
+      },
+      releaseMedia: ({ handle }) => {
+        mediaHandles.delete(handle);
+        return true;
       },
       // 只响应用户刚点过的操作：界面不能自己打开文件（点击的用户激活会传到父页面）
       openFile: async ({ path, reveal }) => {
@@ -229,6 +256,8 @@ export function BotAppScreen({ catalogId, bot, onInstalled, onBotUpdated, onOpen
       br.close();
       offEnv();
       bridge.current = null;
+      mediaAbort.abort();
+      mediaHandles.clear();
     };
   }, [base, uiFailed]);
 

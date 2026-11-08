@@ -4,7 +4,8 @@
 
 @layer components {
   html, body { height: 100%; background: transparent; }
-  body { margin: 0; color: var(--fg); font-family: var(--font); font-size: var(--fs-md); }
+  /* 宿主窗口的 reset 禁止 body 滚动；沙箱里的长页面需要自己的滚动区域。 */
+  body { margin: 0; overflow: auto; color: var(--fg); font-family: var(--font); font-size: var(--fs-md); }
   .kit-page { display: grid; gap: var(--space-5); padding: var(--space-6); }
   .kit-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
   .kit-head-text { display: grid; gap: var(--space-1); min-width: 0; }

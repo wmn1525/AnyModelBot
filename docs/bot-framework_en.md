@@ -26,10 +26,10 @@ Once `check` passes, ask someone to judge whether it's worth shipping, then comm
 Authors (people / Claude + the dev skill / a pipeline later)
         │
         ▼
-Bot package: bots/<id>/ ──► checks ──► human look ──► pack and sign ──► catalog URL
+Bot package: bots/<id>/ ──► checks ──► human look ──► dist/catalog ──► app installer
                                                                           │
                                                                           ▼
-App: catalog sync · runtime (sandboxed iframe, bridge, state files) · UI kit · bot process
+App: local catalog · runtime (sandboxed iframe, bridge, state files) · UI kit · bot process
 ```
 
 | Part | Where | What it does |
@@ -37,7 +37,7 @@ App: catalog sync · runtime (sandboxed iframe, bridge, state files) · UI kit �
 | Format | `src/botkit/format.ts`, `schema.ts` | `bot.json`, permissions, limits, the JSON Schema subset |
 | Checks | `src/botkit/check.ts`, `render.ts`, `evals.ts` | Static rules, rendering, real-model evals |
 | Publishing | `src/botkit/bundle.ts`, `pack.ts`, `sign.ts` | Content-addressed bundles, signed catalog, takedowns |
-| Sync | `src/botkit/catalog.ts`, `config.ts` | Fetch, verify, cache, download on demand |
+| Catalog loading | `src/botkit/catalog.ts`, `config.ts` | Read bundled resources, verify and extract locally; remote catalogs require explicit configuration |
 | Instances | `src/botkit/installer.ts`, `app-skill.ts` | Install on first use, update, take down, remove |
 | Server | `src/web/botapp.ts` | Static routes with CSP, catalog and instance APIs |
 | UI kit | `ui/botkit/` | The only thing a bot's UI may import |
@@ -122,6 +122,7 @@ mount(App);
 | `pickFile({ accept, multiple })` | Let the user pick files into `app/inbox/`; returns `[{ name, size, path }]` |
 | `readFile(path)` | Read other text files under `app/` (up to 2 MB) |
 | `readImage(path)` | Read an image under `app/` (png, jpg, gif, webp, svg, up to 16 MB). Returns `{ url }` for an `<img>`. Needs an instance; images for sample data live under `ui/` and use relative paths |
+| `readMedia(path)`, `releaseMedia(url)` | Since 0.1.23, preview audio/video under `app/` (up to 200 MB per file, four simultaneous previews). Returns `{ url, size }` for `<video>` / `<audio>`. Release the URL when switching files or unmounting. The parent passes the media data; Blob URLs are created inside the sandbox |
 | `openFile(path, { reveal })` | Open a file under `app/`. Call it from a user click. The desktop app opens it with the system app or shows it in its folder (anything that would run on opening is only shown in its folder). On the web it downloads |
 | `desktop` | This is the desktop app, so files can open with the system app |
 | `openUrl(url)` | Open an external page once the user confirms the address; http(s) only |
@@ -142,6 +143,7 @@ Add components to `ui/botkit/kit.js` as real bots need them, rather than working
 | --- | --- |
 | `init` | Language, theme, text size, motion, text and basic bot info |
 | `readFile`, `readImage` | Read-only access to `app/` in the workspace, with no way out |
+| `readMedia`, `releaseMedia` | Read size-limited audio/video and manage preview resources. HTML and scripts are not supported |
 | `openFile` | Open or download a file under `app/`. Runs only if the parent page confirms the user just clicked |
 | `send`, `stop` | Send a message, stop |
 | `subscribe` | Receive `turn`, `file` and `env` events |
@@ -175,10 +177,10 @@ These are runtime limits to design around:
 
 | Action | What happens |
 | --- | --- |
-| Open | Downloads only the UI bundle and shows sample data labeled "Sample". No instance, skills, process or model call |
-| First message (typed or a starter) | Downloads the runtime bundle and verifies its sha256; creates instance `cat-<id>`; sample data becomes the initial state; the bot stays in Mine |
+| Open | Extracts the bundled UI locally and shows sample data labeled "Sample". No network download, instance, skills, process or model call |
+| First message (typed or a starter) | Extracts the bundled runtime locally and verifies its sha256; creates instance `cat-<id>`; sample data becomes the initial state; the bot stays in Mine |
 | After that | Works like any bot, including in chat channels (`/bot` reaches it). It stays out of other bots' peer list |
-| New version published | Skills and UI are replaced on next open. Bots whose persona the user edited stop following the catalog; busy bots wait |
+| App update includes new bot bundles | Skills and UI are replaced on next open, preserving project data. Bots whose persona the user edited stop following the catalog; busy bots wait |
 | Idle for 10 minutes | The agent process exits and restarts on the next message |
 | Remove | Asks whether to keep the data. If not, the workspace and skills are deleted; if so, using it again picks up where it left off |
 
@@ -212,6 +214,12 @@ Eval tasks go in `evals/tasks.json`: `{ id, prompt, changed?, contains?, notCont
 
 ## Publishing and takedowns
 
+Official bots ship with the app. `npm run build` runs `build:catalog`, checks every bot under `bots/`, and writes UI, samples in five languages, personas, skills and available thumbnails to `dist/catalog/`. Electron's `dist/**` packaging rule and the Docker image include these resources. No catalog signing key is needed. First preview and installation read local bundles, verify their SHA-256 hashes, and extract them into the data directory. An old remote index cache cannot override the bundled catalog.
+
+`npm start`, `npm run dev` and `npm run init` generate the bundled catalog first. Before invoking `tsx src/main.ts` directly, run `npm run build:catalog`. Official additions, updates and takedowns ship with app releases. The GitHub Release workflow uses the packaged executable to verify that every bundled bot loads and installs with network requests disabled.
+
+The signed-catalog workflow below remains available for deployments that explicitly configure a remote catalog:
+
 The catalog repository looks like this:
 
 ```text
@@ -227,21 +235,29 @@ npm run bot -- who-uses <skill> --root .
 ```
 
 - `pack` runs the static checks on every bot and writes nothing if any fails. It produces `index.json`, `index.json.sig`, `bundles/` and `thumbs/`. Putting them at the catalog URL publishes them.
-- Clients fetch at startup and every 6 hours (with ETag) and ignore anything that fails verification, including the local cache. UI and skills are verified by sha256.
+- Clients explicitly using a remote catalog fetch at startup and every 6 hours (with ETag) and ignore anything that fails verification, including the local cache. UI and skills are verified by sha256.
 - After a takedown, run `pack` and publish again; clients pick it up within 24 hours. A normal takedown only notifies users. `--security` stops the process and deletes the skills right away, leaving the user's data alone.
 - `.github/workflows/bot-catalog.yml` checks and packs when `bots/**` or `catalog.json` is pushed to master, and keeps the output as a CI artifact. How it reaches production is up to the release environment. Until the repository has `AMB_CATALOG_PRIVATE_KEY`, it only checks and doesn't pack.
 
-### The live catalog
+### Optional remote catalog
 
-The app ships with the catalog's public key and address (`src/botkit/config.ts`). The address is `https://anymodel.bot/catalog/index.json`.
+By default the app reads `dist/catalog/` without connecting to `anymodel.bot/catalog/`. Setting `AMB_CATALOG_URL` explicitly selects a remote catalog. `AMB_CATALOG_PUBKEY` sets its public key; when omitted, the old official catalog's public key is used.
 
 - **Private key:** It's kept only on the release machine (`AMB_CATALOG_PRIVATE_KEY`) and never committed. Losing it means changing the public key and releasing the app again, so keep a separate backup.
-- **Publishing:** On the release machine, pull the latest master, run `pack`, and put the output at the catalog address. Adding or updating a bot doesn't need an app release unless the bot uses something only a newer app has.
+- **Remote publishing:** On the release machine, pull the latest master, run `pack`, and put the output at the catalog address. This affects only clients explicitly connected to that remote catalog.
 - **`catalog.lock.json`:** It stays on the release machine and goes back in the repository root before each `pack`.
 - **Website:** The `/bots` page comes from `site/src/data/catalog-bots.json`. After adding a bot or changing its text, run `npm run sync` in `site/`, commit, and deploy the website.
-- **Turning the catalog off:** Set `AMB_CATALOG=off`. The app stays off the network for this, and the catalog is empty. Tests run this way.
+- **Turning the catalog off:** Set `AMB_CATALOG=off` to disable both bundled and remote catalogs. Tests default to this setting; bundled catalogs have separate offline tests.
 
 To test locally without changing code, set `AMB_CATALOG_URL` and `AMB_CATALOG_PUBKEY`.
+### Signing-key recovery
+
+The publishing host keeps its Ed25519 key pair in `.runtime/catalog/signing.json`, with directory mode `0700` and file mode `0600`. `.runtime/` and the host-local `catalog.lock.json` are Git-ignored. The publishing process reads `privateKey` into `AMB_CATALOG_PRIVATE_KEY`; never print it or put its value in shell history.
+
+age encrypts the key backup; it does not replace catalog signatures. The current setup uses Modelflare's existing age recipients and backup storage, under the configured backup destination's `anymodelbot/catalog-signing/` prefix. `.runtime/catalog/backup-receipt.json` records object locations, sizes and SHA-256 hashes. Uploads are checked against remote object sizes.
+
+To recover, download the matching `.json.age`, decrypt it using the age identity kept offline, and restore the signing file with mode `0600`. Derive its public key and compare it with `CATALOG_PUBLIC_KEY` in `src/botkit/config.ts` before publishing. Version 0.1.23 replaces the catalog public key because the original private key was lost; older clients need to update before loading the new catalog.
+
 ## Building bots with Claude
 
 `.claude/skills/amb-bot-dev/` is the bot dev skill, which turns these rules into steps for Claude. Tell Claude what to build; it scaffolds from the template and works until `check` passes. A future batch pipeline would just be one more author, and its output would pass the same checks.

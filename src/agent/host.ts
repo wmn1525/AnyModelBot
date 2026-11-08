@@ -19,6 +19,7 @@ import type { BotPermission } from "../botkit/format.js";
 import type { AccountService } from "./accounts.js";
 import { acceptsImages } from "../llm/client.js";
 import { CUA_SKILL, MEDIA_SKILL, TASK_RULES, agentPersona, botPrompt } from "./prompts/index.js";
+import { UserSkills } from "../skills/service.js";
 import { t, t as tr } from "../i18n/index.js";
 import { dirBytes, taskSessionDirs } from "../tasks/retention.js";
 
@@ -510,7 +511,7 @@ export function summarizeCall(name: string, argsJson: string): string {
   } catch {
     /* ignore */
   }
-  const pick = a.command ?? a.cmd ?? a.path ?? a.file_path ?? a.filePath ?? a.file ?? a.url ?? a.query ?? a.pattern;
+  const pick = a.command ?? a.cmd ?? a.path ?? a.file_path ?? a.filePath ?? a.file ?? a.url ?? a.query ?? a.pattern ?? (name === "skill" ? a.name : undefined);
   const s = typeof pick === "string" ? pick : Array.isArray(pick) ? pick.join(" ") : "";
   const one = s.replace(/\s+/g, " ").trim();
   return one ? `${name}: ${one.length > 120 ? one.slice(0, 117) + "…" : one}` : name;
@@ -691,7 +692,8 @@ export class AgentHost {
   /** 空闲时换过几次子进程（不算重启：用户看不到） */
   recycles = 0;
 
-  constructor(private o: AgentHostOptions) {}
+  private userSkills: UserSkills;
+  constructor(private o: AgentHostOptions) { this.userSkills = new UserSkills(o.dataDir, o.store); }
 
   get home(): string {
     return path.join(this.o.dataDir, "dsh", this.o.botId);
@@ -1041,11 +1043,22 @@ exec "$REAL" "$@"
    * 影响子进程启动参数的设置签名。带上 PowerShell 路径：装好 PowerShell 7、内置的装好或坏了退回时，空闲的代理进程换用新的。
    * 启动时记的是补丁里实际写的路径（pwsh），不是记签名那一刻的选择：中间隔着几次 await，选择可能刚好变了。
    */
-  private settingsSig(pwsh = pwshProbe.cachedDshPath): string {
+  private settingsSig(pwsh = pwshProbe.cachedDshPath, skills = this.userSkills.revision(this.o.botId)): string {
     const st = this.settings();
-    return `${st.permission}|${st.memory.enabled}|${st.computerUse.enabled}|${st.computerUse.backend}|${st.computerUse.approval}|${this.connectionsEnv()}|${pwsh ?? ""}`;
+    return `${st.permission}|${st.memory.enabled}|${st.computerUse.enabled}|${st.computerUse.backend}|${st.computerUse.approval}|${this.connectionsEnv()}|${pwsh ?? ""}|${skills}`;
   }
   private sig = "";
+  private appliedSkills = "";
+  private closing: Promise<void> | undefined;
+
+  /** 技能变更不能中断后台命令或子代理，也不使用设置变更的超时强制重启。 */
+  private async skillsAllowRestart(): Promise<boolean> {
+    if (this.appliedSkills === this.userSkills.revision(this.o.botId)) return true;
+    const idle = () => this.active === 0 && this.taskBusy.size === 0 && this.turns.size === 0 && this.wakes.size === 0;
+    if (!idle()) return false;
+    const state = await this.control.send<{ busy?: number; jobs?: number }>("idle", {}, 5_000).catch(() => undefined);
+    return state?.busy === 0 && state?.jobs === 0 && idle();
+  }
 
   private reapStale(): void {
     let pid = 0;
@@ -1107,13 +1120,16 @@ exec "$REAL" "$@"
    * 只有设置或 PowerShell 变了、而且没有回合在跑时才重启。
    */
   async ensure(model: string): Promise<SdkHarness> {
+    await this.closing;
+    // 导入可能发生在预热过程中；等预热完成后重新检查技能版本。
+    if (this.starting) await this.starting;
     if (this.stopped) throw new Error("agent host stopped");
     this.syncPrompt();
     // 连续启动失败后不再每条消息都重试一遍（每次都要等满初始化超时）：直到手动重启或冷却结束
     if (!this.harness && !this.starting && this.state === "error" && Date.now() < this.retryAfter) {
       throw new Error(t("agent.startRetryLater", { min: Math.ceil((this.retryAfter - Date.now()) / 60_000), error: this.lastError }));
     }
-    if (this.harness && this.sig !== this.settingsSig() && this.active === 0 && this.tasksAllowRestart()) {
+    if (this.harness && this.sig !== this.settingsSig() && this.active === 0 && await this.skillsAllowRestart() && this.tasksAllowRestart()) {
       log.info("bot settings or PowerShell changed, restarting dsh", { bot: this.o.botId, backgroundTasks: this.taskBusy.size });
       await this.closeHarness();
     }
@@ -1172,6 +1188,7 @@ exec "$REAL" "$@"
   async restartIfStale(): Promise<void> {
     if (!this.harness || this.starting || this.active > 0 || this.entering > 0 || this.stopped) return;
     if (this.sig !== this.settingsSig()) {
+      if (!await this.skillsAllowRestart() || this.active > 0 || this.entering > 0 || this.stopped) return;
       if (!this.tasksAllowRestart()) return;
       log.info("bot settings or PowerShell changed while idle, restarting dsh in the background", { bot: this.o.botId });
     } else if (this.worn && !this.recycling) {
@@ -1269,6 +1286,8 @@ exec "$REAL" "$@"
     let watchdog: NodeJS.Timeout | undefined;
     try {
       fs.mkdirSync(this.home, { recursive: true, mode: 0o700 });
+      const skillsRevision = this.userSkills.sync(this.o.botId);
+      this.appliedSkills = skillsRevision;
       fs.mkdirSync(this.workspace, { recursive: true });
       this.reapStale();
       await this.o.bridge.start();
@@ -1289,7 +1308,7 @@ exec "$REAL" "$@"
       const patch = this.writePatch(routes, apps, pwshPath);
       this.syncPrompt(true);
       this.pwshPath = pwshPath;
-      this.sig = this.settingsSig(pwshPath);
+      this.sig = this.settingsSig(pwshPath, skillsRevision);
       const timeoutMs = this.initTimeoutMs();
       this.control.reset();
       this.stage("patch written", t0, { api, models: routes.length, computerUse: cu ? cu.backend : "off", apps: apps.length, initTimeoutMs: timeoutMs, proxy: hasEnvProxy(process.env) ? "env" : (sysProxy.HTTPS_PROXY ?? sysProxy.ALL_PROXY ?? "none"), ...(process.platform === "win32" ? { pwsh: pwshPath ?? "dsh default (Windows PowerShell 5.1)" } : {}) });
@@ -1410,6 +1429,12 @@ exec "$REAL" "$@"
   }
 
   private async closeHarness(): Promise<void> {
+    if (this.closing) return this.closing;
+    this.closing = this.closeCurrentHarness();
+    try { await this.closing; } finally { this.closing = undefined; }
+  }
+
+  private async closeCurrentHarness(): Promise<void> {
     const h = this.harness;
     this.harness = undefined;
     this.opened.clear();

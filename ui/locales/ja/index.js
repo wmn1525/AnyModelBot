@@ -1,3 +1,4 @@
+import search from "./search.js";
 import common from "./common.js";
 import app from "./app.js";
 import time from "./time.js";
@@ -27,4 +28,4 @@ import perms from "./perms.js";
 import group from "./group.js";
 import botapp from "./botapp.js";
 
-export default { official, botapp, group, common, app, time, settings, account, pwsh, chat, info, markdown, notify, troubleshoot, onboarding, newBot, botSettings, sidebar, avatar, models, ui, guide, activity, perms, access, tasks, needs, rules };
+export default { search, official, botapp, group, common, app, time, settings, account, pwsh, chat, info, markdown, notify, troubleshoot, onboarding, newBot, botSettings, sidebar, avatar, models, ui, guide, activity, perms, access, tasks, needs, rules };

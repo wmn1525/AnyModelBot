@@ -261,3 +261,11 @@ For catalog bots (prebuilt bots with their own UI), see [docs/bot-framework_en.m
 ## License
 
 MIT, see `LICENSE`. Third-party components (magpie MIT — including the adapted UI styles, Tencent openclaw-weixin MIT, and others) are listed in `THIRD_PARTY_NOTICES.md` and in Settings → About.
+
+## User skills and chat history search
+
+See the [skill guide](./skills_en.md) for the UI and ZIP format. `src/skills/archive.ts` validates ZIP paths, extraction limits and `SKILL.md`; `service.ts` stores packages, enabled states and version fingerprints per bot. `src/web/skills.ts` provides preview and management endpoints. Enabled skills are deployed when DSH is idle, without interrupting active turns, subagents or background commands. `src/botkit/installer.ts` checks imported skill name conflicts when updating catalog bots.
+
+`src/store/chat-search.ts` maintains the SQLite message index and provides filters, pagination and original-message context. `ui/screens/message-search.js` implements global search; `ui/components/chat-search.js` implements find in the current chat. Search reads the local database without model calls.
+
+Relevant tests: `test/skills*.test.ts` and `test/chat-search*.test.ts`. Set `AMB_TEST_CHROME` to select Chromium for browser acceptance. With the DSH runtime available, tests also verify discovery, loading, reference reads and disabling a skill during active work.

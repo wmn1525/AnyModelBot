@@ -9,6 +9,7 @@ import type { Bot, Store } from "../store/db.js";
 import { normalizeSettings, type BotSettings } from "../agent/settings.js";
 import { logger } from "../log.js";
 import { appSkill } from "./app-skill.js";
+import { UserSkills } from "../skills/service.js";
 import { safeRelPath } from "./bundle.js";
 import type { BotCatalog, CatalogEntry } from "./catalog.js";
 import { LIMITS, localized, RESERVED_SKILLS, samplePath, type BotAppRef } from "./format.js";
@@ -21,6 +22,7 @@ export const instanceId = (catalogId: string) => `cat-${catalogId}`;
 const STATE_FILE = "app/state.json";
 /** 界面能用 readImage 读的类型。SVG 也可以：只放进沙箱页的 <img>，里面的脚本不会运行 */
 const IMAGE_MIME: Record<string, string> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml" };
+const MEDIA_MIME: Record<string, string> = { ".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".m4a": "audio/mp4", ".ogg": "audio/ogg", ".flac": "audio/flac", ".aac": "audio/aac" };
 
 export class CatalogError extends Error {
   constructor(readonly code: string, readonly status = 400) {
@@ -73,10 +75,12 @@ export class BotInstaller {
     const names = fs.existsSync(src) ? fs.readdirSync(src, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name) : [];
     const installed: string[] = [];
     const staged: Array<[string, string]> = [];
+    const userSkills = this.o.store.getBot(botId) ? new UserSkills(this.o.dataDir, this.o.store).list(botId) : [];
     try {
       for (const name of names) {
         // media、computer-use 由宿主自己写；包里不能覆盖
         if ((RESERVED_SKILLS as readonly string[]).includes(name)) throw new CatalogError("reserved_skill");
+        if (userSkills.some((s) => s.name === name)) throw new CatalogError("skill_conflict");
         const tmp = path.join(dest, `.${name}.${process.pid}.tmp`);
         fs.cpSync(path.join(src, name), tmp, { recursive: true, verbatimSymlinks: true });
         staged.push([tmp, path.join(dest, name)]);
@@ -131,7 +135,10 @@ export class BotInstaller {
   info(bot: Bot): { ref: BotAppRef; entry: CatalogEntry | undefined; base: string; updateAvailable: boolean } {
     const ref = bot.app!;
     const entry = this.o.catalog.get(ref.catalogId);
-    return { ref, entry, base: entry ? uiBase(entry) : ref.ui ? `/amb/botapp/b/${ref.ui}/` : "", updateAvailable: !!entry && !entry.removed && !ref.customized && (!!entry.dev || entry.version !== ref.version) };
+    // 实例先显示已安装的界面；更新成功后才切换，避免新包尚未解压就请求它。
+    const base = entry?.dev ? uiBase(entry) : ref.ui ? `/amb/botapp/b/${ref.ui}/` : "";
+    const changed = !!entry && (!!entry.dev || entry.version !== ref.version || entry.ui.sha256 !== ref.ui || entry.runtime.sha256 !== ref.runtime);
+    return { ref, entry, base, updateAvailable: !!entry && !entry.removed && !ref.customized && changed };
   }
 
   /**
@@ -145,7 +152,7 @@ export class BotInstaller {
     if (ref.customized) return "customized";
     const entry = this.o.catalog.get(ref.catalogId);
     if (!entry || entry.removed) return "removed";
-    if (!entry.dev && entry.version === ref.version) return "current";
+    if (!entry.dev && entry.version === ref.version && entry.ui.sha256 === ref.ui && entry.runtime.sha256 === ref.runtime) return "current";
     if (this.o.busy(botId)) return "busy";
     const uiDir = await this.o.catalog.ensureUi(entry);
     const runtimeDir = await this.o.catalog.ensureRuntime(entry);
@@ -246,6 +253,13 @@ export class BotInstaller {
     if (!f) return undefined;
     const st = fs.statSync(f);
     return st.isFile() && st.nlink === 1 ? { path: f, size: st.size, mtimeMs: st.mtimeMs, mode: st.mode } : undefined;
+  }
+
+  /** 预览只开放音视频；文件边界与下载一致，不能借 Blob 传递 HTML/脚本。 */
+  mediaFile(bot: Bot, rel: unknown): (ResolvedFile & { mime: string }) | undefined {
+    const file = this.appFile(bot, rel);
+    const mime = file && MEDIA_MIME[path.extname(file.path).toLowerCase()];
+    return file && mime && file.size <= LIMITS.mediaBytes ? { ...file, mime } : undefined;
   }
 
   /** 列出 app/ 下的文件（评测用它检查产物）。不跟随符号链接 */

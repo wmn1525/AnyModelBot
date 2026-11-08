@@ -207,7 +207,7 @@ export async function botAppApi(req: http.IncomingMessage, res: http.ServerRespo
   try {
     if (seg[0] === "catalog") {
       if (seg.length === 1 && m === "GET") {
-        d.send(res, 200, { bots: d.catalog.list().map((e) => publicEntry(e, !!d.getBot(instanceId(e.id)))), syncedAt: d.catalog.syncedAt, enabled: d.catalog.remoteEnabled });
+        d.send(res, 200, { bots: d.catalog.list().map((e) => publicEntry(e, !!d.getBot(instanceId(e.id)))), syncedAt: d.catalog.syncedAt, enabled: d.catalog.enabled });
         return true;
       }
       if (seg[1] === "sync" && m === "POST") {
@@ -242,7 +242,7 @@ export async function botAppApi(req: http.IncomingMessage, res: http.ServerRespo
         return true;
       }
       if (seg[2] === "preview" && m === "POST") {
-        // 打开只下载界面包：不创建实例、不装技能、不起进程
+        // 打开只准备界面包（官方包从安装包解出）：不创建实例、不装技能、不起进程
         if (entry.removed) throw new CatalogError("catalog_removed", 410);
         await d.catalog.ensureUi(entry).catch(() => {
           throw new CatalogError("catalog_download_failed", 502);
@@ -292,6 +292,12 @@ export async function botAppApi(req: http.IncomingMessage, res: http.ServerRespo
       }
       if (sub === "list" && m === "GET") {
         d.send(res, 200, { files: d.installer.listApp(botId) });
+        return true;
+      }
+      if (sub === "media" && m === "GET") {
+        const file = d.installer.mediaFile(bot, url.searchParams.get("path"));
+        if (!file) throw new CatalogError("file_not_found", 404);
+        sendFile(req, res, file, file.mime);
         return true;
       }
       if (sub === "download" && m === "GET") {

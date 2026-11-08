@@ -1,7 +1,7 @@
 // 群聊（服务端见 src/core/groups.ts）：和单聊同一套对话流和输入框，每条回复上面多一行头像和名字。
 // @ 谁谁回答；没 @ 时上一个回答的接着答。同一时刻只有一个机器人在答（live），答完重新读时间线。
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
-import { html, Icon, Notice, Popover, Sheet, Skeleton, Spinner, autoGrow } from "../components/ui.js";
+import { html, Icon, IconButton, Notice, Popover, Sheet, Skeleton, Spinner, autoGrow } from "../components/ui.js";
 import { BotAvatar } from "../components/avatar.js";
 import { Markdown, Linkified } from "../components/markdown.js";
 import { upsertStep } from "../components/activity.js";
@@ -14,6 +14,8 @@ import { t, useLang } from "../lib/i18n.js";
 import { notify, plainSnippet } from "../lib/notify.js";
 import { reducedMotion } from "../design/motion.js";
 import { ErrorNotice, MsgActions, PromptCard, WorkLine, addFile, errText, isError, shownText } from "./chat.js";
+import { ConversationFind, HistoryBar, HistoryPageButton, useMessageHistory } from "../components/chat-search.js";
+import { chatView, saveChatView, useChatDraft } from "../lib/chat-view.js";
 
 const NEAR_BOTTOM = 80;
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
@@ -89,7 +91,10 @@ export function GroupSheet({ group, bots, onClose, onSaved }) {
   <//>`;
 }
 
-export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) {
+export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, initialFocus, onBackToSearch, visible = true }) {
+  const viewId = `group:${group.id}`;
+  const savedView = useRef(chatView(viewId));
+  const restoreView = useRef(true);
   const [items, setItems] = useState(null);
   const [live, setLive] = useState(null);
   const [pending, setPending] = useState([]);
@@ -97,7 +102,8 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) 
   const [running, setRunning] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [loadErr, setLoadErr] = useState("");
-  const [text, setText] = useState("");
+  const [text, setText] = useChatDraft(viewId);
+  const [findOpen, setFindOpen] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const [mention, setMention] = useState(null);
@@ -105,7 +111,8 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) 
   const lang = useLang();
   const { sendKey } = useStore(prefs);
   const scroller = useRef(null);
-  const stick = useRef(true);
+  const stick = useRef(savedView.current.atBottom);
+  const history = useMessageHistory({ scope: { group: group.id }, scroller, stick, initialFocus, visible });
   const ta = useRef(null);
   const mounted = useRef(true);
   const following = useRef(null);
@@ -193,16 +200,24 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) 
   }, [lastId, group.running]);
 
   useLayoutEffect(() => {
+    if (!visible || history.context || items === null) return;
+    if (restoreView.current && scroller.current) {
+      restoreView.current = false;
+      if (!savedView.current.atBottom) { scroller.current.scrollTop = savedView.current.top; return; }
+    }
     if (stick.current && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
-  }, [items, live]);
+  }, [items, live, history.context, visible]);
   const onScroll = () => {
     const el = scroller.current;
+    if (!visible || !el?.getClientRects().length) return;
     const near = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM;
-    stick.current = near;
-    setAtBottom(near);
+    stick.current = history.context ? false : near;
+    setAtBottom(history.context ? false : near);
+    if (!history.context) saveChatView(viewId, { top: el.scrollTop, atBottom: near });
     setScrolled(el.scrollTop > 2);
   };
   const toBottom = () => {
+    history.clear();
     stick.current = true;
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: reducedMotion() ? "auto" : "smooth" });
   };
@@ -238,6 +253,7 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) 
   const send = async () => {
     const msg = text.trim();
     if (!msg) return;
+    history.clear(); setFindOpen(false);
     setText("");
     setMention(null);
     requestAnimationFrame(() => autoGrow(ta.current));
@@ -300,7 +316,7 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) 
   const rows = useMemo(() => {
     const out = [];
     let prev = null;
-    const list = [...(items || []), ...(live ? [live] : [])];
+    const list = history.context ? toItems(history.context.messages) : [...(items || []), ...(live ? [live] : [])];
     const lastAi = (items || []).findLast((x) => x.kind === "msg" && x.role === "assistant")?.id;
     for (const it of list) {
       if (it.at && (!prev?.at || new Date(it.at).toDateString() !== new Date(prev.at).toDateString() || it.at - prev.at > 15 * 60_000)) {
@@ -317,12 +333,12 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) 
       const author = !isUser && !same && html`<div class="msg-author"><${BotAvatar} bot=${botOf(it.botId) || { id: it.botId }} size=${20} state=${it.live ? "working" : "idle"} /><span>${nameOf(it.botId)}</span></div>`;
       const cls = `msg-row ${isUser ? "user" : "assistant"}${same ? " cont" : ""}${it.live ? " live" : ""}`;
       if (it.kind === "error") {
-        out.push(html`<div class=${cls} key=${it.id}>${author}<${ErrorNotice} text=${it.text} onFixKey=${() => onOpenSettings("modelflare", "account")} /></div>`);
+        out.push(html`<div class=${cls} data-message-id=${it.mid} key=${it.id}>${author}<${ErrorNotice} text=${it.text} onFixKey=${() => onOpenSettings("modelflare", "account")} /></div>`);
       } else if (isUser) {
-        out.push(html`<div class=${cls} key=${it.id}><div class="msg"><${Linkified} text=${it.text} /></div><${MsgActions} text=${it.text} at=${it.at} /></div>`);
+        out.push(html`<div class=${cls} data-message-id=${it.mid} key=${it.id}><div class="msg"><${Linkified} text=${it.text} /></div><${MsgActions} text=${it.text} at=${it.at} /></div>`);
       } else {
         const shown = shownText(it);
-        out.push(html`<div class=${`${cls}${it.id === lastAi ? " last" : ""}`} key=${it.id}>
+        out.push(html`<div class=${`${cls}${it.id === lastAi ? " last" : ""}`} data-message-id=${it.mid} key=${it.id}>
           ${author}
           ${(it.live || it.steps) && html`<${WorkLine} live=${it.live} stopping=${it.live && stopping} text=${it.text} startedAt=${it.startedAt} steps=${it.activity} count=${it.steps} load=${it.mid ? loadActivity(it) : undefined} />`}
           ${(it.prompts || []).map((p) => html`<${PromptCard} key=${p.requestId} requestId=${p.requestId} fallback=${p.prompt} />`)}
@@ -337,20 +353,27 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) 
     const shownIds = new Set((live?.prompts || []).map((p) => p.requestId));
     for (const p of pending) if (!shownIds.has(p.id)) out.push(html`<div class="msg-row assistant" key=${"p" + p.id}><${PromptCard} requestId=${p.id} fallback="" /></div>`);
     return out;
-  }, [items, live, pending, stopping, canOpen, bots, lang]);
+  }, [items, history.context, live, pending, stopping, canOpen, bots, lang]);
 
-  const empty = items && items.length === 0 && !live;
+  const empty = !history.context && items && items.length === 0 && !live;
   const canSend = !!text.trim();
-  return html`<section class=${`chat${scrolled ? " scrolled" : ""}`} data-screen="group" aria-label=${group.name}>
+  return html`<section class=${`chat${scrolled ? " scrolled" : ""}${findOpen || history.context || history.loading || history.error ? " has-chat-tools" : ""}`} data-screen="group" aria-label=${group.name}>
     <header class="chat-head">
+      ${onBackToSearch && html`<${IconButton} icon="chevLeft" label=${t("search.backResults")} onClick=${onBackToSearch} />`}
       <button type="button" class="head-bot" title=${t("group.editTitle")} onClick=${onEdit}>
         <${GroupAvatars} bots=${members} size=${22} />
         <span class="name">${group.name}</span>
       </button>
       <span class="grow"></span>
+      <${IconButton} icon="search" label=${t("search.findInChat")} onClick=${() => setFindOpen(true)} />
     </header>
+    <div class="chat-tools" hidden=${!(findOpen || history.context || history.loading || history.error)}>
+      <${ConversationFind} scope=${{ group: group.id }} onMatch=${history.show} scroller=${scroller} open=${findOpen} onOpen=${() => setFindOpen(true)} onClose=${() => { setFindOpen(false); history.clearHighlight(); }} />
+      <${HistoryBar} history=${history} onLatest=${toBottom} />
+    </div>
     <div class="chat-scroll" ref=${scroller} onScroll=${onScroll}>
       <div class=${`chat-col${items ? " ready" : ""}`} role="log" aria-live="polite" aria-busy=${running}>
+        <${HistoryPageButton} history=${history} direction="before" />
         ${loadErr && html`<${Notice} tone="red" action=${html`<button type="button" class="btn" onClick=${load}>${t("common.retry")}</button>`}>${t("chat.error.loadHistory", { error: loadErr })}<//>`}
         ${items === null && html`<div class="chat-skel"><${Skeleton} w="40%" /><${Skeleton} w="28%" /></div>`}
         ${empty && html`<div class="chat-empty">
@@ -359,6 +382,7 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) 
           <p>${t("group.empty")}</p>
         </div>`}
         ${rows}
+        <${HistoryPageButton} history=${history} direction="after" />
       </div>
     </div>
     ${!atBottom && html`<button type="button" class="to-bottom" aria-label=${t("chat.toBottom")} onClick=${toBottom}><${Icon} name="down" size="md" /></button>`}

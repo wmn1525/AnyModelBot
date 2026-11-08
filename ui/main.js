@@ -13,6 +13,7 @@ import { NeedsYouScreen } from "./screens/needs-you.js";
 import { BotAppScreen } from "./screens/bot-app.js";
 import { DiscoverScreen } from "./screens/discover.js";
 import { GroupScreen, GroupSheet } from "./screens/group.js";
+import { MessageSearchScreen, ConversationHistoryScreen } from "./screens/message-search.js";
 import { BotAvatar, MAIN_CHAR } from "./components/avatar.js";
 import { Onboarding } from "./screens/onboarding.js";
 import { CoachMark } from "./components/guide.js";
@@ -25,18 +26,22 @@ import { usePresence } from "./design/motion.js";
 import { t, useLang, adoptServerLang, changeLang, getLangPref, LANG_NAMES, LANGS } from "./lib/i18n.js";
 
 // —— 路由：#/chat/<bot> · #/group/<群> · #/new · #/needs · #/settings/<tab>[/<row>] · #/bot/<bot>/settings[/<section>] ——
+/** @returns {{view: string, botId?: string, groupId?: string, conversationId?: string, messageId?: number, query?: string, tab?: string, row?: string, section?: string, catalogId?: string}} */
 function parseHash() {
-  const [kind, a, b, c] = location.hash.replace(/^#\/?/, "").split("/").map((x) => decodeURIComponent(x || ""));
+  const [pathname, query = ""] = location.hash.replace(/^#\/?/, "").split("?");
+  const [kind, a, b, c] = pathname.split("/").map((x) => decodeURIComponent(x || ""));
+  const focus = b === "message" && Number.isSafeInteger(Number(c)) && Number(c) > 0 ? { messageId: Number(c), query: (new URLSearchParams(query).get("q") || "").slice(0, 200) } : {};
   if (kind === "settings") return { view: "settings", tab: TABS.some(([t]) => t === a) ? a : "general", row: b || "" };
   if (kind === "bot" && a && b === "settings") return { view: "bot-settings", botId: a, section: c || "" };
-  if (kind === "group" && a) return { view: "group", groupId: a };
+  if (kind === "group" && a) return { view: "group", groupId: a, ...focus };
+  if (kind === "conversation" && a && focus.messageId) return { view: "conversation", conversationId: a, ...focus };
   if (kind === "new") return { view: "new" };
   if (kind === "needs") return { view: "needs" };
   if (kind === "discover") return { view: "discover" };
   if (kind === "app" && a) return { view: "app", botId: a };
   if (kind === "preview" && a) return { view: "preview", catalogId: a };
   if (kind === "models") return { view: "settings", tab: "modelflare", row: "" }; // 旧链接
-  return { view: "chat", botId: kind === "chat" ? a : "" };
+  return { view: "chat", botId: kind === "chat" ? a : "", ...focus };
 }
 const go = (path) => {
   if (location.hash !== "#" + path) location.hash = path;
@@ -168,11 +173,19 @@ function App() {
   const [localWorking, setLocalWorking] = useState({});
   const [infoOpen, setInfoOpen] = useState(false);
   const [palette, setPalette] = useState(false);
+  const [searchOpen, setSearchOpenValue] = useState(false);
+  const searchOpenRef = useRef(false);
+  const setSearchOpen = (value) => { searchOpenRef.current = value; setSearchOpenValue(value); };
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocus, setSearchFocus] = useState(0);
+  const [fromSearch, setFromSearch] = useState(false);
+  const [messageJump, setMessageJump] = useState(0);
+  const searchReturnFocus = useRef(null);
   const [settingsQ, setSettingsQ] = useState("");
   const [lastBot, setLastBot] = useState(readLastBot);
 
   useEffect(() => {
-    const on = () => setRoute(parseHash());
+    const on = () => { setRoute(parseHash()); setSearchOpen(false); };
     window.addEventListener("hashchange", on);
     return () => window.removeEventListener("hashchange", on);
   }, []);
@@ -211,12 +224,12 @@ function App() {
   }, [bot && bot.id]);
 
   // 信息面板：关上时多留一会儿，播完"列宽滑回 0、面板淡出"再卸载
-  const panelOpen = route.view === "chat" && infoOpen && !!bot;
+  const panelOpen = !searchOpen && route.view === "chat" && infoOpen && !!bot;
   // 目录 Bot 的主界面是专属界面；被安全原因下架的退回普通对话
   const isAppBot = (b) => !!b && b.origin === "catalog" && !b.app?.removed?.security;
   useEffect(() => {
-    if (route.view === "chat" && isAppBot(bot)) go(`/app/${encodeURIComponent(bot.id)}`);
-  }, [route.view, bot && bot.id, bot && bot.origin]);
+    if (route.view === "chat" && !route.messageId && isAppBot(bot)) go(`/app/${encodeURIComponent(bot.id)}`);
+  }, [route.view, route.messageId, bot && bot.id, bot && bot.origin]);
   const panelFx = usePresence(panelOpen, "--dur-slow");
   const lastPanel = useRef(null);
   if (panelOpen) lastPanel.current = bot;
@@ -296,6 +309,7 @@ function App() {
     go(`/settings/${tab}${row ? "/" + row : ""}`);
   };
   const openChat = (id) => {
+    setSearchOpen(false); setFromSearch(false);
     if (id) setLastBot(id);
     const target = id || (bot && bot.id) || "";
     go(`/${isAppBot((bots || []).find((b) => b.id === target)) ? "app" : "chat"}/${encodeURIComponent(target)}`);
@@ -317,7 +331,28 @@ function App() {
     if (route.view !== "chat") openChat();
   };
   const openNeeds = () => go("/needs");
-  const openGroup = (id) => go(`/group/${encodeURIComponent(id)}`);
+  const openGroup = (id) => { setSearchOpen(false); setFromSearch(false); go(`/group/${encodeURIComponent(id)}`); };
+  const openSearch = (focus = true) => {
+    if (!searchOpenRef.current && !document.activeElement?.matches("[data-global-search-entry]")) searchReturnFocus.current = document.activeElement;
+    setSearchOpen(true); setPalette(false);
+    if (focus || window.innerWidth <= 600) setSearchFocus((n) => n + 1);
+  };
+  const closeSearch = () => {
+    setSearchOpen(false);
+    requestAnimationFrame(() => {
+      const previous = searchReturnFocus.current;
+      if (previous?.isConnected && !previous.matches("[data-global-search-entry]")) previous.focus({ preventScroll: true });
+    });
+  };
+  const openSearchHit = (hit, query) => {
+    setSearchOpen(false); setFromSearch(true);
+    setMessageJump((n) => n + 1);
+    const tail = `/message/${hit.id}?q=${encodeURIComponent(query)}`;
+    if (hit.groupId) go(`/group/${encodeURIComponent(hit.groupId)}${tail}`);
+    else if (hit.channel === "web" && hit.conversationId === `${hit.botId}:web:console`) {
+      setLastBot(hit.botId); go(`/chat/${encodeURIComponent(hit.botId)}${tail}`);
+    } else go(`/conversation/${encodeURIComponent(hit.conversationId)}${tail}`);
+  };
   const onDeletedGroup = (id) => {
     reloadGroups();
     if (route.view === "group" && route.groupId === id) go("/chat/");
@@ -357,10 +392,20 @@ function App() {
 
   // —— 全局快捷键 ——
   useEffect(() => {
+    // Search owns Escape before a previously focused composer can treat it as Stop.
+    const closeSearchFirst = (e) => {
+      if (connected && searchOpenRef.current && e.key === "Escape" && !e.isComposing && e.keyCode !== 229) {
+        e.preventDefault(); e.stopPropagation(); closeSearch();
+      }
+    };
     const key = (e) => {
       if (e.isComposing || e.keyCode === 229) return;
       if (!connected) return;
-      if (mod(e) && e.key.toLowerCase() === "k") {
+      if (mod(e) && e.shiftKey && e.key.toLowerCase() === "f") {
+        e.preventDefault(); openSearch();
+      } else if (searchOpenRef.current && e.key === "Escape") {
+        e.preventDefault(); closeSearch();
+      } else if (mod(e) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setPalette((v) => !v);
       } else if (mod(e) && e.key === ",") {
@@ -383,12 +428,14 @@ function App() {
       }
     };
     window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
-  }, [connected, route, infoOpen, bot && bot.id]);
+    window.addEventListener("keydown", closeSearchFirst, true);
+    return () => { window.removeEventListener("keydown", key); window.removeEventListener("keydown", closeSearchFirst, true); };
+  }, [connected, route, infoOpen, searchOpen, bot && bot.id]);
 
   // keys：搜索用的关键词（不显示），两种语言的词典各有一份
   const setLang = (l) => changeLang(l).then(() => toast(t("common.saved"))).catch(failed);
   const commands = [
+    { label: t("search.title"), kbd: isMac ? "⌘⇧F" : "Ctrl+Shift+F", keys: t("search.commandKeys"), run: () => openSearch() },
     { label: t("app.cmd.settings"), kbd: isMac ? "⌘," : "Ctrl+,", keys: t("app.cmd.settingsKeys"), run: () => openSettings() },
     { label: t("app.cmd.newBot"), kbd: isMac ? "⌘N" : "Ctrl+N", keys: t("app.cmd.newBotKeys"), run: newBot },
     ...(needs.n > 0 ? [{ label: t("app.cmd.needs", { count: needs.n }), keys: t("app.cmd.needsKeys"), run: openNeeds }] : []),
@@ -428,10 +475,10 @@ function App() {
   const view = route.view;
   const groups = groupsData ? groupsData.groups : [];
   const routedGroup = view === "group" ? groups.find((g) => g.id === route.groupId) : null;
-  const panelBot = view === "chat" && infoOpen && bot;
+  const panelBot = !searchOpen && view === "chat" && infoOpen && bot;
   const shownPanel = panelFx.mounted ? panelBot || lastPanel.current : null;
   const routedBot = view === "bot-settings" && bots ? bots.find((b) => b.id === route.botId) : null;
-  return html`<div class=${`app${panelBot ? " with-panel" : ""}`} ref=${appRef}>
+  return html`<div class=${`app${panelBot ? " with-panel" : ""}${searchOpen ? " searching" : ""}${fromSearch && route.messageId ? " search-reading" : ""}`} ref=${appRef}>
     ${view === "settings"
       ? html`<${SettingsSide} tab=${route.tab} query=${settingsQ} onQuery=${setSettingsQ} onTab=${(t) => openSettings(t)} onBack=${() => openChat()}
           username=${status && status.username} account=${managed ? account : null} />`
@@ -439,18 +486,23 @@ function App() {
           previews=${previews} pending=${pending} working=${working} needs=${needs} username=${status && status.username} account=${managed ? account : null} update=${update}
           onNew=${newBot} onSelect=${openChat} onNeeds=${openNeeds} onDeleted=${onDeleted} onOpenSettings=${(tab) => openSettings(tab)} onBotSettings=${openBotSettings} onGuide=${startGuide}
           groups=${groups} groupsLoaded=${!!groupsData} groupId=${route.groupId} onNewGroup=${() => setGroupSheet({})} onSelectGroup=${openGroup} onEditGroup=${(group) => setGroupSheet({ group })} onDeletedGroup=${onDeletedGroup}
-          catalog=${catalog} catalogId=${route.catalogId} onDiscover=${openDiscover} onOpenCatalog=${openCatalog} />`}
+          catalog=${catalog} catalogId=${route.catalogId} onDiscover=${openDiscover} onOpenCatalog=${openCatalog}
+          searchQuery=${searchQuery} searchOpen=${searchOpen} onSearchQuery=${setSearchQuery} onOpenSearch=${openSearch} onCloseSearch=${closeSearch} />`}
     <${Splitter} class="split-side" size="--side-w" label=${t("app.resizeSide")} value=${sideW} room=${room("--panel-track")} onCommit=${(v) => setPrefs({ sideW: v })} />
     <main class="main">
+      <div class="route-content" hidden=${searchOpen} inert=${searchOpen || undefined}>
       ${view === "chat" && bot && html`<${ChatScreen} key=${bot.id} bot=${bot} models=${models} modelsError=${modelsError} reloadModels=${reloadModels}
+        initialFocus=${{ id: route.messageId, query: route.query, nonce: messageJump }} onBackToSearch=${fromSearch ? () => openSearch() : undefined} visible=${!searchOpen}
         defaultModel=${settings && settings.defaultModel} infoOpen=${infoOpen} onToggleInfo=${() => setInfoOpen((v) => !v)}
         onWorking=${onWorking} pending=${pending[bot.id] || 0} serverBusy=${!!agentWorking[bot.id]} onOpenSettings=${openSettings} onOpenBotSettings=${openBotSettings} onBotUpdated=${onBotUpdated}
         account=${managed ? account : null} onAccount=${setAccount} />`}
       ${view === "discover" && html`<${DiscoverScreen} catalog=${catalog} onOpen=${openCatalog} />`}
       ${(view === "preview" || (view === "app" && bot && bot.app)) && html`<${BotAppScreen} key=${view === "preview" ? route.catalogId : bot.app.catalogId} catalogId=${view === "preview" ? route.catalogId : bot.app.catalogId} bot=${view === "preview" ? (bots || []).find((b) => b.app?.catalogId === route.catalogId) || null : bot}
         onInstalled=${onInstalled} onBotUpdated=${onBotUpdated} onOpenBotSettings=${openBotSettings} onOpenSettings=${openSettings}
-        chatProps=${{ models, modelsError, reloadModels, defaultModel: settings && settings.defaultModel, onWorking, pending: (bot && pending[bot.id]) || 0, serverBusy: !!(bot && agentWorking[bot.id]), onOpenSettings: openSettings, onOpenBotSettings: openBotSettings, onBotUpdated, account: managed ? account : null, onAccount: setAccount }} />`}
-      ${view === "group" && routedGroup && bots && html`<${GroupScreen} key=${routedGroup.id} group=${routedGroup} bots=${bots} onEdit=${() => setGroupSheet({ group: routedGroup })} onOpenSettings=${openSettings} onChanged=${reloadGroups} />`}
+        chatProps=${{ visible: !searchOpen, models, modelsError, reloadModels, defaultModel: settings && settings.defaultModel, onWorking, pending: (bot && pending[bot.id]) || 0, serverBusy: !!(bot && agentWorking[bot.id]), onOpenSettings: openSettings, onOpenBotSettings: openBotSettings, onBotUpdated, account: managed ? account : null, onAccount: setAccount }} />`}
+      ${view === "group" && routedGroup && bots && html`<${GroupScreen} key=${routedGroup.id} group=${routedGroup} bots=${bots} onEdit=${() => setGroupSheet({ group: routedGroup })} onOpenSettings=${openSettings} onChanged=${reloadGroups}
+        initialFocus=${{ id: route.messageId, query: route.query, nonce: messageJump }} onBackToSearch=${fromSearch ? () => openSearch() : undefined} visible=${!searchOpen} />`}
+      ${view === "conversation" && html`<${ConversationHistoryScreen} key=${route.conversationId} conversationId=${route.conversationId} initialFocus=${{ id: route.messageId, query: route.query, nonce: messageJump }} onBack=${() => openSearch()} onBot=${openChat} bots=${bots || []} visible=${!searchOpen} />`}
       ${view === "group" && groupsData && !routedGroup && html`<div class="empty-state"><b>${t("app.groupMissing")}</b><button type="button" class="text" onClick=${() => openChat()}>${t("app.backToChat")}</button></div>`}
       ${(view === "new" || (view === "chat" && bots && !bots.length)) && html`<${NewBotScreen} first=${!!bots && !bots.length}
         onCreated=${onCreated} onCancel=${bots && bots.length ? () => openChat() : null} />`}
@@ -463,13 +515,15 @@ function App() {
         account=${managed ? account : null} onAccount=${setAccount} onOpenSettings=${openSettings}
         onBack=${() => openChat(routedBot.id)} onBotUpdated=${onBotUpdated} onDeleted=${() => onDeleted(routedBot.id)} />`}
       ${view === "bot-settings" && bots && !routedBot && html`<div class="empty-state"><b>${t("app.botMissing")}</b><button type="button" class="text" onClick=${() => openChat()}>${t("app.backToChat")}</button></div>`}
+      </div>
+      <${MessageSearchScreen} open=${searchOpen} query=${searchQuery} onQuery=${setSearchQuery} bots=${bots || []} groups=${groups} onClose=${closeSearch} onSelect=${openSearchHit} onBot=${openChat} onGroup=${openGroup} focusToken=${searchFocus} />
     </main>
     ${panelBot && html`<${Splitter} class="split-panel" size="--panel-w" edge="end" label=${t("app.resizePanel")} value=${panelW} room=${room("--side-col")}
       onCommit=${(v) => setPrefs({ panelW: v })} />`}
     ${shownPanel && html`<div class=${`panel-scrim${panelFx.leaving ? " leaving" : ""}`} onClick=${() => setInfoOpen(false)}></div>`}
     ${shownPanel && html`<${InfoPanel} key=${shownPanel.id} bot=${shownPanel} leaving=${panelFx.leaving} onClose=${() => setInfoOpen(false)}
       onOpenBotSettings=${() => openBotSettings(shownPanel.id)} onOpenChat=${() => setInfoOpen(false)} onOpenConnections=${(row) => openSettings("connections", row || "")} />`}
-    <${CoachMark} bot=${view === "chat" ? bot : null} view=${view} infoOpen=${!!panelBot} />
+    <${CoachMark} bot=${!searchOpen && view === "chat" ? bot : null} view=${searchOpen ? "search" : view} infoOpen=${!!panelBot} />
     ${palette && html`<${Palette} commands=${commands} onClose=${() => setPalette(false)} />`}
     ${groupSheet && bots && html`<${GroupSheet} group=${groupSheet.group} bots=${bots} onClose=${() => setGroupSheet(null)}
       onSaved=${async (g) => { setGroupSheet(null); await reloadGroups(); openGroup(g.id); }} />`}

@@ -4,6 +4,16 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.28 - 2026-11-08
+
+### Improvements and fixes
+
+- Synced upstream through 184efc2: bundled Due Diligence, PPT Master, Film Studio and US Equity Research for offline first opening and installation, while preserving existing projects and data during upgrades.
+- Added ZIP skill import, preview, enable/disable, replacement and removal, managed per bot.
+- Added local chat history search with bot, conversation, channel and date filters and links to the original messages.
+- Fixed catalog bot content sizing and scrolling, and added media task tracking and recovery.
+- Included driver download retries, Electron checksum caching and Intel Mac Apple networking fixes; retained OKINTO sign-in, grouped models and image generation.
+
 ## 0.1.26 - 2026-11-06
 
 ### Improved

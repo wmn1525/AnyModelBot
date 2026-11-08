@@ -1,0 +1,76 @@
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "episodes": {
+            "type": "integer"
+          },
+          "assets": {
+            "type": "integer"
+          },
+          "exports": {
+            "type": "integer"
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "path",
+          "revision"
+        ]
+      }
+    },
+    "selectedProjectId": {
+      "type": "string"
+    },
+    "runtime": {
+      "type": "object"
+    },
+    "updatedAt": {
+      "type": "string"
+    },
+    "sample": {
+      "type": "boolean"
+    },
+    "sampleProject": {
+      "type": "object"
+    },
+    "sampleEpisode": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "title",
+    "projects"
+  ],
+  "additionalProperties": false
+}

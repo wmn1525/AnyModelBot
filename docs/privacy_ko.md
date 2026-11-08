@@ -21,6 +21,8 @@
 | 데이터 | 저장 위치(데이터 폴더 내부) | 기기 외부 전송 여부 | 전송 대상 |
 | :--- | :--- | :--- | :--- |
 | 대화와 세션 | `anymodel.db`(SQLite) | 답변에 필요한 부분 | 모델 컨텍스트로 Modelflare를 거쳐 선택한 제공업체에 전달 |
+| 가져온 스킬 | `skills/<봇 ID>/`, 활성화 사본은 `dsh/<봇 ID>/skills/` | 이름, 설명, 사용 중 읽은 본문과 자료는 전송 | 선택한 모델의 문맥. 가져오기는 사용 중인 AnyModelBot 인스턴스로만 전송하며 GitHub에 접속하지 않습니다 |
+| 대화 검색 색인 | `anymodel.db`의 `message_search` 및 전문 검색 색인 | 아니요 | 인스턴스 안에 저장된 메시지를 검색하며 모델을 호출하지 않습니다 |
 | 기억 | `memory/`(Markdown: `bots/`, `groups/`, `team/`) | 사용 시 | 모델 요청의 컨텍스트에 포함. 비밀 정보로 보이는 내용은 기록 전에 제외 |
 | 봇 작업 공간 파일 | `workspaces/<bot>/`(받은 파일 `inbox/`, 생성한 이미지·동영상 `media/` 포함) | 봇이 읽어 모델에 보낼 때 | 위와 동일 |
 | Modelflare 로그인 정보 | `modelflare-account.json`(권한 600, 데스크톱 앱은 시스템 키체인으로 암호화) | 토큰 갱신 시 modelflare.dev로만 | Modelflare |
@@ -83,7 +85,7 @@
 - Feishu 채널: Feishu Open Platform과 지속 연결 유지.
 - Telegram, Slack, Discord 채널: 연결 후 `api.telegram.org`, `slack.com`, `discord.com` 및 파일 호스트와 통신해 메시지와 첨부 파일 송수신.
 - Windows에서 에이전트 모드가 켜져 있고 사용 가능한 PowerShell 7이 없으면 Microsoft 공식 릴리스 위치에서 PowerShell 7 다운로드(`AMB_PWSH_AUTO_INSTALL=0`으로 끌 수 있음, [개발 안내](./development_ko.md) 참조).
-- 「둘러보기」의 봇 목록: 시작할 때와 이후 6시간마다 `anymodel.bot/catalog/`에서 목록을 읽고, 봇을 열거나 사용할 때 해당 패키지를 내려받습니다. 이 요청은 내려받기만 하며 사용자의 데이터를 올리지 않습니다. 내려받은 내용은 서명과 해시로 검증합니다(`AMB_CATALOG=off`로 끌 수 있습니다).
+- `AMB_CATALOG_URL`을 직접 설정해 원격 봇 목록을 사용할 때만 목록과 필요한 패키지를 내려받고 서명과 해시를 검증합니다. 사용자 데이터는 업로드하지 않습니다. 기본 공식 봇 목록, 화면, 예시 데이터와 스킬은 앱에 포함되어 있어 열거나 설치할 때 이러한 네트워크 요청이 발생하지 않습니다.
 
 ## 컴퓨터 사용과 스크린샷
 

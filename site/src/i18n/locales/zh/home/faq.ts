@@ -5,6 +5,14 @@ export default {
   "more": "没找到答案？去文档里翻翻",
   "items": [
     {
+      "q": "怎么导入自己的技能？",
+      "a": "打开「机器人设置 → 技能 → 导入 ZIP」，预览后添加。每个 ZIP 包含一个 SKILL.md，最大 20 MB；脚本和参考资料会一起保留。导入不访问 GitHub，运行时所需的软件和联网能力取决于技能。重新导入同名技能可以确认替换。"
+    },
+    {
+      "q": "怎么找到以前的聊天内容？",
+      "a": "在侧栏搜索聊天记录，或按 Ctrl/Cmd+Shift+F 打开全局搜索；Ctrl/Cmd+F 查找当前聊天。可以按机器人、会话、渠道和日期筛选，点击结果跳到原消息。搜索范围是这台设备保存的记录，不调用模型。"
+    },
+    {
       "q": "和 Grok Bot、OpenAI dots、Claude Duet 有什么不同？",
       "a": "它们是同一类常驻的个人 AI 智能体，在后台替你干活，需要你拍板时再来问你。不同的是，AnyModelBot 开源（MIT），跑在你自己的电脑或服务器上；GPT、Claude、Gemini、Grok 等模型都能用，App 免费，模型按用量付费，不绑定某一家的订阅。GitHub 上的 README 有详细对比表。Grok Bot、dots、Claude Duet 分别是 xAI、OpenAI、Anthropic 的产品，AnyModelBot 与它们没有关联。"
     },

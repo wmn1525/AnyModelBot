@@ -298,9 +298,10 @@ describe.skipIf(!runtime)("提示词约定", () => {
    * 3e：task_start 加上 budget_usd（116）之后 10,445（工具 9,538），还在上限之内，上限不变。
    * 少问（产品负责人 2026-11-01）：生图、生视频去掉 confirm 参数，rule_create 加上 mode，聊天规则写清什么时候才问，
    * 之后 10,145（提示词 981 + 工具 9,164），上限调低到 10,450。
+   * 0.1.23 的生图/视频恢复增加 request_id 定义，共 499 字符；当前基线 10,644，上限同步增加到 10,949。
    * 缩短了就调低；要调高，在提交说明里写清原因。
    */
-  const BUDGET = 10_450;
+  const BUDGET = 10_949;
   it("我们的提示词加工具定义不超过字符数上限", async () => {
     const prompt = agentPersona({ computerUse: true }).length + botPrompt({ name: "小蓝", persona: PERSONA, memory: true }).length;
     const tools = JSON.stringify(await ourTools()).length;

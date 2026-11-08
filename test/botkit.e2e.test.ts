@@ -139,6 +139,13 @@ describe("服务端", () => {
     expect(image.body).toMatchObject({ path: "app/out/p.svg", url: `data:image/svg+xml;base64,${Buffer.from("<svg/>").toString("base64")}` });
     expect((await api(`/bots/${inst}/app/image?path=${q("app/out/d.pptx")}`)).status).toBe(404);
     expect((await api(`/bots/${inst}/app/image?path=${q("../../anymodel.db")}`)).status).toBe(404);
+    fs.writeFileSync(path.join(app, "out/film.mp4"), "video fixture");
+    const media = await fetch(`${base}/amb/api/bots/${inst}/app/media?path=${q("app/out/film.mp4")}`);
+    expect(media.status).toBe(200);
+    expect(media.headers.get("content-type")).toBe("video/mp4");
+    expect(await media.text()).toBe("video fixture");
+    expect((await api(`/bots/${inst}/app/media?path=${q("app/out/p.svg")}`)).status).toBe(404);
+    expect((await api(`/bots/${inst}/app/media?path=${q("../../anymodel.db")}`)).status).toBe(404);
     expect((await api(`/bots/${inst}/app/list`)).body.files).toContainEqual({ path: "app/out/d.pptx", size: 2 });
     const res = await fetch(`${base}/amb/api/bots/${inst}/app/download?path=${q("app/out/d.pptx")}`);
     expect(res.status).toBe(200);

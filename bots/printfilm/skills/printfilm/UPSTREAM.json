@@ -1,0 +1,90 @@
+{
+  "repository": "https://github.com/yi1108/printfilm",
+  "commit": "0806618cba00fc0aa2398382c7284ef145ff2e49",
+  "license": "MIT",
+  "files": [
+    {
+      "source": "backend/app/services/ffmpeg_compose.py",
+      "target": "scripts/printfilm_core/ffmpeg_compose.py",
+      "sha256": "ac01c4e062a13a622fb12c58dfc4d01da90b48a688d2ef739171a2328ce30917",
+      "adaptation": "Relative config import, explicit output resolution, propagate requested BGM errors and allow zero BGM volume. Workspace temp directory is set by the runner."
+    },
+    {
+      "source": "backend/app/services/seedance_segments.py",
+      "target": "scripts/printfilm_core/seedance_segments.py",
+      "sha256": "179172f17486fcceaf6cee810b3d23f71b28b87a3c58389481b71710e9c2092a",
+      "adaptation": "Relative imports for standalone runtime."
+    },
+    {
+      "source": "backend/app/services/drama/fragment_plan_prompt.py",
+      "target": "scripts/printfilm_core/fragment_plan_prompt.py",
+      "sha256": "7cd2a06ec4e77c73e791667b0bb41deac8313402112f38177a864efe3434f4b9",
+      "adaptation": "Relative imports for standalone runtime."
+    },
+    {
+      "source": "backend/app/services/drama/script_summary_prompt.py",
+      "target": "scripts/printfilm_core/script_summary_prompt.py",
+      "sha256": "7da3c8ff215ef1accb2d161badfcfa68f45f38f23e32c5ca60315f306f3d6075",
+      "adaptation": "Relative imports for standalone runtime."
+    },
+    {
+      "source": "backend/app/services/drama/generation_prompt.py",
+      "target": "scripts/printfilm_core/generation_prompt.py",
+      "sha256": "a41d32fd35c4c52b4d6648de29b6b1e7e935433adebfbb8049b9fe9aa92e9034",
+      "adaptation": "Relative imports for standalone runtime."
+    },
+    {
+      "source": "backend/app/services/drama/fragment_dialogue.py",
+      "target": "scripts/printfilm_core/fragment_dialogue.py",
+      "sha256": "da8cb597dee023a77b1e6375c9e6abd7bf049983d91cd6c98eb9cc2f1fdd2c07",
+      "adaptation": "Relative imports for standalone runtime."
+    },
+    {
+      "source": "backend/app/services/drama/output_settings.py",
+      "target": "scripts/printfilm_core/output_settings.py",
+      "sha256": "ef7f716a29becee6887838c53e89a5a2e1fa34b4ab1bde576e0d7d02fa0e4938",
+      "adaptation": "Relative imports for standalone runtime."
+    },
+    {
+      "source": "backend/app/services/drama/seedream_options.py",
+      "target": "scripts/printfilm_core/seedream_options.py",
+      "sha256": "17a51e6fd26df7f621df9a6e6ed67dc6519109f458ce62d1ba4910ecf56e7f9d",
+      "adaptation": "Extracted SEEDREAM_SIZE_2K constant only; provider routing omitted."
+    },
+    {
+      "source": "backend/app/services/drama/image_styles.py",
+      "target": "scripts/printfilm_core/image_styles.py",
+      "sha256": "f17c0581e4ca74e46031d25e5a2177ef4e144cbbe9b2683fba9bfa287b049f71",
+      "adaptation": "Style definitions and pure lookups; server storage excluded; four public short-video templates added from short-styles.json."
+    }
+  ],
+  "prompts": [
+    "visual_prompt.CHARACTER_VISUAL_SYSTEM",
+    "visual_prompt.SCENE_VISUAL_SYSTEM",
+    "agents.EPISODE_BATCH_CONTENT_SYSTEM",
+    "agents.EPISODE_OPTIMIZE_SYSTEM",
+    "agents.EPISODE_BODY_FROM_BRIEF_SYSTEM"
+  ],
+  "extractedResources": [
+    {
+      "source": "backend/app/services/ark.py",
+      "target": "references/short-video.txt",
+      "sha256": "fe2de5e823412e0ad89de06ddf17d7fba0d775feead9e09576e7dbfc95919424"
+    },
+    {
+      "source": "backend/app/services/drama/agents.py",
+      "target": "references/prompts.json",
+      "sha256": "e3f56a1ee041f6b76cbc8d8246153ce3dc51cdefc7fb13723be90138352aa448"
+    },
+    {
+      "source": "backend/app/services/drama/visual_prompt.py",
+      "target": "references/prompts.json",
+      "sha256": "4496ab37991aae56c40240f6b5f46f20153594c847b398420c1664419251278c"
+    },
+    {
+      "source": "backend/app/services/templates_seed.py",
+      "target": "references/short-styles.json",
+      "sha256": "62794db58c7578f6db22ce9ca846951869156384a81dbc03a71ca59d2ddf5625"
+    }
+  ]
+}

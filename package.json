@@ -1,7 +1,7 @@
 {
   "name": "anymodel-bot",
   "productName": "okbot",
-  "version": "0.1.26",
+  "version": "0.1.28",
   "private": true,
   "description": "okbot：任意模型的个人 AI 助手（飞书 + 微信 iLink），内置 magpie 模型网关",
   "license": "MIT",
@@ -13,9 +13,13 @@
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "build:magpie": "node scripts/build-magpie.mjs",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && npm run build:catalog",
+    "build:catalog": "tsx scripts/build-catalog.ts",
+    "prestart": "npm run build:catalog",
     "start": "tsx src/main.ts",
+    "predev": "npm run build:catalog",
     "dev": "tsx watch src/main.ts",
+    "preinit": "npm run build:catalog",
     "init": "tsx src/cli/init.ts",
     "weixin:login": "tsx src/cli/weixin-login.ts",
     "bot": "tsx src/cli/amb-bot.ts",
@@ -42,7 +46,9 @@
     "preact": "^11.0.2",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
-    "ws": "8.22.0"
+    "ws": "8.22.0",
+    "yaml": "2.9.1",
+    "yauzl": "3.4.0"
   },
   "devDependencies": {
     "@electron/asar": "^3.4.1",
@@ -50,6 +56,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/qrcode-terminal": "^0.12.2",
     "@types/ws": "^8.18.1",
+    "@types/yauzl": "3.4.0",
     "electron": "44.7.0",
     "electron-builder": "^26.18.0",
     "tsx": "^4.23.15",

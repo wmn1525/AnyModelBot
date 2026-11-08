@@ -1,0 +1,156 @@
+{
+  "anim_3d": {
+    "id": "anim_3d",
+    "name": "3D 动画",
+    "description": "电影级三维动画质感，圆润造型与柔和体积光，适合科普讲解与故事短片。",
+    "category": [
+      "3D",
+      "动漫",
+      "科普"
+    ],
+    "preview_cover": "/static/templates/covers/anim_3d.png",
+    "style_prefix": "电影级三维动画渲染，皮克斯/梦工厂气质，圆润造型与清晰轮廓，柔和体积光与次表面散射，干净材质与饱和配色，浅景深，非写实摄影、非日系赛璐璐平面、非剪纸扁平",
+    "negative_prompt": "写实照片，真人皮肤毛孔，摄影棚实拍，日系赛璐璐，二次元平涂，剪纸扁平，像素风，手绘潦草，血腥恐怖，水印，画面文字，字幕乱码",
+    "default_ratio": "16:9",
+    "shot_duration_min": 4,
+    "shot_duration_max": 12,
+    "llm_system_addon": "三维动画叙事节奏：建立场景→角色动作→关键演示/知识点。【画风】全片必须统一 3D CGI 动画风与同一角色造型，禁止某镜变成真人照片或二维赛璐璐。涉及软件/系统/科普时，优先 3D 角色在工位或场景中操作界面、演示流程。每镜 title 短、subtitle 卖点句；img_prompt 写清三维材质、光影与角色姿态。",
+    "seedream_config": {
+      "ref_images": [],
+      "strength": 0.72,
+      "consistency_mode": "character",
+      "character_prompt": "固定 3D 动画角色：圆润比例、简洁五官、识别度高的发型发色与服装配色，塑料感柔和皮肤与布料材质，全片同一人物设定",
+      "extra_prompt": "三维渲染体积光，干净材质，饱和但不刺眼，主体清晰，画面内不要出现文字；可留白便于叠字"
+    },
+    "seedance_config": {
+      "motion_bias": "轻微布料与发丝飘动，缓慢推近，动画感运镜平滑",
+      "character_consistency": true,
+      "generate_audio": true
+    },
+    "audio_config": {
+      "voice_preset": "warm_storyteller",
+      "bgm_mood": "轻快专业"
+    },
+    "subtitle_config": {
+      "font": "SourceHanSans",
+      "position": "bottom",
+      "title_scale": 1.5,
+      "sub_scale": 1.4,
+      "caption_scale": 1.25
+    },
+    "sort_order": 5,
+    "is_active": true,
+    "is_premium": false
+  },
+  "kids_flat": {
+    "id": "kids_flat",
+    "name": "儿童绘本扁平",
+    "description": "柔和配色与圆润造型，适合儿童科普与故事。",
+    "category": [
+      "儿童",
+      "绘本"
+    ],
+    "preview_cover": "/static/templates/covers/kids_flat.png",
+    "style_prefix": "儿童绘本扁平插画，柔和粉彩，圆润造型，友好角色，简洁背景",
+    "negative_prompt": "恐怖，阴暗，写实照片，复杂纹理，血腥",
+    "default_ratio": "16:9",
+    "shot_duration_min": 3,
+    "shot_duration_max": 12,
+    "llm_system_addon": "用孩子听得懂的短句，每镜突出一个可爱视觉元素，节奏轻快。",
+    "seedream_config": {
+      "ref_images": [],
+      "strength": 0.65,
+      "character_prompt": "圆润可爱卡通角色，大眼睛简化五官，柔和配色服装，友好表情，全片同一角色外形",
+      "extra_prompt": "粉彩柔光，背景简洁，造型圆润，适合儿童观看"
+    },
+    "seedance_config": {
+      "motion_bias": "轻微弹跳感，柔和镜头漂移",
+      "character_consistency": true
+    },
+    "audio_config": {
+      "voice_preset": "warm_storyteller",
+      "bgm_mood": "俏皮轻快"
+    },
+    "subtitle_config": {
+      "font": "RoundedSans",
+      "position": "bottom"
+    },
+    "sort_order": 20,
+    "is_active": true,
+    "is_premium": false
+  },
+  "soft_anime": {
+    "id": "soft_anime",
+    "name": "柔光动漫",
+    "description": "日系柔光赛璐璐，适合青春故事与情感短片。",
+    "category": [
+      "动漫",
+      "故事"
+    ],
+    "preview_cover": "/static/templates/covers/soft_anime.png",
+    "style_prefix": "日系柔光赛璐璐动漫，干净线稿，柔和渐变天空，大眼睛精致五官，统一角色设定，非写实摄影、非水墨、非剪纸",
+    "negative_prompt": "写实照片，真人，真实人脸，水墨，剪纸，像素风，血腥恐怖，水印，画面文字，三头身Q版混用",
+    "default_ratio": "16:9",
+    "shot_duration_min": 3,
+    "shot_duration_max": 12,
+    "llm_system_addon": "青春动漫叙事：情绪镜+对话镜交替。全片必须同一赛璐璐画风与角色外形，禁止某镜变真人。",
+    "seedream_config": {
+      "ref_images": [],
+      "strength": 0.7,
+      "character_prompt": "日系动漫主角，发型发色瞳色固定，校服或常服配色固定，赛璐璐五官，全片同一人设",
+      "extra_prompt": "柔光、干净线稿、柔和天空，统一赛璐璐上色"
+    },
+    "seedance_config": {
+      "motion_bias": "轻微发丝与衣袂飘动，缓慢推近",
+      "character_consistency": true
+    },
+    "audio_config": {
+      "voice_preset": "warm_storyteller",
+      "bgm_mood": "青春轻音乐"
+    },
+    "subtitle_config": {
+      "font": "SourceHanSans",
+      "position": "bottom"
+    },
+    "sort_order": 22,
+    "is_active": true,
+    "is_premium": false
+  },
+  "ink_guofeng": {
+    "id": "ink_guofeng",
+    "name": "水墨国风",
+    "description": "水墨留白与写意笔触，适合历史与文化短故事。",
+    "category": [
+      "国风",
+      "水墨"
+    ],
+    "preview_cover": "/static/templates/covers/ink_guofeng.png",
+    "style_prefix": "中国水墨写意插画，富有表现力的笔触，大量留白，诗意氛围，淡雅墨色，非写实摄影",
+    "negative_prompt": "写实照片，真人，真实人脸，霓虹，赛博朋克，日系动漫，欧美卡通，画面文字，字幕，水印",
+    "default_ratio": "9:16",
+    "shot_duration_min": 4,
+    "shot_duration_max": 12,
+    "llm_system_addon": "叙事偏意境与转折，台词可略文言白话混用，留白节奏。适合竖屏图文：每镜短标题+诗意副标题叠字，并写可朗读的旁白。",
+    "seedream_config": {
+      "ref_images": [],
+      "strength": 0.7,
+      "character_prompt": "水墨写意人物，简笔眉眼，宽袍或古装轮廓固定，墨色淡雅，全片同一人设",
+      "extra_prompt": "大量留白，淡墨渲染，诗意意境，竖屏顶部可叠字"
+    },
+    "seedance_config": {
+      "motion_bias": "墨晕渗开与消散，缓慢升降镜头，薄雾飘动",
+      "character_consistency": true
+    },
+    "audio_config": {
+      "voice_preset": "guqin_narrator",
+      "bgm_mood": "古筝氛围"
+    },
+    "subtitle_config": {
+      "font": "KaiTi",
+      "position": "top"
+    },
+    "sort_order": 60,
+    "is_active": true,
+    "is_premium": false
+  }
+}

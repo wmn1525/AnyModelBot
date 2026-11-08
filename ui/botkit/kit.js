@@ -12,6 +12,7 @@ export { useEffect, useMemo, useRef, useState };
 let seq = 0;
 const waiting = new Map();
 const listeners = new Set();
+const mediaHandles = new Map();
 
 window.addEventListener("message", (e) => {
   if (e.source !== window.parent) return;
@@ -104,6 +105,24 @@ export function useBot() {
       pickFile: (opts = {}) => call("pickFile", opts),
       readFile: (path) => call("readFile", { path }),
       readImage: (path) => call("readImage", { path }),
+      readMedia: async (path) => {
+        const r = await call("readMedia", { path });
+        try {
+          const url = URL.createObjectURL(r.blob);
+          mediaHandles.set(url, r.handle);
+          return { url, size: r.size };
+        } catch (e) {
+          await call("releaseMedia", { handle: r.handle });
+          throw e;
+        }
+      },
+      releaseMedia: (url) => {
+        const handle = mediaHandles.get(url);
+        if (handle === undefined) return Promise.resolve(true);
+        URL.revokeObjectURL(url);
+        mediaHandles.delete(url);
+        return call("releaseMedia", { handle });
+      },
       openFile: (path, opts = {}) => call("openFile", { path, reveal: !!opts.reveal }),
       openUrl: (url) => call("openUrl", { url }),
     }),

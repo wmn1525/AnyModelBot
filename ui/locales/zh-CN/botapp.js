@@ -40,10 +40,11 @@ export default {
   errors: {
     catalog_not_found: "找不到这个 Bot。",
     catalog_removed: "这个 Bot 已下架。",
-    catalog_download_failed: "下载失败，请检查网络后重试。",
+    catalog_download_failed: "Bot 文件加载失败，请重试。",
     catalog_failed: "出了点问题，请重试。",
     file_not_found: "找不到这个文件。",
     inbox_too_large: "文件太大了。",
+    skill_conflict: "新版本的技能与用户导入的技能重名，请先删除或重命名导入的技能。",
     reserved_skill: "这个 Bot 的技能名字不合规，无法安装。",
     dev_invalid: "这个目录不是合法的 Bot 包。",
     dev_loopback_only: "只有在本机运行时才能加载本机目录。",

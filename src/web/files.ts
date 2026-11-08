@@ -156,9 +156,9 @@ export function fileHeaders(name: string): Record<string, string> {
 }
 
 /** 把文件发给浏览器（带 ETag，没变时 304） */
-export function sendFile(req: http.IncomingMessage, res: http.ServerResponse, f: ResolvedFile): void {
+export function sendFile(req: http.IncomingMessage, res: http.ServerResponse, f: ResolvedFile, contentType?: string): void {
   const etag = `W/"${f.size.toString(36)}-${Math.floor(f.mtimeMs).toString(36)}"`;
-  const headers = { ...fileHeaders(path.basename(f.path)), etag };
+  const headers = { ...fileHeaders(path.basename(f.path)), ...(contentType ? { "content-type": contentType } : {}), etag };
   if (req.headers["if-none-match"] === etag) {
     res.writeHead(304, headers).end();
     return;

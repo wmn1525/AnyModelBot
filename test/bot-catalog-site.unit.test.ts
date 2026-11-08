@@ -31,7 +31,7 @@ describe("官网的 Bot 目录", () => {
         return [] as string[];
       }
     })();
-    const want = ids.map(manifest).filter((m) => !removed.includes(m.id)).map(({ id, avatar, name, summary, about, starters }) => ({ id, avatar, name, summary, about, starters }));
+    const want = ids.map(manifest).filter((m) => !removed.includes(m.id)).map(({ id, minAppVersion, avatar, name, summary, about, starters }) => ({ id, minAppVersion, avatar, name, summary, about, starters }));
     expect(JSON.parse(fs.readFileSync(path.join(ROOT, "site/src/data/catalog-bots.json"), "utf8"))).toEqual(want);
   });
 });

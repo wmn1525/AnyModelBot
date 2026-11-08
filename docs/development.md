@@ -263,3 +263,11 @@ README 的素材清单与录制规范见 [docs/assets/README.md](./assets/README
 ## 许可
 
 MIT，见 `LICENSE`；第三方组件（magpie MIT——含界面样式改编、Tencent openclaw-weixin MIT 等）见 `THIRD_PARTY_NOTICES.md`，也可在 设置 → 关于 中查看。
+
+## 用户技能与聊天记录搜索
+
+用户入口与 ZIP 格式见[技能使用说明](./skills.md)。`src/skills/archive.ts` 校验 ZIP 路径、解压上限和 `SKILL.md`，`service.ts` 按机器人保存包、启用状态和版本指纹；`src/web/skills.ts` 提供预览与管理接口。DSH 空闲后部署启用项，变更不会中断运行中的回合、子代理或后台命令。`src/botkit/installer.ts` 在目录 Bot 升级时检查用户技能重名。
+
+`src/store/chat-search.ts` 在 SQLite 中维护消息搜索索引，提供过滤、分页与原消息上下文；`ui/screens/message-search.js` 是全局搜索，`ui/components/chat-search.js` 负责当前聊天查找。搜索直接读取本机数据库，不经过模型。
+
+相关测试：`test/skills*.test.ts`、`test/chat-search*.test.ts`。浏览器验收可使用 `AMB_TEST_CHROME` 指定 Chromium 路径；有 DSH 运行时时还会验证技能发现、加载、资源读取及运行中停用。

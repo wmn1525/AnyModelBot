@@ -2,6 +2,11 @@
    不描边），一行一项、行间一条细线，开关用 Switch。
    设置分页在侧栏（shell.css 的 .side-nav）。 */
 @layer app {
+.skill-list .name, .skill-list .sub { overflow-wrap: anywhere; }
+.skill-meta { color: var(--muted); }
+.skill-instructions { margin: var(--space-4) 0; }
+.skill-instructions summary { cursor: pointer; color: var(--fg-2); }
+.skill-instructions pre { max-height: 40vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: var(--space-3); margin-top: var(--space-2); background: var(--well); border-radius: var(--r-lg); font-size: var(--fs-xs); }
 /* Full domain names and measurement details stay readable on narrow screens. */
 .settings #set-line { flex-wrap: wrap; }
 .settings #set-line > .who { flex-basis: 100%; }

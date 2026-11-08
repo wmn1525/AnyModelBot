@@ -1,3 +1,4 @@
+import search from "./search.js";
 // zh-CN 文案：每个命名空间一个文件，键 = "命名空间.键"（见 ui/lib/i18n.js）。两种语言的键必须一一对应（test/i18n.unit.test.ts 会查）。
 import common from "./common.js";
 import app from "./app.js";
@@ -28,4 +29,4 @@ import perms from "./perms.js";
 import group from "./group.js";
 import botapp from "./botapp.js";
 
-export default { official, botapp, group, common, app, time, settings, account, pwsh, chat, info, markdown, notify, troubleshoot, onboarding, newBot, botSettings, sidebar, avatar, models, ui, guide, activity, perms, access, tasks, needs, rules };
+export default { search, official, botapp, group, common, app, time, settings, account, pwsh, chat, info, markdown, notify, troubleshoot, onboarding, newBot, botSettings, sidebar, avatar, models, ui, guide, activity, perms, access, tasks, needs, rules };

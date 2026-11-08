@@ -1,0 +1,185 @@
+{
+  "title": "PRINTFILM",
+  "sample": true,
+  "projects": [
+    {
+      "id": "sample-film",
+      "title": "달빛 우체국",
+      "kind": "drama",
+      "path": "",
+      "revision": 1,
+      "updatedAt": "",
+      "episodes": 1,
+      "assets": 1,
+      "exports": 0,
+      "archived": false
+    }
+  ],
+  "selectedProjectId": "sample-film",
+  "sampleProject": {
+    "id": "sample-film",
+    "kind": "drama",
+    "title": "달빛 우체국",
+    "source": "작은 여우가 달빛 아래 마지막 편지를 배달합니다.",
+    "summary": {
+      "synopsis": "작은 여우가 달빛 아래 마지막 편지를 배달합니다."
+    },
+    "settings": {
+      "mode": "video",
+      "ratio": "9:16",
+      "resolution": "720p",
+      "style": "cgi-3d-animation",
+      "audioMode": "native",
+      "voice": "zh-CN-XiaoxiaoNeural",
+      "subtitles": true,
+      "imageModel": "",
+      "videoModel": "",
+      "bgm": "",
+      "bgmVolume": 0.15,
+      "targetDuration": 60,
+      "episodeCount": 3,
+      "language": "ko"
+    },
+    "episodes": [
+      {
+        "id": "sample-ep",
+        "number": 1,
+        "title": "달빛 우체국",
+        "summary": "달빛 우체국",
+        "revision": 1,
+        "path": ""
+      }
+    ],
+    "assets": [
+      {
+        "id": "sample-fox",
+        "type": "character",
+        "name": "여우 우편배달부",
+        "prompt": "달빛 우체국",
+        "voice": "",
+        "media": {},
+        "assetIds": [],
+        "selectedMedia": {}
+      }
+    ],
+    "canvas": {
+      "nodes": [
+        {
+          "id": "sample-a",
+          "label": "등장인물",
+          "x": 40,
+          "y": 50,
+          "assetId": "sample-fox"
+        },
+        {
+          "id": "sample-b",
+          "label": "샷",
+          "x": 360,
+          "y": 50,
+          "episodeId": "sample-ep",
+          "shotId": "sample-shot-0"
+        }
+      ],
+      "edges": [
+        {
+          "from": "sample-a",
+          "to": "sample-b"
+        }
+      ]
+    },
+    "exports": [],
+    "jobs": [],
+    "history": [],
+    "archived": false,
+    "revision": 1
+  },
+  "sampleEpisode": {
+    "id": "sample-ep",
+    "number": 1,
+    "title": "달빛 우체국",
+    "summary": "달빛 우체국",
+    "content": "작은 여우가 달빛 아래 마지막 편지를 배달합니다.",
+    "shots": [
+      {
+        "id": "sample-shot-0",
+        "title": "장면",
+        "narration": "",
+        "visualPrompt": "달빛 우체국",
+        "videoPrompt": "달빛 우체국",
+        "segmentScript": "",
+        "duration": 8,
+        "assetIds": [
+          "sample-fox"
+        ],
+        "dialogue": [],
+        "locked": false,
+        "media": {
+          "image": [
+            {
+              "id": "sample-img-0",
+              "path": "./samples/shot-0.svg",
+              "model": "sample",
+              "at": "",
+              "kind": "image"
+            }
+          ]
+        },
+        "selectedMedia": {}
+      },
+      {
+        "id": "sample-shot-1",
+        "title": "등장인물",
+        "narration": "작은 여우가 달빛 아래 마지막 편지를 배달합니다.",
+        "visualPrompt": "달빛 우체국",
+        "videoPrompt": "달빛 우체국",
+        "segmentScript": "",
+        "duration": 8,
+        "assetIds": [
+          "sample-fox"
+        ],
+        "dialogue": [],
+        "locked": false,
+        "media": {
+          "image": [
+            {
+              "id": "sample-img-1",
+              "path": "./samples/shot-1.svg",
+              "model": "sample",
+              "at": "",
+              "kind": "image"
+            }
+          ]
+        },
+        "selectedMedia": {}
+      },
+      {
+        "id": "sample-shot-2",
+        "title": "소품",
+        "narration": "",
+        "visualPrompt": "달빛 우체국",
+        "videoPrompt": "달빛 우체국",
+        "segmentScript": "",
+        "duration": 8,
+        "assetIds": [
+          "sample-fox"
+        ],
+        "dialogue": [],
+        "locked": false,
+        "media": {
+          "image": [
+            {
+              "id": "sample-img-2",
+              "path": "./samples/shot-2.svg",
+              "model": "sample",
+              "at": "",
+              "kind": "image"
+            }
+          ]
+        },
+        "selectedMedia": {}
+      }
+    ],
+    "exports": [],
+    "revision": 1
+  }
+}

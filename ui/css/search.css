@@ -1,0 +1,52 @@
+@layer app {
+  .route-content { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+  .route-content[hidden], .message-search[hidden], .chat-tools[hidden] { display: none; }
+  .message-search { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+  .search-head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--page-gutter); }
+  .search-input { flex: 1; min-width: 0; font-size: var(--fs-lg); background: transparent; color: var(--fg); border: 0; outline: none; }
+  .search-input:focus-visible { box-shadow: var(--ring); border-radius: var(--r-sm); }
+  .search-filters { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0 var(--page-gutter) var(--space-3); border-bottom: 1px solid var(--line-2); }
+  .search-filter { min-width: 0; max-width: 100%; }
+  .search-filter-toggle { display: none; }
+  .search-filter .field { max-width: 100%; min-width: 0; font-size: var(--fs-sm); }
+  .search-results { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-3) var(--page-gutter) var(--space-8); }
+  .search-result { display: grid; width: 100%; gap: var(--space-2); padding: var(--space-4) var(--space-2); border-bottom: 1px solid var(--line-2); text-align: start; color: var(--fg); border-radius: var(--r-sm); }
+  .search-result:hover, .search-result:focus-visible { background: var(--well); }
+  .search-result:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .search-result-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); font-size: var(--fs-sm); }
+  .search-result-head strong { overflow-wrap: anywhere; }
+  .search-result-head > span, .search-result-head time, .search-result-title { color: var(--fg-2); }
+  .search-result-head time { margin-inline-start: auto; font-size: var(--fs-xs); }
+  .search-result-title:empty { display: none; }
+  .search-result-body { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; line-height: var(--lh-relaxed); }
+  .search-author { color: var(--fg-2); }
+  .search-result mark, .search-names mark { color: var(--on-mark); background: var(--mark); border-radius: var(--r-xs); }
+  .search-empty { display: grid; justify-items: start; gap: var(--space-3); padding: var(--space-8) 0; color: var(--fg-2); }
+  .search-empty h2 { color: var(--fg); font-size: var(--fs-lg); }
+  .search-names { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); }
+  .search-count { display: flex; align-items: center; gap: var(--space-2); margin-block: var(--space-3); }
+  .search-more, .history-page { align-self: center; margin: var(--space-4) auto; }
+  .chat-tools { flex: none; margin-top: var(--head-h); padding: 0 var(--head-px); border-bottom: 1px solid var(--line-2); background: var(--surface); }
+  .has-chat-tools .chat-col { padding-top: var(--space-4); }
+  .has-chat-tools .chat-scroll { scroll-padding-top: var(--space-4); }
+  .conversation-find { display: flex; align-items: center; gap: var(--space-1); padding: var(--space-2) 0; }
+  .conversation-find .field { flex: 1; min-width: 0; }
+  .find-count { color: var(--fg-2); font-size: var(--fs-xs); max-width: 14em; overflow-wrap: anywhere; }
+  .history-bar { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) 0; color: var(--fg-2); font-size: var(--fs-sm); flex-wrap: wrap; }
+  .history-channel-note { margin: 0; padding: 0 var(--space-2) var(--space-3); color: var(--fg-2); font-size: var(--fs-sm); }
+  .history-screen .chat-col { padding-bottom: var(--space-8); }
+  .message-located { background: var(--mark); border-radius: var(--r-md); }
+  ::highlight(amb-chat-search) { background: var(--mark); color: var(--on-mark); }
+  @media (max-width: 600px) {
+    .app.searching, .app.search-reading { grid-template-columns: minmax(0, 1fr); }
+    .app.searching > .side, .app.search-reading > .side, .app.searching > .split-side, .app.search-reading > .split-side { display: none; }
+    .app.searching > .main, .app.search-reading > .main { grid-area: 1 / 1; margin: var(--pane-gap); }
+    .search-filter-toggle { display: inline-flex; }
+    .search-filters { display: none; }
+    .search-filters.open { display: flex; }
+    .search-head { padding-inline: var(--space-3); }
+    .search-filters, .search-results { padding-inline: var(--space-3); }
+    .find-count { max-width: 6em; white-space: normal; }
+    .search-result-head time { width: 100%; margin-inline-start: 0; }
+  }
+}

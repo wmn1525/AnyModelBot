@@ -9,6 +9,7 @@ import { eventText, isMessenger, isPushChannel } from "../core/types.js";
 import type { PlatformError } from "../channels/messenger/transport.js";
 import { findAppRoot } from "../magpie/supervisor.js";
 import { botAppApi, serveBotAppStatic } from "./botapp.js";
+import { skillsApi } from "./skills.js";
 import { logFilePath, logger, readLogTail, registerSecret } from "../log.js";
 import { diagnosticsReport, safeStatus, testAgent, testModel } from "../diagnostics.js";
 import { REASONING_EFFORTS, ZOOMS, normalizeLowBalance, saveConfigFile } from "../config.js";
@@ -27,6 +28,7 @@ import { GroupChats } from "../core/groups.js";
 import { defaultLine } from "../agent/approvals.js";
 import { normalizeSettings } from "../agent/settings.js";
 import { SEARCH_PROVIDERS, normalizeSearxUrl, type SearchProvider } from "../agent/search.js";
+import { ChatSearchInputError } from "../store/chat-search.js";
 import { ConnectionError, connectionUserMessage } from "../agent/accounts.js";
 import { scopeLabel } from "../agent/memory.js";
 import { pwshProbe, type PwshMode, type PwshStatus } from "../agent/pwsh.js";
@@ -221,7 +223,7 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
   let token = cfg.ui.token;
   // 用上目录 Bot 之后，命令行方式在非 Linux 的回环模式下也要令牌：技能脚本是外部代码，而进程来源检查只在 Linux 生效（agent/peer-guard.ts）。
   // 目录没启用时没有外部代码，行为不变
-  const usesCatalog = app.catalog.remoteEnabled || app.store.listBots().some((b) => b.origin === "catalog");
+  const usesCatalog = app.catalog.enabled || app.store.listBots().some((b) => b.origin === "catalog");
   const loopbackNeedsToken = isLoopback(host) && !app.desktop && process.platform !== "linux" && usesCatalog;
   if ((!isLoopback(host) || loopbackNeedsToken) && !token) {
     const f = path.join(cfg.dataDir, "ui-token");
@@ -354,8 +356,9 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
     const p = url.pathname.slice("/amb/api".length);
     const m = req.method || "GET";
     const seg = p.split("/").filter(Boolean);
-    // 写操作要求 JSON（触发 CORS 预检，阻止跨站表单 CSRF）
-    if ((m === "POST" || m === "PUT" || m === "PATCH") && !/^application\/json\s*(;|$)/i.test(String(req.headers["content-type"] || "").trim())) {
+    // JSON 和技能 ZIP 都触发 CORS 预检；不接受跨站表单能发送的简单 Content-Type。
+    const zipUpload = m === "POST" && seg[0] === "bots" && seg[2] === "skills" && (seg.length === 3 || (seg.length === 4 && seg[3] === "preview")) && /^application\/(zip|octet-stream)\s*(;|$)/i.test(String(req.headers["content-type"] || "").trim());
+    if ((m === "POST" || m === "PUT" || m === "PATCH") && !zipUpload && !/^application\/json\s*(;|$)/i.test(String(req.headers["content-type"] || "").trim())) {
       throw new HttpError(415, t("web.needJson"));
     }
 
@@ -1098,6 +1101,28 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
         return send(res, 200, { approval: publicApproval(app.store.getApproval(row.id)!, app.store) });
       }
     }
+    if (seg[0] === "messages" && m === "GET") {
+      const num = (key: string) => url.searchParams.has(key) ? Number(url.searchParams.get(key)) : undefined;
+      try {
+        if (seg.length === 2 && seg[1] === "scopes") return send(res, 200, { conversations: app.store.chatSearch.conversations() });
+        if (seg.length === 2 && seg[1] === "search") {
+          return send(res, 200, app.store.chatSearch.search({
+            query: url.searchParams.get("q") || "", botId: url.searchParams.get("bot") || undefined,
+            groupId: url.searchParams.get("group") || undefined, conversationId: url.searchParams.get("conversation") || undefined,
+            channel: url.searchParams.get("channel") || undefined, from: num("from"), to: num("to"),
+            cursor: url.searchParams.get("cursor") || undefined, limit: num("limit"),
+          }));
+        }
+        if (seg.length === 3 && seg[2] === "context") {
+          const context = app.store.chatSearch.context(Number(seg[1]), num("before"), num("after"));
+          if (!context) throw new HttpError(404, t("web.messageNotFound"));
+          return send(res, 200, { ...context, messages: context.messages.map(publicMessage), canOpen: !!app.desktop?.openPath });
+        }
+      } catch (e) {
+        if (e instanceof ChatSearchInputError) throw new HttpError(400, t("web.badMessageSearch"));
+        throw e;
+      }
+    }
     if (seg[0] === "groups") {
       if (seg.length === 1) {
         if (m === "GET") return send(res, 200, { groups: app.store.listGroups().map(publicGroup) });
@@ -1247,6 +1272,7 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
         }
       }
       const sub = seg.slice(2).join("/");
+      if (seg[2] === "skills") return skillsApi(req, res, url, id, seg.slice(3), app.userSkills, readJson, () => { void app.agent.refreshIdle(); });
       if (sub === "settings" && m === "GET") return send(res, 200, { settings: bot.settings, computerUse: app.agent.computerUse(id) });
       if (sub === "settings" && m === "PUT") {
         const b = await readJson(req);
