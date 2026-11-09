@@ -1,7 +1,7 @@
 {
   "name": "anymodel-bot",
   "productName": "okbot",
-  "version": "0.1.28",
+  "version": "0.1.31",
   "private": true,
   "description": "okbot：任意模型的个人 AI 助手（飞书 + 微信 iLink），内置 magpie 模型网关",
   "license": "MIT",
@@ -31,6 +31,7 @@
     "electron:dev": "npm run build && electron .",
     "dist": "npm run i18n:check && npm run build && node scripts/prepare-dsh.mjs && node scripts/bundle-dsh.mjs && node scripts/build-magpie.mjs --target current && node scripts/fetch-cua-driver.mjs --target current && electron-builder",
     "electron:smoke": "npm run build && node scripts/electron-smoke.mjs",
+    "dist:debug": "node scripts/dist-debug.mjs",
     "dist:linux": "npm run i18n:check && npm run build && node scripts/prepare-dsh.mjs --os linux --cpu x64 && node scripts/bundle-dsh.mjs --os linux --cpu x64 && node scripts/build-magpie.mjs --target linux/amd64,linux/arm64 && node scripts/fetch-cua-driver.mjs --target linux/x64,linux/arm64 && electron-builder --linux",
     "dist:mac": "npm run i18n:check && npm run build && node scripts/build-magpie.mjs --target darwin/amd64,darwin/arm64 && node scripts/fetch-cua-driver.mjs --target darwin/x64,darwin/arm64 && node scripts/prepare-dsh.mjs --os darwin --cpu arm64 && node scripts/bundle-dsh.mjs --os darwin --cpu arm64 && electron-builder --mac dmg zip --arm64 && node scripts/prepare-dsh.mjs --os darwin --cpu x64 && node scripts/bundle-dsh.mjs --os darwin --cpu x64 && electron-builder --mac dmg zip --x64",
     "dist:win": "npm run i18n:check && npm run build && node scripts/build-magpie.mjs --target windows/amd64,windows/arm64 && node scripts/fetch-cua-driver.mjs --target win32/x64,win32/arm64 && node scripts/prepare-dsh.mjs --os win32 --cpu x64 && node scripts/bundle-dsh.mjs --os win32 --cpu x64 && electron-builder --win nsis --x64 && node scripts/prepare-dsh.mjs --os win32 --cpu arm64 && node scripts/bundle-dsh.mjs --os win32 --cpu arm64 && electron-builder --win nsis --arm64",
@@ -42,6 +43,7 @@
   },
   "dependencies": {
     "@larksuiteoapi/node-sdk": "1.76.0",
+    "electron-updater": "6.8.12",
     "htm": "^3.1.1",
     "preact": "^11.0.2",
     "qrcode": "^1.5.4",
@@ -86,6 +88,7 @@
       "!**/*.map",
       "LICENSE",
       "THIRD_PARTY_NOTICES*.md",
+      "CHANGELOG*.md",
       "LICENSES/**",
       "!dist/*-unpacked{,/**}",
       "!dist/win-unpacked{,/**}",
@@ -254,6 +257,21 @@
           "StartupWMClass": "okbot"
         }
       }
+    },
+    "protocols": [
+      {
+        "name": "AnyModelBot",
+        "schemes": [
+          "anymodelbot"
+        ]
+      }
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "wmn1525",
+      "repo": "AnyModelBot",
+      "private": false,
+      "channel": "latest-${arch}"
     }
   }
 }

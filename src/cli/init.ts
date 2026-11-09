@@ -9,8 +9,8 @@ import readline from "node:readline";
 import { stdin, stdout } from "node:process";
 import { loadConfig } from "../config.js";
 import { App } from "../app.js";
-import { normalizeLine } from "../modelflare.js";
-import { OFFICIAL_PROVIDERS } from "../official-providers.js";
+import { normalizeLine } from "../providers/modelflare.js";
+import { OFFICIAL_PROVIDERS } from "../providers/official.js";
 import { t as tr } from "../i18n/index.js";
 
 /** 行队列：兼容交互终端与管道输入（管道时所有行会一次性到达） */

@@ -45,5 +45,12 @@ export default {
   "openBot": "봇 열기",
   "filters": "필터",
   "user": "사용자",
-  "appChannel": "앱 내 대화"
+  "appChannel": "앱 내 대화",
+  "recent": "최근 대화",
+  "recentDay": {
+    "today": "오늘",
+    "yesterday": "어제",
+    "week": "지난 7일",
+    "earlier": "이전"
+  }
 };

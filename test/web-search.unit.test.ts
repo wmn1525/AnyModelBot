@@ -1,4 +1,4 @@
-/** 联网搜索（src/agent/search.ts）：免费后端的解析（真实页面裁剪的样本，不联网）、回退与冷却、带 Key 接口的请求。 */
+/** 联网搜索（src/tools/search.ts）：免费后端的解析（真实页面裁剪的样本，不联网）、回退与冷却、带 Key 接口的请求。 */
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -33,7 +33,7 @@ import {
   type SearchBackend,
   type WebSearchSettings,
   type WebSource,
-} from "../src/agent/search.js";
+} from "../src/tools/search.js";
 
 const fixture = (f: string) => fs.readFileSync(path.join(__dirname, "fixtures", "web-search", f), "utf8");
 

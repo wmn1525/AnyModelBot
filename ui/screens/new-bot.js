@@ -1,7 +1,8 @@
 // 新建机器人（参考 Grok Bot 的创建页）：头像角色 + 名称 + 人设，下面是从模板开始。
 // 默认头像是天天。头像只管长相，选模板不会换头像：机器人做什么由人设决定。
 import { useEffect, useRef, useState } from "preact/hooks";
-import { html, Icon, IconButton, Button, autoGrow } from "../components/ui.js";
+import { html, Icon, IconButton, Button, Notice, autoGrow } from "../components/ui.js";
+import { PickModel, shortModel, sameModel } from "../components/model-picker.js";
 import { BotAvatar, AvatarPicker, MAIN_CHAR } from "../components/avatar.js";
 import { api } from "../lib/api.js";
 import { createStore, failed } from "../lib/store.js";
@@ -33,13 +34,21 @@ export const TEMPLATES = [
 /** 正在填的新机器人：侧栏那一行占位跟着显示头像和名字，建好后原地换成真的那一行 */
 export const newBotDraft = createStore(null);
 
-export function NewBotScreen({ first, onCreated, onCancel }) {
+export function NewBotScreen({ first, onCreated, onCancel, models, modelsError, reloadModels, defaultModel }) {
   const [name, setName] = useState("");
   const [prompt, setPrompt] = useState("");
   const [tpl, setTpl] = useState("");
   const [avatar, setAvatar] = useState(MAIN_CHAR);
   const [hi, setHi] = useState(null);
   const [busy, setBusy] = useState(false);
+  // 模型设置（第 16 项）：默认跟随全局默认模型；全局默认没设、或者已经下架时不悄悄换成列表里的第一个，请用户自己选
+  const [model, setModel] = useState("");
+  const listed = (m) => !!m && !!models?.some((x) => sameModel(x, m));
+  const inherited = listed(defaultModel) ? defaultModel : "";
+  const effectiveModel = model || inherited;
+  // 列表读不到时：跟随默认还能建（之后在对话里出错会提示换模型）；手选的模型核对不了，先重试
+  const modelAvailable = listed(effectiveModel) || (!!modelsError && !model && !!defaultModel);
+  const needsPick = !!models && !modelsError && !modelAvailable;
   const nameRef = useRef(null);
   const promptRef = useRef(null);
   useEffect(() => {
@@ -66,10 +75,10 @@ export function NewBotScreen({ first, onCreated, onCancel }) {
   const create = async (e) => {
     e.preventDefault();
     const n = name.trim();
-    if (!n || busy) return;
+    if (!n || busy || !modelAvailable) return;
     setBusy(true);
     try {
-      const r = await api("/bots", { method: "POST", body: { name: n, systemPrompt: prompt.trim(), avatar } });
+      const r = await api("/bots", { method: "POST", body: { name: n, systemPrompt: prompt.trim(), avatar, defaultModel: model } });
       await onCreated(r.bot);
     } catch (err) {
       failed(err);
@@ -99,7 +108,19 @@ export function NewBotScreen({ first, onCreated, onCancel }) {
           <textarea class="field" ref=${promptRef} rows="3" placeholder=${t("newBot.personaPlaceholder")} value=${prompt}
             onInput=${(e) => { setPrompt(e.target.value); setTpl(""); }} />
         </label>
-        <${Button} type="submit" variant="primary" size="lg" loading=${busy} disabled=${!name.trim()}>${t("newBot.create")}<//>
+        <details class="new-model-settings" open=${needsPick || undefined}>
+          <summary>${t("firstUse.modelSettings")}<span class="hint">${!models && !modelsError ? t("firstUse.modelLoading")
+            : model ? shortModel(model)
+            : inherited ? t("firstUse.inherit", { model: shortModel(inherited) })
+            : t("firstUse.modelNone")}</span></summary>
+          <p class="hint">${t("firstUse.modelHint")}</p>
+          <${PickModel} value=${model} models=${models} modelsError=${modelsError} reloadModels=${reloadModels} onChange=${setModel}
+            resetLabel=${inherited ? t("firstUse.inherit", { model: shortModel(inherited) }) : undefined} label=${t("firstUse.modelSettings")} />
+        </details>
+        ${modelsError && html`<${Notice} tone="red" action=${html`<button type="button" class="btn" onClick=${reloadModels}>${t("common.retry")}</button>`}>${t("firstUse.modelFailed")}<//>`}
+        ${needsPick && html`<${Notice} tone="amber">${t(model || defaultModel ? "firstUse.modelUnavailable" : "firstUse.modelPickFirst")}<//>`}
+        <p class="hint">${t("firstUse.moreCapabilities")}</p>
+        <${Button} type="submit" variant="primary" size="lg" loading=${busy} disabled=${!name.trim() || !modelAvailable}>${t("newBot.create")}<//>
       </form>
       <div class="new-sugg">
         <div class="list-head">${t("newBot.fromTemplate")}</div>

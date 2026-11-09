@@ -9,17 +9,11 @@
  * - describe：给用户看的话（跟着语言，src/i18n 的 rules.*）：每天 08:00、每个工作日 08:00、每周一、周四 09:00、每 30 分钟、11月2日 15:00；
  *   英文 Daily 08:00、Weekdays 08:00、Every Mon, Thu 09:00、Every 30 min、Nov 2 15:00。
  */
-import { localParts, minuteOf } from "../core/quiet.js";
+import { localParts, minuteOf } from "../domain/quiet.js";
+import type { Schedule } from "../domain/schedule.js";
 import { lang as currentLang, tl, type Lang } from "../i18n/index.js";
 
-export type Schedule =
-  | { kind: "once"; at: number; tz: string }
-  /** days：0 = 周日；没有 = 每天 */
-  | { kind: "daily"; time: string; days?: number[]; tz: string }
-  | { kind: "weekly"; time: string; days: number[]; tz: string }
-  /** from：第一次的时间（之后每 minutes 分钟一次） */
-  | { kind: "every"; minutes: number; from: number; tz: string }
-  | { kind: "cron"; cron: string; tz: string };
+export type { Schedule };
 
 /** every 最短间隔 */
 export const MIN_EVERY_MIN = 15;

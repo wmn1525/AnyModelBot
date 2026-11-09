@@ -17,6 +17,12 @@ export interface ConnectedAccount {
   used_usd: number;
   billed_to_enterprise: boolean;
   quota_per_unit: number;
+  /**
+   * bot 余额：只能在 AnyModelBot 里用的专属额度（注册赠送、订阅附赠），这次授权签发的 Key 发出的请求先扣它。
+   * remaining_percent 是相对最近一次发放后的余额算的，0–100 的整数（向下取整）。
+   * 不返回或为 null = 没有 bot 余额（从没获得过、企业托管成员，或服务端还没有这个字段）。
+   */
+  bot?: { balance_usd: number; remaining_percent: number } | null;
 }
 
 /**
@@ -99,7 +105,8 @@ export class AccountSession {
     this.refreshing ??= (async () => {
       try {
         const t = await refreshTokens(await this.o.endpoints(), this.o.clientId, this.o.record.refreshToken, this.fetch);
-        this.o.record = { ...this.o.record, refreshToken: t.refreshToken, scope: t.scope || this.o.record.scope };
+        // 刷新令牌时服务端若带回 ID Token，顺带补上账户标识（升级前登录的没有记过）
+        this.o.record = { ...this.o.record, refreshToken: t.refreshToken, scope: t.scope || this.o.record.scope, ...(t.subject ? { subject: t.subject } : {}) };
         this.o.persist(this.o.record);
         this.access = { token: t.accessToken, expiresAt: t.expiresAt };
         return t.accessToken;

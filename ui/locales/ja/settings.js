@@ -483,7 +483,7 @@ export default {
       "available": "バージョン {version} が利用可能です",
       "latest": "最新バージョンを使用しています",
       "download": "ダウンロード ↗",
-      "notes": "更新内容 ↗"
+      "notes": "更新内容"
     },
     "licenses": {
       "name": "ライセンスと第三者への帰属表示",

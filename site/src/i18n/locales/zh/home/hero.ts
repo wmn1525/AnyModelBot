@@ -9,6 +9,7 @@ export default {
   "trust": [
     "App 免费开源",
     "模型按量付费",
+    "注册送 $1 Bot 额度",
     "Windows / macOS / Linux"
   ],
   "appUiNote": "",

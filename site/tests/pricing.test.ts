@@ -111,6 +111,16 @@ describe("计算器（30 天，默认线路）", () => {
   });
 });
 
+describe("厂商", () => {
+  it("没有 vendor_id 的模型按线路前缀归到同前缀最多的厂商", () => {
+    const copy = structuredClone(raw) as typeof raw;
+    const m = copy.data.find((x) => x.model_name === "gpt-5.6-sol")!;
+    delete (m as { vendor_id?: number }).vendor_id;
+    const r = buildSnapshot(copy, pricingConfig, new Date("2026-10-30T13:24:41Z")).rows.find((x) => x.model === "gpt-5.6-sol")!;
+    expect(r.vendor).toBe(row("gpt-6.1-terra").vendor);
+  });
+});
+
 describe("格式", () => {
   it("价格", () => {
     expect([fmtPrice(0.0315), fmtPrice(0.2571428571), fmtPrice(1.26), fmtPrice(0.39999999999999997)]).toEqual(["$0.0315", "$0.257143", "$1.26", "$0.4"]);

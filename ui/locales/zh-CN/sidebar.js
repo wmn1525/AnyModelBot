@@ -3,6 +3,8 @@ export default {
   /** 没登录、也没有用户名时左下角显示的名字 */
   localUser: "本机用户",
   settingsTitle: "设置（⌘,）",
+  /** 头像菜单里的"设置"（快捷键另外显示在右边） */
+  settings: "设置",
   openSettings: "打开设置",
   account: "账户",
   accountDetails: "账户和用量",
@@ -10,6 +12,12 @@ export default {
   topUp: "充值 ↗",
   lowBalance: "余额不多了",
   belowLine: "低于提醒线 {amount}",
+  /** Bot 额度：Modelflare 发的、只能在 AnyModelBot 里用的额度（左下角的圆环和点开的卡片） */
+  botQuota: "Bot 额度",
+  botLeft: "剩余 {percent}%",
+  botQuotaOpen: "Bot 额度剩余 {percent}%，查看详情",
+  botQuotaScope: "只能在 AnyModelBot 里使用",
+  subscribeBonus: "订阅套餐另送套餐额度 10% 的 Bot 额度",
   update: "发现新版本 {version}，去下载 ↗",
   updateDismiss: "不再提示这个版本",
   renamed: "已重命名",

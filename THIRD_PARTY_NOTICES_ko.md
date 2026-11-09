@@ -81,6 +81,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - ws 8.22.0 — MIT
 - yauzl 3.4.0 — MIT
 - yaml 2.9.1 — ISC
+- electron-updater 6.8.12 — MIT
 
 전이 의존성의 라이선스는 node_modules의 각 패키지에 보관됩니다. 데스크톱 앱에는 Electron(MIT)과 Chromium 등의 구성 요소도 포함되며 라이선스는 설치 폴더의 LICENSE와 LICENSES.chromium.html에 있습니다.
 

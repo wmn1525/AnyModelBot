@@ -4,14 +4,15 @@
  */
 import crypto from "node:crypto";
 import os from "node:os";
-import { appVersion, type App } from "./app.js";
+import type { App } from "./app.js";
+import { appVersion } from "./version.js";
 import type { HostEvent } from "./agent/host.js";
 import { isModelPath, type ProxyEvent } from "./agent/bridge.js";
 import { shapeRejection } from "./agent/api-fallback.js";
 import { logFilePath, logger, readLogTail, redactText, redactValue } from "./log.js";
-import { bareModel } from "./modelflare.js";
-import { officialModelName, officialOf } from "./official-providers.js";
-import { pwshProbe, pwshReportLine } from "./agent/pwsh.js";
+import { bareModel } from "./providers/modelflare.js";
+import { officialModelName, officialOf } from "./providers/official.js";
+import { pwshProbe, pwshReportLine } from "./tools/pwsh/index.js";
 import { t, type MessageKey, t as tr } from "./i18n/index.js";
 import { explainLocalProxyError, localProxyFailureHint } from "./network-error.js";
 

@@ -19,8 +19,6 @@ const w = t.home.window;
 const m = t.home.memory;
 const handsonIcons = ["shield", "lock", "pointer"] as const;
 const memoryIcons = ["doc", "shield", "layers"] as const;
-// 两章下面"还有这些"的六格：生图生视频、三档权限、斜杠命令、用量与预算、三个 API 域名、微信收发图片和文件
-const moreIcons = ["play", "shield", "terminal", "card", "globe", "chat"] as const;
 const more = t.home.features.more;
 const lineAt = (i: number) => String(500 + i * 650);
 const secretAt = 500 + m.lines.length * 650 + 300;
@@ -96,17 +94,11 @@ const chapters = [
       </div>
     </div>
 
-    <!-- 还有这些：上面两章没讲到的能力，版式沿用"认识它们"下面那排好处（home.css 的 crew-perks），三列两行 -->
+    <!-- 还有这些：上面两章没讲到的能力，只是一段纯文字清单（不加图标、分隔线和入场动效） -->
     <div class="caps" aria-labelledby="caps-h3">
       <h3 class="subhead" id="caps-h3">{more.h3}</h3>
-      <ul class="crew-perks" role="list">
-        {more.items.map((p, i) => (
-          <li class="reveal" style={`--reveal-delay:${(i % 3) * 80}ms`}>
-            <span class="crew-perks__ico"><Icon name={moreIcons[i]} /></span>
-            <b>{p.title}</b>
-            <span>{p.body}</span>
-          </li>
-        ))}
+      <ul class="caps__list" role="list">
+        {more.items.map((p) => <li><b>{p.title}</b>{p.body}</li>)}
       </ul>
     </div>
   </div>

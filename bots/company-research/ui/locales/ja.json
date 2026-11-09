@@ -13,6 +13,9 @@
   "jobs.sampleNote": "架空の会社のサンプルです",
   "detail.empty": "会社名を入力して、最初の調査を始めましょう。",
   "job.stale": "このジョブはしばらく進んでおらず、中断した可能性があります。「続ける」を選ぶと再開できます。",
+  "job.failedShort": "この調査は完了しませんでした。理由はチャットのメッセージをご覧ください。",
+  "job.errorDetails": "エラーの詳細",
+  "job.copyDetails": "詳細をコピー",
   "status.pending": "待機中",
   "status.grounding": "会社を特定中",
   "status.researching": "調査中",
@@ -67,5 +70,16 @@
   "action.openPdf": "PDF を開く",
   "action.delete": "{company} の調査を削除して",
   "action.deleteLabel": "削除",
-  "action.deleteConfirm": "削除を確定"
+  "action.deleteConfirm": "削除を確定",
+  "jobs.title": "調査タスク",
+  "jobs.new": "新規",
+  "jobs.newTitle": "新しい調査",
+  "jobs.newSub": "会社名だけで始められます。公式サイトや業界を加えると特定が正確になります",
+  "form.cancel": "キャンセル",
+  "form.hint": "下の入力欄で直接伝えることもできます。例：Stripe をフルで調査して。",
+  "tab.process": "フロー",
+  "sources.filter": "分野で絞り込む",
+  "sources.all": "すべて",
+  "sources.usedOnly": "引用のみ",
+  "sources.none": "条件に合う出典はありません"
 }

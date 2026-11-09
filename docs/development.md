@@ -1,5 +1,9 @@
 # 开发文档
 
+
+> 0.1.31 · Windows 安装版和 Linux AppImage 默认在后台下载更新，下载后由用户点击重启安装；有任务运行时暂缓。当前未签名的 macOS 安装包继续手动下载升级。0.1.28 及更早版本需先手动安装本版。
+> 新增“更新了什么”弹窗与关于页更新日志，版本检测、更新下载和更新说明统一指向本仓库。
+
 简体中文 | [English](./development_en.md) | [日本語](./development_ja.md) | [한국어](./development_ko.md) | [Русский](./development_ru.md)
 
 这份文档给想从源码运行、打包或参与开发的人看。普通用户直接从 [Releases](https://github.com/modelflare-ai/AnyModelBot/releases) 下载安装包即可，见 [README](../README.md#-下载)。
@@ -15,20 +19,27 @@
 ```
 src/
   core/          统一消息类型、会话队列与去重、运行时（/model /reset、流式）、重启后的提醒、准入（主人 + 允许名单）、持久化出站队列
-  agent/         代理模式：DSH 宿主与桥接、审批、权限预设、记忆与上下文管家、生图 / 生视频、联网搜索、电脑操作、Windows PowerShell
+  delivery/      主动消息的投递：免打扰、每天上限、合并摘要、微信 24 小时窗口和续期提醒
+  agent/         代理模式：DSH 宿主与桥接、审批、权限预设、记忆与上下文管家、DSH 会话目录
     prompts/     交给代理模型的全部提示词：人设、聊天规则、记忆说明、每段第一条消息、技能说明
+  tools/         代理用的能力：联网搜索（search.ts）、生图 / 生视频（media/）、电脑操作（computer-use/）、Windows PowerShell（pwsh/）、用户授权的账号 Notion / 飞书（accounts/）
   llm/           OpenAI 兼容客户端（模型接入接口）
   magpie/        内置 magpie 守护：隔离目录、空闲端口、自动生成密钥、健康检查、崩溃重启、干净退出
   channels/      feishu/（长连接 + CardKit）  weixin/（iLink，MIT 声明见 LICENSE.openclaw-weixin）  messenger/（Telegram、Slack、Discord，共用一套收发）
+  tasks/         后台任务和规则：运行、阶段、花费、保留与清理、时间表
+  botkit/        目录 Bot 框架：包格式、检查、打包签名、目录、安装、界面静态路由（见 docs/bot-framework.md）
+  skills/        用户自己装的技能（ZIP 包）
   store/         SQLite（node:sqlite，无需原生编译）
+  domain/        纯数据形状和规则：机器人设置、免打扰时段、时间表、目录 Bot 记录、代理步骤；不做 I/O，只依赖 i18n。store 只依赖它（依赖方向由 test/architecture.unit.test.ts 检查）
   account/       Modelflare 账户：PKCE 回环登录、令牌轮换、余额与提醒、机器人预算 Key、模型能力与参考价
-  web/           管理界面服务（JSON API + 流式对话 SSE）
+  web/           管理界面服务：server.ts 启动、鉴权、分发；routes/ 按领域放接口（JSON API + 流式对话 SSE）；http.ts 是共用的小函数
   cli/           init 首次设置向导、weixin-login
-  official-providers.ts  官方 API：厂商表（地址写死）、模型 id、校验失败时的说明
-  modelflare.ts  Modelflare 线路、密钥校验（GET /v1/models）、模型路由与归因
+  providers/     模型从哪来：modelflare.ts（线路、密钥校验 GET /v1/models、模型路由与归因）、modelflare-domains.ts（线路测速）、official.ts（官方 API 厂商表，地址写死）
+  updates/       更新：check.ts（检查新版本）、desktop.ts（桌面版的下载与重启）
   guide.ts       上手清单的进度
   i18n/          服务端多语言：报错、状态文字、托盘菜单、机器人发出的系统消息（messages/<命名空间>.ts）
   diagnostics.ts 故障排查：探测、日志尾部、脱敏的诊断报告
+  version.ts     应用版本号（package.json）
   main.ts        命令行入口
 electron/        桌面版主进程（启动器 + 托盘）
 ui/              管理界面（Preact + htm，无构建步骤）
@@ -66,7 +77,7 @@ npm run test:dsh-bundle  # 用 Electron 跑真实 DSH 集成测试，加载打�
 ```
 
 - DSH 代理运行时：`scripts/prepare-dsh.mjs` 按目标平台安装 `dsh-runtime/`，`scripts/bundle-dsh.mjs` 把它打成 `resources/dsh/dsh.asar`（全部 JS，一个文件）加上 `resources/dsh/node_modules/`（只有原生包，约 55 个文件）。Electron 主进程和 `ELECTRON_RUN_AS_NODE` 子进程直接读 asar，无需首启解压；安装包因此只需解出几百个文件（Windows 上解压与杀毒逐个扫描是安装慢的主因）。开发时仍直接用 `dsh-runtime/`。
-- Windows 上代理执行命令用的 PowerShell：经沙箱时 Windows PowerShell 5.1 每条命令要二三十秒，PowerShell 7 约 1 秒。应用按这个顺序选：系统里能用的 PowerShell 7（后台按 DSH 的方式试运行一次，什么都不下载）→ 应用内置的 PowerShell 7 → Windows PowerShell 5.1。没有能用的 7 且代理模式开着时，应用在后台自动下载官方 PowerShell 7.6.9（LTS）的 zip，装到 `%LOCALAPPDATA%\AnyModelBot\pwsh\`：不需要管理员权限，不写注册表、不改 PATH，不影响你自己的 PowerShell。版本和 x64 / arm64 两个 zip 的 SHA256 写死在 `src/agent/pwsh-private.ts`（升级用 `node scripts/pwsh-hashes.mjs <版本>`），下载后核对哈希、解压后核对微软 Authenticode 签名，再按 DSH 的方式试运行（版本、读写临时文件、拉起外部程序）通过才用；装失败或装了一半的不会被用，下次启动会清掉。装的时候对话页和 设置 → 常规 显示进度，`/status` 也有，装好之前命令照常用 5.1；装好后空闲的代理进程在后台换用它，不用重启应用。运行中代理拉不起它（被杀毒软件删除或隔离、被策略拦截）就自动退回上一种并提示原因；设置 → 故障排查 可以安装、重新安装、改回系统默认。Windows 10 1607 / Server 2016 以前的系统不下载。桌面版下载走系统代理（Chromium 网络栈）；命令行版用 Node 的 fetch（较新的 Node 设 `NODE_USE_ENV_PROXY=1` 后认 `HTTPS_PROXY`）；`AMB_PWSH_MIRROR` 可换成镜像前缀（照样核对哈希和签名），`AMB_PWSH_AUTO_INSTALL=0` 关掉自动安装。
+- Windows 上代理执行命令用的 PowerShell：经沙箱时 Windows PowerShell 5.1 每条命令要二三十秒，PowerShell 7 约 1 秒。应用按这个顺序选：系统里能用的 PowerShell 7（后台按 DSH 的方式试运行一次，什么都不下载）→ 应用内置的 PowerShell 7 → Windows PowerShell 5.1。没有能用的 7 且代理模式开着时，应用在后台自动下载官方 PowerShell 7.6.9（LTS）的 zip，装到 `%LOCALAPPDATA%\AnyModelBot\pwsh\`：不需要管理员权限，不写注册表、不改 PATH，不影响你自己的 PowerShell。版本和 x64 / arm64 两个 zip 的 SHA256 写死在 `src/tools/pwsh/private.ts`（升级用 `node scripts/pwsh-hashes.mjs <版本>`），下载后核对哈希、解压后核对微软 Authenticode 签名，再按 DSH 的方式试运行（版本、读写临时文件、拉起外部程序）通过才用；装失败或装了一半的不会被用，下次启动会清掉。装的时候对话页和 设置 → 常规 显示进度，`/status` 也有，装好之前命令照常用 5.1；装好后空闲的代理进程在后台换用它，不用重启应用。运行中代理拉不起它（被杀毒软件删除或隔离、被策略拦截）就自动退回上一种并提示原因；设置 → 故障排查 可以安装、重新安装、改回系统默认。Windows 10 1607 / Server 2016 以前的系统不下载。桌面版下载走系统代理（Chromium 网络栈）；命令行版用 Node 的 fetch（较新的 Node 设 `NODE_USE_ENV_PROXY=1` 后认 `HTTPS_PROXY`）；`AMB_PWSH_MIRROR` 可换成镜像前缀（照样核对哈希和签名），`AMB_PWSH_AUTO_INSTALL=0` 关掉自动安装。
 - 代理执行的命令能联网（沙箱只限制写文件），用的是你的代理：应用环境变量里的 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` / `NO_PROXY`（及小写）和证书、软件源变量（`SSL_CERT_FILE`、`REQUESTS_CA_BUNDLE`、`NODE_EXTRA_CA_CERTS`、`PIP_INDEX_URL`、`npm_config_registry`、`GOPROXY` 等）原样传下去；环境里没设代理时，桌面版每次拉起代理进程都问一次系统代理（系统设置和 PAC），按 `http://主机:端口` 传下去（见 `src/agent/proxy-env.ts`）。本机地址（`127.0.0.1`、`localhost`、`::1`）总是并进 `NO_PROXY`，永不走代理。
 - 数据目录：`<userData>/data`（macOS `~/Library/Application Support/anymodel bot/data`，Windows `%APPDATA%\anymodel bot\data`，Linux `~/.config/anymodel bot/data`）。日志在数据目录的 `logs/app.log`。
 - 单实例；关闭窗口默认隐藏到托盘（设置 → 常规 可改为退出）；托盘菜单：打开 / 在浏览器中打开 / 开机自启（macOS、Windows）/ 打开数据目录 / 退出。
@@ -74,7 +85,11 @@ npm run test:dsh-bundle  # 用 Electron 跑真实 DSH 集成测试，加载打�
 - 界面只监听 127.0.0.1，且每次启动生成随机访问令牌，其他本机程序无法直接调用管理接口。
 - 退出时先停渠道、再停 magpie；若上次被强杀残留 magpie 进程，下次启动会自动清理（Linux/macOS）。
 
-发布：在 `CHANGELOG.md` 和 `CHANGELOG_en.md` 写好这个版本的更新日志（用户能感受到的变化，不写网站和内部改动。官网英文页不显示提到微信、飞书的行），改 `package.json` 的版本号并提交，推送 `v<版本>` 标签。这个版本没写更新日志时，发布流程开始就会失败；写了就作为 GitHub Release 的说明，官网更新日志页也显示它。`.github/workflows/release.yml` 会在六种系统 / 架构上各自打包，并把安装包和 `SHA256SUMS` 发到 GitHub Release。签名与公证所需的仓库密钥见该文件开头的注释。同一个标签还会触发 `.github/workflows/docker.yml`，把 x64 + arm64 镜像发布到 `ghcr.io/modelflare-ai/anymodel-bot`（`<版本>` 和 `latest` 两个标签）。
+发布：在 `CHANGELOG.md`、`CHANGELOG_en.md`、`CHANGELOG_ja.md`、`CHANGELOG_ko.md` 和 `CHANGELOG_ru.md` 写好这个版本的更新日志（用户能感受到的变化，不写网站和内部改动。官网英文页不显示提到微信、飞书的行），改 `package.json` 的版本号并提交，推送 `v<版本>` 标签。这个版本没写更新日志时，发布流程开始就会失败；写了就作为 GitHub Release 的说明，官网更新日志页也显示它。应用里的「更新了什么」弹窗读的也是它：`CHANGELOG*.md` 随安装包和 Docker 镜像打包（`src/changelog.ts`），还没安装的新版本在用户点开时从那个版本标签下读取。`.github/workflows/release.yml` 会在六种系统 / 架构上各自打包，并把安装包和 `SHA256SUMS` 发到 GitHub Release。签名与公证所需的仓库密钥见该文件开头的注释。同一个标签还会触发 `.github/workflows/docker.yml`，把 x64 + arm64 镜像发布到 `ghcr.io/modelflare-ai/anymodel-bot`（`<版本>` 和 `latest` 两个标签）。 标签发版时 macOS 包必须带 Developer ID 签名并完成公证，打包后会对 .app 和 DMG 里的 .app 做 `spctl` 等校验，不通过就失败。正式包关闭开发者工具；需要调试包时用 `npm run dist:debug`，或在手动运行 Release 时勾选 `debug_build`（文件名带 `-debug-`，标签上不允许，`scripts/check-build-flavor.mjs` 会核对打包结果）。
+
+每次发版必须同步官网、相关文档和五种语言的 README。先运行 `npm --prefix site run sync` 同步官网内容；GitHub Release 和 Docker 发布后，按[官网部署说明](../site/README.md)更新线上官网，确认 `/download`、`/changelog` 和 `/bots` 的版本、下载链接与说明一致。只有线上官网也同步完成，才算本次发布完成。
+
+应用内更新从 0.1.29 开始提供，使用 `electron-updater`，只在已打包的 macOS、Windows 和 Linux AppImage 中启用。`ui.autoDownloadUpdates` 默认 `true`，在「设置 → 常规」修改；下载完成只通知，不会在普通退出时安装，点击重启前会检查活动对话和后台任务。0.1.28 及以前的用户需手动安装一次包含更新器的版本。GitHub 构建为 macOS 同时生成 DMG 和更新用 ZIP，并发布按架构区分的 `latest-${arch}` 更新清单及 blockmap；所有文件上传完成后才公开 Release。CLI、Docker 和未打包的开发运行仍手动更新。
 
 ## Docker
 
@@ -91,7 +106,7 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 
 ## 模型（Modelflare）
 
-- 首次启动只有一个按钮「登录 / 注册 Modelflare」：在系统浏览器里登录（没有账户可当场注册）并点「继续」授权，回到本程序后自动为这台电脑签发一把专用 API Key 并连接 → 选默认模型 → 开始对话。Docker 或远程部署收不到浏览器登录的回调：登录后浏览器会跳到打不开的 `127.0.0.1` 地址，把地址栏里的链接贴回首次启动页即可（`POST /amb/api/account/login/complete`，state 和 PKCE 校验不变）。旧版本填过 API Key、没有登录的，升级后 Key 会从本机移除，需要重新登录。
+- 首次启动只有一个按钮「登录 / 注册 Modelflare」：在系统浏览器里登录（没有账户可当场注册）并点「继续」授权，回到本程序后自动为这台电脑签发一把专用 API Key 并连接 → 选默认模型 → 开始对话。Docker 或远程部署收不到浏览器登录的回调：登录后浏览器会跳到打不开的 `127.0.0.1` 地址，把地址栏里的链接贴回首次启动页即可（`POST /amb/api/account/login/complete`，state 和 PKCE 校验不变）。旧版本填过 API Key、没有登录的，升级后 Key 会从本机移除，需要重新登录。 浏览器里的回调页先显示「正在完成登录」，换令牌、读账户、签发本机 Key、接入网关全部成功后才显示「登录成功」（失败时显示原因）；桌面版注册了 `anymodelbot://` 链接，成功页加载后自动尝试打开一次应用，「打开 AnyModelBot」按钮可以重试，只有应用确实收到这次的链接才显示「已返回」。用自己的 API Key 的页面下方也能直接用 Modelflare 账号登录。第一次接入、全局默认模型还空着时，按 `src/account/first-model.ts` 的规则选一次首用模型（支持工具调用，单轮预占和一个代表性任务的花费都在体验额度内，优先 DeepSeek）；没有合适的就不预选，让用户自己选。
 - 登录方式：OIDC 授权码 + PKCE（RFC 7636），按 RFC 8252 作为原生应用——本程序是公共客户端（`client_id` 为 `anymodel-bot`，没有也不需要客户端密钥），授权结果回调到本机 `127.0.0.1` 的临时端口。在 Modelflare 网页个人资料页的「已授权的应用」里可以随时撤销；撤销后本程序会发现并回到登录页。
 - 账户凭据（refresh token）存在数据目录的 `modelflare-account.json`（权限 600），桌面版用系统钥匙串加密（Electron safeStorage）；界面只拿到账户名称。「退出登录」会撤销这台电脑的授权，Modelflare 同时删除登录时为它和各机器人签发的 Key。
 - 余额：不常驻显示，点侧栏左下角的头像弹出，设置 → 模型 里也有，显示账户钱包余额；「充值」打开 Modelflare 网页，回到窗口时自动刷新。余额低于提醒线（默认 1 美元，可改或关闭）时在应用里提醒一次，也可以设置让机器人发到你的微信 / 飞书。
@@ -102,7 +117,7 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 - 生成前确认：直接生成，不打扰你。机器人选了不是默认的模型、要求没说清，都不问：它按最合理的理解生成，再说一句用了什么。只在预计花费超过 $0.5 时（按参考价、张数、视频时长和分辨率估算；视频估不出来也算）先在聊天里问你这次用哪个模型（附提示词、参数、参考价和为什么问）。可以确认、换成别的模型或取消；微信回复编号或模型名，飞书 / 网页点选。10 分钟内没回答就不生成。想每次都确认：机器人设置 → 生图 / 生视频 → 生成前确认 →「每次都问」。
 - 联网搜索：代理的 `web_search` 不用 DeepSeek 自带的搜索（它要 DeepSeek 的 Key），经 `amb-web-search` 插件交给本程序搜。默认免费、不用设置：依次试 Exa 的公开 MCP、必应、DuckDuckGo，上次成功的先试，出错的（限流、验证页、必应给出不相干的结果）跳过 10 分钟。设置 → 网络与访问 → 联网搜索 可以换成 Tavily、Exa、博查、智谱（填 Key）或自己的 SearXNG，填了就先用它，出错时退回免费的。Key 和渠道令牌一样存在本机数据库里，代理进程拿不到。桌面版搜索走系统代理；命令行版用 Node 的 fetch（设 `NODE_USE_ENV_PROXY=1` 后认 `HTTPS_PROXY`）。
 - 聊天渠道账号（`src/core/routes.ts`）：微信、飞书、Telegram、Slack、Discord 的账号也是全局的，在设置 › 连接里添加，可以起别名。消息交给哪个机器人：这个人用 `/bot` 选过的 → 账号的默认机器人 → 第一个机器人。`/bot` 列出机器人，发一次 `/bot 名字` 就切换并记住，之后这个会话一直和它聊。每个机器人的系统提示词里都有其他机器人的名单和切换方法，用户问起时答得上来。名单和主人跟着账号走，能用这个账号的人可以和任何机器人聊。账号的 key 是命名空间：升级前的渠道 key 就是原来的机器人 id，登录态、配额、名单、队列都不用搬，默认机器人也是原来那个。删除机器人不影响账号。
-- 已授权账号（`src/agent/accounts.ts`）：全局一份（设置 › 连接），所有机器人共用，同一个服务可以加多个账号，比如对任何机器人说「看我第一个飞书和第二个飞书的消息」。`amb-connections` 插件把每次工具调用经 bridge 交给本程序，令牌不进代理进程；账号用工具的 `account` 参数选（序号或名字），`connected_accounts` 列出来。有账号的服务才有工具。只读机器人和观察规则不能写，宿主也会再查一次。聊天渠道账号见下一条。
+- 已授权账号（`src/tools/accounts/index.ts`）：全局一份（设置 › 连接），所有机器人共用，同一个服务可以加多个账号，比如对任何机器人说「看我第一个飞书和第二个飞书的消息」。`amb-connections` 插件把每次工具调用经 bridge 交给本程序，令牌不进代理进程；账号用工具的 `account` 参数选（序号或名字），`connected_accounts` 列出来。有账号的服务才有工具。只读机器人和观察规则不能写，宿主也会再查一次。聊天渠道账号见下一条。
   - **Notion**（`notion.ts`）：用户添加时选一键授权或令牌。令牌走 REST API；一键授权用 OAuth + PKCE + 动态注册，回调到本机 `/oauth/notion/callback`，再由本程序调官方远程 MCP（`mcp.notion.com`）的工具。模型看到的是同一套工具：`notion_search`、`notion_read_page`、`notion_query_database`，不是只读的机器人再加 `notion_create_page`、`notion_update_page`。没有删除页面的工具。
   - **飞书**（`feishu-account.ts`）：和官方 lark-cli 同一套流程：扫码创建个人应用（也可以填已有的自建应用），再设备授权拿用户令牌。只读，工具是 `feishu_list_chats`、`feishu_read_chat`、`feishu_search_messages`。
 - 默认图片 / 视频模型：首次设置时和默认文本模型一起选，之后在 设置 → 模型 修改；选「自动」时用推荐顺序里第一个不需要参考素材的模型。
@@ -128,7 +143,7 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 
 ## 官方 API Key
 
-- 引导页的「使用自己的 API Key」和 设置 → 模型 都能填。支持的厂商和地址写死在 `src/official-providers.ts`，接口（`GET /amb/api/official`、`PUT`/`DELETE /amb/api/official/<id>`）只认表里的 id，不能填地址。
+- 引导页的「使用自己的 API Key」和 设置 → 模型 都能填。支持的厂商和地址写死在 `src/providers/official.ts`，接口（`GET /amb/api/official`、`PUT`/`DELETE /amb/api/official/<id>`）只认表里的 id，不能填地址。
 - 每家是内置网关里的一个 provider，id 为 `official-<厂商>`，模型 id 为 `official-<厂商>/<模型>`，和 Modelflare 的同名模型分得开。Key 不经命令行参数：经网关本机接口的请求体写入隔离配置。
 - 校验走网关的模型列表接口（代理、各家的鉴权写法都在网关里），通过才保存。模型每小时和厂商的列表核对一次，不能对话的（语音、图片、向量……）不进选择器。
 - 代理的接口按厂商定：OpenAI 走 Responses，Anthropic 走 Messages，其余走 Chat Completions；上下文、价格、推理能力来自网关的模型目录（`/v1/models`）。只有官方 Key 时不读 Modelflare 的目录和账户。
@@ -144,7 +159,7 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 - 语言：简体中文 / English / 日本語 / 한국어 / Русский，设置 → 常规 → 语言（引导页右上角、命令面板里也能切），默认跟随系统（系统语言不在已支持语言中时用英文）。偏好存在 config.json 的 `ui.lang`，托盘菜单、服务端报错和状态文字、机器人发到微信 / 飞书的系统消息（`/help`、审批提示等）都跟着它；命令行 / Docker 下"跟随系统"看 `AMB_LANG`，再看 `LC_ALL` / `LC_MESSAGES` / `LANG`，都没有时用简体中文。日志、发给模型的提示词和用户自己起的机器人名不翻译。
   - 界面文案在 `ui/locales/<语言>/<命名空间>.js`，代码里写 `t("命名空间.键", { 参数 })`（`ui/lib/i18n.js`）；服务端在 `src/i18n/messages/<命名空间>.ts`，键有类型检查。每个界面请求带 `x-amb-lang`，服务端在这个请求里用同一种语言回话。
   - 新增文案须补齐本次发布的所有目标语言；`node scripts/i18n-check.mjs [文件…]` 检查界面代码里有没有漏掉的中文、用到的键在不在、全部语言词典是否对齐（`npm test` 里的 `test/i18n.unit.test.ts` 也会查）。确需留在代码里的中文（字体名、匹配中文输入的正则）在那一行写 `// i18n-ignore`。
-- 上手清单（新手引导）：对话空状态里是 6 步清单——打招呼、换模型、接到微信、让它动手、让它记住你、生成一张图。最后一步在引导里只放预置演示，不管账户有没有图片 / 视频模型都一样：和真的默认流程一样直接生成、图片显示在对话里，但不发给机器人、不调用模型、不扣费，图是客户端自带的 `ui/assets/guide-demo.svg`。目的是教会怎么操作，不替用户花钱；之后真的让它画图、收到图片也会算完成这一步。点「发送这句」直接试，点「带我去」或侧栏左下角的清单入口，会有一张引导卡片指着要点的地方（那里亮一圈）。做完自动打勾：对话里有了回复、换了模型、收到文件 / 图片、渠道连上、记忆写入；进度存在 config.json 的 `ui.guide`（接口 `/amb/api/guide`），老用户已经做过的步骤会自动算完成。清单可以收起到左下角或「不再显示」，设置 → 常规 → 上手清单 可以重新开始。
+- 上手清单（新手引导）：对话空状态里是 6 步清单——打招呼、换模型、接到微信、让它动手、让它记住你、生成一张图。最后一步在引导里只放预置演示，不管账户有没有图片 / 视频模型都一样：和真的默认流程一样直接生成、图片显示在对话里，但不发给机器人、不调用模型、不扣费，图是客户端自带的 `ui/assets/guide-demo.svg`。目的是教会怎么操作，不替用户花钱；之后真的让它画图、收到图片也会算完成这一步。点「发送这句」直接试，点「带我去」或侧栏左下角的清单入口，会有一张引导卡片指着要点的地方（那里亮一圈）。做完自动打勾：对话里有了回复、换了模型、收到文件 / 图片、渠道连上、记忆写入；进度存在 config.json 的 `ui.guide`（接口 `/amb/api/guide`），老用户已经做过的步骤会自动算完成。清单可以收起到左下角或「不再显示」，设置 → 常规 → 上手清单 可以重新开始。 打招呼要有一条真正的回复（出错提示不算），渠道要真的连上（只填了配置不算）；「连接常用聊天工具」这一步可以选微信、飞书、Telegram、Slack、Discord，界面语言只决定推荐哪个。明确说「记住……」时回合后的记忆整理会马上做，不用等 90 秒。进度按用户分开存（登录了 Modelflare 按账户，存在 KV 的 `guide.owner.*`；没登录时仍写 config.json 的 `ui.guide`），全部做完是一个里程碑，之后自动收起、不再出现；自动弹出的引导卡片在输入框有草稿或任务运行时先不出来。
 - 视觉：中性色与组件改编自 magpie 的界面（MIT），强调色为 Modelflare 荧光黄绿 `#d7ff00`。设计系统说明见 `ui/design/README.md`。
 
 ### 多语言文案与发布检查
@@ -216,7 +231,7 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
   - **Codex Computer Use 桥（可选，仅 macOS）**：kimi-computer-use，需要本机已安装 OpenAI Codex Computer Use；不可用时自动回退到 Cua Driver。
 - **审批**：默认所有电脑操作（读取、截图、点击、输入、按键、滚动、拖拽、设值）**自动执行，无需审批**；可选「点击、输入等改变界面的操作先问我」（读取界面仍自动）。升级时已有机器人（含默认机器人）会被迁移为自动执行。权限预设为「只读」的机器人只开放读取类工具。
 - **平台说明**
-  - macOS：需在「系统设置 → 隐私与安全性」中给本应用授予「辅助功能」与「屏幕录制」权限；以 `--direct` 方式运行驱动（尚未在真机验证）。
+  - macOS：需在「系统设置 → 隐私与安全性」中给本应用授予「辅助功能」与「屏幕录制」权限；以 `--direct` 方式运行驱动（尚未在真机验证）。 缺这两项时，机器人调用电脑操作工具会被拦下，这一轮结束并说明「因缺少权限未能继续」，对话里按缺的那一项显示授权卡片（系统原生请求、打开对应的系统设置页、重新检测；屏幕录制改完通常要重新打开应用，卡片上可以直接重新打开，输入框里的草稿会带回来）。首次启动不索要任何权限。
   - Linux：X11 下通过 AT-SPI 读取界面（需要 at-spi2-core，应用需开启无障碍）；Wayland 会降级——只能操作 XWayland 应用的前台窗口，界面会给出提示。没有图形会话（DISPLAY/WAYLAND_DISPLAY）时不可用。
   - Windows：必须在已登录用户的交互式桌面会话中运行（服务/计划任务的非交互会话不可用）。
 - 截图只发给（支持视觉的）模型使用，不会被转发到微信/飞书聊天中；只有用户要求时才会作为文件发送。

@@ -5,7 +5,7 @@
  *   amb-tasks 插件给这些会话限定工具、加任务规则和 task_report。
  * - run 是一段工作：排队 → 跑（占名额）→ 收尾（会话空了但还有后台命令或子代理：settling，仍占名额）→ 结束。
  *   名额见 slots.ts；聊天从不占名额（人的通道）。
- * - 一轮结束、会话安静下来时按代理最近的 Report 结束这个 run：done / failed 的那一句按主动消息的规则（core/delivery.ts：
+ * - 一轮结束、会话安静下来时按代理最近的 Report 结束这个 run：done / failed 的那一句按主动消息的规则（delivery/index.ts：
  *   免打扰、合并、每天上限、微信窗口）发回请求它的会话（飞书回复在请求那条消息下），网页写进会话历史。
  *   没有 Report 就提醒一次，还没有就算失败。进行中的任务给微信留配额，也算续期提醒里"之后还要发的"。
  * - 宿主欠会话的每条输入都落库（交出去时记 DSH 收件 id，会话里出现这条用户消息时记 taken）。应用重启或代理进程退出时，
@@ -35,19 +35,20 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { needsPerson, type Delivery } from "../core/delivery.js";
+import { needsPerson, type Delivery } from "../delivery/index.js";
 import { sentText } from "../core/outbox.js";
 import { ActivityLog, type ActivityStep } from "../agent/activity.js";
 import { ResumeFailed, deliverables } from "../agent/host.js";
-import { answerLine, defaultLine, defaultOf, parseAnswer, promptButtons, questionsOf, taskPromptText, type ApprovalCenter, type ApprovalEvent, type QuestionItem, type ReplyContext } from "../agent/approvals.js";
+import { RULE_APPROVAL_TTL_MS, answerLine, defaultLine, defaultOf, parseAnswer, promptButtons, questionsOf, taskPromptText, type ApprovalCenter, type ApprovalEvent, type QuestionItem, type ReplyContext } from "../agent/approvals.js";
 import { MESSENGER_LABEL, isMessenger, isPushChannel, type PushChannel } from "../core/types.js";
 import { actionCardSpec } from "../channels/feishu/transport.js";
 import { NUDGE, RULE_NUDGE, RULE_RERUN, RULE_RESULT_SYSTEM, attachmentsOf, rebrief, recoveryNote, resumeNote, retryNote, ruleBrief, ruleResultInput, ruleRules, taskBrief } from "../agent/prompts/index.js";
-import type { BotSettings } from "../agent/settings.js";
+import type { BotSettings } from "../domain/bot-settings.js";
 import type { ApprovalRow, Conversation, InputKind, RuleKind, RuleMode, RuleRow, RuleTrigger, RunCause, RunInputRow, RunOutcome, RunRow, Store, TaskReport, TaskRow } from "../store/db.js";
 import type { AttentionItem } from "./attention.js";
 import { logger } from "../log.js";
-import { localParts, systemTimeZone } from "../core/quiet.js";
+import { localParts, systemTimeZone } from "../domain/quiet.js";
+import { addTaskNote } from "../core/task-notes.js";
 import {
   BUDGET_TOOL,
   RESERVE_SHARE,
@@ -68,7 +69,6 @@ import { Scheduler } from "./scheduler.js";
 import { matchesFilter, type RuleEvent } from "./rule-events.js";
 import {
   MAX_RULES,
-  RULE_APPROVAL_TTL_MS,
   RULE_DENY,
   RULE_DENY_PREFIX,
   RULE_FAILS_TO_PAUSE,
@@ -89,7 +89,8 @@ import {
   type RuleView,
 } from "./rules.js";
 import { t as tr } from "../i18n/index.js";
-import { KEEP_MS, SWEEP_MS, WARN_MS, dirBytes, hasFiles, taskFolder } from "./retention.js";
+import { KEEP_MS, SWEEP_MS, WARN_MS, hasFiles, taskFolder } from "./retention.js";
+import { dirBytes } from "../agent/session-dirs.js";
 import { ruleMarkdown, taskMarkdown, type ExportedTaskRun } from "./export.js";
 
 /** 引用一条消息时，平台会把原文一起给我们的渠道：靠引用就认得出是哪个任务的结果 */
@@ -278,7 +279,6 @@ export function slugOf(title: string): string {
   return s || "task";
 }
 
-const NOTES = "task-notes:";
 /** 还没删掉的会话记录（"<机器人>:<任务>"，会话开在代理进程里时删不了，下次清理再删） */
 const TRASH = "tasks:session-trash";
 /** 「需要你」里问要不要改为执行的那一行点过「继续观察」：哪一版不再问（每条规则一个；删规则时一起删） */
@@ -293,19 +293,6 @@ const amountIn = (text: string) => {
   const v = m ? Number(m[1]) : NaN;
   return v > 0 && v <= 100 ? v : undefined;
 };
-
-/** 给聊天代理的便条：后台任务的结果发出去了，下一条聊天消息带上它（模型知道这件事，用户问"详细说说"时能接上） */
-export function takeTaskNotes(store: Store, conversationId: string): string {
-  const v = store.getKV(NOTES + conversationId);
-  if (!v) return "";
-  store.deleteKV(NOTES + conversationId);
-  try {
-    const list = JSON.parse(v) as string[];
-    return Array.isArray(list) ? list.join("\n") : "";
-  } catch {
-    return "";
-  }
-}
 
 export class TaskService {
   /** runId → 在跑的 run */
@@ -624,7 +611,7 @@ export class TaskService {
   }
 
   /**
-   * 暂停、恢复后台工作：暂停时不开始新的 run（任务的排着等，规则到点记为跳过、之后不补），主动消息排着（core/delivery.ts）；
+   * 暂停、恢复后台工作：暂停时不开始新的 run（任务的排着等，规则到点记为跳过、之后不补），主动消息排着（delivery/index.ts）；
    * 聊天照常，正在跑的那一轮照常做完。恢复时排着的 run 开始、排着的主动消息按平常的规则发（免打扰、每天上限照旧）。
    */
   setPaused(botId: string, paused: boolean, by: string): boolean {
@@ -1245,14 +1232,7 @@ export class TaskService {
   }
 
   private note(conversationId: string, line: string): void {
-    let list: string[] = [];
-    try {
-      list = JSON.parse(this.store.getKV(NOTES + conversationId) || "[]");
-    } catch {
-      list = [];
-    }
-    list.push(clip(line, 500));
-    this.store.setKV(NOTES + conversationId, JSON.stringify(list.slice(-5)));
+    addTaskNote(this.store, conversationId, line);
   }
 
   // ---------- 插件经 bridge 来的 ----------
@@ -1529,7 +1509,7 @@ export class TaskService {
 
   /**
    * 推给请求它的会话（微信、飞书；网页的提问卡片就在对话里）：一个会话同时只推一个，前一个没回答，后面的只在"需要你"里等，
-   * 微信里光回编号才不会认错。按主动消息的规则推（core/delivery.ts：免打扰、每天上限；问题不合并）：排着的、留着的都算推了。
+   * 微信里光回编号才不会认错。按主动消息的规则推（delivery/index.ts：免打扰、每天上限；问题不合并）：排着的、留着的都算推了。
    * 出站 id 固定（askId），同一条只推一次；发不出去（微信窗口关了）由出站队列留着。
    */
   private pushNext(conversationId: string): void {
@@ -1666,7 +1646,7 @@ export class TaskService {
   /**
    * "需要你"里任务那一份：失败的；预算用完的（平常由审批中心那一份给：那个「再给 $1 继续？」的提问；这里只在它不在时补上）；
    * 机器人的预算留给聊天、后台工作停着的（一个机器人一行，没有后台工作时不提）。
-   * 提问和审批由审批中心那一份给，没送到的由出站队列那一份给（core/delivery.ts）。
+   * 提问和审批由审批中心那一份给，没送到的由出站队列那一份给（delivery/index.ts）。
    */
   attention(): AttentionItem[] {
     const out: AttentionItem[] = [];

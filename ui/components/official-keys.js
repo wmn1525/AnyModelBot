@@ -1,4 +1,4 @@
-// 官方 API Key：用户自己在模型厂商那里申请的 Key（src/official-providers.ts）。引导页和设置页共用填 Key 的表单。
+// 官方 API Key：用户自己在模型厂商那里申请的 Key（src/providers/official.ts）。引导页和设置页共用填 Key 的表单。
 import { useEffect, useRef, useState } from "preact/hooks";
 import { html, MenuButton, Spinner } from "./ui.js";
 import { api } from "../lib/api.js";
@@ -46,7 +46,7 @@ export function OfficialKeyForm({ provider, autoFocus = true, onConnected }) {
 }
 
 /** 引导页：不想用 OKINTO 账户时，选一家、填 Key 直接开始 */
-export function OfficialStart({ onConnected, onBack }) {
+export function OfficialStart({ onConnected, onBack, accountLogin }) {
   const [list, setList] = useState(null);
   const [cur, setCur] = useState("");
   const [err, setErr] = useState("");
@@ -64,6 +64,7 @@ export function OfficialStart({ onConnected, onBack }) {
     ${!list && !err && html`<div class="login-wait"><${Spinner} /></div>`}
     ${provider && html`<${MenuButton} label=${t("official.choose")} value=${cur} onChange=${setCur} align="left" options=${list.map((p) => [p.id, officialName(p)])} />
       <${OfficialKeyForm} provider=${provider} onConnected=${onConnected} />`}
-    <div class="login-links"><button type="button" class="text" onClick=${onBack}>${t("official.backToLogin")}</button></div>
+    ${accountLogin ? html`<section class="own-key-login"><h2 class="t-label">${t("firstUse.noKey")}</h2>${accountLogin}</section>`
+      : onBack && html`<div class="login-links"><button type="button" class="text" onClick=${onBack}>${t("official.backToLogin")}</button></div>`}
   </div>`;
 }

@@ -11,8 +11,6 @@ export default {
   app: {
     sample: "샘플",
     placeholder: "말하면 화면이 바뀝니다",
-    send: "보내기",
-    stop: "중지",
     conversation: "전체 대화",
     info: "정보",
     uiFailed: "화면에 문제가 생겨 대화로 전환했습니다.",
@@ -20,6 +18,9 @@ export default {
     openUrlConfirm: "열기",
     removed: "이 봇은 카탈로그에서 내려갔습니다. 데이터는 남아 있습니다.",
     removedSecurity: "이 봇은 보안 문제로 내려갔고 스킬은 비활성화되었습니다. 데이터는 남아 있습니다.",
+    starters: "이렇게 시작해 보세요",
+    more: "더 보기",
+    less: "접기",
   },
   info: { what: "할 수 있는 일", skills: "사용하는 스킬", perms: "필요한 권한", settings: "봇 설정" },
   perm: {
@@ -28,6 +29,12 @@ export default {
     "channel-send": "채팅 채널로 먼저 메시지 보내기",
     "computer-use": "컴퓨터 조작",
     accounts: "연결한 계정 사용",
+  },
+  view: { label: "보기", app: "작업 공간", chat: "대화" },
+  intro: {
+    hello: "안녕하세요, {name}입니다.",
+    try: "이렇게 시작해 보세요",
+    note: "하고 싶은 일을 바로 말해도 됩니다. 첫 메시지를 보내기 전까지 보이는 내용은 모두 예시입니다.",
   },
   tip: { kept: "{name}은(는) '내 봇'에 남습니다. 내일도 여기 있습니다." },
   remove: {

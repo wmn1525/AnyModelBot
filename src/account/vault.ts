@@ -20,6 +20,10 @@ export interface AccountRecord {
   /** 登录时为本机签发的 API Key（服务端 id；明文只在内置网关配置里） */
   deviceKeyId: number;
   signedInAt: number;
+  /** Stable local progress namespace; never used as a display name. */
+  ownerKey?: string;
+  /** ID Token 的 sub：打开充值页时让网页核对是不是同一个账户（不是密钥，见 oauth.ts 的 TokenSet.subject） */
+  subject?: string;
 }
 
 interface FileShape {

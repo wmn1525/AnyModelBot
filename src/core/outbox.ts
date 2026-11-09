@@ -5,7 +5,7 @@
  * - 临时失败按退避重试（5 秒起，翻倍到 5 分钟），渠道没在运行时等它上线；
  * - 要等对方先发消息才能发的（微信：超过 24 小时没说话、本轮配额用完）留着（held），对方下次发消息时按原来的顺序先发出去，
  *   能合并的合成一条「你不在时：…」，排在这次的回复前面；
- * - 主动消息（任务结果等，规则见 delivery.ts）可以排到某个时间再发（scheduled：免打扰、每天上限、合并），不挡同一会话里的回复；
+ * - 主动消息（任务结果等，规则见 delivery/index.ts）可以排到某个时间再发（scheduled：免打扰、每天上限、合并），不挡同一会话里的回复；
  *   到时间时同一会话一起到期的交给 planner 合成一条摘要；对方先发了消息就和留着的一起先发；
  * - 再也发不出去了（平台多次拒绝、等待太久）标记 gone 并记下原因，只记在日志和诊断信息里；
  * - 应用重启后接着发。流式的中间内容和"正在输入"不经过这里。
@@ -59,7 +59,7 @@ export interface OutboxInput {
   replyTo?: string;
   /** 多久之后不再发（默认 24 小时；ack、审批提示更短）；排着的从到期时算起 */
   ttlMs?: number;
-  /** 主动推送的用途（见 delivery.ts）；不给 = 对话里的回复 */
+  /** 主动推送的用途（见 delivery/index.ts）；不给 = 对话里的回复 */
   purpose?: OutboxPurpose;
   subject?: string;
   ref?: string;
@@ -129,7 +129,7 @@ export class Outbox {
   private started = false;
   private stopped = false;
   private listeners = new Set<(row: OutboxRow) => void>();
-  /** 排着的消息到时间时怎么办（delivery.ts 设）；没有就一条一条照原样发 */
+  /** 排着的消息到时间时怎么办（delivery/index.ts 设）；没有就一条一条照原样发 */
   planner: OutboxPlanner | undefined;
 
   constructor(

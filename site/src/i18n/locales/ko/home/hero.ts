@@ -9,6 +9,7 @@ export default {
   "trust": [
     "무료 오픈 소스 앱",
     "모델은 사용한 만큼 결제",
+    "가입 시 Bot 크레딧 $1",
     "Windows / macOS / Linux"
   ],
   "appUiNote": "",

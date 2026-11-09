@@ -66,6 +66,18 @@ describe("chat search API", () => {
     expect(context.target.groupId).toBe(groupId);
     expect(context.messages.map((m: any) => m.id)).toEqual([groupUser, groupReply]);
   });
+  it("lists recent conversations: one row per timeline, newest first, group copies hidden", async () => {
+    const recent = await (await fetch(`${base}/amb/api/messages/recent`)).json();
+    // 群聊（成员的回复存在各自会话里）合成一行、取最新那条；成员会话里复制进去的用户消息不出现
+    expect(recent.conversations.map((r: any) => r.id)).toEqual([groupReply, externalId, recentId]);
+    expect(recent.conversations[0]).toMatchObject({ groupId, groupName: "Production group", role: "assistant" });
+    expect(recent.conversations[1]).toMatchObject({ conversationId: "research:feishu:team", channel: "feishu", title: "Planning team" });
+    expect(recent.conversations[2]).toMatchObject({ botId: "film", conversationId: "film:web:console", channel: "web" });
+    expect(JSON.stringify(recent)).not.toContain("hidden duplicate");
+    const one = await (await fetch(`${base}/amb/api/messages/recent?limit=1`)).json();
+    expect(one.conversations.map((r: any) => r.id)).toEqual([groupReply]);
+    expect((await fetch(`${base}/amb/api/messages/recent?limit=-1`)).status).toBe(400);
+  });
   it("rejects malformed requests and nonexistent messages", async () => {
     expect((await fetch(`${base}/amb/api/messages/search?q=x&limit=100000`)).status).toBe(400);
     expect((await fetch(`${base}/amb/api/messages/search?q=x&cursor=broken`)).status).toBe(400);
@@ -135,8 +147,11 @@ describe.skipIf(!browserAvailable)("chat search UI", () => {
 
   it("filters channels and groups and opens the correct original timeline", async () => {
     const page = await pageFor();
-    await page.getByRole("searchbox", { name: "搜索聊天记录", exact: true }).fill("分镜");
-    const results = page.locator('[data-screen="message-search"]');
+    // 侧栏的搜索入口是个按钮，打开搜索弹窗
+    await page.getByRole("button", { name: "搜索聊天记录", exact: true }).click();
+    const results = page.getByRole("dialog", { name: "搜索聊天记录", exact: true });
+    await results.getByRole("searchbox").fill("分镜");
+    await results.getByRole("button", { name: "筛选", exact: true }).click();
     await results.getByLabel("聊天渠道", { exact: true }).selectOption("feishu");
     await page.waitForFunction(() => document.querySelectorAll(".search-result").length === 1);
     await results.getByLabel("机器人或会话", { exact: true }).selectOption("conversation:research:feishu:team");
@@ -191,6 +206,7 @@ describe.skipIf(!browserAvailable)("chat search UI", () => {
     await page.keyboard.press("Control+Shift+f");
     const results = page.locator('[data-screen="message-search"]');
     await results.getByRole("searchbox").fill("分镜");
+    await results.getByRole("button", { name: "筛选", exact: true }).click();
     await results.getByLabel("时间范围", { exact: true }).selectOption("today");
     await page.waitForFunction(() => document.querySelectorAll(".search-result").length === 4);
     await results.getByLabel("时间范围", { exact: true }).selectOption("custom");
@@ -199,6 +215,36 @@ describe.skipIf(!browserAvailable)("chat search UI", () => {
     await results.getByLabel("结束日期", { exact: true }).fill(day);
     await page.waitForFunction(() => document.querySelectorAll(".search-result").length === 1);
     expect(await results.locator(".search-result").innerText()).toContain("Old storyboard");
+    await page.close();
+  });
+
+  it("opens as a dialog over the chat and lists recent conversations before typing", async () => {
+    const page = await pageFor();
+    await page.keyboard.press("Control+Shift+f");
+    const dialog = page.getByRole("dialog", { name: "搜索聊天记录", exact: true });
+    await dialog.waitFor({ state: "visible" });
+    // 弹窗不占用页面：后面的聊天还在
+    expect(await page.locator('[data-screen="chat"]').isVisible()).toBe(true);
+    expect(await dialog.evaluate((el: HTMLElement) => el.getBoundingClientRect().width)).toBeLessThan(720);
+    // 没输入：按天分组的最近对话，群聊和渠道会话各占一行，最新的在前
+    await dialog.locator(".search-recent-row").first().waitFor();
+    const rows = await dialog.locator(".search-recent-row .search-recent-name").allInnerTexts();
+    expect(rows).toContain("Production group");
+    expect(rows.some((r: string) => r.startsWith("Planning team"))).toBe(true);
+    expect(new Set(rows).size).toBe(rows.length);
+    expect(await dialog.locator(".search-recent-day").first().innerText()).toBe("今天");
+    if (process.env.AMB_SEARCH_SCREENSHOTS) {
+      fs.mkdirSync(process.env.AMB_SEARCH_SCREENSHOTS, { recursive: true });
+      await page.screenshot({ path: path.join(process.env.AMB_SEARCH_SCREENSHOTS, "recent.png") });
+    }
+    // 回车打开第一行；渠道会话打开历史记录
+    await dialog.getByRole("button", { name: /Planning team/ }).click();
+    await page.locator(`[data-screen="conversation-history"] [data-message-id="${externalId}"]`).waitFor();
+    await dialog.waitFor({ state: "hidden" });
+    // 再打开，键盘选群聊打开群
+    await page.keyboard.press("Control+Shift+f");
+    await dialog.getByRole("button", { name: /Production group/ }).click();
+    await page.locator('[data-screen="group"]').waitFor();
     await page.close();
   });
 

@@ -15,7 +15,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { BOT_AVATARS } from "../agent/settings.js";
-import { appVersion } from "../app.js";
+import { appVersion } from "../version.js";
 import { dirHash } from "../botkit/bundle.js";
 import { checkStatic } from "../botkit/check.js";
 import { COMPLETION_MIN, runEvals } from "../botkit/evals.js";

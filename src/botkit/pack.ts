@@ -66,8 +66,9 @@ function prepareCatalog(o: { root: string; now?: number; lock?: Record<string, C
     blobs.push([`bundles/${uiHash}.ambot`, ui], [`bundles/${rtHash}.ambot`, runtime]);
     const thumbs: CatalogEntry["thumbs"] = {};
     for (const theme of ["light", "dark"] as const) {
-      const f = path.join(dir, ".check", `${theme}.png`);
-      if (!fs.existsSync(f)) continue;
+      // 发现页封面：先用画好的 cover/<主题>.png，没有时退回渲染检查的界面截图
+      const f = [path.join(dir, "cover", `${theme}.png`), path.join(dir, ".check", `${theme}.png`)].find((p) => fs.existsSync(p));
+      if (!f) continue;
       const data = fs.readFileSync(f);
       const h = sha256(data);
       thumbs[theme] = h;

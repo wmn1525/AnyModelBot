@@ -21,7 +21,7 @@ import { ApprovalCenter } from "../src/agent/approvals.js";
 import { DEFAULT_SETTINGS } from "../src/agent/settings.js";
 import { RULE_NUDGE, RULE_RERUN, RULE_RESULT_SYSTEM, ruleRules } from "../src/agent/prompts/index.js";
 import { Outbox } from "../src/core/outbox.js";
-import { Delivery } from "../src/core/delivery.js";
+import { Delivery } from "../src/delivery/index.js";
 import { Store, type RunRow } from "../src/store/db.js";
 import { Attention } from "../src/tasks/attention.js";
 import { DataDirLocked, LOCK_FILE, lockDataDir } from "../src/store/lock.js";

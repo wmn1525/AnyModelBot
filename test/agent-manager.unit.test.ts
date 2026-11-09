@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Store } from "../src/store/db.js";
 import { AgentManager } from "../src/agent/manager.js";
 import { RECYCLE_AFTER_SESSIONS, TurnStopped, type TurnInput } from "../src/agent/host.js";
-import type { MediaModel, MediaService } from "../src/agent/media.js";
+import type { MediaModel, MediaService } from "../src/tools/media/index.js";
 import { STEWARD_SYSTEM } from "../src/agent/steward.js";
 
 const COMPACT = '{"action":"compact","reason":"still working"}';

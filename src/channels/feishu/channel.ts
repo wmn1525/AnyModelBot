@@ -4,7 +4,7 @@ import type { BotRuntime } from "../../core/runtime.js";
 import { HistoryDenied, type FeishuMessageEvent, type FeishuTransport } from "./transport.js";
 import { FeishuReply, deliverFeishu } from "./card.js";
 import { Outbox, stableId } from "../../core/outbox.js";
-import type { Delivery } from "../../core/delivery.js";
+import type { Delivery } from "../../delivery/index.js";
 import type { Store } from "../../store/db.js";
 import { logger } from "../../log.js";
 import { t } from "../../i18n/index.js";

@@ -39,7 +39,7 @@ App: local catalog · runtime (sandboxed iframe, bridge, state files) · UI kit 
 | Publishing | `src/botkit/bundle.ts`, `pack.ts`, `sign.ts` | Content-addressed bundles, signed catalog, takedowns |
 | Catalog loading | `src/botkit/catalog.ts`, `config.ts` | Read bundled resources, verify and extract locally; remote catalogs require explicit configuration |
 | Instances | `src/botkit/installer.ts`, `app-skill.ts` | Install on first use, update, take down, remove |
-| Server | `src/web/botapp.ts` | Static routes with CSP, catalog and instance APIs |
+| Server | `src/web/botapp.ts`, `src/botkit/static.ts` | Catalog and instance APIs; static UI routes with CSP (also used by `amb-bot check` rendering) |
 | UI kit | `ui/botkit/` | The only thing a bot's UI may import |
 | Container | `ui/screens/bot-app.js`, `discover.js`, `ui/lib/bot-bridge.js` | iframe, bridge, composer, Discover page |
 | Permissions | `src/agent/host.ts`, `dsh-runtime/plugins/amb-bot-gate.mjs` | Undeclared permissions are refused at runtime |
@@ -56,7 +56,21 @@ bots/<id>/
   state.schema.json  The data contract between the UI and the bot
   sample.<lang>.json Sample data shown on open, in the user's language. zh-CN and en are required; other languages fall back to en
   evals/             tasks.json (eval tasks), injection.json (prompt injection cases)
+  cover/             Optional: Discover cover art, light.png and dark.png
 ```
+
+### Cover
+
+A Discover card opens with a cover image: `cover/light.png` and `cover/dark.png`, switched with the UI theme. Packing uses it first, falls back to the UI screenshot in `.check/`, and shows the avatar when neither exists.
+
+- Draw what the bot does (a scene, its props), not the bot's avatar on its own: the avatar already sits next to the card's name.
+- Official covers are one series: a matte clay and frosted glass still life on a warm grey backdrop, a little ink, and a single tiny signal yellow-green `#d7ff00` highlight; no text, logos or people. The dark version is the same picture re-lit on a charcoal backdrop. Draw at 1536×1024 with gpt-image (Codex image generation), then crop to 16:10 and reduce to a 256-color PNG:
+
+  ```bash
+  ffmpeg -i in.png -vf "crop=1536:960,scale=1200:750:flags=lanczos,split[a][b];[a]palettegen=max_colors=256:stats_mode=full[p];[b][p]paletteuse=dither=sierra2_4a" -compression_level 9 cover/light.png
+  ```
+
+- It must be a PNG of at most 500 KB per file (the client rejects larger thumbnails from an online catalog, using the UI bundle limit). `amb-bot check` enforces this (`format.cover`).
 
 ### bot.json
 
@@ -66,7 +80,7 @@ bots/<id>/
 | `version`, `minAppVersion` | Bot version; users on an older app don't see the bot |
 | `name`, `summary` | Name (≤ 24 characters), one line (≤ 80 characters) |
 | `about` | 1–3 lines shown in the info panel |
-| `starters` | 2–3 clickable sentences; each must visibly change the view |
+| `starters` | 2–3 clickable sentences; each must visibly change the view. Until first use they show as one row of single-line chips above the composer, truncated when they don't fit (hover shows the full text), so keep them short (under about 60 characters in English) |
 | `avatar` | A base character (`blue`, `yellow`, `green`, `red`, `purple`, `orange`) or a field expert (`law`, `health`, `finance`, `code`, `design`, `writing`, `education`, `science`, `data`, `marketing`, `cooking`, `translate`). It only sets the look. Older apps don't know the experts, so set `minAppVersion` to the release that added them |
 | `permissions` | See below |
 | `skills` | Imported skills: `name`, `source`, `sha256` (from `amb-bot hash`), `author`, `license`, `url`. Your own skills aren't listed |
@@ -132,6 +146,30 @@ The kit follows the app's theme, language, text size and motion preference on it
 ### Components
 
 `Page`, `Section`, `Card` (`on` adds the highlight background), `Row`, `Stack`, `Grid`, `Button`, `Field`, `Notice`, `Empty`, `Meter`, `Table`, `Link` (an external link the user confirms before it opens). Design system classes (`.btn`, `.field`, `.t-title`…) and tokens (`--fg`, `--well`, `--space-*`, `--fs-*`) work directly; see [ui/design/README.md](../ui/design/README.md). `style` in JS can't hardcode colors, spacing or font sizes either; use it only for computed values, such as a bar's width.
+
+### Desktop workspace
+
+A bot's UI is a window in a desktop app, not a web page that scrolls top to bottom. Bots that hold several pieces of work (projects, research runs, jobs) all use the same structure from `kit.css`:
+
+```html
+<div class="kit-ws">
+  <nav class="kit-ws-list">
+    <div class="kit-list-head"><h2 class="t-label">Projects</h2><button class="btn sm">New</button></div>
+    <button class="kit-item on"><span class="kit-item-title">Name</span><span class="kit-item-meta">…</span></button>
+  </nav>
+  <main class="kit-ws-main">
+    <header class="kit-bar"><div class="kit-bar-text"><h1>The selected one</h1><p>Status · one line</p></div><div class="kit-bar-actions">…</div></header>
+    <div class="kit-ws-body"><div class="kit-tabs" role="tablist">…</div>…</div>
+  </main>
+</div>
+```
+
+- The list on the left and the content on the right scroll separately and fill the UI's height; the toolbar stays over the content as it scrolls. Below 640px the list moves to the top.
+- The bot's name is already in the host's title bar, so the UI doesn't repeat a big title. Text that never changes, such as a disclaimer, goes in `.kit-foot` at the end instead of the top.
+- One primary action is enough: work out the next step from progress and put the rest under "More". Tabs use `.kit-tabs`, five at most.
+- The host shows starters as one row of single-line chips, so keep starters short; ones that don't fit are truncated.
+- The host title bar switches between Workspace and Chat for every bot: Workspace is the bot's UI, Chat is the full conversation (before first use, an introduction and the full starters). A UI doesn't build its own chat.
+- So that newcomers and experts both get going quickly, give each bot two things: "New" at the top of the list is a wizard — a few choices that the UI writes into one sentence (shown before sending) and passes to `send`; and at least one view experts know, such as key figures in a research note, a source audit, presentation mode or a storyboard sheet.
 
 Add components to `ui/botkit/kit.js` as real bots need them, rather than working around the kit in one bot. The kit ships with the app, so adding to it needs a release. Register new abilities in `KIT_SINCE` in `src/botkit/format.ts`: a bot using one can't have a lower `minAppVersion`, and the check enforces it (`ui.min-app-version`).
 
@@ -207,7 +245,7 @@ Failures name the exact rule. When a new kind of problem turns up, add a rule to
 
 Rendering, behavior and security only run under `--full`. `--full` is optional: packing and publishing don't depend on it. Running it needs two things:
 
-- Rendering uses Playwright, which isn't an app dependency: `npm i --no-save playwright && npx playwright install chromium`. Screenshots stay in `.check/` and, once committed, become Discover thumbnails when packing. Without them, Discover cards show the avatar.
+- Rendering uses Playwright, which isn't an app dependency: `npm i --no-save playwright && npx playwright install chromium`. Screenshots stay in `.check/` and, once committed, become Discover thumbnails when packing if the bot has no drawn cover (below). With neither, Discover cards show the avatar.
 - Evals connect to a running app: install Go 1.26.8+, run `npm run setup && npm start`, and sign in to Modelflare (`--app <url>`, by default the configured local port; set `AMB_UI_TOKEN` if it has a token). They really install the bot and call the model, then clean up.
 
 Eval tasks go in `evals/tasks.json`: `{ id, prompt, changed?, contains?, notContains?, file?, files? }`, at least 3. `file: { name, text }` puts a file in `app/inbox/`. `files` checks outputs against the files themselves: `{ match (a regex for the path), minBytes?, zipHas? (entries the zip must contain), absent? (no such file may exist) }`. Nobody can click approvals during evals: the first-use prompt for a declared permission passes, everything else is denied, and the bot's questions get "go ahead with your recommendation". Injection cases go in `evals/injection.json`: `{ id, prompt, file?: { name, text }, mustNotContain }`, at least 1.

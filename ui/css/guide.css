@@ -41,7 +41,7 @@ button.guide-step > .ic { color: var(--muted); }
 .guide-step.open .title { font-weight: var(--fw-semibold); }
 .guide-step .desc { margin: 0; color: var(--fg-2); line-height: var(--lh-normal); }
 :is(.guide-step, .guide-coach) .how { margin: 0; padding-left: var(--space-4); display: grid; gap: var(--space-1); color: var(--muted); font-size: var(--fs-sm); line-height: var(--lh-normal); }
-.guide-try { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-1); padding-top: var(--space-2); border-top: 1px solid var(--line-2); }
+.guide-try { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: var(--space-2); }
 .guide-try .txt { flex: 1 1 160px; min-width: 0; font-size: var(--fs-md); color: var(--fg); line-height: var(--lh-snug); }
 
 /* —— 侧栏左下角的清单入口：账户行上面，和侧栏的行对齐 —— */
@@ -102,7 +102,7 @@ button.guide-step > .ic { color: var(--muted); }
 @keyframes guide-ping { 50% { outline-offset: calc(var(--space-0-5) + var(--space-1) * var(--motion)); outline-color: var(--accent-soft); } }
 /* 信息面板里的行装在会裁切的分组里：外圈往里收，不呼吸 */
 .row.guide-spot { outline-offset: calc(-1 * var(--space-0-5)); animation: none; }
-.composer.guide-spot { --composer-edge: var(--accent); --composer-edge-w: 1.5px; --composer-shadow: var(--ring); --composer-tint: var(--pill); }
+.composer.guide-spot { --composer-shadow: 0 0 0 1.5px var(--accent), 0 0 0 5px var(--accent-soft); --composer-tint: var(--pill); }   /* 描边：引导时要你输入的地方（临时的） */
 
 /* —— 生图的预置演示（MediaDemo）：和真的回复同一套样子（工作状态行、chat.css 的 .msg-files / .msg-img），
    下面一行说明是自带的示例图；点开在原地放大（限高，放大后仍在一屏里） —— */
@@ -115,3 +115,5 @@ button.guide-step > .ic { color: var(--muted); }
 .guide-confetti i { position: absolute; width: 8px; height: 12px; border-radius: 2px; }
 .guide-confetti i.dot { height: 8px; border-radius: 50%; }
 }
+
+@layer app { .guide-coach-body { user-select: text; -webkit-user-select: text; } }

@@ -5,6 +5,7 @@
 // 所以这里重跑应用的 scripts/build-bot-avatars.py（--out 临时目录 --png），先确认它重新生成的 WebP 和
 // public/bots 里的一模一样（原图、拆层参数都没变），再把同一次生成的 PNG 编成 AVIF。
 // 质量 q58：和 WebP q86 比，按预乘 RGBA 的 PSNR 算，六个角色的最低值和平均值都不低于 WebP（45.4 / 46.4 对 43.6 / 45.9 dB）。
+// 小档（<角色>@224 / @112 / @56）用同一个质量，各档 PSNR 都在 45.4 dB 以上；@112、@56 的 WebP 是无损的，AVIF 看不出差别。
 //
 // 用法：npm run bots:avif（需要仓库根目录、python3 + numpy + Pillow；sharp 随 Astro 安装，锁定在 package-lock 里）。
 // 精灵图更新后（npm run sync 带来新的 WebP）要重跑一次；check-images 按 src/data/bots-avif.json 记下的 WebP 哈希把关。

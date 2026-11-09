@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { testModelflareDomains } from "../src/modelflare-domains.js";
-import { modelflareBaseUrl, normalizeLine, verifyModelflareKey } from "../src/modelflare.js";
+import { testModelflareDomains } from "../src/providers/modelflare-domains.js";
+import { modelflareBaseUrl, normalizeLine, verifyModelflareKey } from "../src/providers/modelflare.js";
 
 afterEach(() => vi.useRealTimers());
 

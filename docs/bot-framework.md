@@ -39,7 +39,7 @@ App：本地目录 · 运行时（沙箱 iframe、桥接、状态文件）· 界
 | 打包发布 | `src/botkit/bundle.ts`、`pack.ts`、`sign.ts` | 内容寻址的包、签名的目录、下架 |
 | 目录加载 | `src/botkit/catalog.ts`、`config.ts` | 默认读内置目录、校验并解压本地包；显式配置才使用远程目录 |
 | 实例 | `src/botkit/installer.ts`、`app-skill.ts` | 第一次使用时安装，升级、下架、移除 |
-| 服务端 | `src/web/botapp.ts` | 界面的静态路由和 CSP，目录和实例的接口 |
+| 服务端 | `src/web/botapp.ts`、`src/botkit/static.ts` | 目录和实例的接口；界面的静态路由和 CSP（`amb-bot check` 渲染也用） |
 | 界面套件 | `ui/botkit/` | Bot 的界面唯一能引用的东西 |
 | 容器 | `ui/screens/bot-app.js`、`discover.js`、`ui/lib/bot-bridge.js` | iframe、桥接、输入框、发现页 |
 | 权限 | `src/agent/host.ts`、`dsh-runtime/plugins/amb-bot-gate.mjs` | 没声明的权限运行时拒绝 |
@@ -56,7 +56,21 @@ bots/<id>/
   state.schema.json  界面和 Bot 之间的数据约定
   sample.<lang>.json 示例数据，打开时按用户的语言显示。zh-CN、en 必须有，其余语言缺了退回 en
   evals/             tasks.json（评测任务）、injection.json（提示注入用例）
+  cover/             可选：发现页封面 light.png、dark.png
 ```
+
+### 封面
+
+发现页卡片上方是一张封面：`cover/light.png`、`cover/dark.png`，跟着界面主题换。打包时先用它，没有时退回 `.check/` 里的界面截图，再没有就显示头像。
+
+- 画这个 Bot 在做的事（场景、道具），不画单独的机器人头像——头像已经在卡片的名字旁边。
+- 官方 Bot 的封面是一套：哑光黏土 + 磨砂玻璃的静物，暖灰底，少量墨色，只有一个很小的黄绿 `#d7ff00` 亮点；不写字、不放标志和人物。深色版是同一张图换成炭灰底重新打光。用 gpt-image（Codex 的生图）画 1536×1024，再裁成 16:10 压成 256 色 PNG：
+
+  ```bash
+  ffmpeg -i in.png -vf "crop=1536:960,scale=1200:750:flags=lanczos,split[a][b];[a]palettegen=max_colors=256:stats_mode=full[p];[b][p]paletteuse=dither=sierra2_4a" -compression_level 9 cover/light.png
+  ```
+
+- 必须是 PNG，单张不超过 500 KB（客户端取线上目录的缩略图时按界面包的上限拒绝），`amb-bot check` 会拦（`format.cover`）。
 
 ### bot.json
 
@@ -66,7 +80,7 @@ bots/<id>/
 | `version`、`minAppVersion` | Bot 版本；App 版本不够的用户看不到这个 Bot |
 | `name`、`summary` | 名称（≤ 24 字符）、一句话（≤ 80 字符） |
 | `about` | 1–3 行说明，显示在信息面板 |
-| `starters` | 2–3 句可点的话，每句都要让界面发生看得见的变化 |
+| `starters` | 2–3 句可点的话，每句都要让界面发生看得见的变化。还没用过时显示在输入框上方的一排单行胶囊里，放不下时省略、悬停看全文，写短一点（中文 20 字左右以内） |
 | `avatar` | 基础角色 `blue`、`yellow`、`green`、`red`、`purple`、`orange`，或领域专家 `law`、`health`、`finance`、`code`、`design`、`writing`、`education`、`science`、`data`、`marketing`、`cooking`、`translate`；只决定长相。专家要新版 App 才认得，用了就把 `minAppVersion` 设到发布它们的那个版本 |
 | `permissions` | 见下表 |
 | `skills` | 引入的技能：`name`、`source`、`sha256`（`amb-bot hash` 算）、`author`、`license`、`url`。自己写的不用列 |
@@ -132,6 +146,30 @@ mount(App);
 ### 组件
 
 `Page`、`Section`、`Card`（`on` 时用高亮底色）、`Row`、`Stack`、`Grid`、`Button`、`Field`、`Notice`、`Empty`、`Meter`、`Table`、`Link`（外部链接，点开前让用户确认）。设计系统的类（`.btn`、`.field`、`.t-title`…）和 token（`--fg`、`--well`、`--space-*`、`--fs-*`）都能直接用，规范见 [ui/design/README.md](../ui/design/README.md)。JS 里的 `style` 同样不能写死颜色、间距和字号，只放算出来的值，比如条形的宽度。
+
+### 桌面工作区
+
+专属界面是桌面应用里的一个窗口，不是一张从上往下滚的网页。有多份作品（项目、研究、任务）的 Bot 都用 `kit.css` 里同一套结构：
+
+```html
+<div class="kit-ws">
+  <nav class="kit-ws-list">
+    <div class="kit-list-head"><h2 class="t-label">项目</h2><button class="btn sm">新建</button></div>
+    <button class="kit-item on"><span class="kit-item-title">名称</span><span class="kit-item-meta">…</span></button>
+  </nav>
+  <main class="kit-ws-main">
+    <header class="kit-bar"><div class="kit-bar-text"><h1>当前这一份</h1><p>状态 · 一行说明</p></div><div class="kit-bar-actions">…</div></header>
+    <div class="kit-ws-body"><div class="kit-tabs" role="tablist">…</div>…</div>
+  </main>
+</div>
+```
+
+- 左边列表、右边内容各自滚动，填满界面的高度；工具栏往下滚时盖在内容上。窗口窄于 640px 时列表收到上面。
+- Bot 的名字已经在容器顶栏里，界面里不再写大标题；免责声明这类每次都一样的话放在末尾的 `.kit-foot`，不占顶部。
+- 主操作一个就够：按进度算出"下一步"，其余收进"更多"。分页用 `.kit-tabs`，最多五个。
+- 容器底部的示例是一排单行胶囊，可点的话写短一点，放不下时会被省略。
+- 容器顶栏有「工作台 / 对话」两种看法，所有 Bot 都一样：工作台是专属界面，对话是完整的对话流（还没用过时是一段开场白和完整的示例）。界面不用自己做聊天。
+- 让新手和懂行的人都能上手，每个 Bot 做两样东西：列表顶上的「新建」是向导——点选几项，界面把要求写成一句话（发出前显示出来）再 `send`；另外至少一个懂行的人熟悉的专业视图，比如研报的关键数字、来源核对、放映、分镜表。
 
 组件按真实需要加到 `ui/botkit/kit.js`：加进套件，不要在单个 Bot 里绕过。套件随 App 发布，所以往里加东西要发版。新能力登记在 `src/botkit/format.ts` 的 `KIT_SINCE`，用到它的 Bot 的 `minAppVersion` 不能更低，检查会拦（`ui.min-app-version`）。
 
@@ -207,7 +245,7 @@ npm run bot -- check bots/<id> --full   # 可选：再跑渲染和真实模型�
 
 渲染、行为、安全三类只在 `--full` 里跑。`--full` 是可选的，打包和上架都不依赖它。要跑的话需要两样东西：
 
-- 渲染用 Playwright，不是 App 的依赖：`npm i --no-save playwright && npx playwright install chromium`。截图留在 `.check/`，提交后打包时用作发现页缩略图；没有截图时，发现页卡片显示头像。
+- 渲染用 Playwright，不是 App 的依赖：`npm i --no-save playwright && npx playwright install chromium`。截图留在 `.check/`；没有画好的封面（见下）时，提交后打包时用作发现页缩略图；两样都没有时，发现页卡片显示头像。
 - 评测连到运行中的 App：先装 Go 1.26.8+，运行 `npm run setup && npm start` 并登录 Modelflare（`--app <地址>`，默认本机配置的端口；有令牌时设 `AMB_UI_TOKEN`）。评测会真实安装并调用模型，跑完清掉。
 
 评测任务写在 `evals/tasks.json`：`{ id, prompt, changed?, contains?, notContains?, file?, files? }`，至少 3 个。`file: { name, text }` 把文件放进 `app/inbox/`。`files` 检查产物，只信文件本身：`{ match（路径的正则）, minBytes?, zipHas?（zip 里要有的条目）, absent?（这样的文件不能存在） }`。评测时没人点审批：Bot 声明过的权限第一次用时的确认算通过，其余拒绝，Bot 的提问答“按你的建议继续”。注入用例写在 `evals/injection.json`：`{ id, prompt, file?: { name, text }, mustNotContain }`，至少 1 个。

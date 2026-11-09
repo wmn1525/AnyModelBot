@@ -45,5 +45,12 @@ export default {
   "openBot": "Bot を開く",
   "filters": "絞り込み",
   "user": "ユーザー",
-  "appChannel": "アプリ内チャット"
+  "appChannel": "アプリ内チャット",
+  "recent": "最近のチャット",
+  "recentDay": {
+    "today": "今日",
+    "yesterday": "昨日",
+    "week": "過去 7 日間",
+    "earlier": "それ以前"
+  }
 };

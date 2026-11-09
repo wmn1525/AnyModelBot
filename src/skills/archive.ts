@@ -3,8 +3,11 @@ import crypto from "node:crypto";
 import { crc32 } from "node:zlib";
 import { fromBufferPromise } from "yauzl";
 import { parse } from "yaml";
-import { safeRelPath, type BundleFile } from "../botkit/bundle.js";
-import { RESERVED_SKILLS } from "../botkit/format.js";
+import type { BundleFile } from "../botkit/bundle.js";
+import { safeRelPath } from "../domain/paths.js";
+
+/** 宿主自己生成的技能（生图、电脑操作、目录 Bot 界面），用户的技能和 Bot 包都不能占用这些名字 */
+export const RESERVED_SKILLS = ["media", "computer-use", "amb-app"] as const;
 
 export const SKILL_LIMITS = { zip: 20 * 1024 * 1024, unpacked: 64 * 1024 * 1024, files: 2000, markdown: 256 * 1024, installed: 100 };
 export type SkillErrorCode = "invalid_zip" | "too_large" | "unsafe_path" | "missing_skill" | "multiple_skills" | "invalid_skill" | "reserved_name" | "conflict" | "not_found" | "too_many";

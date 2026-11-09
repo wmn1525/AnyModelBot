@@ -7,11 +7,11 @@ import { ApiError, type AppKey } from "./client.js";
 import type { AccountHooks, AccountStatus, AlertSettings, BotBudget, UsageSummary } from "./manager.js";
 import { startOfLocalDay, summarizeUsage } from "./manager.js";
 import { referencePrice, estimateRates, type PricingCatalog, type ModelInfo } from "./model-info.js";
-import { playgroundModel, parsePlaygroundModel, type NewApiDesktop } from "./newapi-types.js";
-import type { KeyBalance } from "../modelflare.js";
+import { playgroundModel, parsePlaygroundModel, type NewApiDesktop } from "../providers/newapi.js";
+import type { KeyBalance } from "../providers/modelflare.js";
 import { registerSecret } from "../log.js";
 import type { Store } from "../store/db.js";
-import { imageRoute, priceNote, unitPrice, sortModels, type Catalog, type MediaKind, type MediaModel } from "../agent/media.js";
+import { imageRoute, priceNote, unitPrice, sortModels, type Catalog, type MediaKind, type MediaModel } from "../tools/media/index.js";
 import { logger } from "../log.js";
 
 const SESSION = "newapi.session";
@@ -51,6 +51,7 @@ export class NewApiAccountManager {
   constructor(private o: {
     origin: string; desktop: NewApiDesktop; store: Store; hooks: AccountHooks; alerts: () => AlertSettings;
     connectRelay(endpoint: { baseUrl: string; apiKey: string }, models: string[]): Promise<void>;
+    onSignedIn?(): Promise<void>;
   }) { registerSecret(this.relayKey); }
 
   init(): void {
@@ -61,13 +62,19 @@ export class NewApiAccountManager {
   }
   async restore(): Promise<void> { if (this.state === "signing_in") await this.refresh(); }
   get signedIn(): boolean { return this.state === "signed_in"; }
+  get ownerKey(): string {
+    if (!this.signedIn) return "local";
+    if (!this.bundle?.user.id) return "pending-account";
+    return crypto.createHash("sha256").update(`${this.o.origin}:${this.bundle.user.id}`).digest("hex");
+  }
+  knownBalanceUsd(): number | null { return this.status().balanceUsd; }
   get baseUrl(): string { return this.relayUrl; }
   /** Only the host uses this loopback credential; site keys never leave this class. */
   get mediaKey(): string { return this.active ? this.relayKey : ""; }
   get active(): boolean { return !!this.bundle && this.attached; }
   status(): AccountStatus {
     const alerts = this.o.alerts();
-    return { state: this.state, name: this.name, source: this.signedIn ? "account" : this.keyBalance ? "key" : "none", balanceUsd: this.signedIn ? this.balance : this.keyBalance?.available ?? null, usedUsd: this.signedIn ? this.used : this.keyBalance?.used ?? null,
+    return { bot: null, topupUrl: `${this.o.origin}/console/topup`, state: this.state, name: this.name, source: this.signedIn ? "account" : this.keyBalance ? "key" : "none", balanceUsd: this.signedIn ? this.balance : this.keyBalance?.available ?? null, usedUsd: this.signedIn ? this.used : this.keyBalance?.used ?? null,
       balanceUnit: this.signedIn ? "USD" : this.keyBalance?.unit ?? "USD", balanceScope: this.signedIn ? "account" : this.keyBalance?.scope, unlimitedBalance: !this.signedIn && this.keyBalance?.unlimited, billedToEnterprise: false, updatedAt: this.updatedAt, error: this.error,
       loginUrl: this.login ? `${this.o.origin}/login` : "", alerts, keyQuality: { strategy: "balanced", supported: false }, lowBalance: !this.keyBalance?.unlimited && (this.keyBalance?.unit ?? "USD") === "USD" && (this.signedIn ? this.balance : this.keyBalance?.available) != null && alerts.lowBalanceUsd > 0 && (this.signedIn ? this.balance! : this.keyBalance!.available!) < alerts.lowBalanceUsd,
       ...(this.active ? { loginMethod: "newapi-playground" as const, capabilities: { groups: true, usage: true, budgets: false, notifications: false, invite: false, media: true } } : {}),
@@ -125,6 +132,7 @@ export class NewApiAccountManager {
       if (generation !== this.loginGeneration) return;
       this.login = undefined;
       await this.refresh();
+      if (generation === this.loginGeneration && this.signedIn) await this.o.onSignedIn?.();
     }, (error: Error) => {
       if (generation !== this.loginGeneration) return;
       this.login = undefined; this.state = "signed_out";
@@ -400,6 +408,7 @@ export class NewApiAccountManager {
     throw new ApiError("用量记录超过 10000 条，请到 OKINTO 控制台查看完整记录", 409);
   }
   async repairKeys(): Promise<boolean> { if (!this.signedIn) return false; await this.refresh(); return false; }
+  async setRoutingStrategy(): Promise<AccountStatus> { throw new ApiError("请在 OKINTO 控制台管理路由策略", 409); }
   async setBotBudget(_id: string, _name: string, _budget: BotBudget): Promise<void> { throw new ApiError("游乐场登录使用账户余额；请在 OKINTO 控制台管理账户额度", 409); }
   async botBudgets(): Promise<Record<string, Pick<AppKey, "status" | "limit_usd" | "remain_usd" | "used_usd">>> { return {}; }
   async notifications(): Promise<unknown> { return { items: [], unread_count: 0 }; }

@@ -1,5 +1,9 @@
 # 개발 안내
 
+
+> 0.1.31 · Windows 설치판과 Linux AppImage는 기본으로 업데이트를 백그라운드 다운로드합니다. 사용자가 재시작을 선택해야 설치되며 작업 중에는 기다립니다. 현재 서명되지 않은 macOS 빌드는 수동 업데이트를 유지합니다. 0.1.28 이하는 이번 버전을 먼저 수동 설치해야 합니다.
+> 새 업데이트 안내와 정보 페이지의 변경 기록을 추가했습니다. 버전 확인, 다운로드 및 업데이트 설명은 이 저장소를 사용합니다.
+
 [简体中文](./development.md) | [English](./development_en.md) | [日本語](./development_ja.md) | 한국어 | [Русский](./development_ru.md)
 
 소스에서 AnyModelBot을 실행하거나 패키징하고 기여하려는 분을 위한 안내입니다. 앱을 사용하기만 하려면 [릴리스](https://github.com/modelflare-ai/AnyModelBot/releases)에서 설치 파일을 받으세요. [README](../README_ko.md#-다운로드)를 참고하세요.
@@ -13,20 +17,27 @@
 ```
 src/
   core/          공통 메시지 타입, 세션 대기열과 중복 제거, 런타임(/model /reset, 스트리밍), 재시작 안내, 접근 허가(소유자+허용 목록), 영구 보낼 편지함
-  agent/         에이전트 모드: DSH 호스트·브리지, 승인, 권한 프리셋, 기억·컨텍스트 관리자, 이미지·동영상 생성, 웹 검색, 컴퓨터 사용, Windows PowerShell
+  delivery/      먼저 보내는 메시지 전달: 방해 금지 시간, 하루 상한, 요약 묶음, WeChat 24시간 창과 연장 알림
+  agent/         에이전트 모드: DSH 호스트·브리지, 승인, 권한 프리셋, 기억·컨텍스트 관리자, DSH 세션 폴더
     prompts/     에이전트 모델이 읽는 모든 프롬프트: 역할, 대화 규칙, 기억 안내, 구간 첫 메시지, 스킬
+  tools/         에이전트가 쓰는 기능: 웹 검색(search.ts), 이미지·동영상 생성(media/), 컴퓨터 사용(computer-use/), Windows PowerShell(pwsh/), 연결된 Notion·Feishu 계정(accounts/)
   llm/           OpenAI 호환 클라이언트(모델 접근 인터페이스)
   magpie/        magpie 관리: 격리 폴더, 빈 포트, 비밀 값 생성, 상태 검사, 충돌 후 재시작, 정상 종료
   channels/      feishu/(지속 연결+CardKit) weixin/(iLink; MIT 고지는 LICENSE.openclaw-weixin) messenger/(Telegram·Slack·Discord 공통 송수신 경로)
+  tasks/         백그라운드 작업과 규칙: 실행, 단계, 비용, 보존과 정리, 일정
+  botkit/        카탈로그 봇 프레임워크: 패키지 형식, 검사, 패킹과 서명, 카탈로그, 설치, UI 정적 경로(docs/bot-framework.md 참고)
+  skills/        사용자가 직접 설치하는 스킬(ZIP 패키지)
   store/         SQLite(node:sqlite, 네이티브 빌드 불필요)
+  domain/        순수 데이터 형태와 규칙: 봇 설정, 방해 금지 시간, 일정, 카탈로그 봇 기록, 에이전트 단계. I/O 없음, i18n에만 의존. store는 여기에만 의존(의존 방향은 test/architecture.unit.test.ts에서 검사)
   account/       Modelflare 계정: PKCE 루프백 로그인, 토큰 교체, 잔액·알림, 봇별 예산 키, 모델 기능·참고 가격
-  web/           콘솔 서버(JSON API+SSE 실시간 대화)
+  web/           콘솔 서버: server.ts가 시작·인증·분배, routes/에 영역별 API(JSON API+SSE 실시간 대화), http.ts는 공용 도우미
   cli/           첫 실행 init 마법사, weixin-login
-  official-providers.ts  공식 API: 제공업체 목록(주소 고정), 모델 ID, 키 확인 실패 시 안내
-  modelflare.ts  Modelflare 경로, 키 검증(GET /v1/models), 모델 라우팅·출처 표시
+  providers/     모델 출처: modelflare.ts(경로, 키 검증 GET /v1/models, 모델 라우팅·출처 표시), modelflare-domains.ts(경로 속도 측정), official.ts(공식 API 제공업체 목록, 주소 고정)
+  updates/       업데이트: check.ts(새 버전 확인), desktop.ts(데스크톱 다운로드와 재시작)
   guide.ts       시작 체크리스트 진행 상태
   i18n/          서버 다국어: 오류, 상태 문구, 트레이 메뉴, 봇 시스템 메시지(messages/<namespace>.ts)
   diagnostics.ts 문제 해결: 진단 요청, 최근 로그, 비밀 정보를 가린 진단 보고서
+  version.ts     앱 버전(package.json)
   main.ts        명령줄 진입점
 electron/        데스크톱 메인 프로세스(실행기+트레이)
 ui/              콘솔 화면(Preact+htm, 별도 빌드 없음)
@@ -64,7 +75,7 @@ npm run test:dsh-bundle  # 패키징된 build/dsh의 실제 DSH 통합 테스트
 ```
 
 - DSH 에이전트 런타임: `scripts/prepare-dsh.mjs`가 대상 플랫폼에 맞게 `dsh-runtime/`을 설치하고 `scripts/bundle-dsh.mjs`가 `resources/dsh/dsh.asar`(모든 JavaScript를 한 파일로)와 `resources/dsh/node_modules/`(네이티브 패키지만, 약 55개 파일)로 묶습니다. Electron 메인 프로세스와 `ELECTRON_RUN_AS_NODE` 자식 프로세스는 asar를 직접 읽으며 첫 실행 때 압축을 풀지 않습니다. 설치 프로그램이 수백 개의 파일만 풀면 되므로 Windows의 압축 해제와 파일별 백신 검사로 인한 지연을 줄입니다. 개발 중에는 `dsh-runtime/`을 직접 사용합니다.
-- Windows 에이전트 명령용 PowerShell: 샌드박스에서 Windows PowerShell 5.1은 명령당 20~30초, PowerShell 7은 약 1초가 걸립니다. 선택 순서는 시스템의 사용 가능한 PowerShell 7(DSH와 같은 방식으로 백그라운드에서 한 번 시험하며 다운로드하지 않음) → 앱 전용 PowerShell 7 → Windows PowerShell 5.1입니다. 사용 가능한 7이 없고 에이전트 모드가 켜져 있으면 공식 PowerShell 7.6.9(LTS) zip을 백그라운드에서 `%LOCALAPPDATA%\AnyModelBot\pwsh\`로 다운로드합니다. 관리자 권한, 레지스트리 쓰기, PATH 변경이 필요 없으며 기존 PowerShell에도 영향을 주지 않습니다. 버전과 x64/arm64 zip의 SHA256은 `src/agent/pwsh-private.ts`에 고정합니다(`node scripts/pwsh-hashes.mjs <version>`으로 갱신). 다운로드 후 해시, 압축 해제 후 Microsoft Authenticode 서명을 확인하고 DSH 방식의 시험 실행(버전, 임시 파일 읽기·쓰기, 외부 프로그램 실행)을 통과해야 사용합니다. 실패하거나 미완료된 설치는 사용하지 않고 다음 실행 시 정리합니다. 설치 중에는 대화 화면, 설정 → 일반, `/status`에 진행 상황을 표시하며 준비될 때까지 5.1을 사용합니다. 대기 중인 에이전트는 앱 재시작 없이 전환됩니다. 실행 중 시작할 수 없게 되면(삭제·백신 격리·정책 차단) 이전 선택지로 돌아가고 이유를 안내합니다. 설정 → 문제 해결에서 설치·재설치·시스템 기본값 복귀가 가능합니다. Windows 10 1607 / Server 2016보다 오래된 시스템에서는 다운로드하지 않습니다. 데스크톱 앱은 Chromium 네트워크 스택으로 시스템 프록시를 사용하고 명령줄은 Node fetch를 사용합니다(최근 Node에서는 `NODE_USE_ENV_PROXY=1`일 때 `HTTPS_PROXY` 적용). `AMB_PWSH_MIRROR`로 미러 접두사를 지정해도 해시와 서명은 검사하며 `AMB_PWSH_AUTO_INSTALL=0`으로 자동 설치를 끕니다.
+- Windows 에이전트 명령용 PowerShell: 샌드박스에서 Windows PowerShell 5.1은 명령당 20~30초, PowerShell 7은 약 1초가 걸립니다. 선택 순서는 시스템의 사용 가능한 PowerShell 7(DSH와 같은 방식으로 백그라운드에서 한 번 시험하며 다운로드하지 않음) → 앱 전용 PowerShell 7 → Windows PowerShell 5.1입니다. 사용 가능한 7이 없고 에이전트 모드가 켜져 있으면 공식 PowerShell 7.6.9(LTS) zip을 백그라운드에서 `%LOCALAPPDATA%\AnyModelBot\pwsh\`로 다운로드합니다. 관리자 권한, 레지스트리 쓰기, PATH 변경이 필요 없으며 기존 PowerShell에도 영향을 주지 않습니다. 버전과 x64/arm64 zip의 SHA256은 `src/tools/pwsh/private.ts`에 고정합니다(`node scripts/pwsh-hashes.mjs <version>`으로 갱신). 다운로드 후 해시, 압축 해제 후 Microsoft Authenticode 서명을 확인하고 DSH 방식의 시험 실행(버전, 임시 파일 읽기·쓰기, 외부 프로그램 실행)을 통과해야 사용합니다. 실패하거나 미완료된 설치는 사용하지 않고 다음 실행 시 정리합니다. 설치 중에는 대화 화면, 설정 → 일반, `/status`에 진행 상황을 표시하며 준비될 때까지 5.1을 사용합니다. 대기 중인 에이전트는 앱 재시작 없이 전환됩니다. 실행 중 시작할 수 없게 되면(삭제·백신 격리·정책 차단) 이전 선택지로 돌아가고 이유를 안내합니다. 설정 → 문제 해결에서 설치·재설치·시스템 기본값 복귀가 가능합니다. Windows 10 1607 / Server 2016보다 오래된 시스템에서는 다운로드하지 않습니다. 데스크톱 앱은 Chromium 네트워크 스택으로 시스템 프록시를 사용하고 명령줄은 Node fetch를 사용합니다(최근 Node에서는 `NODE_USE_ENV_PROXY=1`일 때 `HTTPS_PROXY` 적용). `AMB_PWSH_MIRROR`로 미러 접두사를 지정해도 해시와 서명은 검사하며 `AMB_PWSH_AUTO_INSTALL=0`으로 자동 설치를 끕니다.
 - 에이전트 명령은 네트워크에 접근하며 프록시를 사용합니다(샌드박스는 쓰기만 제한). `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` / `NO_PROXY`와 소문자 형태, 인증서·패키지 인덱스 변수(`SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `NODE_EXTRA_CA_CERTS`, `PIP_INDEX_URL`, `npm_config_registry`, `GOPROXY` 등)를 앱 환경에서 전달합니다. 환경에 프록시가 없으면 데스크톱 앱이 에이전트 시작마다 시스템 설정과 PAC를 조회해 `http://host:port` 형태로 전달합니다(`src/agent/proxy-env.ts`). 루프백(`127.0.0.1`, `localhost`, `::1`)은 항상 `NO_PROXY`에 추가하며 프록시를 거치지 않습니다.
 - 데이터 폴더: `<userData>/data`(macOS `~/Library/Application Support/anymodel bot/data`, Windows `%APPDATA%\anymodel bot\data`, Linux `~/.config/anymodel bot/data`). 로그는 데이터 폴더의 `logs/app.log`에 있습니다.
 - 단일 인스턴스로 실행합니다. 창을 닫으면 기본적으로 트레이에 숨깁니다(설정 → 일반에서 종료하도록 변경 가능). 트레이 메뉴: 열기 / 브라우저에서 열기 / 로그인 시 실행(macOS, Windows) / 데이터 폴더 열기 / 종료.
@@ -72,7 +83,11 @@ npm run test:dsh-bundle  # 패키징된 build/dsh의 실제 DSH 통합 테스트
 - 콘솔은 127.0.0.1에서만 수신 대기하고 시작마다 임의 접근 토큰을 생성하여 다른 로컬 프로그램의 관리 API 직접 호출을 막습니다.
 - 종료 시 채널을 먼저 중지하고 magpie를 종료합니다. 이전 실행이 강제 종료되어 magpie가 남았다면 다음 실행에서 정리합니다(Linux/macOS).
 
-릴리스: `CHANGELOG.md`와 `CHANGELOG_en.md`에 해당 버전의 변경 사항을 작성합니다(웹사이트나 내부 구현보다 사용자가 느끼는 변경 중심, 영문 사이트는 WeChat·Feishu가 언급된 줄 제외). `package.json`의 `version`을 올리고 커밋한 뒤 `v<version>` 태그를 푸시합니다. 변경 내역이 없으면 릴리스 워크플로가 처음에 실패합니다. 있으면 GitHub Release 노트와 사이트 변경 내역에 반영됩니다. `.github/workflows/release.yml`이 6개 OS/아키텍처 러너에서 빌드하고 설치 파일과 `SHA256SUMS`를 GitHub Release에 게시합니다. 서명·공증에 필요한 저장소 비밀 값은 해당 파일 상단 주석을 확인하세요. 같은 태그가 `.github/workflows/docker.yml`도 실행하여 x64+arm64 이미지를 `ghcr.io/modelflare-ai/anymodel-bot`에 `<version>`, `latest` 태그로 게시합니다.
+릴리스: `CHANGELOG.md`, `CHANGELOG_en.md`, `CHANGELOG_ja.md`, `CHANGELOG_ko.md`, `CHANGELOG_ru.md`에 해당 버전의 변경 사항을 작성합니다(웹사이트나 내부 구현보다 사용자가 느끼는 변경 중심, 영문 사이트는 WeChat·Feishu가 언급된 줄 제외). `package.json`의 `version`을 올리고 커밋한 뒤 `v<version>` 태그를 푸시합니다. 변경 내역이 없으면 릴리스 워크플로가 처음에 실패합니다. 있으면 GitHub Release 노트와 사이트 변경 내역에 반영됩니다. 앱의 ‘업데이트 내용’ 대화상자도 같은 변경 내역을 읽습니다. `CHANGELOG*.md`는 설치 파일과 Docker 이미지에 포함되며(`src/changelog.ts`), 아직 설치하지 않은 새 버전의 내용은 사용자가 열 때 해당 버전 태그에서 읽어 옵니다. `.github/workflows/release.yml`이 6개 OS/아키텍처 러너에서 빌드하고 설치 파일과 `SHA256SUMS`를 GitHub Release에 게시합니다. 서명·공증에 필요한 저장소 비밀 값은 해당 파일 상단 주석을 확인하세요. 같은 태그가 `.github/workflows/docker.yml`도 실행하여 x64+arm64 이미지를 `ghcr.io/modelflare-ai/anymodel-bot`에 `<version>`, `latest` 태그로 게시합니다. 태그로 배포할 때 macOS 설치 파일은 Developer ID 서명과 공증이 필수이며, 패키징 후 .app과 DMG 안의 .app을 `spctl` 등으로 검사해 통과하지 못하면 실패합니다. 정식 빌드는 개발자 도구를 끕니다. 디버그 빌드가 필요하면 `npm run dist:debug`를 쓰거나 Release를 수동 실행할 때 `debug_build`를 선택합니다(파일 이름에 `-debug-`가 붙고, 태그에서는 거부되며, `scripts/check-build-flavor.mjs`가 패키지 결과를 확인합니다).
+
+버전을 배포할 때마다 공식 사이트, 관련 문서와 5개 언어의 README를 함께 업데이트합니다. `npm --prefix site run sync`로 사이트 내용을 동기화하고 GitHub Release와 Docker 이미지 게시 후 [사이트 배포 안내](../site/README.md)에 따라 운영 사이트를 갱신합니다. `/download`, `/changelog`, `/bots`의 버전, 다운로드 링크와 설명이 일치하는지 확인하며 운영 사이트까지 반영되어야 배포가 완료됩니다.
+
+앱 내 업데이트는 0.1.29부터 패키징된 macOS, Windows, Linux AppImage에서 `electron-updater`로 제공합니다. `ui.autoDownloadUpdates`의 기본값은 `true`이며 설정 → 일반에서 변경합니다. 다운로드 후 알림만 표시하고 일반 종료 시에는 설치하지 않습니다. 재시작 전에 실행 중인 대화와 백그라운드 작업을 확인합니다. 0.1.28 이전 사용자는 업데이트 기능이 포함된 버전을 한 번 직접 설치해야 합니다. GitHub 빌드는 macOS DMG와 업데이트용 ZIP, 아키텍처별 `latest-${arch}` 메타데이터와 blockmap을 만들고 모든 파일 업로드 후 Release를 공개합니다. CLI, Docker와 패키징하지 않은 개발 실행은 수동 업데이트를 유지합니다.
 
 ## Docker
 
@@ -89,7 +104,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 
 ## 모델(Modelflare)
 
-- 첫 화면의 ‘Modelflare 로그인 / 회원가입’을 누르면 시스템 브라우저에서 로그인·가입하고 계속 버튼으로 접근을 허용합니다. 앱으로 돌아오면 이 컴퓨터 전용 API 키를 발급·연결하고 기본 모델을 선택한 뒤 대화를 시작합니다. Docker·원격 배포는 브라우저 콜백을 받을 수 없으므로, 로그인 후 이동하는 열리지 않는 `127.0.0.1` 주소의 링크를 첫 화면에 붙여 넣습니다(`POST /amb/api/account/login/complete`, state와 PKCE 검증은 동일). 이전 버전에서 API 키를 입력하고 로그인하지 않은 경우 업그레이드할 때 키를 기기에서 제거하므로 로그인해야 합니다.
+- 첫 화면의 ‘Modelflare 로그인 / 회원가입’을 누르면 시스템 브라우저에서 로그인·가입하고 계속 버튼으로 접근을 허용합니다. 앱으로 돌아오면 이 컴퓨터 전용 API 키를 발급·연결하고 기본 모델을 선택한 뒤 대화를 시작합니다. Docker·원격 배포는 브라우저 콜백을 받을 수 없으므로, 로그인 후 이동하는 열리지 않는 `127.0.0.1` 주소의 링크를 첫 화면에 붙여 넣습니다(`POST /amb/api/account/login/complete`, state와 PKCE 검증은 동일). 이전 버전에서 API 키를 입력하고 로그인하지 않은 경우 업그레이드할 때 키를 기기에서 제거하므로 로그인해야 합니다. 브라우저 콜백 페이지는 먼저 ‘로그인을 완료하는 중’을 보여 주고, 토큰 교환·계정 조회·기기 전용 키 발급·게이트웨이 연결이 모두 성공한 뒤에야 ‘로그인 성공’을 표시합니다(실패하면 이유 표시). 데스크톱 앱은 `anymodelbot://` 링크를 등록하고, 페이지는 열릴 때 한 번 앱을 열어 보며 ‘AnyModelBot 열기’로 다시 시도할 수 있습니다. 앱이 실제로 그 링크를 받았을 때만 ‘돌아갔습니다’를 표시합니다. 직접 API 키를 쓰는 화면에서도 Modelflare 계정으로 바로 로그인할 수 있습니다. 처음 연결할 때 전역 기본 모델이 비어 있으면 `src/account/first-model.ts`의 규칙(도구 호출 지원, 1회 선점 금액과 대표 작업 비용이 체험 한도 안, DeepSeek 우선)으로 첫 사용 모델을 한 번 고릅니다. 맞는 모델이 없으면 미리 고르지 않고 사용자가 고릅니다.
 - 로그인 방식은 RFC 8252의 네이티브 앱에 맞춘 OIDC 인증 코드+PKCE(RFC 7636)입니다. 공개 클라이언트(`client_id`: `anymodel-bot`)로서 클라이언트 비밀 값이 없고 필요하지도 않습니다. 결과는 `127.0.0.1`의 임시 포트로 전달됩니다. Modelflare 프로필의 인증된 앱에서 권한을 취소하면 앱이 이를 감지해 로그인 화면으로 돌아옵니다.
 - 갱신 토큰은 데이터 폴더의 `modelflare-account.json`(권한 600)에 저장합니다. 데스크톱은 시스템 키체인(Electron safeStorage)으로 암호화하며 화면에는 계정 이름만 전달합니다. 로그아웃하면 컴퓨터의 권한을 취소하고 Modelflare가 로그인 시 컴퓨터·봇에 발급한 키를 삭제합니다.
 - 잔액은 상시 표시하지 않습니다. 사이드바 왼쪽 아래 아바타 또는 설정 → 모델에서 지갑 잔액을 확인합니다. 충전은 Modelflare 웹사이트를 열고 앱으로 돌아오면 잔액을 갱신합니다. 알림 기준(기본 US$1, 변경·해제 가능) 아래가 되면 한 번 알리며 WeChat/Feishu로도 보낼 수 있습니다.
@@ -100,9 +115,9 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 - 생성 전 확인: 기본적으로 즉시 생성합니다. 기본 모델이 아니거나 요청이 모호하다는 이유만으로 묻지 않고 합리적으로 해석한 뒤 결과에서 사용한 내용을 한 줄로 설명합니다. 예상 비용이 $0.5를 넘을 때만 프롬프트·매개변수·참고 가격·확인 이유와 함께 모델을 묻습니다(이미지 수, 동영상 길이·해상도 등으로 계산하며 비용을 추정할 수 없는 동영상도 포함). 승인·모델 변경·취소가 가능하며 WeChat에서는 번호나 모델 이름으로, Feishu/웹에서는 클릭으로 답합니다. 10분 내 답이 없으면 생성하지 않습니다. 항상 확인하려면 봇 설정 → 이미지와 동영상 → 생성 전에 확인 → 항상 확인을 선택하세요.
 - 웹 검색: `web_search`는 DeepSeek 키가 필요한 자체 검색을 쓰지 않고 `amb-web-search` 플러그인을 통해 앱에 위임합니다. 기본 검색은 무료이며 Exa 공개 MCP, Bing, DuckDuckGo를 순서대로 시도하되 최근 성공한 것을 우선합니다. 실패한 제공업체(요청 제한, 봇 검사, 무관한 Bing 결과)는 10분간 건너뜁니다. 설정 → 네트워크 및 접근 → 웹 검색에서 Tavily, Exa, Bocha, Zhipu(키 필요), 자체 SearXNG를 지정하면 우선 사용하고 실패 시 무료 검색으로 대체합니다. 키는 채널 토큰처럼 로컬 DB에 저장하며 에이전트에 전달하지 않습니다. 데스크톱은 시스템 프록시, 명령줄은 Node fetch(`NODE_USE_ENV_PROXY=1`이면 `HTTPS_PROXY` 적용)를 사용합니다.
 - 채팅 채널 계정(`src/core/routes.ts`): WeChat, Feishu, Telegram, Slack, Discord도 전역 계정입니다. 설정 › 연결에서 추가하고 별칭을 지정합니다. 메시지 수신 봇은 사용자가 `/bot`으로 선택한 봇 → 계정 기본 봇 → 첫 번째 봇 순서입니다. `/bot`은 목록, `/bot name`은 전환 후 선택 저장입니다. 각 봇의 시스템 프롬프트에 다른 봇과 전환법을 넣어 관련 질문에 답하게 합니다. 소유자·허용 목록은 계정에 속하므로 허용된 사용자는 모든 봇과 대화할 수 있습니다. 계정 키는 네임스페이스이며 기존 채널은 이전 봇 ID를 유지해 로그인·한도·허용 목록·대기열과 기본 봇이 그대로 남습니다. 봇 삭제는 계정에 영향을 주지 않습니다.
-- 연결된 계정(`src/agent/accounts.ts`): 설정 › 연결의 전역 목록을 모든 봇이 공유하며 서비스별 여러 계정을 추가할 수 있습니다. 어떤 봇에게든 ‘첫 번째 Feishu와 두 번째 Feishu 확인해 줘’라고 요청할 수 있습니다. `amb-connections`가 브리지로 도구 호출을 앱에 전달하므로 토큰은 에이전트에 가지 않습니다. `account` 매개변수로 번호나 이름을 선택하고 `connected_accounts`로 목록을 조회합니다. 계정이 있는 서비스만 도구를 제공합니다. 읽기 전용 봇과 관찰 중인 규칙은 쓸 수 없고 호스트도 재검사합니다. 채팅 채널 계정도 별도로 관리합니다.
-  - **Notion**(`notion.ts`): 한 번의 접근 허용 또는 토큰 중 선택합니다. 토큰은 REST API, 접근 허용은 PKCE·동적 등록을 사용하는 OAuth와 로컬 `/oauth/notion/callback`을 거쳐 Notion 원격 MCP(`mcp.notion.com`)를 호출합니다. 모델이 보는 도구는 둘 다 `notion_search`, `notion_read_page`, `notion_query_database`이며 읽기 전용이 아니면 `notion_create_page`, `notion_update_page`도 제공합니다. 삭제 도구는 없습니다.
-  - **Feishu**(`feishu-account.ts`): 공식 lark-cli와 같은 흐름으로 스캔해 개인 앱을 만들거나 기존 앱을 입력한 뒤 기기 인증으로 사용자 토큰을 받습니다. `feishu_list_chats`, `feishu_read_chat`, `feishu_search_messages`의 읽기 전용 도구를 제공합니다.
+- 연결된 계정(`src/tools/accounts/index.ts`): 설정 › 연결의 전역 목록을 모든 봇이 공유하며 서비스별 여러 계정을 추가할 수 있습니다. 어떤 봇에게든 ‘첫 번째 Feishu와 두 번째 Feishu 확인해 줘’라고 요청할 수 있습니다. `amb-connections`가 브리지로 도구 호출을 앱에 전달하므로 토큰은 에이전트에 가지 않습니다. `account` 매개변수로 번호나 이름을 선택하고 `connected_accounts`로 목록을 조회합니다. 계정이 있는 서비스만 도구를 제공합니다. 읽기 전용 봇과 관찰 중인 규칙은 쓸 수 없고 호스트도 재검사합니다. 채팅 채널 계정도 별도로 관리합니다.
+  - **Notion**(`tools/accounts/notion.ts`): 한 번의 접근 허용 또는 토큰 중 선택합니다. 토큰은 REST API, 접근 허용은 PKCE·동적 등록을 사용하는 OAuth와 로컬 `/oauth/notion/callback`을 거쳐 Notion 원격 MCP(`mcp.notion.com`)를 호출합니다. 모델이 보는 도구는 둘 다 `notion_search`, `notion_read_page`, `notion_query_database`이며 읽기 전용이 아니면 `notion_create_page`, `notion_update_page`도 제공합니다. 삭제 도구는 없습니다.
+  - **Feishu**(`tools/accounts/feishu.ts`): 공식 lark-cli와 같은 흐름으로 스캔해 개인 앱을 만들거나 기존 앱을 입력한 뒤 기기 인증으로 사용자 토큰을 받습니다. `feishu_list_chats`, `feishu_read_chat`, `feishu_search_messages`의 읽기 전용 도구를 제공합니다.
 - 기본 이미지·동영상 모델은 첫 설정 때 텍스트 모델과 함께 선택하고 설정 → 모델에서 변경합니다. 자동은 추천 순서 중 참고 자료가 필요 없는 첫 모델을 사용합니다.
 - 모델 선택기는 컨텍스트 길이, 이미지 이해·도구·추론 기능, 공개 가격표의 100만 입력/출력 토큰당 최저 참고 가격을 표시합니다. 최종 금액은 청구서 기준입니다.
 - 가성비(로그인 필요): 컴퓨터 키와 봇 예산 키에 Modelflare Smart Key의 `routing_strategy`를 넣습니다. 저렴한 가격 `low_cost`는 최저 배수부터, 균형 `balanced`는 중간 가격부터(기본값), 품질 `stable`은 최고 배수부터 시도합니다. 설정 → 모델 → 가성비 또는 모델 선택기 첫 슬라이더에서 바꾸면 기존 키도 `PATCH /api/connected-app/api-keys/<id>`로 갱신하고 로컬 DB `account.routing`에 저장합니다. 선택 이력이 없는 로그인 사용자는 첫 키 검사 때 기존 키에 균형을 한 번 적용합니다(로그: `applied the default key routing strategy`). Modelflare가 `routing_strategy`를 응답에 돌려줘야 지원으로 판정합니다. 필드를 거부하면(400/422) 제외하고 다시 발급하므로 발급·검사·예산 기능이 실패하지 않습니다. 무시하여 응답에 없을 때도 미지원으로 보고 설정을 숨긴 뒤 하루 후 재시도합니다.
@@ -126,7 +141,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 
 ## 공식 API 키
 
-- 시작 화면의 ‘내 API 키 사용’과 설정 → 모델에서 입력할 수 있습니다. 지원 제공업체와 주소는 `src/official-providers.ts`에 고정되어 있고, API(`GET /amb/api/official`, `PUT`/`DELETE /amb/api/official/<id>`)는 목록의 ID만 받으며 주소는 지정할 수 없습니다.
+- 시작 화면의 ‘내 API 키 사용’과 설정 → 모델에서 입력할 수 있습니다. 지원 제공업체와 주소는 `src/providers/official.ts`에 고정되어 있고, API(`GET /amb/api/official`, `PUT`/`DELETE /amb/api/official/<id>`)는 목록의 ID만 받으며 주소는 지정할 수 없습니다.
 - 각각 내장 게이트웨이의 provider이며 ID는 `official-<제공업체>`, 모델 ID는 `official-<제공업체>/<모델>`입니다. Modelflare의 같은 이름 모델과 구분됩니다. 키는 명령줄 인수를 거치지 않고 게이트웨이 로컬 API의 요청 본문으로 격리된 설정에 기록됩니다.
 - 확인에는 게이트웨이의 모델 목록을 사용하고(프록시와 제공업체별 인증 방식은 게이트웨이에 있음), 통과해야만 저장합니다. 모델은 1시간마다 제공업체 목록과 대조하며 대화할 수 없는 모델(음성, 이미지, 임베딩 등)은 선택기에 넣지 않습니다.
 - 에이전트 API는 제공업체별로 정해집니다. OpenAI는 Responses, Anthropic은 Messages, 나머지는 Chat Completions입니다. 컨텍스트 길이, 가격, 추론 지원은 게이트웨이의 모델 목록(`/v1/models`)에서 가져옵니다. 공식 키만 있으면 Modelflare의 목록과 계정을 읽지 않습니다.
@@ -142,7 +157,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 - 언어: 설정 → 일반 → 언어에서 중국어 간체·영어·일본어·한국어·러시아어를 선택합니다. 첫 화면 오른쪽 위와 명령 팔레트에서도 바꿀 수 있습니다. 기본은 시스템 언어이며 미지원 언어는 영어입니다. 선택은 config.json의 `ui.lang`에 저장하고 트레이 메뉴, 서버 오류·상태, WeChat/Feishu의 `/help`·승인 안내 등 시스템 메시지에 적용됩니다. 명령줄·Docker의 시스템 언어는 `AMB_LANG`, `LC_ALL`/`LC_MESSAGES`/`LANG` 순이며 없으면 중국어 간체입니다. 로그, 모델 프롬프트, 사용자가 정한 봇 이름은 번역하지 않습니다.
   - 화면 문구는 `ui/locales/<lang>/<namespace>.js`에 있고 `t("namespace.key", { params })`로 사용합니다(`ui/lib/i18n.js`). 서버 문구는 `src/i18n/messages/<namespace>.ts`이며 키를 타입 검사합니다. 모든 화면 요청은 `x-amb-lang`을 보내며 서버도 해당 언어로 응답합니다.
   - 새 문구는 두 기준 언어에 모두 추가합니다. `node scripts/i18n-check.mjs [files…]`는 화면 코드의 중국어 잔여 문구, 없는 키, zh/en 불일치를 검사합니다(`npm test`의 `test/i18n.unit.test.ts`도 동일 검사). 글꼴 이름·중국어 입력 정규식처럼 필요한 중국어는 해당 줄에 `// i18n-ignore`를 붙입니다.
-- 시작 체크리스트: 빈 대화에는 인사, 모델 변경, WeChat 연결, 작업 맡기기, 기억하기, 이미지 생성의 여섯 단계가 나옵니다. 마지막 단계는 계정의 미디어 모델 여부와 무관하게 내장 데모만 재생합니다. 실제 기본 흐름처럼 즉시 생성해 대화에 보이지만 봇에 전송하지 않고 모델 호출·과금도 없습니다. 이미지는 `ui/assets/guide-demo.svg`입니다. 비용 없이 흐름을 배우도록 한 것이며 실제 이미지 요청·수신으로도 완료됩니다. 보내기를 누르면 직접 시도하고 이동하기 또는 왼쪽 아래 항목을 누르면 해당 제어 요소를 테두리로 강조하는 안내 카드가 나옵니다. 응답, 모델 변경, 파일·이미지 수신, 채널 연결, 기억 저장에 따라 자동 완료되며 config.json의 `ui.guide`(API `/amb/api/guide`)에 저장합니다. 기존 사용자가 이미 한 단계도 인정합니다. 왼쪽 아래로 접거나 완전히 숨길 수 있고 설정 → 일반 → 시작 체크리스트에서 다시 시작합니다.
+- 시작 체크리스트: 빈 대화에는 인사, 모델 변경, WeChat 연결, 작업 맡기기, 기억하기, 이미지 생성의 여섯 단계가 나옵니다. 마지막 단계는 계정의 미디어 모델 여부와 무관하게 내장 데모만 재생합니다. 실제 기본 흐름처럼 즉시 생성해 대화에 보이지만 봇에 전송하지 않고 모델 호출·과금도 없습니다. 이미지는 `ui/assets/guide-demo.svg`입니다. 비용 없이 흐름을 배우도록 한 것이며 실제 이미지 요청·수신으로도 완료됩니다. 보내기를 누르면 직접 시도하고 이동하기 또는 왼쪽 아래 항목을 누르면 해당 제어 요소를 테두리로 강조하는 안내 카드가 나옵니다. 응답, 모델 변경, 파일·이미지 수신, 채널 연결, 기억 저장에 따라 자동 완료되며 config.json의 `ui.guide`(API `/amb/api/guide`)에 저장합니다. 기존 사용자가 이미 한 단계도 인정합니다. 왼쪽 아래로 접거나 완전히 숨길 수 있고 설정 → 일반 → 시작 체크리스트에서 다시 시작합니다. 인사는 실제 응답이 있어야 하고(오류 안내는 제외), 채널은 실제로 연결되어야 합니다(설정만으로는 완료되지 않음). ‘자주 쓰는 채팅 앱 연결’에서는 WeChat, Feishu, Telegram, Slack, Discord를 고를 수 있고 UI 언어는 추천 항목만 정합니다. ‘기억해…’라고 분명히 말하면 턴 후 기억 정리를 90초 기다리지 않고 바로 합니다. 진행 상황은 사용자별로 저장되며(Modelflare 로그인 시 계정별로 KV `guide.owner.*`, 로그인하지 않았으면 기존대로 config.json의 `ui.guide`), 모두 마치면 이후 자동으로 숨겨집니다. 스스로 나타나는 안내 카드는 입력창에 초안이 있거나 작업이 실행 중이면 기다립니다.
 - 시각 디자인: 무채색과 구성 요소는 magpie(MIT)를 바탕으로 수정했고 강조색은 Modelflare의 형광 연두색 `#d7ff00`입니다. `ui/design/README.md`에 디자인 시스템을 설명합니다.
 
 ### 현지화와 릴리스 검사
@@ -214,7 +229,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
   - **Codex Computer Use 브리지(선택, macOS 전용):** kimi-computer-use입니다. OpenAI Codex Computer Use의 로컬 설치가 필요하며 사용할 수 없으면 Cua Driver로 전환합니다.
 - **승인:** 읽기·스크린샷·클릭·입력·키·스크롤·끌기·값 설정은 기본적으로 **승인 없이 자동 실행**합니다. 선택적으로 화면 변경 전에 확인할 수 있으며 읽기는 자동입니다. 업그레이드 시 기본 봇을 포함한 기존 봇은 자동 모드로 이전합니다. 읽기 전용 봇은 읽기 도구만 받습니다.
 - **플랫폼별 사항**
-  - macOS: 시스템 설정 → 개인정보 보호 및 보안에서 손쉬운 사용·화면 기록을 허용합니다. `--direct` 모드로 실행하며 실제 기기 검증은 아직 완료하지 않았습니다.
+  - macOS: 시스템 설정 → 개인정보 보호 및 보안에서 손쉬운 사용·화면 기록을 허용합니다. `--direct` 모드로 실행하며 실제 기기 검증은 아직 완료하지 않았습니다. 권한이 없으면 컴퓨터 제어 도구 호출을 막고 이번 턴을 ‘권한이 없어 계속할 수 없었습니다’로 끝내며, 대화에 부족한 권한만 담은 카드를 보여 줍니다(시스템 기본 요청, 해당 시스템 설정 열기, 다시 확인. 화면 기록은 보통 앱을 다시 열어야 하며 카드에서 바로 다시 열 수 있고 보내지 않은 초안도 돌아옵니다). 처음 실행할 때는 아무 권한도 요청하지 않습니다.
   - Linux: X11은 AT-SPI로 화면을 읽습니다(at-spi2-core 및 앱의 접근성 활성화 필요). Wayland는 기능이 제한되어 XWayland 앱의 전경 창만 조작하며 화면에 이를 알립니다. 그래픽 세션(DISPLAY / WAYLAND_DISPLAY)이 없으면 사용할 수 없습니다.
   - Windows: 로그인한 사용자의 대화형 데스크톱 세션이 필요합니다. 서비스·예약 작업의 비대화형 세션은 지원하지 않습니다.
 - 스크린샷은 비전 지원 모델에만 보내며 WeChat/Feishu에 전달하지 않습니다. 사용자가 요청할 때만 파일로 보냅니다.

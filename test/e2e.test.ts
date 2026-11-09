@@ -364,9 +364,11 @@ describe("网页对话（流式）", () => {
   it("会话级模型：PUT /chat/model 后下一条消息使用它，空字符串恢复默认", async () => {
     expect((await api("/bots/default/chat/model", { method: "PUT", body: { model: "mock-b" } })).json.model).toBe("mock-b");
     expect((await api("/bots/default/chat")).json.model).toBe("mock-b");
+    expect((await api("/bots/default/chat/model")).json.model).toBe("mock-b");
     await sse("/bots/default/chat/stream", { text: "用哪个" });
     expect(llm.calls.at(-1)!.model).toBe("mock-b");
     await api("/bots/default/chat/model", { method: "PUT", body: { model: "" } });
+    expect((await api("/bots/default/chat/model")).json.model).toBe("");
     await sse("/bots/default/chat/stream", { text: "又用哪个" });
     expect(llm.calls.at(-1)!.model).toBe("mock-a");
   });

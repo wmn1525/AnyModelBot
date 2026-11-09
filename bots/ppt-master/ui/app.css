@@ -1,33 +1,11 @@
-/* PPT 大师的界面。颜色、间距、字号都来自设计系统的 token；层次靠留白和细线 */
-.ppt-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 13rem) minmax(0, 1fr) minmax(0, 16rem);
-  gap: var(--space-6);
-  align-items: start;
-}
-.ppt-col { display: grid; gap: var(--space-5); min-width: 0; }
+/* PPT 大师的桌面工作区（kit.css 的 .kit-ws）。颜色、间距、字号都来自设计系统的 token；成组靠底色和留白 */
 .ppt-strong { font-weight: var(--fw-medium); }
 .ppt-text { margin: 0; overflow-wrap: anywhere; }
 .ppt-block { display: block; }
 .ppt-heading { margin: 0; }
 .ppt-notice { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }
-
-.ppt-projects { display: grid; gap: var(--space-1); }
-.ppt-project {
-  display: grid;
-  gap: var(--space-0-5);
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border: 0;
-  border-radius: var(--r-md);
-  background: transparent;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.ppt-project:hover { background: var(--well-hover); }
-.ppt-project.on { background: var(--well); }
+.ppt-sec { display: grid; gap: var(--space-2); min-width: 0; }
+.ppt-sec > h2 { margin: 0; }
 
 .ppt-job-head { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; justify-content: space-between; }
 .ppt-steps { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
@@ -42,7 +20,10 @@
 .ppt-steps li.now { border-top-color: var(--fg); color: var(--fg); font-weight: var(--fw-medium); }
 .ppt-progress { display: grid; gap: var(--space-1); }
 
-.ppt-pages { --kit-col-min: 11rem; gap: var(--space-3); }
+
+/* 幻灯片查看器：大图限高（窗口矮时不把缩略图挤出去），下面翻页和一排缩略图 */
+.ppt-viewer { display: grid; gap: var(--space-3); min-width: 0; }
+.ppt-stage { display: grid; place-items: center; padding: var(--space-4); background: var(--well); border-radius: var(--r-well); }
 .ppt-page {
   display: flex;
   align-items: center;
@@ -51,19 +32,26 @@
   aspect-ratio: 16 / 9;
   padding: 0;
   overflow: hidden;
-  border: var(--hairline) solid var(--line);
-  border-radius: var(--r-md);
+  border: 0;
+  border-radius: var(--r-sm);
   background: var(--well);
   color: var(--fg);
   font: inherit;
   cursor: pointer;
+  box-shadow: 0 0 0 var(--hairline) var(--line);
 }
-.ppt-page:hover { border-color: var(--ctl-edge); }
-.ppt-page.large { margin-bottom: var(--space-3); cursor: zoom-out; }
 .ppt-page img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.ppt-page.large { width: min(100%, calc(48vh * 16 / 9)); background: transparent; cursor: pointer; box-shadow: var(--shadow-float); }
+.ppt-pager { display: flex; align-items: center; justify-content: center; gap: var(--space-3); }
+.ppt-count { min-width: 6rem; text-align: center; font-variant-numeric: tabular-nums; }
+.ppt-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: var(--space-2); }
+.ppt-strip .ppt-page { opacity: .72; transition: opacity var(--t-fast), box-shadow var(--t-fast); }
+.ppt-strip .ppt-page:hover { opacity: 1; }
+.ppt-strip .ppt-page.on { opacity: 1; box-shadow: 0 0 0 2px var(--accent); }
 
-.ppt-export { display: grid; gap: var(--space-1-5); min-width: 0; padding-bottom: var(--space-3); border-bottom: var(--hairline) solid var(--line-2); }
-.ppt-export:last-child { padding-bottom: 0; border-bottom: 0; }
+.ppt-exports { display: grid; gap: var(--space-2); }
+.ppt-export { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); min-width: 0; }
+.ppt-export-text { display: grid; gap: var(--space-0-5); min-width: 0; flex: 1 1 14rem; }
 
 .ppt-spec { gap: var(--space-3); }
 .ppt-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(11rem, 100%), 1fr)); gap: var(--space-3); margin: 0; }
@@ -72,9 +60,29 @@
 .ppt-choice { display: flex; gap: var(--space-2); align-items: flex-start; cursor: pointer; }
 .ppt-revise { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2); align-items: end; }
 
-@media (max-width: 860px) {
-  .ppt-layout { grid-template-columns: minmax(0, 1fr); }
-}
 @media (max-width: 480px) {
   .ppt-revise { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* 放映：盖满界面的深色底（两种主题都一样），一页一屏，底下一行页码和退出 */
+.ppt-show { position: fixed; inset: 0; z-index: var(--z-modal); display: grid; grid-template-rows: minmax(0, 1fr) auto; place-items: center; gap: var(--space-3); padding: var(--space-6) var(--space-6) var(--space-4); background: var(--black); color: var(--white); outline: none; }
+.ppt-show .ppt-page.large { width: min(100%, calc((100vh - 7rem) * 16 / 9)); box-shadow: none; border-radius: 0; }
+.ppt-show-bar { display: flex; align-items: center; gap: var(--space-4); font-size: var(--fs-sm); }
+.ppt-show-bar .ppt-count, .ppt-show-hint { color: var(--white); opacity: .7; }
+.ppt-show-exit { --btn-bg: transparent; --btn-fg: var(--white); --btn-bg-hover: var(--white); --btn-fg-hover: var(--black); }
+
+/* 新建：左边从主题开始的向导，右边从文档开始；窄了上下排 */
+.ppt-new { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--space-8); align-items: start; max-width: 56rem; }
+.ppt-new-form, .ppt-new-doc { display: grid; gap: var(--space-4); min-width: 0; }
+.ppt-new-doc { justify-items: start; gap: var(--space-2); padding: var(--space-4); background: var(--well); border-radius: var(--r-well); }
+.ppt-new h2 { margin: 0; }
+.ppt-sets { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-6); }
+.ppt-set { display: grid; gap: var(--space-2); margin: 0; padding: 0; border: 0; min-width: 0; }
+.ppt-set legend { padding: 0 0 var(--space-2); }
+.ppt-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ppt-chip { height: var(--ctl-md); padding: 0 var(--space-3); border-radius: var(--r-full); background: var(--pill); color: var(--fg-2); font: inherit; font-size: var(--fs-sm); cursor: pointer; transition: background var(--t-fast), color var(--t-fast); }
+.ppt-chip:hover { background: var(--pill-hover); color: var(--fg); }
+.ppt-chip[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+.ppt-preview { display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-4); background: var(--well); border-radius: var(--r-well); }
+.ppt-preview p { margin: 0; line-height: var(--lh-snug); }
+@media (max-width: 760px) { .ppt-new { grid-template-columns: minmax(0, 1fr); } }

@@ -21,7 +21,7 @@ export const shortModel = (id) => {
 /** Clean internal OKINTO IDs in historical activity text without rewriting URLs. */
 export const displayModelText = (text) => String(text || "").replace(/(?<![\w:/])(?:(?:modelflare|mfb-[\w-]+)\/)?(?:Okinto|newapi)\/[^\s"'<>\uFF0C\u3002\uFF1B\uFF1A\u3001)]+/gi, (id) => displayModel(id));
 
-/** 官方 API 的模型 id 是 official-<厂商>/<模型>（src/official-providers.ts）；这张表只管显示，test/official-providers.unit.test.ts 核对它和服务端的表一致 */
+/** 官方 API 的模型 id 是 official-<厂商>/<模型>（src/providers/official.ts）；这张表只管显示，test/official-providers.unit.test.ts 核对它和服务端的表一致 */
 const OFFICIAL_NAMES = {
   openai: "OpenAI",
   anthropic: "Anthropic",

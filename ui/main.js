@@ -2,7 +2,7 @@
 // 没有任何模型来源（OKINTO 或官方 API Key）→ 整页引导；已连接 → 侧栏 + 对话（信息面板按需），设置与机器人设置占满主区。
 import { render } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { html, Icon, DialogHost, Notice, Toasts, Splitter, tokenPx } from "./components/ui.js";
+import { html, Icon, IconButton, DialogHost, Notice, Toasts, Splitter, tokenPx } from "./components/ui.js";
 import { Sidebar } from "./screens/sidebar.js";
 import { ChatScreen } from "./screens/chat.js";
 import { InfoPanel } from "./screens/info-panel.js";
@@ -17,11 +17,15 @@ import { MessageSearchScreen, ConversationHistoryScreen } from "./screens/messag
 import { BotAvatar, MAIN_CHAR } from "./components/avatar.js";
 import { Onboarding } from "./screens/onboarding.js";
 import { CoachMark } from "./components/guide.js";
+import { WhatsNewHost, openWhatsNew } from "./components/whats-new.js";
 import { api } from "./lib/api.js";
 import { loadGuide, setFocus, setGuideTrim } from "./lib/guide.js";
+import { restoreDrafts } from "./lib/chat-view.js";
+import { previewText } from "./lib/errors.js";
 import { setThemeMode } from "./lib/theme.js";
 import { failed, toast, useStore } from "./lib/store.js";
 import { prefs, setPrefs } from "./lib/prefs.js";
+import { trailingThrottle } from "./lib/throttle.js";
 import { usePresence } from "./design/motion.js";
 import { t, useLang, adoptServerLang, changeLang, getLangPref, LANG_NAMES, LANGS } from "./lib/i18n.js";
 
@@ -142,15 +146,15 @@ function App() {
   const [route, setRoute] = useState(parseHash);
   const [mf, mfErr, reloadMf] = useLoader(() => api("/modelflare"));
   const [status, , reloadStatus] = useLoader(() => api("/status"));
-  // 新版本提示：服务端在后台查 GitHub，这里只读结果（启动约 20 秒后才有第一次结果，所以隔一分钟看一次）
+  // 更新检查和下载在桌面主进程进行；这里只读状态，下载时更频繁地刷新进度。
   const [update, , reloadUpdate] = useLoader(() => api("/update"));
-  useInterval(reloadUpdate, 60_000);
+  useInterval(reloadUpdate, update?.supported ? (update.phase === "downloading" ? 1000 : 5000) : 60_000);
   const [settings, , reloadSettings, setSettings] = useLoader(() => api("/settings"));
   // 语言偏好以服务端配置为准（可能在另一个窗口 / 浏览器里改过）；本机缓存只管首帧
   useEffect(() => {
     if (settings) adoptServerLang(settings.lang);
   }, [settings && settings.lang]);
-  const connected = !!(mf && (mf.mode === "external" || mf.connected || mf.official));
+  const connected = !!(mf && !mf.setupRequired && (mf.mode === "external" || mf.connected || mf.official));
   const [botsData, botsErr, reloadBots, setBotsData] = useLoader(() => (connected ? api("/bots") : Promise.resolve(null)), [connected]);
   const [groupsData, , reloadGroups] = useLoader(() => (connected ? api("/groups") : Promise.resolve(null)), [connected]);
   const [groupSheet, setGroupSheet] = useState(null); // 建群 / 改群的弹窗：{ group? }
@@ -163,6 +167,19 @@ function App() {
   // OKINTO 账户与余额：后端每 5 分钟读一次；界面每分钟取快照，切回窗口时请后端立刻刷新
   const [account, , , setAccount] = useLoader(() => api("/account"), [connected]);
   const managed = !!(mf && mf.mode === "managed");
+  // 登录 / 退出 / 回到接入配置：重新读连接状态、设置、模型和账户。用 ref 拿最新的加载函数：
+  // loadModels 跟着 connected 变，事件处理里不能留着第一次渲染时的那个（那时可能还没连上，读不到模型）
+  const onConnectionChange = useRef(null);
+  onConnectionChange.current = () => { reloadMf(); reloadSettings(); loadModels(); api("/account").then(setAccount).catch(() => {}); };
+  useEffect(() => {
+    const changed = () => onConnectionChange.current?.();
+    window.addEventListener("amb-connection-change", changed);
+    return () => window.removeEventListener("amb-connection-change", changed);
+  }, []);
+  // 系统要求重新打开应用（电脑操作权限）前暂存的草稿：放回输入框，取一次就删
+  useEffect(() => {
+    api("/computer-use/relaunch-drafts").then((d) => restoreDrafts(d.drafts)).catch(() => {});
+  }, []);
   const [previews, setPreviews] = useState({});
   const [pending, setPending] = useState({});
   const [agentWorking, setAgentWorking] = useState({});
@@ -170,6 +187,8 @@ function App() {
   const [bgWorking, setBgWorking] = useState({});
   // 「需要你」：件数（侧栏那一行，0 时没有）和每个机器人的件数、最早那件
   const [needs, setNeeds] = useState({ n: 0, bots: {} });
+  // 电脑操作在等系统授权的机器人（macOS 桌面版）：对话页显示授权卡片
+  const [cuBlocked, setCuBlocked] = useState([]);
   const [localWorking, setLocalWorking] = useState({});
   const [infoOpen, setInfoOpen] = useState(false);
   const [palette, setPalette] = useState(false);
@@ -195,12 +214,27 @@ function App() {
   useEffect(() => {
     if (connected) loadGuide();
   }, [connected]);
+  // 升级后第一次进到主界面：弹一次"更新了什么"（全新安装、首次登录引导时不弹）
+  useEffect(() => {
+    if (!connected) return;
+    api("/whats-new").then((w) => w.show && openWhatsNew({ mode: "installed", version: w.current, since: w.seen })).catch(() => {});
+  }, [connected]);
   useEffect(() => {
     if (!connected || !managed) return;
     const on = () => document.visibilityState === "visible" && api("/account/refresh", { method: "POST", body: {} }).then(setAccount).catch(() => {});
     window.addEventListener("focus", on);
     return () => window.removeEventListener("focus", on);
   }, [connected, managed]);
+  // 额度要最新的时候请后端立刻读一次（3 秒内读过就沿用）：打开额度卡片时（sidebar.js 发 amb-account-refresh），
+  // 以及每处理完一件事（下面看"工作中"的变化）。后者 10 秒内最多一次，期间又处理完的到时补一次
+  const refreshAccount = useRef(null);
+  refreshAccount.current = () => connected && managed && api("/account/refresh", { method: "POST", body: { maxAgeMs: 3000 } }).then(setAccount).catch(() => {});
+  useEffect(() => {
+    const on = () => refreshAccount.current?.();
+    window.addEventListener("amb-account-refresh", on);
+    return () => window.removeEventListener("amb-account-refresh", on);
+  }, []);
+  const usageRefresh = useMemo(() => trailingThrottle(() => refreshAccount.current?.(), 10_000, 1500), []);
   // 授权在网页上被撤销时后端会断开连接：回到登录页；余额跌破提醒线时提示一次
   const prevAccount = useRef(null);
   useEffect(() => {
@@ -208,7 +242,6 @@ function App() {
     prevAccount.current = account;
     if (!prev || !account) return;
     if (prev.state === "signed_in" && account.state !== "signed_in") reloadMf();
-    if (!prev.lowBalance && account.lowBalance) toast(t("app.lowBalance", { amount: account.balanceUsd.toFixed(2) }), "err");
   }, [account]);
 
   const bots = botsData ? botsData.bots : null;
@@ -224,7 +257,7 @@ function App() {
   }, [bot && bot.id]);
 
   // 信息面板：关上时多留一会儿，播完"列宽滑回 0、面板淡出"再卸载
-  const panelOpen = !searchOpen && route.view === "chat" && infoOpen && !!bot;
+  const panelOpen = route.view === "chat" && infoOpen && !!bot;
   // 目录 Bot 的主界面是专属界面；被安全原因下架的退回普通对话
   const isAppBot = (b) => !!b && b.origin === "catalog" && !b.app?.removed?.security;
   useEffect(() => {
@@ -257,7 +290,7 @@ function App() {
         const latest = {};
         // 群里的话算在群聊那一行，不算在机器人这一行
         for (const c of d.conversations || []) if (!c.peerId?.startsWith("group:") && (!latest[c.botId] || c.updatedAt > latest[c.botId].updatedAt)) latest[c.botId] = c;
-        setPreviews(Object.fromEntries(Object.entries(latest).map(([k, c]) => [k, { text: (c.lastMessage || "").replace(/^⚠️\s*/, "").replace(/\s+/g, " "), at: c.updatedAt }])));
+        setPreviews(Object.fromEntries(Object.entries(latest).map(([k, c]) => [k, { text: previewText(c.lastMessage), at: c.updatedAt, failed: (c.lastMessage || "").startsWith("⚠️") }])));
       })
       .catch(() => {});
     reloadGroups();
@@ -284,6 +317,10 @@ function App() {
           for (const [id, n] of Object.entries(a.background || {})) if (Number(n) > 0) bg[id] = true;
           setBgWorking(bg);
           setNeeds({ n: Number(a.attention) || 0, bots: a.needs || {} });
+          setCuBlocked((prev) => {
+            const next = Array.isArray(a.cuBlocked) ? a.cuBlocked : [];
+            return prev.join() === next.join() ? prev : next;
+          });
         })
         .catch(() => {}),
     [],
@@ -295,6 +332,13 @@ function App() {
     for (const src of [bgWorking, localWorking]) for (const [k, v] of Object.entries(src)) if (v) m[k] = true;
     return m;
   }, [agentWorking, bgWorking, localWorking]);
+  // 某个机器人从"工作中"变回空闲（对话、渠道消息、后台任务处理完）：这次请求的花费已经记上，刷新额度
+  const prevWorking = useRef({});
+  useEffect(() => {
+    const prev = prevWorking.current;
+    prevWorking.current = working;
+    if (account?.state === "signed_in" && Object.keys(prev).some((id) => prev[id] && !working[id])) usageRefresh();
+  }, [working]);
   const wantWorking = useRef({});
   const onWorking = useCallback((id, on) => {
     wantWorking.current[id] = on;
@@ -314,7 +358,11 @@ function App() {
     const target = id || (bot && bot.id) || "";
     go(`/${isAppBot((bots || []).find((b) => b.id === target)) ? "app" : "chat"}/${encodeURIComponent(target)}`);
   };
-  const openDiscover = () => go("/discover");
+  const openDiscover = () => {
+    setSearchOpen(false);
+    setFromSearch(false);
+    go("/discover");
+  };
   const openCatalog = (e) => (e.instanceId ? openChat(e.instanceId) : go(`/preview/${encodeURIComponent(e.id)}`));
   // 第一次发消息创建了实例：地址换成实例，界面不重新加载（BotAppScreen 按目录 id 复用）
   const onInstalled = async (b) => {
@@ -333,7 +381,8 @@ function App() {
   const openNeeds = () => go("/needs");
   const openGroup = (id) => { setSearchOpen(false); setFromSearch(false); go(`/group/${encodeURIComponent(id)}`); };
   const openSearch = (focus = true) => {
-    if (!searchOpenRef.current && !document.activeElement?.matches("[data-global-search-entry]")) searchReturnFocus.current = document.activeElement;
+    // 搜索是弹窗：关上后焦点回到打开它的地方（侧栏的搜索入口、聊天输入框等）
+    if (!searchOpenRef.current) searchReturnFocus.current = document.activeElement;
     setSearchOpen(true); setPalette(false);
     if (focus || window.innerWidth <= 600) setSearchFocus((n) => n + 1);
   };
@@ -341,7 +390,7 @@ function App() {
     setSearchOpen(false);
     requestAnimationFrame(() => {
       const previous = searchReturnFocus.current;
-      if (previous?.isConnected && !previous.matches("[data-global-search-entry]")) previous.focus({ preventScroll: true });
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
     });
   };
   const openSearchHit = (hit, query) => {
@@ -467,48 +516,50 @@ function App() {
   }
   if (!connected) {
     return html`<${Onboarding} gateway=${status && status.gateway} defaultModel=${settings && settings.defaultModel}
-        skipModelStep=${catalog.length > 0}
-        onDone=${() => { reloadMf(); reloadSettings(); go(catalog.length > 0 ? "/discover" : "/chat/"); }} />
+        skipModelStep=${catalog.length > 0} existingConnection=${!!mf.setupRequired && (mf.official || mf.connected)}
+        onDone=${() => { reloadMf(); reloadSettings(); go("/chat/"); }} />
       <${Toasts} />`;
   }
 
   const view = route.view;
   const groups = groupsData ? groupsData.groups : [];
   const routedGroup = view === "group" ? groups.find((g) => g.id === route.groupId) : null;
-  const panelBot = !searchOpen && view === "chat" && infoOpen && bot;
+  const panelBot = view === "chat" && infoOpen && bot;
   const shownPanel = panelFx.mounted ? panelBot || lastPanel.current : null;
   const routedBot = view === "bot-settings" && bots ? bots.find((b) => b.id === route.botId) : null;
-  return html`<div class=${`app${panelBot ? " with-panel" : ""}${searchOpen ? " searching" : ""}${fromSearch && route.messageId ? " search-reading" : ""}`} ref=${appRef}>
+  return html`<div class=${`app${panelBot ? " with-panel" : ""}${fromSearch && route.messageId ? " search-reading" : ""}`} ref=${appRef}>
     ${view === "settings"
       ? html`<${SettingsSide} tab=${route.tab} query=${settingsQ} onQuery=${setSettingsQ} onTab=${(t) => openSettings(t)} onBack=${() => openChat()}
-          username=${status && status.username} account=${managed ? account : null} />`
+          username=${status && status.username} account=${managed ? account : null} update=${update} onUpdateChanged=${reloadUpdate} />`
       : html`<${Sidebar} bots=${bots} botsError=${botsErr} reloadBots=${reloadBots} selectedId=${bot && bot.id} view=${view === "chat" && bots && !bots.length ? "new" : view}
-          previews=${previews} pending=${pending} working=${working} needs=${needs} username=${status && status.username} account=${managed ? account : null} update=${update}
+          previews=${previews} pending=${pending} working=${working} needs=${needs} username=${status && status.username} account=${managed ? account : null} update=${update} onUpdateChanged=${reloadUpdate}
           onNew=${newBot} onSelect=${openChat} onNeeds=${openNeeds} onDeleted=${onDeleted} onOpenSettings=${(tab) => openSettings(tab)} onBotSettings=${openBotSettings} onGuide=${startGuide}
           groups=${groups} groupsLoaded=${!!groupsData} groupId=${route.groupId} onNewGroup=${() => setGroupSheet({})} onSelectGroup=${openGroup} onEditGroup=${(group) => setGroupSheet({ group })} onDeletedGroup=${onDeletedGroup}
           catalog=${catalog} catalogId=${route.catalogId} onDiscover=${openDiscover} onOpenCatalog=${openCatalog}
-          searchQuery=${searchQuery} searchOpen=${searchOpen} onSearchQuery=${setSearchQuery} onOpenSearch=${openSearch} onCloseSearch=${closeSearch} />`}
+          onOpenSearch=${openSearch} />`}
     <${Splitter} class="split-side" size="--side-w" label=${t("app.resizeSide")} value=${sideW} room=${room("--panel-track")} onCommit=${(v) => setPrefs({ sideW: v })} />
     <main class="main">
-      <div class="route-content" hidden=${searchOpen} inert=${searchOpen || undefined}>
+      ${mf.keyChangeNotice && html`<div class="key-change-note"><${Notice} action=${html`<${IconButton} icon="close" label=${t("common.close")} onClick=${async () => { await api("/account/key-notice", { method: "DELETE" }); reloadMf(); }} />`}>${t("firstUse.keyChanged")}<//></div>`}
+      <div class="route-content" inert=${searchOpen || undefined}>
       ${view === "chat" && bot && html`<${ChatScreen} key=${bot.id} bot=${bot} models=${models} modelsError=${modelsError} reloadModels=${reloadModels}
-        initialFocus=${{ id: route.messageId, query: route.query, nonce: messageJump }} onBackToSearch=${fromSearch ? () => openSearch() : undefined} visible=${!searchOpen}
+        initialFocus=${{ id: route.messageId, query: route.query, nonce: messageJump }} onBackToSearch=${fromSearch ? () => openSearch() : undefined}
         defaultModel=${settings && settings.defaultModel} infoOpen=${infoOpen} onToggleInfo=${() => setInfoOpen((v) => !v)}
         onWorking=${onWorking} pending=${pending[bot.id] || 0} serverBusy=${!!agentWorking[bot.id]} onOpenSettings=${openSettings} onOpenBotSettings=${openBotSettings} onBotUpdated=${onBotUpdated}
-        account=${managed ? account : null} onAccount=${setAccount} />`}
+        account=${managed ? account : null} onAccount=${setAccount} cuBlocked=${cuBlocked.includes(bot.id)} />`}
       ${view === "discover" && html`<${DiscoverScreen} catalog=${catalog} onOpen=${openCatalog} />`}
       ${(view === "preview" || (view === "app" && bot && bot.app)) && html`<${BotAppScreen} key=${view === "preview" ? route.catalogId : bot.app.catalogId} catalogId=${view === "preview" ? route.catalogId : bot.app.catalogId} bot=${view === "preview" ? (bots || []).find((b) => b.app?.catalogId === route.catalogId) || null : bot}
         onInstalled=${onInstalled} onBotUpdated=${onBotUpdated} onOpenBotSettings=${openBotSettings} onOpenSettings=${openSettings}
-        chatProps=${{ visible: !searchOpen, models, modelsError, reloadModels, defaultModel: settings && settings.defaultModel, onWorking, pending: (bot && pending[bot.id]) || 0, serverBusy: !!(bot && agentWorking[bot.id]), onOpenSettings: openSettings, onOpenBotSettings: openBotSettings, onBotUpdated, account: managed ? account : null, onAccount: setAccount }} />`}
+        chatProps=${{ models, modelsError, reloadModels, defaultModel: settings && settings.defaultModel, onWorking, pending: (bot && pending[bot.id]) || 0, serverBusy: !!(bot && agentWorking[bot.id]), onOpenSettings: openSettings, onOpenBotSettings: openBotSettings, onBotUpdated, account: managed ? account : null, onAccount: setAccount, cuBlocked: !!(bot && cuBlocked.includes(bot.id)) }} />`}
       ${view === "group" && routedGroup && bots && html`<${GroupScreen} key=${routedGroup.id} group=${routedGroup} bots=${bots} onEdit=${() => setGroupSheet({ group: routedGroup })} onOpenSettings=${openSettings} onChanged=${reloadGroups}
-        initialFocus=${{ id: route.messageId, query: route.query, nonce: messageJump }} onBackToSearch=${fromSearch ? () => openSearch() : undefined} visible=${!searchOpen} />`}
-      ${view === "conversation" && html`<${ConversationHistoryScreen} key=${route.conversationId} conversationId=${route.conversationId} initialFocus=${{ id: route.messageId, query: route.query, nonce: messageJump }} onBack=${() => openSearch()} onBot=${openChat} bots=${bots || []} visible=${!searchOpen} />`}
+        initialFocus=${{ id: route.messageId, query: route.query, nonce: messageJump }} onBackToSearch=${fromSearch ? () => openSearch() : undefined} />`}
+      ${view === "conversation" && html`<${ConversationHistoryScreen} key=${route.conversationId} conversationId=${route.conversationId} initialFocus=${{ id: route.messageId, query: route.query, nonce: messageJump }} onBack=${() => openSearch()} onBot=${openChat} bots=${bots || []} />`}
       ${view === "group" && groupsData && !routedGroup && html`<div class="empty-state"><b>${t("app.groupMissing")}</b><button type="button" class="text" onClick=${() => openChat()}>${t("app.backToChat")}</button></div>`}
       ${(view === "new" || (view === "chat" && bots && !bots.length)) && html`<${NewBotScreen} first=${!!bots && !bots.length}
+        models=${models} modelsError=${modelsError} reloadModels=${reloadModels} defaultModel=${settings && settings.defaultModel}
         onCreated=${onCreated} onCancel=${bots && bots.length ? () => openChat() : null} />`}
       ${view === "settings" && html`<${SettingsScreen} tab=${route.tab} query=${settingsQ} onQuery=${setSettingsQ} onTab=${(t) => openSettings(t)} focusRow=${route.row}
         mf=${mf} onMfChanged=${reloadMf} onSettings=${setSettings} models=${models} modelsError=${modelsError} reloadModels=${reloadModels}
-        status=${status} update=${update} bots=${bots} onOpenBotSettings=${openBotSettings} account=${managed ? account : null} onAccount=${setAccount} />`}
+        status=${status} update=${update} onUpdateChanged=${reloadUpdate} bots=${bots} onOpenBotSettings=${openBotSettings} account=${managed ? account : null} onAccount=${setAccount} />`}
       ${view === "needs" && html`<${NeedsYouScreen} multiBot=${!!bots && bots.length > 1} onChanged=${pollWorking} onOpenChat=${openChat} onRelogin=${relogin} onOpenBotSettings=${openBotSettings} />`}
       ${view === "bot-settings" && routedBot && html`<${BotSettingsScreen} key=${routedBot.id} bot=${routedBot} section=${route.section}
         models=${models} modelsError=${modelsError} reloadModels=${reloadModels} defaultModel=${settings && settings.defaultModel}
@@ -523,10 +574,11 @@ function App() {
     ${shownPanel && html`<div class=${`panel-scrim${panelFx.leaving ? " leaving" : ""}`} onClick=${() => setInfoOpen(false)}></div>`}
     ${shownPanel && html`<${InfoPanel} key=${shownPanel.id} bot=${shownPanel} leaving=${panelFx.leaving} onClose=${() => setInfoOpen(false)}
       onOpenBotSettings=${() => openBotSettings(shownPanel.id)} onOpenChat=${() => setInfoOpen(false)} onOpenConnections=${(row) => openSettings("connections", row || "")} />`}
-    <${CoachMark} bot=${!searchOpen && view === "chat" ? bot : null} view=${searchOpen ? "search" : view} infoOpen=${!!panelBot} />
+    <${CoachMark} bot=${!searchOpen && view === "chat" ? bot : null} view=${searchOpen ? "search" : view} infoOpen=${!!panelBot} busy=${!!bot && working[bot.id]} onConnections=${(channel) => openSettings("connections", `add-channel-${channel}`)} />
     ${palette && html`<${Palette} commands=${commands} onClose=${() => setPalette(false)} />`}
     ${groupSheet && bots && html`<${GroupSheet} group=${groupSheet.group} bots=${bots} onClose=${() => setGroupSheet(null)}
       onSaved=${async (g) => { setGroupSheet(null); await reloadGroups(); openGroup(g.id); }} />`}
+    <${WhatsNewHost} update=${update} onUpdateChanged=${reloadUpdate} />
     <${DialogHost} />
     <${Toasts} />
   </div>`;

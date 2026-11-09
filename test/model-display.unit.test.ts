@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayModel as serverLabel, parsePlaygroundModel } from "../src/account/newapi-types.js";
+import { displayModel as serverLabel, parsePlaygroundModel } from "../src/providers/newapi.js";
 // @ts-expect-error Browser module
 import { displayModel, displayModelText, shortModel } from "../ui/lib/models.js";
 

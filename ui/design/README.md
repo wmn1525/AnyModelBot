@@ -51,11 +51,11 @@ ui/components/ui.js      组件的 JS 写法：Icon Button IconButton Notice Ske
 | 圆角 | `--r-xs … --r-3xl`、`--r-full`。同一种面用同一个圆角角色：`--r-well`（内容里的一组）、`--r-pane`（面板与浮层）、`--r-bubble`（消息气泡），见「容器与层次」。嵌套时内层 = 外层 − 内边距（`.seg`、`.pop` 里的列表项就是这样算的）。圆形用 `50%`。 |
 | 间距 | 4 的倍数 `--space-1 … --space-16`，另有 `-0-5 / -1-5 / -2-5 / -3-5` 半步。页面和组件先用按用途命名的间距角色（见下文「间距」）。写死的像素只允许 0、≤1px 的细线，以及同一行带 `/* 微调：… */` 注释的光学微调。 |
 | 控件高度 | `--ctl-xs … --ctl-2xl`（22 / 24 / 28 / 32 / 36 / 44）。 |
-| 细线 | `--hairline`：一个物理像素（普通屏 1px，高分屏 .5px）。面板、浮层的细边都用它——写死 `.5px` 在 1x 屏上会被抗锯齿成一道若有若无的虚影。 |
-| 层次 | `--well` / `--well-hover` / `--well-press`（内容里的一组，只有这一层）；`--line-2`（行间细线）；`--ctl-edge` / `--ctl-edge-hover`（输入框的边，≥ 3:1）；`--red-wash` / `--amber-wash`（提示行的淡底）。规则见「容器与层次」。 |
-| 投影 | 分三档，只给浮在内容上的东西，都很淡：`--shadow-float`（输入框、回到底部、提示胶囊）、`--shadow-pop`（菜单、引导卡片、抽屉）、`--shadow-modal`（对话框、命令面板）。`--shadow-pane` 只有一道细线（面板）。`--seg-edge` 是分段 thumb、开关圆钮的一点点影子。见「容器与层次」。 |
+| 细线 | `--hairline`：一个物理像素（普通屏 1px，高分屏 .5px）。浮层的细边都用它——写死 `.5px` 在 1x 屏上会被抗锯齿成一道若有若无的虚影。 |
+| 层次 | `--well` / `--well-hover` / `--well-press`（内容里的一组，只有这一层）；`--fill-field` / `--fill-field-hover`（输入框的填充）；`--line-2`（表头下沿）；`--red-wash` / `--amber-wash`（提示行的淡底）。规则见「容器与层次」。 |
+| 投影 | 分三档，只给浮在内容上的东西，都很淡：`--shadow-float`（输入框、回到底部、提示胶囊）、`--shadow-pop`（菜单、引导卡片、抽屉）、`--shadow-modal`（对话框、命令面板）。`--shadow-pane` 是 `none`（面板靠底色和窗口分开）。`--seg-edge` 是分段 thumb、开关圆钮的一点点影子。见「容器与层次」。 |
 | 层级 | 只用 `--z-*`；同一窗格内的浮动件用 `calc(var(--z-float) ± 1)`。 |
-| 焦点 | 输入框：accent 描边（浅色墨、深色近白）+ `box-shadow: var(--ring)` 中性光晕（错误时 `--ring-danger`）；其他控件：全局 `:focus-visible` 2px 描边、外移 2px，装在会裁切的容器里时用 `--focus-offset` 往里收。 |
+| 焦点 | 输入框：填充深一级 + 一圈和填充同色的淡光晕（错误时 `--ring-danger`）；其他控件：全局 `:focus-visible` 2px 描边、外移 2px，装在会裁切的容器里时用 `--focus-offset` 往里收。 |
 
 现有语义色名（`--bg --card --pill --line --fg --muted --accent …`）沿用 magpie 的叫法，分组见 `semantic.css` 里的 `/* —— 组 —— */` 注释。
 
@@ -108,24 +108,25 @@ ui/components/ui.js      组件的 JS 写法：Icon Button IconButton Notice Ske
 | 主操作：主按钮、打开的开关、滑块 | `--primary` / `--on-primary` | 墨底白字 | 近白底墨字 |
 | 发送 / 停止 | `--send-bg` / `--send-fg` | 墨色圆钮 + 黄绿箭头 | 近白圆钮 + 墨色箭头 |
 | 焦点、勾选、链接 | `--accent` | 墨色 | 近白 |
-| 输入框聚焦光晕 | `--ring`（`--accent-soft`） | 中性 | 中性 |
+| 拖入文件、按钮的焦点光晕 | `--ring`（`--accent-soft`） | 中性 | 中性 |
 | 选中文字、定位闪烁 | `--mark` / `--on-mark` | 一层灰 | 一层白 |
-| "有新东西"的小点：未读、上新、回到底部、新版本 | `--signal` | 墨色 | 黄绿 |
+| 提示蓝点：侧栏里等你处理的机器人和「需要你」、上新、未读、回到底部、新版本 | `--signal` | 蓝 `--blue-500` | 蓝 `--blue-400` |
 | 品牌填充：只给应用标志 | `--brand` / `--on-brand` / `--brand-line` | 黄绿底墨字 | 同左 |
 
-黄绿能出现的地方只有上面三处（浅色的发送箭头、深色的小点、应用标志），外加模型选择器的彩蛋（两个滑块都拉满时才有）。**不要用黄绿铺底**：按钮、提示胶囊、选中态、进度、图表都用中性色；状态（成功、工作中）用 `--green`，不要用黄绿冒充。
+黄绿能出现的地方只有上面两处（浅色的发送箭头、应用标志），外加模型选择器的彩蛋（两个滑块都拉满时才有）。**不要用黄绿铺底**：按钮、提示胶囊、选中态、进度、图表都用中性色；状态（成功、工作中）用 `--green`，不要用黄绿冒充。
 
 **余额**（账户浮层、设置 › okinto 中转，`Balance` 组件）：一个安静的数字。低于提醒线时数字不变色（红字像欠费），只多一行带琥珀色小点的小字；侧栏底部是一行灰底提示（`.side-note`），不写金额。
 
 ## 材质
 
-窗口只有几种面，越往上越亮。层次靠底色和一道细线，不靠投影和透明（参考 Codex、Grok）。
+窗口只有几种面，越往上越亮。层次靠底色，不靠线、投影和透明（参考 Codex、Grok）。
 
 | 层 | 是什么 | token |
 |---|---|---|
 | 窗口底色 | 窗口最底层，侧栏就是它：一层纯色的中性灰，不放光晕、不随机器人变色（用户 2026-11-03 要求）。`.app`、引导页、样例页的 `.window-bg` 共用 | `--bg`（`--glass-side` 是透明） |
 | 主区、信息面板、引导页卡片 | 窗口底色上的圆角面板，四周留 `--pane-gap` | `--surface`、`--glass-panel`，`--shadow-pane` |
-| 顶栏、输入框、回到底部 | 盖在滚动内容上，几乎不透，内容从底下滚过只隐约看得到 | `--glass-chrome`、`--glass-float` + `--glass-filter` |
+| 顶栏、回到底部 | 盖在滚动内容上，几乎不透，内容从底下滚过只隐约看得到 | `--glass-chrome`、`--glass-float` + `--glass-filter` |
+| 对话输入框 | 盖在滚动内容上的一块实色填充，比主区深一档 | `chat.css` 的 `--composer-bg` |
 | 菜单、命令面板、提示、对话框 | 最上层，基本是实色 | `--glass-pop`、`--glass-sheet` + `--glass-filter-lg` |
 
 写法：
@@ -137,23 +138,23 @@ ui/components/ui.js      组件的 JS 写法：Icon Button IconButton Notice Ske
 
 不用磨砂颗粒，也不用顶边高光：干净比质感重要。
 
-- **填充、悬停、描边都是半透明的一层**（`--pill*`、`--side-*`、`--line*`、`--sel*`），放在玻璃和实色上都对。不要在玻璃上用实色灰。
+- **填充、悬停都是半透明的一层**（`--pill*`、`--side-*`、`--fill-field*`、`--sel*`），放在玻璃和实色上都对。不要在玻璃上用实色灰。
 - **`backdrop-filter` 和 `transform` 会让元素变成 `position: fixed` 子元素的包含块**。对话框（`.scrim`）还是渲染在原地的，所以侧栏、主区、`.chat` 不要加；下拉不受影响，`Popover` 挂在 `<body>` 下。
 - 系统开了"降低透明度"（`prefers-reduced-transparency`，解析成 `<html data-glass="off">`）时，盖在内容上的几样换成实色、`--glass-filter*` 变成 `none`。不做成用户设置：材质本来就几乎不透，开关看不出差别（用户 2026-11-03 定的，Cursor 也没有这个选项）。
 - **模糊只给浮层**：对话框、命令面板后面的遮罩只压暗、不模糊——对话框自己的玻璃已经模糊了一层，两层叠在一起既糊又费 GPU。
 
 ## 容器与层次
 
-一句话：**成组靠底色和间距，不靠描边；一组里面不再套一组；投影只给真正浮在内容上的东西。**
+一句话：**成组靠底色和间距，不靠线；一组里面不再套一组；投影只给真正浮在内容上的东西。**（用户 2026-11-09 要求：整个客户端少用线段，输入框也不描边，干净整洁。）
 
 | 层 | 是什么 | 底色 | 边 | 投影 |
 |---|---|---|---|---|
 | 0 窗口 | 窗口底色、侧栏 | `--bg` | 无 | 无 |
-| 1 面板 | 主区、信息面板、引导页卡片 | `--surface` / `--glass-panel` | 一道细线 `--shadow-pane` | 无 |
+| 1 面板 | 主区、信息面板、引导页卡片 | `--surface` / `--glass-panel` | 无（靠底色和窗口分开） | 无 |
 | 2 组（只有这一层） | 设置分组 `.list`、提问 / 审批卡 `.card`、代码块、文件、模板卡、行内提示、展开的编辑区 | `--well`，可点的组悬停 `--well-hover`、按下 `--well-press` | 无 | 无 |
-| 组里的东西 | 行、命令、选项、按钮、输入框 | 直接排在组里，行与行之间一条 `--line-2` | 只有输入框有 | 无 |
-| 顶栏 | 盖在滚动内容上 | `--glass-chrome` | 滚动后下面一条细线 | 无 |
-| 3 常驻浮件 | 对话输入框、回到底部、提示胶囊 | `--glass-float` / `--glass-pop` | 一道细线 | `--shadow-float`，很淡 |
+| 组里的东西 | 行、命令、选项、按钮、输入框 | 直接排在组里，行与行之间靠行高分开；输入框是一块 `--fill-field` | 无 | 无 |
+| 顶栏 | 盖在滚动内容上 | `--glass-chrome` | 无 | 无 |
+| 3 常驻浮件 | 回到底部、提示胶囊；对话输入框是一块实色填充，不描边、不加投影 | `--glass-float` / `--glass-pop` | 一道细线 | `--shadow-float`，很淡 |
 | 4 临时弹出 | 菜单、引导卡片、窄窗口的抽屉 | `--glass-pop` | 一道细线 | `--shadow-pop` |
 | 5 模态 | 对话框、命令面板，后面有遮罩 | `--glass-sheet` / `--glass-pop` | 一道细线 | `--shadow-modal` |
 
@@ -162,22 +163,21 @@ ui/components/ui.js      组件的 JS 写法：Icon Button IconButton Notice Ske
 - **深色下越往上越亮**：`--bg` → `--surface` → `--glass-float` / `--glass-pop` → `--glass-sheet`，投影只是辅助。
 
 - **不嵌套**：`--well` 里不再放 `--well`、卡片或描边框。审批卡里的 `write_file …` 就是一行等宽字；选项字母平时只是一列字，选中才填成一块（这是状态，不是容器）；图标不套底片（模板卡选中时图标换成主操作色的一片，也是状态）。对话框里不再套卡片："更换密钥"的表单直接排在对话框的内边距里。信息面板上的行直接排在面板上，只有展开的编辑区和待审批是一层 `--well`。
-- **描边只给两种东西**：
-  1. 文字输入框 `.field`：`--ctl-edge`，对它可能落在的每一种表面（主区、信息面板、对话框、`--well`）都 ≥ 3:1（两个主题都约 3.2:1），底色透明；悬停 `--ctl-edge-hover`，聚焦换 accent + `--ring`。这是界面里唯一常驻的边——看到边就知道"这里能打字"。
-  2. 浮层玻璃的细边 `--glass-edge`，以及应用标志的墨色细边 `--brand-line`（黄绿在白底上只有 1.15:1）。
-- **分隔线**只用在行与行之间（列表行、表格行、菜单分隔、正文 `hr`、"用时"下面），≤ 1px 的 `--line-2`（表头下沿用 `--line`）。表格不画格子：没有外框、竖线和表头底色，第一列贴着正文左边。
+- **输入框是填充，不描边**：`.field` 是一块 `--fill-field`（半透明，放在主区、信息面板、对话框、`--well` 上都认得出），悬停、聚焦深一级，聚焦再加一圈和填充同色的淡光晕；对话输入框是一块比主区深一档的实色。系统高对比度模式（`forced-colors`）下没有填充，补回一道系统色的边。
+- **常驻的边只剩**浮层玻璃的细边 `--glass-edge`，以及应用标志的墨色细边 `--brand-line`（黄绿在白底上只有 1.15:1）。
+- **不画分隔线**：列表行、菜单分组、"用时"下面、设置里的块与块之间都靠间距；菜单的 `li.sep` / `hr` 只是一段空。剩下的线只有表格表头下沿（`--line-2`）、正文 `hr` 和引文的灰色竖线。表格不画格子：没有外框、竖线、行线和表头底色，第一列贴着正文左边。
 - **不加侧边色条**：提示 `.notice` 是一行淡底（`--red-wash` / `--amber-wash` / `--well`）+ 左边一个图标 + `--fg` 的字（在淡底上 ≥ 14:1）；语气靠图标颜色，不要"淡红底 + 红边 + 左侧粗红条"，也不要淡红底上的红字（对比度不够）。引文 `blockquote` 的灰色竖线是排版记号，可以留。
-- **描边和投影不另外叠加**：内容里的组两样都不要；浮层只用上面那三档（细线已经在里面）；分段 thumb、开关圆钮只有 `--seg-edge`。
-- **状态用点，不用彩色胶囊**：`.badge` 是"状态点 + 文字"（和设置页的「● 已连接」同一种写法）；只有计数 `.badge.count` 保留一小块底。
+- **描边和投影不另外叠加**：内容里的组两样都不要；浮层只用 `--shadow-float / -pop / -modal`（细线已经在里面）；分段 thumb、开关圆钮只有 `--seg-edge`。
+- **状态用点，不用彩色胶囊**：`.badge` 是"状态点 + 文字"（和设置页的「● 已连接」同一种写法）；计数 `.badge.count` 只留在信息面板、连接页的分组标题里。**侧栏不用数字标签**（用户 2026-11-09 要求）：等你处理的机器人行和「需要你」右边只有一个蓝点 `.needs-dot`（`--signal`），件数写在 title 和读屏文字里；头像等你时照样跳，但不冒感叹号。
 - **小标签**：分组名、菜单分组一律 `.t-label`（11px semibold、`--muted`），不全大写、不加字距、不用 `--faint`（读不清）。
 - **同一种面同一个圆角**：`--r-well`（12）、`--r-pane`（14）、`--r-bubble`（20）。
 - **不用装饰性 emoji**：服务端用 `⚠️` 标记出错的消息（微信、飞书里只能这样），界面里显示前去掉，语气交给 `Notice` 的图标。
 
 **可交互的东西要认得出来**（非文字对比度 ≥ 3:1，或者有等效的提示）：
 
-- 输入框：`--ctl-edge` 本身 ≥ 3:1。
-- 对话输入框认得出它靠一道细边、常显的占位文字（`--placeholder`，3:1）、工具栏和发送钮、固定在底部的位置，输入时边深一级；侧栏搜索框靠放大镜图标 + 占位文字 + 底色，聚焦时一道 `--line-strong` 的边。
-- 按钮、分段、开关、下拉靠文字和填充；键盘焦点一律 2px accent 描边（`:focus-visible`），输入框是 accent 描边 + `--ring`。
+- 输入框：靠填充、上方的标签和常显的占位文字（`--placeholder`，3:1）认出来；聚焦时填充深一级 + 淡光晕。高对比度模式下有系统色的边。
+- 对话输入框认得出它靠比主区深一档的实色、常显的占位文字、工具栏和发送钮、固定在底部的位置；侧栏搜索框靠放大镜图标 + 占位文字 + 底色，聚焦时换成实色面。
+- 按钮、分段、开关、下拉靠文字和填充；键盘焦点一律 2px accent 描边（`:focus-visible`），输入框是填充深一级 + 淡光晕。
 
 真的需要一道边时，在**同一行**写 `/* 描边：理由 */`，守卫测试认这个注释（`ui/` 下除 token 文件外的所有 CSS）。
 
@@ -189,14 +189,14 @@ ui/components/ui.js      组件的 JS 写法：Icon Button IconButton Notice Ske
 |---|---|---|
 | 悬停 | 叠一层半透明，静默控件的字从 `--ctl-fg` 变 `--fg`；可点的组（模板卡）底色深一级，不浮起、不加描边 | `--pill` → `--pill-hover`，`--well` → `--well-hover`；侧栏里是一层淡灰 `--side-hover` |
 | 按下 | 再深一级，不缩小、不回弹 | `--pill-press`、`--sel-press`、`--side-press` |
-| 键盘焦点 | `:focus-visible` 2px `--accent` 描边；输入框是描边 + 光晕 | `--focus-offset`、`--ring` |
+| 键盘焦点 | `:focus-visible` 2px `--accent` 描边；输入框是填充深一级 + 淡光晕 | `--focus-offset`、`--field-ring` |
 | 打开 | 菜单展开时触发它的按钮保持"按住"的样子，箭头翻转，加号转成叉 | `[aria-expanded="true"]`，`.icon-btn.on` |
 | 选中 / 当前 | 侧栏行和设置导航是同一种灰深一级，没有投影；菜单当前项打勾；模板卡底色深一级、图标换成主操作色的一片；头像选择是底色深一级 + 名字变实（头像在"听"）。都不描边 | `--side-active`，`--well-press`，`--pill-press` |
 | 禁用 | `--o-disabled`，不响应悬停和按下；主按钮和发送钮退成中性灰（半透明的主操作色会发浑） | `:disabled` |
 | 加载 | 转圈，颜色不变，只是不可点（`aria-busy`） | `Button loading` |
-| 错误 | 红描边，聚焦时红光晕 | `.err` / `aria-invalid`，`--ring-danger` |
+| 错误 | 铺一层淡红，聚焦时红光晕 | `.err` / `aria-invalid`，`--red-wash`、`--ring-danger` |
 | 只读 | 次级底，聚焦不发光 | `[readonly]` |
-| 滚动边缘 | 内容滚到顶栏底下时，顶栏才出现一条细线 | `.chat.scrolled` |
+| 滚动边缘 | 顶栏不画线，内容滚到底下时只靠毛玻璃 | `--glass-chrome` |
 
 ## 分隔条
 
@@ -262,9 +262,9 @@ ui/components/ui.js      组件的 JS 写法：Icon Button IconButton Notice Ske
 | 图标 | `Icon`（`svg.ic [ic-xs\|ic-sm\|ic-md\|ic-lg\|ic-xl] [ic-strong]`），见下文「图标」 | `--ic-size --ic-w` |
 | 图标按钮 | `.icon-btn [xs] [on]`；`IconButton` 的 `iconSize` 缺省 `sm` | `--ib-size --ib-r --ib-fg --ib-fg-hover --ib-bg-hover --ib-bg-on --ib-bg-press` |
 | 文字按钮 | `.text [danger\|accent]` | — |
-| 输入框 | `.field [mono] [err]`，`.field-wrap > .field + .tail`；边是 `--ctl-edge`（≥ 3:1），底透明 | `--field-h --field-px --field-r --field-bg --field-edge --field-edge-hover --field-edge-focus --field-ring` |
-| 状态 / 计数 / 点 | `.badge [ok\|err\|warn\|off]`（状态点 + 文字），`.badge.count [warn]`（计数，唯一带底的徽标），`.dot [ok\|err\|warn]` | `--badge-fg`（点的颜色；计数的字色）`--badge-bg`（只对计数），`--dot-bg` |
-| 列表行 | `.list > .row [compact] [clickable] [off] [flash]`，`.row-edit`，`.list-head`；`.list` 是一块 `--well`，行间 `--line-2` | `--row-h --row-py --row-pl --row-pr --row-gap` |
+| 输入框 | `.field [mono] [err]`，`.field-wrap > .field + .tail`；一块 `--fill-field` 填充，不描边 | `--field-h --field-px --field-r --field-bg --field-bg-hover --field-ring` |
+| 状态 / 计数 / 点 | `.badge [ok\|err\|warn\|off]`（状态点 + 文字），`.badge.count [warn]`（计数，唯一带底的徽标；侧栏不用，侧栏用蓝点 `.needs-dot`），`.dot [ok\|err\|warn]` | `--badge-fg`（点的颜色；计数的字色）`--badge-bg`（只对计数），`--dot-bg` |
+| 列表行 | `.list > .row [compact] [clickable] [off] [flash]`，`.row-edit`，`.list-head`；`.list` 是一块 `--well`，行间不画线 | `--row-h --row-py --row-pl --row-pr --row-gap` |
 | 分段 | `Seg` 组件（`.seg > .thumb + button`），两个以上的选项 | `--seg-r --seg-pad --seg-thumb --seg-on` |
 | 开关 | `Switch` 组件（`button.switch[role=switch] [sm]`），只有开 / 关 | `--switch-w --switch-h --switch-pad --switch-track --switch-track-hover --switch-dot` |
 | 档位滑块 | `Stops` 组件（`.stops[role=slider] [custom] > .stops-fill + .stops-dot + .stops-knob`），几档离散的值；`value = -1` 不在任何一档上 | `--stops-h --stops-pad --stops-track --stops-fill-bg --stops-knob-bg --stops-dot-bg --stops-dot-on` |
@@ -322,9 +322,9 @@ JS 组件（`ui/components/ui.js`）只是给常用组合一个带逻辑的写�
 | 发出 | 你的气泡 | `fade-in`（base） |
 | 思考 | 工作状态行 | 比气泡晚 `--stagger` 淡入；"思考中"是 `sheen` 微光 |
 | 输出 | 新段落 / 列表项 | 新挂载的块淡入（moderate），已在的不重播；最后一段末尾一个 `breathe` 小点（代码块、表格结尾不画） |
-| 收尾 | 状态行、操作 | "用时"换字淡入、细线淡入；短于 3 秒的整行平滑收起；最后一条回复的复制 / 时刻晚一拍淡入 |
+| 收尾 | 状态行、操作 | "用时"换字淡入；短于 3 秒的整行平滑收起；最后一条回复的复制 / 时刻晚一拍淡入 |
 | 插入 | 提问 / 审批卡、出错提示、交付的文件 | `fade-in` |
-| 输入框 | 边、发送钮 | 聚焦时边深一级；发送、停止互换时图标淡入；点发送 / 停止不抢输入框焦点 |
+| 输入框 | 发送钮 | 发送、停止互换时图标淡入；点发送 / 停止不抢输入框焦点 |
 | 其他 | 首次加载、回到底部 | 历史读到后整列淡入一次；回到底部淡入淡出 |
 
 ## 头像
@@ -364,6 +364,7 @@ JS 组件（`ui/components/ui.js`）只是给常用组合一个带逻辑的写�
 - **一次性反应** `cue={ kind, at }`：`hello`（新建 / 打招呼，`greet` 在挂载时播）、`done`（忙 → 不忙时自动播）、`error`、以及戳头像触发的 `poke` / `love`（连戳三下）/ `dizzy`（戳六下）。时长是 `tokens/motion.css` 的 `--bot-*`。
 - **lively**：只给大头像（空态、新建页、启动页）：呼吸、眨眼、四处看、脚下有影子。小于 36px 不画粒子。
 - **图层**：`python3 scripts/build-bot-avatars.py` 把每张原图拆成头（眼睛已抹掉）、两只耳朵、头顶配件和发光部分，输出 `design/bots/<key>.webp`（8 格精灵图）。眼睛是 `avatar.js` 画的 SVG，才能眨眼和换表情（睁眼、开心、闭眼、难过、××、晕、爱心）。换原图后重跑脚本，几何有变化时同步 `BOT_CHARS` 里的百分比。
+- **分档与边缘**：`<key>.webp` 每格 448，另有 `<key>@224 / @112 / @56.webp`，`avatar.js` 按显示尺寸 × 设备像素比挑最小的够用的一档（`SPRITE_TIERS`），不让浏览器把 448 的图实时缩到 20–40px（绒毛边缘会出锯齿、动起来会闪）。脚本还把原画轮廓外圈带背光的浅色毛尖换成内侧绒毛的颜色，112 / 56 档另外压暗内侧的轮廓光，暗色界面上不再有一圈浅色毛边。改分档要同时改脚本的 `TIERS`、`SPRITE_TIERS` 和官网 `site/src/lib/bots.ts`（`test/avatars.unit.test.ts` 会查）。
 
 ## 文案
 

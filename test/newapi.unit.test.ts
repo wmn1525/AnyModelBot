@@ -1,6 +1,6 @@
 ﻿import { describe, expect, it } from "vitest";
-import { fetchKeyBalance, modelflareBaseUrl, modelflareIssuer, verifyModelflareKey } from "../src/modelflare.js";
-import { MediaService } from "../src/agent/media.js";
+import { fetchKeyBalance, modelflareBaseUrl, modelflareIssuer, verifyModelflareKey } from "../src/providers/modelflare.js";
+import { MediaService } from "../src/tools/media/index.js";
 
 const base = "https://api.okinto.com/v1";
 function mock(routes: Record<string, unknown>, calls: Array<{ path: string; auth: string | null }> = []) {

@@ -5,7 +5,8 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import type { AddressInfo } from "node:net";
-import { dirHash, packFiles, readBundle, safeRelPath, sha256, unpackTo } from "../src/botkit/bundle.js";
+import { dirHash, packFiles, readBundle, sha256, unpackTo } from "../src/botkit/bundle.js";
+import { safeRelPath } from "../src/domain/paths.js";
 import { BotCatalog } from "../src/botkit/catalog.js";
 import { catalogConfig } from "../src/botkit/config.js";
 import { checkStatic } from "../src/botkit/check.js";
@@ -20,7 +21,7 @@ import { Store } from "../src/store/db.js";
 import { UserSkills } from "../src/skills/service.js";
 import { readSkillZip } from "../src/skills/archive.js";
 import { skillZip, skillMd } from "./skill-fixture.js";
-import { botAppCsp, serveBotAppStatic } from "../src/web/botapp.js";
+import { botAppCsp, serveBotAppStatic } from "../src/botkit/static.js";
 // @ts-expect-error 前端模块是无类型的原生 ES 模块
 import { safeExternalUrl } from "../ui/lib/bot-bridge.js";
 
@@ -293,6 +294,16 @@ describe("约束检查", () => {
     write(dir, "ui/big.bin", Buffer.from(Array.from({ length: 800_000 }, () => Math.floor(Math.random() * 256))) as unknown as string);
     expect(rules(dir)).toContain("ui.size");
   });
+  it("发现页封面可选；有的话要是 PNG，不超过远程缩略图的上限", () => {
+    const png = (extra: number) => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(extra)]);
+    fs.mkdirSync(path.join(dir, "cover"), { recursive: true });
+    fs.writeFileSync(path.join(dir, "cover/light.png"), png(16));
+    expect(rules(dir)).not.toContain("format.cover");
+    fs.writeFileSync(path.join(dir, "cover/dark.png"), Buffer.from("GIF89a"));
+    expect(rules(dir)).toContain("format.cover");
+    fs.writeFileSync(path.join(dir, "cover/dark.png"), png(600 * 1024));
+    expect(checkStatic(dir).issues.find((i) => i.rule === "format.cover")?.file).toBe("cover/dark.png");
+  });
 });
 
 /** 起一个静态服务器当目录地址 */
@@ -410,6 +421,19 @@ describe("目录", () => {
     await c.sync();
     expect(c.list()).toEqual([]);
     expect(c.get("fixture-bot")?.removed?.security).toBe(true);
+  });
+  it("发现页缩略图先用画好的封面 cover/，没有时退回渲染截图 .check/", () => {
+    const bot = path.join(repo, "bots", "fixture-bot");
+    const png = (s: string) => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from(s)]);
+    const shot = png("shot-light");
+    const cover = png("cover-light");
+    const dark = png("shot-dark");
+    write(bot, ".check/light.png", shot as unknown as string);
+    write(bot, ".check/dark.png", dark as unknown as string);
+    expect(pack().index.bots[0].thumbs).toEqual({ light: sha256(shot), dark: sha256(dark) });
+    write(bot, "cover/light.png", cover as unknown as string);
+    expect(pack().index.bots[0].thumbs).toEqual({ light: sha256(cover), dark: sha256(dark) });
+    expect(fs.readFileSync(path.join(out, "thumbs", `${sha256(cover)}.png`))).toEqual(cover);
   });
   it("Bot 目录删掉之后，下架记录仍在 index 里", () => {
     write(repo, "catalog.json", JSON.stringify({ removed: { "fixture-bot": { reason: "x" } } }));

@@ -54,6 +54,8 @@ const P = {
   code: "M5.25 4.5 1.75 8l3.5 3.5M10.75 4.5 14.25 8l-3.5 3.5M9.1 2.75 6.9 13.25",
   shield: "M8 1.75 2.75 3.6v4.15c0 3.05 2.2 5.4 5.25 6.5 3.05-1.1 5.25-3.45 5.25-6.5V3.6L8 1.75Z",
   pulse: "M1.75 8.25h2.5l1.5-3.75 2.75 7.5 1.75-5 1 1.25h3",
+  compass: "M8 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12ZM10.5 5.5 9.25 9.25 5.5 10.5l1.25-3.75L10.5 5.5Z",
+  inbox: "M2.25 9.25 3.85 4.1a1 1 0 0 1 .95-.7h6.4a1 1 0 0 1 .95.7l1.6 5.15V12a1 1 0 0 1-1 1h-9.5a1 1 0 0 1-1-1V9.25ZM2.25 9.25H5.5l.75 1.5h3.5l.75-1.5h3.25",
   palette: {
     s: "M8 1.75a6.25 6.25 0 1 0 0 12.5c.83 0 1.25-.55 1.25-1.2 0-.75-.6-1.05-.6-1.75 0-.62.5-1.05 1.15-1.05h1.45a3 3 0 0 0 3-3C14.25 4.2 11.45 1.75 8 1.75Z",
     f: dot(4.75, 8.25, 0.8) + dot(5.75, 5.25, 0.8) + dot(8.75, 4.25, 0.8) + dot(11.25, 6.25, 0.8),
@@ -408,10 +410,15 @@ function Portal({ children }) {
   return null;
 }
 
-export function Popover({ anchor, onClose, class: cls = "", width = 280, prefer, align, maxHeight, children, label, keepFocus }) {
+/**
+ * 浮层。anchor 决定位置；点 anchor 不算"点外面"（让它自己的 onClick 去开关）。
+ * trigger：位置跟着一块更大的区域、开关却是其中一个按钮时传这个按钮，只有点它不关浮层（账户菜单贴着整个账户区）。
+ */
+export function Popover({ anchor, trigger, onClose, class: cls = "", width = 280, prefer, align, maxHeight, children, label, keepFocus }) {
   const ref = useRef(null);
-  const anchorRef = useRef(anchor && anchor.nodeType ? anchor : null);
-  anchorRef.current = anchor && anchor.nodeType ? anchor : null;
+  const own = trigger || anchor;
+  const anchorRef = useRef(own && own.nodeType ? own : null);
+  anchorRef.current = own && own.nodeType ? own : null;
   const pos = usePopPosition(anchor, true, { width, prefer, align, maxHeight });
   useDismiss(ref, onClose, true, anchorRef);
   useEffect(() => {
@@ -589,10 +596,10 @@ export function DialogHost() {
   <//>`;
 }
 
-export function Toasts() {
+export function Toasts({ scope = "" }) {
   const list = useStore(toasts);
   return html`<div class="toasts" role="status" aria-live="polite">
-    ${list.map((it) => html`<div key=${it.id} class=${`toast ${it.kind}${it.leaving ? " leaving" : ""}`}>
+    ${list.filter((it) => (it.scope || "") === scope).map((it) => html`<div key=${it.id} class=${`toast ${it.kind}${it.leaving ? " leaving" : ""}`}>
       <span>${it.text}</span>
       ${it.kind === "err" && html`<${IconButton} icon="close" size="xs" iconSize="xs" label=${t("common.close")} onClick=${() => dismissToast(it.id)} />`}
     </div>`)}

@@ -15,7 +15,7 @@ import {
   macAtLeast144,
   mcpPatchLines,
   type CuProbe,
-} from "../src/agent/computer-use.js";
+} from "../src/tools/computer-use/index.js";
 
 let dir: string;
 beforeEach(() => {

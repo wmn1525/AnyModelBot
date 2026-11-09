@@ -6,7 +6,7 @@ import { App } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 import { resolveMagpieBinary } from "../src/magpie/supervisor.js";
 import { NewApiAccountManager } from "../src/account/newapi.js";
-import { playgroundModel, parsePlaygroundModel } from "../src/account/newapi-types.js";
+import { playgroundModel, parsePlaygroundModel } from "../src/providers/newapi.js";
 import { listen, readJson, until } from "./helpers.js";
 
 const suite = resolveMagpieBinary() ? describe : describe.skip;

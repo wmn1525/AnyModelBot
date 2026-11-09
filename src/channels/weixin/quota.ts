@@ -8,7 +8,7 @@ export const QUOTA_PER_INBOUND = 10;
 export const QUOTA_WINDOW_MS = 24 * 3600_000;
 
 export class WeixinQuota {
-  /** 现在要给主动消息（任务结果等）留几条：聊天回复只能用 remaining − reserved（core/delivery.ts 设） */
+  /** 现在要给主动消息（任务结果等）留几条：聊天回复只能用 remaining − reserved（delivery/index.ts 设） */
   reserver: ((userId: string) => number) | undefined;
 
   constructor(private store: Store, private botId: string, private now: () => number = Date.now) {}

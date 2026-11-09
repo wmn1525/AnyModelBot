@@ -6,6 +6,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
+import { safeRelPath } from "../domain/paths.js";
 import { LIMITS } from "./format.js";
 
 export interface BundleFile {
@@ -23,12 +24,6 @@ export function packFiles(files: BundleFile[]): Buffer {
   return zlib.gzipSync(json, { level: 9 });
 }
 
-/** 路径只能是目录内的普通相对路径 */
-export function safeRelPath(p: unknown): p is string {
-  if (typeof p !== "string" || !p || p.length > 512) return false;
-  if (p.includes("\\") || p.includes("\0") || p.startsWith("/") || /^[a-zA-Z]:/.test(p)) return false;
-  return p.split("/").every((s) => s && s !== "." && s !== "..");
-}
 
 export function readBundle(buf: Buffer): BundleFile[] {
   const json = zlib.gunzipSync(buf, { maxOutputLength: LIMITS.unpackedBytes * 2 }).toString("utf8");

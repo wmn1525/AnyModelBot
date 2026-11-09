@@ -45,5 +45,12 @@ export default {
   "openBot": "Open bot",
   "filters": "Filters",
   "user": "User",
-  "appChannel": "In-app chat"
+  "appChannel": "In-app chat",
+  "recent": "Recent chats",
+  "recentDay": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "week": "Previous 7 days",
+    "earlier": "Earlier"
+  }
 };

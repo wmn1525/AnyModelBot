@@ -14,7 +14,7 @@ import { FeishuReply } from "../src/channels/feishu/card.js";
 import { feishuParts } from "../src/channels/feishu/channel.js";
 import { redactValue, mask } from "../src/log.js";
 import { loadConfig } from "../src/config.js";
-import { verifyModelflareKey, modelflareBaseUrl, normalizeLine, keyTail, MODELFLARE_LINES } from "../src/modelflare.js";
+import { verifyModelflareKey, modelflareBaseUrl, normalizeLine, keyTail, MODELFLARE_LINES } from "../src/providers/modelflare.js";
 import { saveConfigFile } from "../src/config.js";
 import { FakeFeishu, feishuEvent, listen, mockOpenAI } from "./helpers.js";
 

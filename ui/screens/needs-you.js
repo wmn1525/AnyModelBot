@@ -13,11 +13,12 @@ import { failed, toast } from "../lib/store.js";
 import { fmtAgo } from "../lib/format.js";
 import { t } from "../lib/i18n.js";
 
-/** 侧栏机器人列表上方的「需要你」：只有件数大于 0 时才有 */
+/** 侧栏顶部导航里「发现」下面的「需要你」：只有件数大于 0 时才有。和设置导航同一种行：图标 + 文字 + 右边一个蓝点（侧栏不写件数，件数在 title 和读屏文字里） */
 export function NeedsRow({ count, on, onClick }) {
   if (!count) return null;
-  return html`<button type="button" class=${`needs-row${on ? " sel" : ""}`} aria-current=${on ? "page" : undefined} onClick=${onClick}>
-    <span class="mark" aria-hidden="true"><span class="dot warn"></span></span><span class="label">${t("needs.title")}</span><span class="badge count warn">${count}</span>
+  const label = t("sidebar.needs", { count });
+  return html`<button type="button" class=${`nav-item needs-row${on ? " sel" : ""}`} aria-current=${on ? "page" : undefined} title=${label} onClick=${onClick}>
+    <${Icon} name="inbox" size="md" /><span class="label">${t("needs.title")}</span><span class="needs-dot" role="img" aria-label=${label}></span>
   </button>`;
 }
 

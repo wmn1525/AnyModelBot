@@ -1,11 +1,11 @@
 // 机器人设置（信息面板的 ⚙，参考 Codex 的编辑页）：返回 + 头像 + 大标题；身份是头像角色 + 带标签的输入框，其余是白色圆角 list + 行，改动即保存。
 import { useEffect, useRef, useState } from "preact/hooks";
-import { html, Icon, Seg, Switch, MenuButton, Notice, Skeleton, autoGrow } from "../components/ui.js";
+import { html, Icon, Seg, Switch, MenuButton, Notice, Skeleton, Toasts, autoGrow } from "../components/ui.js";
 import { BotAvatar, AvatarPicker, charOf } from "../components/avatar.js";
 import { ModelPicker, shortModel } from "../components/model-picker.js";
 import { api } from "../lib/api.js";
 import { deleteBot } from "../lib/bots.js";
-import { failed, saved } from "../lib/store.js";
+import { failed, saved, clearToasts } from "../lib/store.js";
 import { usd } from "../lib/links.js";
 import { perms, fullWarning, confirmPermission } from "../lib/perms.js";
 import { t } from "../lib/i18n.js";
@@ -56,8 +56,9 @@ function BudgetRows({ bot, budget, account, onSaved, onOpenSettings }) {
     try {
       const r = await api(`/bots/${bot.id}/budget`, { method: "PUT", body: { enabled, limitUsd } });
       onSaved(r.settings);
-      saved();
+      saved("bot-settings");
     } catch (e) {
+      clearToasts("bot-settings");
       failed(e);
       setLimit(String(budget.limitUsd));
     } finally {
@@ -120,16 +121,18 @@ export function BotSettingsScreen({ bot, section, models, modelsError, reloadMod
     try {
       const r = await api(`/bots/${bot.id}`, { method: "PUT", body });
       onBotUpdated(r.bot);
-      saved();
+      saved("bot-settings");
     } catch (e) {
+      clearToasts("bot-settings");
       failed(e);
     }
   };
   const put = async (body) => {
     try {
       setD(await api(`/bots/${bot.id}/settings`, { method: "PUT", body }));
-      saved();
+      saved("bot-settings");
     } catch (e) {
+      clearToasts("bot-settings");
       failed(e);
     }
   };
@@ -155,6 +158,7 @@ export function BotSettingsScreen({ bot, section, models, modelsError, reloadMod
   const cu = d && d.computerUse;
   const codex = cu && cu.backends && cu.backends.find((b) => b.id === "codex");
   return html`<section class="settings view" data-screen="bot-settings">
+    <div class="bot-save-feedback"><${Toasts} scope="bot-settings" /></div>
     <div class="set-head">
       <button type="button" class="icon-btn set-back" aria-label=${t("botSettings.back")} title=${t("botSettings.backTitle")} onClick=${onBack}><${Icon} name="arrowLeft" size="md" /></button>
       <${BotAvatar} bot=${bot} char=${s && s.avatar} size=${36} cue=${hi} pokeable />

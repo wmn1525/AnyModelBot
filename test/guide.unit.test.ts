@@ -17,19 +17,22 @@ describe("引导进度", () => {
     });
   });
 
-  it("推导：有过回复、换过模型、绑了渠道、记下过东西", () => {
+  it("推导：有过真正的回复、换过模型、真的连上了渠道、记下过东西", () => {
     const none = { conversations: [], bots: [], channelBound: () => false, memoryCount: () => 0 };
     expect(deriveGuide(none)).toEqual([]);
     expect(deriveGuide({ ...none, conversations: [{ messageCount: 1, model: "" }] })).toEqual([]);
+    // 回复是一条出错提示（余额不足等）：不能把失败算成"打过招呼"
+    expect(deriveGuide({ ...none, conversations: [{ messageCount: 2, model: "", successfulReply: false }] })).toEqual([]);
     expect(
       deriveGuide({
-        conversations: [{ messageCount: 2, model: "" }],
+        conversations: [{ messageCount: 2, model: "", successfulReply: true }],
         bots: [{ id: "a", defaultModel: "gpt-x", feishuAppId: "" }, { id: "b", defaultModel: "", feishuAppId: "" }],
         channelBound: (id) => id === "b",
         memoryCount: (id) => (id === "a" ? 1 : 0),
       }),
     ).toEqual(["hello", "model", "weixin", "memory"]);
-    expect(deriveGuide({ ...none, bots: [{ id: "a", defaultModel: "", feishuAppId: "cli_x" }] })).toEqual(["weixin"]);
+    // 只填了飞书 App ID、渠道没有连上：不算完成"连接常用聊天工具"
+    expect(deriveGuide({ ...none, bots: [{ id: "a", defaultModel: "", feishuAppId: "cli_x" }] })).toEqual([]);
   });
 
   it("合并保持清单顺序", () => {
@@ -78,16 +81,31 @@ describe("界面接口 /guide", () => {
     expect((await api("/guide", { method: "DELETE" })).status).toBe(405);
   });
 
-  it("能从数据看出来的步骤自动打勾，并记下来", async () => {
+  it("能从数据看出来的步骤自动打勾，并记下来（只有配置、没连上的渠道不算）", async () => {
     const bot = app.store.createBot({ name: "小蓝" });
     app.store.updateBot(bot.id, { defaultModel: "gpt-x", feishuAppId: "cli_test" });
     const r = await api("/guide");
-    expect(r.json.done).toEqual(["model", "weixin", "hands"]);
-    expect(loadConfig({ dataDir: app.config.dataDir, env: {} }).ui.guide.done).toEqual(["model", "weixin", "hands"]);
+    expect(r.json.done).toEqual(["model", "hands"]);
+    expect(loadConfig({ dataDir: app.config.dataDir, env: {} }).ui.guide.done).toEqual(["model", "hands"]);
   });
 
-  it("重置后从头来（推导出的仍算做过）", async () => {
-    const r = await api("/guide", { method: "PUT", body: { reset: true } });
-    expect(r.json).toMatchObject({ done: ["model", "weixin"], hidden: false, seen: [] });
+  it("升级前做过的步骤不被新的判定清零；选的渠道记下来", async () => {
+    expect((await api("/guide", { method: "PUT", body: { done: "weixin", channel: "telegram" } })).json).toMatchObject({ done: ["model", "weixin", "hands"], channel: "telegram" });
+    expect((await api("/guide")).json).toMatchObject({ done: ["model", "weixin", "hands"], channel: "telegram" });
+    expect((await api("/guide", { method: "PUT", body: { channel: "fax" } })).status).toBe(400);
+  });
+
+  it("换了账户以后，上一个账户迟到的请求不推进这个清单", async () => {
+    const r = await api("/guide", { method: "PUT", body: { done: "memory", owner: "someone-else" } });
+    expect(r.status).toBe(409);
+    expect((await api("/guide")).json.done).not.toContain("memory");
+  });
+
+  it("全部完成记成里程碑，之后一直收起；重新开始时清掉", async () => {
+    const r = await api("/guide", { method: "PUT", body: { done: [...GUIDE_STEPS] } });
+    expect(r.json.seen).toContain("completed");
+    expect((await api("/guide")).json.seen).toContain("completed");
+    const again = await api("/guide", { method: "PUT", body: { reset: true } });
+    expect(again.json).toMatchObject({ done: ["model"], hidden: false, seen: [] });
   });
 });

@@ -9,7 +9,7 @@ import path from "node:path";
 import { App } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 import { resolveMagpieBinary } from "../src/magpie/supervisor.js";
-import { officialProviderId } from "../src/official-providers.js";
+import { officialProviderId } from "../src/providers/official.js";
 import { FakeFeishu, listen, mockOpenAI, readJson } from "./helpers.js";
 
 const bin = resolveMagpieBinary();

@@ -123,6 +123,27 @@ export class ChatSearch {
     return rows.map((r) => ({ id: String(r.id), botId: String(r.botId), botName: String(r.botName), channel: String(r.channel), title: String(r.title), lastMessageId: Number(r.lastMessageId) }));
   }
 
+  /**
+   * 最近的对话（搜索弹窗没输入时列出来）：每条时间线（群聊算一条，其余一个会话一条）最新那条能看到的消息，新的在前。
+   * 先按会话取最大 id（走 msg_conv 索引，不扫全表），再按时间线合并：群里成员的回复存在各自的会话里。
+   */
+  recent(limit = 50): ChatSearchHit[] {
+    limit = boundedInteger(limit, 50, 200);
+    const rows = this.db.prepare(`SELECT m.id, m.conversation_id, m.role, m.created_at, ${documentSql("m")} AS document, ${META}
+      ${FROM} WHERE m.id IN (SELECT MAX(x.id) FROM messages x WHERE x.role IN ('user', 'assistant') GROUP BY x.conversation_id) AND ${VISIBLE}
+      ORDER BY m.created_at DESC, m.id DESC`).all() as Row[];
+    const seen = new Set<string>();
+    const out: ChatSearchHit[] = [];
+    for (const r of rows) {
+      const line = r.groupId ? `group:${r.groupId}` : String(r.conversation_id);
+      if (seen.has(line)) continue;
+      seen.add(line);
+      out.push(hit(r, ""));
+      if (out.length >= limit) break;
+    }
+    return out;
+  }
+
   search(input: ChatSearchQuery): { query: string; results: ChatSearchHit[]; total: number; nextCursor: string | null } {
     if (typeof input.query !== "string" || input.query.length > 200 || input.query.includes("\0")) throw new ChatSearchInputError("Invalid query");
     const query = input.query.trim();

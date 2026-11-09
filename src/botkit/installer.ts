@@ -10,9 +10,10 @@ import { normalizeSettings, type BotSettings } from "../agent/settings.js";
 import { logger } from "../log.js";
 import { appSkill } from "./app-skill.js";
 import { UserSkills } from "../skills/service.js";
-import { safeRelPath } from "./bundle.js";
+import { safeRelPath } from "../domain/paths.js";
 import type { BotCatalog, CatalogEntry } from "./catalog.js";
-import { LIMITS, localized, RESERVED_SKILLS, samplePath, type BotAppRef } from "./format.js";
+import { LIMITS, localized, samplePath, type BotAppRef } from "./format.js";
+import { RESERVED_SKILLS } from "../skills/archive.js";
 import { prune, validate, type JsonSchema } from "./schema.js";
 import type { ResolvedFile } from "../web/files.js";
 

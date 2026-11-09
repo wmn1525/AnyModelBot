@@ -11,8 +11,6 @@ export default {
   app: {
     sample: "Sample",
     placeholder: "Say something and the view updates",
-    send: "Send",
-    stop: "Stop",
     conversation: "Full conversation",
     info: "Info",
     uiFailed: "The view hit a problem, so this switched to the conversation.",
@@ -20,6 +18,9 @@ export default {
     openUrlConfirm: "Open",
     removed: "This bot was removed from the catalog. Your data is still here.",
     removedSecurity: "This bot was removed for security reasons and its skills are disabled. Your data is still here.",
+    starters: "Try one of these",
+    more: "Show more",
+    less: "Show less",
   },
   info: { what: "What it does", skills: "Skills used", perms: "Permissions", settings: "Bot settings" },
   perm: {
@@ -28,6 +29,12 @@ export default {
     "channel-send": "Send messages to chat channels on its own",
     "computer-use": "Control your computer",
     accounts: "Use accounts you connected",
+  },
+  view: { label: "View", app: "Workspace", chat: "Chat" },
+  intro: {
+    hello: "Hi, I'm {name}.",
+    try: "Try one of these",
+    note: "Or just say what you want. I only start working after your first message; everything here is a sample until then.",
   },
   tip: { kept: "{name} stays in Mine. It'll be here tomorrow." },
   remove: {

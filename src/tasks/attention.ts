@@ -10,7 +10,7 @@
 import { MESSENGER_LABEL, isMessenger } from "../core/types.js";
 import type { ApprovalRow, Store } from "../store/db.js";
 import { defaultLine, questionsOf, type QuestionItem } from "../agent/approvals.js";
-import type { AttentionItem as DeliveryItem } from "../core/delivery.js";
+import type { AttentionItem as DeliveryItem } from "../delivery/index.js";
 import { logger } from "../log.js";
 import { t as tr } from "../i18n/index.js";
 import { BUDGET_TOOL } from "./cost.js";
@@ -236,7 +236,7 @@ export function approvalItems(store: Store, rows: ApprovalRow[]): AttentionItem[
 }
 
 /**
- * 出站队列那一份（core/delivery.ts）：没送到的结果，一个会话一行。「1 条结果未送达微信，在微信里发条消息就能收到」，
+ * 出站队列那一份（delivery/index.ts）：没送到的结果，一个会话一行。「1 条结果未送达微信，在微信里发条消息就能收到」，
  * 第二行是没送到的那几句（在这里就能看到）；一直失败的可以重试、放弃了的可以不再提示
  */
 export function deliveryItem(d: DeliveryItem, botName: string): AttentionItem {

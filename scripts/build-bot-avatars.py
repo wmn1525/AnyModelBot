@@ -9,9 +9,15 @@
   3 top       头顶配件（天线球 / 星星 / 嫩芽 / 角 / 宝石 / 天线），同样向头里多留一截
   4–7         上面四层各自的"发光部分"（哒哒的灯带、晶晶的霓虹线），没有就是空的
 
+分档：<key>.webp 每格 448（CELL），另有 <key>@224 / @112 / @56.webp（TIERS，每档是上一档的一半），都从原图直接缩出来。
+界面按"显示尺寸 × 设备像素比"挑最小的够用的一档（ui/components/avatar.js 的 SPRITE_TIERS、官网 BotFace.astro），
+浏览器最多再缩一倍：一张 448 的图实时缩到 20–40px，绒毛边缘会出锯齿，动起来还会闪。
+边缘：原画轮廓外圈半透明的毛尖带背光，比身体亮得多，贴到暗色界面上是一圈浅色毛刺；clean_edge 把它换成内侧绒毛的颜色。
+内侧的轮廓光大图上保留（立体感），112 / 56 档缩到 1px 左右会变成一圈浅色描边，soften_rim 把这一圈压暗。
+
 只用 numpy + Pillow：  python3 scripts/build-bot-avatars.py [角色 ...]（不写角色就全部重新生成）
 官网的 AVIF 版要从无损的精灵图编码（site/scripts/make-bot-avif.ts）：  python3 scripts/build-bot-avatars.py --out <目录> --png
-  --out 改输出目录（默认 ui/design/bots），--png 另存一份无损 PNG
+  --out 改输出目录（默认 ui/design/bots），--png 每档另存一份无损 PNG
 几何（源图像素）和 ui/components/avatar.js 里的 BOT_CHARS 是同一套数，改一边要改另一边。
 """
 import os
@@ -28,6 +34,8 @@ OUT = os.path.join(ROOT, "ui", "design", "bots")
 SIDE, CX, CY = 1290, 767, 511
 CELL = 448
 QUALITY = 86
+TIERS = (224, 112, 56)  # 小档；改了要同步 avatar.js 的 SPRITE_TIERS 和官网 BotFace.astro
+RIM_MAX = 112  # 这一档及更小的档压暗内侧轮廓光（soften_rim）
 
 CHARS = {
     # eyes: 两眼中心；er: 眼睛半径；patch: 抹眼睛（连同光晕）的实心 / 渐隐半径（× er）
@@ -85,6 +93,49 @@ def ramp(v, a, b):
     return t * t * (3 - 2 * t)
 
 
+def blur(x, r=6, passes=3):
+    """近似高斯模糊（三次盒式模糊，σ ≈ 6.5px），边界按边缘值延伸"""
+    for _ in range(passes):
+        for ax in (0, 1):
+            c = np.cumsum(np.pad(x, [(r + 1, r) if i == ax else (0, 0) for i in range(2)], mode="edge"), axis=ax)
+            n = c.shape[ax]
+            x = (np.take(c, np.arange(2 * r + 1, n), axis=ax) - np.take(c, np.arange(0, n - 2 * r - 1), axis=ax)) / (2 * r + 1)
+    return x
+
+
+def clean_edge(rgb, alpha):
+    """去掉轮廓外圈的亮边：半透明的毛尖改用紧挨着的内侧绒毛颜色（越透明换得越多），形状不动。
+
+    原画的绒毛带背光，最外面一圈毛尖比身体亮得多（深色角色尤其明显），贴到暗色界面上就是一圈断断续续的浅色描边，缩小后成了"毛刺"。
+    内侧颜色取往里收 4px 的实心区域的模糊平均（避开亮边本身）；只处理离大块实心区域 10px 以内的像素，
+    细链子、羽毛绒丝、离得远的光晕（闪闪的星星）这些本来就该半透明的部分保持原样。
+    alpha 只去掉几乎看不见的残影；原图内部是 253 不是 255，顺便补满。
+    """
+    solid = np.asarray(Image.fromarray(((alpha > 0.97) * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(9))).astype(np.float32) / 255.0
+    near = blur(solid)
+    inner = np.dstack([blur(rgb[..., i] * solid) for i in range(3)]) / np.maximum(near, 1e-6)[..., None]
+    k = ((1 - ramp(alpha, 0.3, 0.99)) * ramp(near, 0.003, 0.03))[..., None]
+    return rgb * (1 - k) + inner * k, np.clip((alpha - 0.02) / 0.96, 0.0, 1.0)
+
+
+def soften_rim(rgb, alpha, d):
+    """小档用：把轮廓内侧约 d 像素（缩小后的 1 像素）宽的轮廓光拉向更里面的绒毛颜色。
+
+    原画的轮廓光从边缘往里渐暗约 30px，大图上是立体感；缩到 112 / 56 档只剩 1px 左右，和边缘混成一圈浅色描边（深色角色最明显）。
+    只处理大块的身体：先往里收再放回去（开运算），比 3d 细的部件（天线杆、链子、硬币、羽毛）不在里面，颜色不动。
+    形态学用"模糊后取阈值"近似：三次盒式模糊的 σ ≈ r，取 0.97 / 0.03 约等于往里收 / 往外放 1.9σ ≈ 1.5d。
+    """
+    r = max(int(round(d * 0.8)), 1)
+    solid = (alpha > 0.5).astype(np.float32)
+    deep = (blur(solid, r) > 0.97).astype(np.float32)
+    body = blur((blur(deep, r) > 0.03).astype(np.float32), 2)
+    near = blur(deep, r)
+    inner = np.dstack([blur(rgb[..., i] * deep, r) for i in range(3)]) / np.maximum(near, 1e-6)[..., None]
+    depth = blur(solid, max(r // 2, 1))  # 边缘处 0.5，往里约 0.66d 到 0.95
+    k = ((1 - ramp(depth, 0.5, 0.95)) * body * ramp(near, 0.003, 0.03))[..., None]
+    return rgb * (1 - k) + inner * k
+
+
 def refine_eyes(rgb, eyes, er):
     """在给定位置附近找亮斑的质心，修正手量的眼睛中心"""
     v = rgb.max(axis=2).astype(np.float32)
@@ -139,7 +190,7 @@ def paint_out_eyes(rgb, c):
 def build(key, c):
     im = Image.open(os.path.join(SRC, c["src"])).convert("RGBA")
     a = np.asarray(im).astype(np.float32)
-    rgb, alpha = a[..., :3], a[..., 3] / 255.0
+    rgb, alpha = clean_edge(a[..., :3], a[..., 3] / 255.0)
     c = dict(c, eyes=refine_eyes(rgb, c["eyes"], c["er"]))
     h, w = alpha.shape
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
@@ -159,8 +210,6 @@ def build(key, c):
     stem_x = ramp(xx, t["stem"][0] - 6, t["stem"][0] + 6) * (1 - ramp(xx, t["stem"][1] - 6, t["stem"][1] + 6))
     top_m = alpha * np.maximum(top, stem_x * ramp(yy, t["cut"] + ext, t["cut"] + ext - 10))
 
-    head_rgb = paint_out_eyes(rgb, c)
-
     # 发光部分：按通道取色，并避开绒毛外缘（外缘被背光照亮，颜色和灯带相近）
     g = np.zeros_like(alpha)
     parts = ""
@@ -174,39 +223,45 @@ def build(key, c):
     on = lambda p: 1.0 if p in parts else 0.0
     g_head = g * zone_h * ramp(eye_d, c["er"] * c["patch"][1], c["er"] * c["patch"][1] + 6) * on("h")
 
-    layers = [
-        (head_rgb, head_m),
-        (rgb, earL_m),
-        (rgb, earR_m),
-        (rgb, top_m),
-        (rgb, g_head),
-        (rgb, g * zone_l * on("l")),
-        (rgb, g * zone_r * on("r")),
-        (rgb, g * zone_t * on("t")),
-    ]
+    masks = [head_m, earL_m, earR_m, top_m, g_head, g * zone_l * on("l"), g * zone_r * on("r"), g * zone_t * on("t")]
     x0, y0 = CX - SIDE // 2, CY - SIDE // 2
-    sheet = Image.new("RGBA", (CELL * len(layers), CELL), (0, 0, 0, 0))
-    for i, (col, m) in enumerate(layers):
-        layer = np.dstack([np.clip(col, 0, 255), np.clip(m * 255, 0, 255)]).astype(np.uint8)
-        canvas = Image.new("RGBA", (SIDE, SIDE), (0, 0, 0, 0))
-        canvas.paste(Image.fromarray(layer, "RGBA"), (-x0, -y0))
-        # 预乘后再缩放：透明处原图的黑底不会渗进绒毛边缘
-        pre = np.asarray(canvas).astype(np.float32)
-        pre[..., :3] *= pre[..., 3:4] / 255.0
-        small = np.asarray(Image.fromarray(pre.astype(np.uint8), "RGBA").resize((CELL, CELL), Image.LANCZOS)).astype(np.float32)
-        a8 = small[..., 3:4]
-        small[..., :3] = np.where(a8 > 0, small[..., :3] * 255.0 / np.maximum(a8, 1), 0)
-        sheet.paste(Image.fromarray(np.clip(small, 0, 255).astype(np.uint8), "RGBA"), (i * CELL, 0))
+
+    def canvases_of(col):
+        """按这套颜色拼出 8 层（原图尺寸）；头那一层抹掉眼睛"""
+        out = []
+        for i, m in enumerate(masks):
+            layer = np.dstack([np.clip(paint_out_eyes(col, c) if i == 0 else col, 0, 255), np.clip(m * 255, 0, 255)]).astype(np.uint8)
+            canvas = Image.new("RGBA", (SIDE, SIDE), (0, 0, 0, 0))
+            canvas.paste(Image.fromarray(layer, "RGBA"), (-x0, -y0))
+            out.append(canvas)
+        return out
+
+    full = canvases_of(rgb)
     os.makedirs(OUT, exist_ok=True)
-    path = os.path.join(OUT, key + ".webp")
-    sheet.save(path, "WEBP", quality=QUALITY, alpha_quality=90, method=6)
-    if PNG:
-        sheet.save(os.path.join(OUT, key + ".png"))
+    sizes = []
+    for cell in (CELL, *TIERS):
+        canvases = canvases_of(soften_rim(rgb, alpha, SIDE / cell)) if cell <= RIM_MAX else full
+        sheet = Image.new("RGBA", (cell * len(canvases), cell), (0, 0, 0, 0))
+        for i, canvas in enumerate(canvases):
+            # Pillow 缩放 RGBA 时自己会先预乘 alpha（透明处原图的黑底不会渗进绒毛边缘），不要再手动预乘：
+            # 预乘两次 = 颜色按 alpha² 加权，半透明边缘的颜色被量化成黑点
+            sheet.paste(canvas.resize((cell, cell), Image.LANCZOS), (i * cell, 0))
+        name = key if cell == CELL else f"{key}@{cell}"
+        path = os.path.join(OUT, name + ".webp")
+        if cell == CELL:
+            sheet.save(path, "WEBP", quality=QUALITY, alpha_quality=90, method=6)
+        elif cell >= 200:
+            sheet.save(path, "WEBP", quality=90, alpha_quality=100, method=6)  # 无损要 2.5 倍体积；q90 的 PSNR 不低于 448 档
+        else:
+            sheet.save(path, "WEBP", lossless=True, method=6)  # 小档只有几 KB，无损：边缘不受色度抽样影响
+        if PNG:
+            sheet.save(os.path.join(OUT, name + ".png"))
+        sizes.append(f"{os.path.getsize(path) // 1024}")
 
     k = CELL / SIDE
     to = lambda x, y: (round((x - x0) * k / CELL * 100, 2), round((y - y0) * k / CELL * 100, 2))
     eyes = [tuple(float(v) for v in to(*p)) for p in c["eyes"]]
-    print(f"{key}: {os.path.getsize(path) // 1024}KB eyes={eyes} r={round(c['er'] * k / CELL * 100, 2)}% "
+    print(f"{key}: {'/'.join(sizes)}KB eyes={eyes} r={round(c['er'] * k / CELL * 100, 2)}% "
           f"earL={to(e['cutL'], (e['y0'] + e['y1']) / 2)} earR={to(e['cutR'], (e['y0'] + e['y1']) / 2)} "
           f"top={to((t['stem'][0] + t['stem'][1]) / 2, t['cut'])}")
 

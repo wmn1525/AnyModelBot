@@ -16,7 +16,7 @@ import { approvalItems } from "../src/tasks/attention.js";
 import { ApprovalCenter } from "../src/agent/approvals.js";
 import { DEFAULT_SETTINGS } from "../src/agent/settings.js";
 import { Outbox } from "../src/core/outbox.js";
-import { Delivery } from "../src/core/delivery.js";
+import { Delivery } from "../src/delivery/index.js";
 import { Store } from "../src/store/db.js";
 
 const TZ = "Asia/Shanghai";

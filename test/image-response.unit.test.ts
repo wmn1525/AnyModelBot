@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { imagePayload, imageSources } from "../src/agent/image-response.js";
+import { imagePayload, imageSources } from "../src/tools/media/image-response.js";
 
 const image = "data:image/png;base64,aW1hZ2U=";
 describe("image response parser", () => {

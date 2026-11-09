@@ -2,7 +2,7 @@ export default {
   "title": "Ready-made bots | AnyModelBot",
   "description": "Explore ready-made AnyModelBot bots for company research, presentations, short videos and episodic dramas, each with its own interface.",
   "h1": "Ready-made bots you can use right away",
-  "lead": "Each bot has its own view. Opening one shows a sample, and it's only installed when you send your first message. Remove it whenever you like.",
+  "lead": "Official bot UIs, samples and skills ship with the app, so opening a bot needs no package download. Preview a sample, then send your first message to start. Model calls still need a network connection.",
   "tryLabel": "Try saying",
   "howTitle": "How to use them",
   "how": [

@@ -4,10 +4,11 @@
  * 依赖账户授权的功能（用量、通知、邀请、机器人预算、性价比）不可用。
  */
 import os from "node:os";
+import crypto from "node:crypto";
 import { logger } from "../log.js";
 import { t } from "../i18n/index.js";
 import type { Store } from "../store/db.js";
-import { MODELFLARE_CLIENT_ID, MODELFLARE_SCOPES, MODELFLARE_WEB, UTM, webUrl, type KeyBalance } from "../modelflare.js";
+import { MODELFLARE_CLIENT_ID, MODELFLARE_SCOPES, MODELFLARE_WEB, UTM, webUrl, type KeyBalance } from "../providers/modelflare.js";
 import { discover, OAuthError, revokeToken, startLogin, type LoginAttempt, type OidcEndpoints } from "./oauth.js";
 import { AccountRevokedError, AccountSession, ApiError, ROUTING_STRATEGIES, type AppKey, type ConnectedAccount, type RoutingStrategy, type UsageRow } from "./client.js";
 import type { AccountRecord, AccountVault } from "./vault.js";
@@ -26,8 +27,11 @@ export interface AccountHooks {
   sharedKeyTail(): string;
   /** 共用连接的 Key 已经不能用：没连接，或 OKINTO 说这把 Key 无效 */
   sharedKeyRejected(): Promise<boolean>;
-  /** 提醒：写入应用通知；push = 同时经机器人发到你的微信 / 飞书 */
-  alert(text: string, push: boolean): void;
+  /**
+   * 提醒：写入应用通知；push = 同时经机器人发到你的微信 / 飞书。
+   * kind = low_balance：侧栏账户区已经常驻显示"余额较低 + 充值"，应用内不再另弹同一状态的通知，只按设置推送。
+   */
+  alert(text: string, push: boolean, kind?: "low_balance"): void;
 }
 
 export interface AlertSettings {
@@ -42,6 +46,19 @@ export interface BotBudget {
   limitUsd: number;
 }
 
+export interface BotQuota {
+  balanceUsd: number;
+  remainingPercent: number;
+}
+
+/** 读接口里的 bot 字段：不是对象、缺数或数不对时当作没有（界面退回只显示余额）；百分比夹到 0–100 的整数 */
+export function botQuota(v: unknown): BotQuota | null {
+  if (!v || typeof v !== "object") return null;
+  const { balance_usd: bal, remaining_percent: pct } = v as Record<string, unknown>;
+  if (typeof bal !== "number" || !Number.isFinite(bal) || typeof pct !== "number" || !Number.isFinite(pct)) return null;
+  return { balanceUsd: bal, remainingPercent: Math.min(100, Math.max(0, Math.floor(pct))) };
+}
+
 export type AccountState = "signed_out" | "signing_in" | "signed_in" | "unavailable";
 
 export interface AccountStatus {
@@ -54,6 +71,11 @@ export interface AccountStatus {
   balanceUnit?: string;
   balanceScope?: "account" | "token" | "billing";
   unlimitedBalance?: boolean;
+  /**
+   * bot 额度（只能在 AnyModelBot 里用，本机签发的 Key 先扣它）：balanceUsd 是金额，remainingPercent 是相对最近一次发放的
+   * 剩余百分比（0–100 的整数）。没有 bot 额度、企业托管成员、服务端还没有这个字段、读取失败时为 null，界面照旧只显示余额。
+   */
+  bot: BotQuota | null;
   usedUsd: number | null;
   billedToEnterprise: boolean;
   updatedAt: number;
@@ -65,6 +87,11 @@ export interface AccountStatus {
   keyQuality: { strategy: RoutingStrategy; supported: boolean };
   loginMethod?: "newapi-playground" | "oidc";
   capabilities?: { groups: boolean; usage: boolean; budgets: boolean; notifications: boolean; invite: boolean; media?: boolean };
+  /**
+   * 充值页地址：登录时拿到了账户标识就放在 # 后面（#amb_account=…），Modelflare 网页据此核对浏览器里登录的是不是同一个账户，
+   * 不一致时提示切换。# 后面的内容不会发给服务器、CDN 或统计；没有标识时就是普通的充值页。
+   */
+  topupUrl: string;
 }
 
 /**
@@ -102,10 +129,15 @@ export class AccountManager {
   private session: AccountSession | undefined;
   private endpoints: OidcEndpoints | undefined;
   private login: LoginAttempt | undefined;
-  private snapshot: Pick<AccountStatus, "name" | "source" | "balanceUsd" | "usedUsd" | "billedToEnterprise" | "updatedAt" | "error" | "balanceUnit" | "balanceScope" | "unlimitedBalance"> = {
+  /** 最近一次已经完成的登录：成功页唤起应用后，用它确认"已返回 AnyModelBot" */
+  private finishedLogin: LoginAttempt | undefined;
+  /** 正在完成登录时读到的余额（还没写进快照）：首用模型按它算体验额度 */
+  private loginBalanceUsd: number | null = null;
+  private snapshot: Pick<AccountStatus, "name" | "source" | "balanceUsd" | "bot" | "usedUsd" | "billedToEnterprise" | "updatedAt" | "error" | "balanceUnit" | "balanceScope" | "unlimitedBalance"> = {
     name: "",
     source: "none",
     balanceUsd: null,
+    bot: null,
     usedUsd: null,
     billedToEnterprise: false,
     updatedAt: 0,
@@ -128,6 +160,10 @@ export class AccountManager {
       alerts: () => AlertSettings;
       fetchImpl?: typeof fetch;
       hostname?: string;
+      /** 桌面版的应用链接（anymodelbot://login-complete）：登录成功页用它把用户带回应用；其他运行方式不传 */
+      appLink?: () => string | undefined;
+      /** 登录成功页上的应用图标 */
+      logo?: () => Buffer | undefined;
     },
   ) {}
 
@@ -153,6 +189,10 @@ export class AccountManager {
     return this.state === "signed_in" && !!this.session;
   }
 
+  get ownerKey(): string {
+    return this.session?.record.ownerKey || (this.signedIn ? "pending-account" : "local");
+  }
+
   status(): AccountStatus {
     const alerts = this.o.alerts();
     const bal = this.snapshot.balanceUsd;
@@ -163,7 +203,14 @@ export class AccountManager {
       alerts,
       lowBalance: (this.snapshot.balanceUnit ?? "USD") === "USD" && !this.snapshot.unlimitedBalance && bal !== null && alerts.lowBalanceUsd > 0 && bal < alerts.lowBalanceUsd,
       keyQuality: { strategy: this.routingStrategy(), supported: this.routing().support === "yes" },
+      topupUrl: this.topupUrl(),
     };
+  }
+
+  private topupUrl(): string {
+    const base = webUrl("/billing", "amb_topup");
+    const sub = this.state === "signed_in" ? this.session?.record.subject : undefined;
+    return sub ? `${base}#amb_account=${encodeURIComponent(sub)}` : base;
   }
 
   private async ensureEndpoints(): Promise<OidcEndpoints> {
@@ -197,12 +244,18 @@ export class AccountManager {
       scope: MODELFLARE_SCOPES,
       extra: { ...UTM, utm_campaign: "amb_signup" }, // 授权页也是注册入口：没有账户的人在这里注册
       fetchImpl: this.fetch,
+      // 成功页要等这一步做完才说"登录成功"：读账户、签发本机 Key、接到网关任何一步失败，页面显示失败原因
+      finalize: (tokens, signal) => this.completeLogin(tokens, signal),
+      appLink: this.o.appLink?.(),
+      logo: this.o.logo,
     });
     this.login = attempt;
     this.state = "signing_in";
     this.snapshot.error = "";
     void attempt.result.then(
-      (tokens) => this.completeLogin(tokens),
+      () => {
+        this.finishedLogin = attempt;
+      },
       (e: Error) => {
         if (this.login !== attempt) return;
         this.login = undefined;
@@ -215,6 +268,16 @@ export class AccountManager {
 
   cancelLogin(): void {
     this.login?.cancel();
+  }
+
+  /** 桌面版收到 anymodelbot://login-complete?r=…：确认是这次登录的成功页唤起的，成功页随后显示"已返回" */
+  markLoginReturned(nonce: string): boolean {
+    return !!this.finishedLogin?.markReturned(nonce);
+  }
+
+  /** 已知的余额（含正在完成登录时刚读到的）；不知道时 null */
+  knownBalanceUsd(): number | null {
+    return this.snapshot.balanceUsd ?? this.loginBalanceUsd;
   }
 
   /** Docker、远程部署：浏览器回不到这台机器，用户把登录后地址栏里的链接贴回来 */
@@ -233,19 +296,30 @@ export class AccountManager {
     this.snapshot.error = text;
   }
 
-  private async completeLogin(tokens: { accessToken: string; expiresAt: number; refreshToken: string; scope: string }): Promise<void> {
-    const rec: AccountRecord = { issuer: this.o.issuer, refreshToken: tokens.refreshToken, scope: tokens.scope, deviceKeyId: 0, signedInAt: Date.now() };
+  private async completeLogin(tokens: { accessToken: string; expiresAt: number; refreshToken: string; scope: string; subject?: string }, signal?: AbortSignal): Promise<void> {
+    const rec: AccountRecord = { issuer: this.o.issuer, refreshToken: tokens.refreshToken, scope: tokens.scope, deviceKeyId: 0, signedInAt: Date.now(), ...(tokens.subject ? { subject: tokens.subject } : {}) };
     const session = this.newSession(rec, { token: tokens.accessToken, expiresAt: tokens.expiresAt });
     try {
       const account = await session.account();
+      this.loginBalanceUsd = Number.isFinite(account.balance_usd) ? account.balance_usd : null;
       const key = await this.issueKey((routing) => session.createKey(this.deviceKeyName(), undefined, routing));
       if (!key.key) throw new Error(t("account.no_new_key"));
+      // 用户已经取消、或者收尾超时：不留这次授权（撤销会连同刚签发的 Key 一起删除）
+      const abandoned = async () => {
+        await this.revokeQuietly(session);
+        throw new Error(t("account.login_cancelled"));
+      };
+      if (signal?.aborted) await abandoned();
       try {
         await this.o.hooks.connectKey(key.key);
       } catch (e) {
         // 接不上网关就不留这次授权：撤销会连同刚签发的 Key 一起删除
         await this.revokeQuietly(session);
         throw e;
+      }
+      if (signal?.aborted) {
+        await this.o.hooks.disconnect().catch(() => {});
+        await abandoned();
       }
       session.updateRecord({ deviceKeyId: key.id });
       // 刚登录时本机只有这一把 Key：它带着策略签发成功，就算已经应用过了
@@ -259,10 +333,14 @@ export class AccountManager {
       void this.repairKeys();
     } catch (e) {
       this.state = this.session ? "signed_in" : "signed_out";
-      this.snapshot.error = t("account.login_incomplete", { reason: (e as Error).message });
+      // 取消或超时时原因已经记下（取消不算出错），不再改写成"登录没有完成"
+      if (!signal?.aborted) this.snapshot.error = t("account.login_incomplete", { reason: (e as Error).message });
       log.warn("login failed", { message: (e as Error).message });
+      // 交给登录页：浏览器里的回调页显示同一个原因，不把失败说成成功
+      throw new Error(this.snapshot.error);
     } finally {
       this.login = undefined;
+      this.loginBalanceUsd = null;
     }
   }
 
@@ -293,7 +371,7 @@ export class AccountManager {
     this.saveRouting({ applied: undefined });
     await this.o.hooks.disconnect();
     for (const botId of this.botKeyIds().keys()) this.o.store.deleteKV(BOT_KEY(botId));
-    this.snapshot = { name: "", source: "none", balanceUsd: null, usedUsd: null, billedToEnterprise: false, updatedAt: 0, error: "" };
+    this.snapshot = { name: "", source: "none", balanceUsd: null, bot: null, usedUsd: null, billedToEnterprise: false, updatedAt: 0, error: "" };
   }
 
   /** 授权在别处被撤销：断开并回到登录页 */
@@ -317,11 +395,15 @@ export class AccountManager {
   // ---------- 余额 ----------
 
   private applyAccount(a: ConnectedAccount): void {
+    if (this.session && a.username && !this.session.record.ownerKey) {
+      this.session.updateRecord({ ownerKey: crypto.createHash("sha256").update(`${this.o.issuer}\n${a.username}`).digest("hex") });
+    }
     this.quotaPerUnit = a.quota_per_unit;
     this.snapshot = {
-      name: a.display_name || a.username,
+      name: a.display_name || (/^mf_[a-z0-9]+$/i.test(a.username) ? "" : a.username),
       source: "account",
       balanceUsd: a.balance_usd,
+      bot: botQuota(a.bot),
       usedUsd: a.used_usd,
       billedToEnterprise: a.billed_to_enterprise,
       updatedAt: Date.now(),
@@ -345,6 +427,7 @@ export class AccountManager {
         const b = await this.o.hooks.keyBalance?.();
         this.snapshot = {
           ...this.snapshot,
+          bot: null,
           source: b ? "key" : "none",
           balanceUsd: b ? b.available : null,
           usedUsd: b ? b.used : null,
@@ -357,7 +440,12 @@ export class AccountManager {
       }
       this.checkLowBalance();
     } catch (e) {
-      if (!(e instanceof AccountRevokedError)) this.snapshot.error = (e as Error).message;
+      if (!(e instanceof AccountRevokedError)) {
+        this.snapshot.error = (e as Error).message;
+        // 读不到时 bot 额度也不留旧数：界面和以前一样显示"暂不可用"
+        this.snapshot.balanceUsd = null;
+        this.snapshot.bot = null;
+      }
     }
     return this.status();
   }
@@ -370,7 +458,7 @@ export class AccountManager {
     const alerted = !!this.o.store.getKV(ALERTED);
     if (bal < lowBalanceUsd && !alerted) {
       this.o.store.setKV(ALERTED, String(Date.now()));
-      this.o.hooks.alert(t("account.low_balance", { balance: bal.toFixed(2), threshold: lowBalanceUsd, url: webUrl("/console/topup", "amb_low_balance") }), push);
+      this.o.hooks.alert(t("account.low_balance", { balance: bal.toFixed(2), threshold: lowBalanceUsd, url: webUrl("/console/topup", "amb_low_balance") }), push, "low_balance");
     } else if (bal >= lowBalanceUsd && alerted) {
       this.o.store.deleteKV(ALERTED);
     }

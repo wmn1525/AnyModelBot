@@ -105,6 +105,9 @@ export const zh = {
   stoppedByUser: "已中止（处理了 {d}）。{restarted}可以继续发消息。",
   stoppedIdle: "⚠️ 代理 {d}没有任何进展，已自动中止{restart}。{where}可以重新发送，或用 /model 换个模型试试。",
   stoppedLimit: "⚠️ 这条消息处理超过了 {d}的上限，已中止{restart}。{where}可以把任务拆小一点再发。",
+  stoppedPermission: "⚠️ 电脑操作需要 macOS 授权（{missing}），任务因缺少权限未能继续。按界面上的说明开启后，可以重新发送。",
+  permAccessibility: "辅助功能",
+  permScreen: "屏幕录制",
   runtimeRestarted: "⚠️ 代理进程重启了（可能是同一机器人的另一个会话中止了卡住的消息），这条消息没有处理完，请重新发送。",
 } satisfies Catalog;
 
@@ -208,5 +211,8 @@ export const en: Catalog<typeof zh> = {
   stoppedByUser: "Stopped (ran for {d}). {restarted}You can keep sending messages.",
   stoppedIdle: "⚠️ The agent made no progress for {d}, so it was stopped automatically{restart}. {where}Send it again, or try another model with /model.",
   stoppedLimit: "⚠️ This message took longer than the {d} limit and was stopped{restart}. {where}Try splitting the task into smaller pieces.",
+  stoppedPermission: "⚠️ Computer Use needs macOS permission ({missing}), so the task couldn't continue. Grant it as shown in AnyModelBot, then send the task again.",
+  permAccessibility: "Accessibility",
+  permScreen: "Screen Recording",
   runtimeRestarted: "⚠️ The agent process restarted (another conversation with the same bot may have stopped a stuck message), so this message wasn't finished. Please send it again.",
 };

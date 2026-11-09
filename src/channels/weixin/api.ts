@@ -8,6 +8,9 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { t } from "../../i18n/index.js";
+import { logger } from "../../log.js";
+
+const apiLog = logger("weixin.api");
 
 export const ILINK_APP_ID = "bot";
 export const DEFAULT_ILINK_BASE = "https://ilinkai.weixin.qq.com";
@@ -204,6 +207,8 @@ export interface QrStatusResp {
   baseurl?: string;
   ilink_user_id?: string;
   redirect_host?: string;
+  /** 本地加的：这次查询没拿到答复（网络错误、HTTP 错误），按 wait 处理；带着的验证码要重发 */
+  failed?: string;
 }
 
 export class WeixinApiError extends Error {
@@ -284,15 +289,36 @@ export class IlinkClient {
     return JSON.parse(raw) as QrCodeResp;
   }
 
-  /** 长轮询二维码状态；超时/网络错误视为 wait。 */
+  /**
+   * 长轮询二维码状态；超时/网络错误视为 wait（带上 failed，调用方据此重发验证码）。
+   * 除了客户端超时，失败都记一条日志：扫完码一直不动时，日志里能看出是不是这台电脑连不上（例如换机房后的地址）。
+   */
   async getQrCodeStatus(qrcode: string, verifyCode?: string, timeoutMs = 35_000, signal?: AbortSignal): Promise<QrStatusResp> {
     const q = `ilink/bot/get_qrcode_status?qrcode=${encodeURIComponent(qrcode)}${verifyCode ? `&verify_code=${encodeURIComponent(verifyCode)}` : ""}`;
     try {
       return JSON.parse(await this.request("GET", q, undefined, timeoutMs, signal)) as QrStatusResp;
     } catch (e) {
       if (signal?.aborted) throw e;
-      return { status: "wait" };
+      const message = (e as Error).message || String(e);
+      if (!/timeout/i.test(message)) apiLog.warn("get_qrcode_status failed, treating as wait", { host: this.baseUrl, message: message.slice(0, 200) });
+      return { status: "wait", failed: message };
     }
+  }
+
+  /**
+   * 上线 / 下线通知（移植自 openclaw-weixin 2.1.10+ 的 notifyStart / notifyStop）：服务端据此对账机器人在不在线。
+   * 失败只记日志，不影响收发；下线通知用自己的短超时，退出时不会久等。
+   */
+  async notifyStart(): Promise<void> {
+    await this.notifyState("ilink/bot/msg/notifystart", 10_000);
+  }
+  async notifyStop(): Promise<void> {
+    await this.notifyState("ilink/bot/msg/notifystop", 3_000);
+  }
+  private async notifyState(endpoint: string, timeoutMs: number): Promise<void> {
+    const raw = await this.request("POST", endpoint, {}, timeoutMs);
+    const r = raw.trim() ? (JSON.parse(raw) as { ret?: number; errmsg?: string }) : {};
+    if (r.ret !== undefined && r.ret !== 0) throw new WeixinApiError(`${endpoint} ret=${r.ret} errmsg=${r.errmsg ?? ""}`, r.ret);
   }
 
   // ---------- 消息 ----------

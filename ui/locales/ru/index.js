@@ -1,3 +1,5 @@
+import firstUse from "./firstUse.js";
+import updates from "./updates.js";
 import search from "./search.js";
 import access from "./access.js";
 import account from "./account.js";
@@ -27,7 +29,7 @@ import tasks from "./tasks.js";
 import time from "./time.js";
 import troubleshoot from "./troubleshoot.js";
 import ui from "./ui.js";
-export default { search,
+export default { firstUse, updates, search,
   official,
   access,
   account,

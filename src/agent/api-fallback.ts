@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { logger } from "../log.js";
-import { bareModel } from "../modelflare.js";
+import { bareModel } from "../providers/modelflare.js";
 
 const log = logger("agent.api");
 

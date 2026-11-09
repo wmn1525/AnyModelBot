@@ -38,6 +38,7 @@ export default {
   "endTurnLimit": "ターンごとの上限を超えました",
   "endUser": "ユーザーが停止しました",
   "endIdle": "長時間進捗がないため、自動停止しました",
+  "endPermission": "システムの許可がないため停止しました",
   "mediaSavedNotDelivered": "ボット「{name}」が生成した{kind}はワークスペース（{files}）に保存しましたが、依頼元のメッセージ処理が停止されたため、チャットには送信していません。必要な場合は、チャットでボットに送信を依頼してください。",
   "kindImage": "画像",
   "kindVideo": "動画",

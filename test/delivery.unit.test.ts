@@ -6,8 +6,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Store, type OutboxRow } from "../src/store/db.js";
 import { Outbox } from "../src/core/outbox.js";
-import { Delivery, digestText, nudgeAt, nudgeText, type PushInput } from "../src/core/delivery.js";
-import { DEFAULT_QUIET, fmtWhen, inQuiet, minuteOf, nextAt, quietEnd, startOfDay } from "../src/core/quiet.js";
+import { Delivery, digestText, nudgeAt, nudgeText, type PushInput } from "../src/delivery/index.js";
+import { DEFAULT_QUIET, fmtWhen, inQuiet, minuteOf, nextAt, quietEnd, startOfDay } from "../src/domain/quiet.js";
 import { deliverWeixin } from "../src/channels/weixin/channel.js";
 import { WeixinQuota } from "../src/channels/weixin/quota.js";
 import { normalizeSettings } from "../src/agent/settings.js";

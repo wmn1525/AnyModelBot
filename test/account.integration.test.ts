@@ -71,6 +71,15 @@ d("账户登录（经管理接口，真实内置网关）", () => {
     expect(llm.calls.at(-1)!.auth).toBe("Bearer sk-key-1");
   }, 30_000);
 
+  it("Bot 额度：/account 带上 bot（旧版服务端没有时为 null）；界面带 maxAgeMs 刷新时 3 秒后就会重新读", async () => {
+    expect((await api("/account")).json.bot).toBeNull();
+    mf.s.bot = { balance_usd: 0.83, remaining_percent: 83 };
+    await until(async () => (await api("/account/refresh", "POST", { maxAgeMs: 3000 })).json.bot?.remainingPercent === 83, 10_000, 500);
+    expect((await api("/account")).json).toMatchObject({ balanceUsd: 12.5, bot: { balanceUsd: 0.83, remainingPercent: 83 } });
+    mf.s.bot = undefined;
+    await until(async () => (await api("/account/refresh", "POST", { maxAgeMs: 3000 })).json.bot === null, 10_000, 500);
+  }, 30_000);
+
   it("机器人预算：开启后走它自己的 Key，用量可查；关闭后回到本机 Key", async () => {
     const on = await api("/bots/default/budget", "PUT", { enabled: true, limitUsd: 5 });
     expect(on.status).toBe(200);

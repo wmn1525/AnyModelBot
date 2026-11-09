@@ -1,6 +1,6 @@
 # Background tasks and proactive rules (Phase 3 design)
 
-Status: **3a–3f are built**, plus questions that don't block (a task asks right away and keeps working while a question with a default waits, see [Questions](#questions-ask-early-keep-working)): tasks, questions and needs-you, delivery, rules with an opt-in observe mode, cost controls, and the tasks view with retention, cleanup and Markdown export (`src/tasks/`, `src/core/delivery.ts`, `dsh-runtime/plugins/amb-tasks.mjs`, `ui/components/tasks.js`; tests in `test/tasks.*`, `test/delivery.*`, `test/rules.*`, `test/cost.*`, `test/retention.*`, `test/tasks-view.*`). Written 2026-10-31 against `master` df22385 and the pinned DSH `0.2.1-rc.4` in `dsh-runtime/`.
+Status: **3a–3f are built**, plus questions that don't block (a task asks right away and keeps working while a question with a default waits, see [Questions](#questions-ask-early-keep-working)): tasks, questions and needs-you, delivery, rules with an opt-in observe mode, cost controls, and the tasks view with retention, cleanup and Markdown export (`src/tasks/`, `src/delivery/index.ts`, `dsh-runtime/plugins/amb-tasks.mjs`, `ui/components/tasks.js`; tests in `test/tasks.*`, `test/delivery.*`, `test/rules.*`, `test/cost.*`, `test/retention.*`, `test/tasks-view.*`). Written 2026-10-31 against `master` df22385 and the pinned DSH `0.2.1-rc.4` in `dsh-runtime/`.
 
 > **2026-11-01, the PO changed the defaults: act, and ask only when it is really needed.** "We need to be automatic, not an infinite prompt for users." Since then: a rule the user asks for acts right away, because the user's words are its mandate just as an explicit task request is; observe is opt-in (「先观察」 in chat, or Observe in the rule editor), and editing a rule's words no longer sends it back to observe. Agents decide for themselves and say what they chose; they ask only when a wrong guess would cause harm, cost money or waste most of the work, when they need something only the user has, or when the step cannot be undone, and never about language, format, scope or style. Image and video generation asks only above the cost threshold. Idle task folders are cleaned up without a needs-you row or a notification. The sections below are updated; the new decisions are in [15](#15-decisions-product-owner-2026-11-01-act-and-ask-only-when-really-needed), and the ones they replace are marked in [14](#14-decisions-product-owner-2026-10-31).
 Feasibility evidence is in [Appendix A](#appendix-a-feasibility-answers-with-evidence). The spike that produced it is `scripts/spikes/p3-tasks/`.
@@ -433,13 +433,15 @@ These use `ui/design/README.md`:
 - no emoji;
 - **nothing is drawn when healthy.**
 
-**Sidebar.** A "需要你" row appears above the bots only when the count is above 0. Bot avatars already have `working` (后台任务) and `waiting` (等你批准) states.
+**Sidebar.** A "需要你" row appears in the fixed nav under the search box, below "发现", only when the count is above 0. It is a `.nav-item` like the settings nav (inbox icon on the search icon's line, label aligned with the search text, `.badge.count warn` on the bots' count line) and does not scroll with the bot list. Bot avatars already have `working` (后台任务) and `waiting` (等你批准) states.
 
 ```
 ┌ side ─────────────────────────────┐
 │ [新建]                     [任务]  │   ← 任务: icon button, opens the tasks view
 │ ⌕ 搜索                             │
-│ ● 需要你                        3  │   ← only when > 0 (amber dot, .badge.count warn)
+│ ◎ 发现                          •  │   ← fixed nav: only when the catalog has bots
+│ ▭ 需要你                        3  │   ← fixed nav: only when > 0 (.badge.count warn)
+│ 我的                               │   ← the scrolling list starts here
 │ (天天) 天天         2分钟            │   ← avatar state "waiting"
 │        GPU 价格调研等你回答       1  │
 │ (哒哒) 哒哒          正在工作…       │   ← avatar state "working", 1 task running

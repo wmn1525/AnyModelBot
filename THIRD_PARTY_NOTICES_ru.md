@@ -83,6 +83,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - ws 8.22.0 — MIT
 - yauzl 3.4.0 — MIT
 - yaml 2.9.1 — ISC
+- electron-updater 6.8.12 — MIT
 
 Лицензии транзитивных зависимостей находятся внутри соответствующих пакетов в node_modules. Настольное приложение также включает Electron (MIT), Chromium и другие компоненты; их лицензии находятся в LICENSE и LICENSES.chromium.html в папке установки.
 

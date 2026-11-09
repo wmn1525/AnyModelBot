@@ -7,18 +7,18 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { listen, mockModelflare, approveInBrowser, callbackLink, readJson } from "./helpers.js";
+import { listen, mockModelflare, approveInBrowser, callbackLink, readJson, until } from "./helpers.js";
 import { discover, startLogin, pkcePair } from "../src/account/oauth.js";
-import { AccountManager, summarizeUsage, type AccountHooks } from "../src/account/manager.js";
+import { AccountManager, botQuota, summarizeUsage, type AccountHooks } from "../src/account/manager.js";
 import { AccountVault } from "../src/account/vault.js";
 import { loadModelInfo, referencePrice } from "../src/account/model-info.js";
-import { MediaService, docSection, estimateUsd, pickDefault, type MediaModel } from "../src/agent/media.js";
+import { MediaService, docSection, estimateUsd, pickDefault, type MediaModel } from "../src/tools/media/index.js";
 import { AgentManager, MEDIA_ASK_USD, mediaAsk } from "../src/agent/manager.js";
 import { normalizeSettings } from "../src/agent/settings.js";
 import { locateDshRuntime } from "../src/agent/host.js";
 import { findAppRoot } from "../src/magpie/supervisor.js";
 import { Store } from "../src/store/db.js";
-import { bareModel, isBotProviderModel, routeModel, skillHeader } from "../src/modelflare.js";
+import { bareModel, isBotProviderModel, routeModel, skillHeader } from "../src/providers/modelflare.js";
 
 describe("回环 PKCE 登录", () => {
   let mf: Awaited<ReturnType<typeof mockModelflare>>;
@@ -48,6 +48,86 @@ describe("回环 PKCE 登录", () => {
     // 回调端口只接受一次：再来一次连不上或 404
     const again = await fetch(`${u.searchParams.get("redirect_uri")}?code=y&state=${u.searchParams.get("state")}`).catch(() => undefined);
     expect(again === undefined || again.status === 404).toBe(true);
+  });
+
+  it("登录成功页要等登录真正完成：finalize 失败时页面显示失败原因，不说成功", async () => {
+    const attempt = await startLogin(await discover(mf.url), {
+      clientId: "anymodel-bot",
+      scope: "openid offline_access",
+      finalize: async () => {
+        throw new Error("网关没接上");
+      },
+    });
+    const u = new URL(attempt.url);
+    const state = u.searchParams.get("state")!;
+    const page = await approveInBrowser(mf, attempt.url);
+    expect(page.status).toBe(200);
+    const html = await page.text();
+    // 先显示"正在完成登录"，成功的那一块是隐藏的
+    expect(html).toContain('id="pending"');
+    expect(html).toContain('id="done" hidden');
+    await expect(attempt.result).rejects.toThrow(/网关没接上/);
+    const origin = new URL(u.searchParams.get("redirect_uri")!).origin;
+    const status = await (await fetch(`${origin}/callback/status?state=${encodeURIComponent(state)}`)).json();
+    expect(status).toMatchObject({ state: "failed", message: expect.stringMatching(/网关没接上/), returned: false });
+    // 不带这次的 state 查不到
+    expect((await fetch(`${origin}/callback/status?state=forged`)).status).toBe(404);
+  });
+
+  it("finalize 成功后才是 done；只有这次成功页带的 nonce 才能确认\"已返回应用\"", async () => {
+    let finalized = false;
+    const attempt = await startLogin(await discover(mf.url), {
+      clientId: "anymodel-bot",
+      scope: "openid offline_access",
+      appLink: "anymodelbot://login-complete",
+      finalize: async () => {
+        finalized = true;
+      },
+    });
+    const u = new URL(attempt.url);
+    const origin = new URL(u.searchParams.get("redirect_uri")!).origin;
+    const state = encodeURIComponent(u.searchParams.get("state")!);
+    const html = await (await approveInBrowser(mf, attempt.url)).text();
+    await attempt.result;
+    expect(finalized).toBe(true);
+    const nonce = /anymodelbot:\/\/login-complete\?r=([\w-]+)/.exec(html)?.[1];
+    expect(nonce).toBeTruthy();
+    expect((await (await fetch(`${origin}/callback/status?state=${state}`)).json()).state).toBe("done");
+    expect(attempt.markReturned("someone-else")).toBe(false);
+    expect((await (await fetch(`${origin}/callback/status?state=${state}`)).json()).returned).toBe(false);
+    expect(attempt.markReturned(nonce!)).toBe(true);
+    expect((await (await fetch(`${origin}/callback/status?state=${state}`)).json()).returned).toBe(true);
+    attempt.cancel(); // 已经完成：取消不改变结果
+    await expect(attempt.result).resolves.toBeTruthy();
+  });
+
+  it("正在完成登录时取消：finalize 看到取消信号，登录以取消结束", async () => {
+    let seen: AbortSignal | undefined;
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const attempt = await startLogin(await discover(mf.url), {
+      clientId: "anymodel-bot",
+      scope: "openid offline_access",
+      finalize: async (_t, signal) => {
+        seen = signal;
+        await gate; // 模拟卡在接网关这一步
+        if (signal.aborted) throw new Error("abandoned");
+      },
+    });
+    await approveInBrowser(mf, attempt.url);
+    await until(() => !!seen);
+    attempt.cancel();
+    await expect(attempt.result).rejects.toMatchObject({ code: "cancelled" });
+    expect(seen!.aborted).toBe(true);
+    release();
+  });
+
+  it("没有应用链接（命令行、Docker）时成功页不去唤起本机的客户端", async () => {
+    const attempt = await startLogin(await discover(mf.url), { clientId: "anymodel-bot", scope: "openid offline_access" });
+    const html = await (await approveInBrowser(mf, attempt.url)).text();
+    await attempt.result;
+    expect(html).not.toContain("anymodelbot://");
+    expect(html).toContain('id="app" hidden');
   });
 
   it("用户在授权页拒绝：登录以 access_denied 结束", async () => {
@@ -201,6 +281,29 @@ describe("AccountManager", () => {
     expect(alerts.filter((a) => a.includes("余额只剩"))).toHaveLength(2);
   });
 
+  it("Bot 额度：服务端返回 bot 时带上金额和剩余百分比；用完是 0%；不返回、null、读取失败时为 null，余额照旧", async () => {
+    await signIn();
+    // 旧版服务端：没有 bot 字段
+    expect(manager.status()).toMatchObject({ balanceUsd: 12.5, bot: null });
+    mf.s.bot = { balance_usd: 0.83, remaining_percent: 83 };
+    expect((await manager.refresh()).bot).toEqual({ balanceUsd: 0.83, remainingPercent: 83 });
+    expect(manager.status().balanceUsd).toBe(12.5);
+    mf.s.bot = { balance_usd: 0, remaining_percent: 0 };
+    expect((await manager.refresh()).bot).toEqual({ balanceUsd: 0, remainingPercent: 0 });
+    mf.s.bot = null;
+    expect((await manager.refresh()).bot).toBeNull();
+    mf.s.bot = { balance_usd: 0.5, remaining_percent: 50 };
+    await manager.refresh();
+    mf.s.accountFail = true;
+    const failed = await manager.refresh();
+    expect(failed).toMatchObject({ balanceUsd: null, bot: null });
+    expect(failed.error).toBeTruthy();
+    mf.s.accountFail = false;
+    expect((await manager.refresh()).bot).toEqual({ balanceUsd: 0.5, remainingPercent: 50 });
+    await manager.logout();
+    expect(manager.status().bot).toBeNull();
+  });
+
   it("机器人预算：开启签发自己的 Key，调整只改上限，关闭删除 Key", async () => {
     await signIn();
     await manager.setBotBudget("b1", "写作助手", { enabled: true, limitUsd: 5 });
@@ -223,6 +326,19 @@ describe("AccountManager", () => {
     manager.completeLoginFromLink(callbackLink(mf, url));
     await until(() => manager.signedIn);
     expect(manager.status()).toMatchObject({ state: "signed_in", source: "account" });
+  });
+
+  it("充值页地址：登录时拿到账户标识就放在 # 后面（不进查询串）；没有标识时是普通地址", async () => {
+    expect(manager.status().topupUrl).not.toContain("#");
+    mf.s.subject = "user-42";
+    await signIn();
+    const u = new URL(manager.status().topupUrl);
+    expect(u.pathname).toBe("/billing");
+    expect(u.hash).toBe("#amb_account=user-42");
+    expect(u.searchParams.has("amb_account")).toBe(false);
+    // 退出后不再带
+    await manager.logout();
+    expect(manager.status().topupUrl).not.toContain("#");
   });
 
   it("没登录时不能设预算", async () => {
@@ -922,5 +1038,20 @@ describe("Key 失效后自动重试", () => {
     expect(n).toBe(1);
     expect(r.recovers()).toBe(0);
     expect(r.finish).toContain("401 invalid token");
+  });
+});
+
+describe("Bot 额度字段", () => {
+  it("缺字段、类型不对、不是有限数时当作没有；百分比向下取整并夹到 0–100", () => {
+    expect(botQuota(undefined)).toBeNull();
+    expect(botQuota(null)).toBeNull();
+    expect(botQuota("0.83")).toBeNull();
+    expect(botQuota({ balance_usd: 0.83 })).toBeNull();
+    expect(botQuota({ balance_usd: "0.83", remaining_percent: 83 })).toBeNull();
+    expect(botQuota({ balance_usd: 0.83, remaining_percent: Number.NaN })).toBeNull();
+    expect(botQuota({ balance_usd: 0.83, remaining_percent: 83 })).toEqual({ balanceUsd: 0.83, remainingPercent: 83 });
+    expect(botQuota({ balance_usd: 0.837, remaining_percent: 83.9 })).toEqual({ balanceUsd: 0.837, remainingPercent: 83 });
+    expect(botQuota({ balance_usd: 2, remaining_percent: 140 })?.remainingPercent).toBe(100);
+    expect(botQuota({ balance_usd: 0, remaining_percent: -3 })?.remainingPercent).toBe(0);
   });
 });

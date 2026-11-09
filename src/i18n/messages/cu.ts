@@ -2,7 +2,7 @@
 import type { Catalog } from "../types.js";
 
 export const zh = {
-  // Codex Computer Use 桥（computer-use.ts）
+  // Codex Computer Use 桥（tools/computer-use/index.ts）
   codexUnavailable: "Codex Computer Use 桥: 需要 macOS 14.4+ 和已安装的 Codex Computer Use",
   codexOff: "{base}（{why}）",
   codexNotMac: "当前系统不是 macOS",
@@ -12,7 +12,7 @@ export const zh = {
   codexNoLauncher: "未找到 ChatGPT/Codex 应用自带的 codex 启动器",
   codexAvailable: "Codex Computer Use 桥: 可用（macOS）",
   codexFallback: "（Codex 桥不可用，已改用 Cua Driver：{reason}）",
-  // Cua Driver（cua-driver.ts）
+  // Cua Driver（tools/computer-use/cua-driver.ts）
   cuaOff: "Cua Driver: 不可用（{why}）",
   cuaAvailable: "Cua Driver: 可用（{os}）",
   cuaUnsupported: "不支持 {platform}",

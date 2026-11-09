@@ -6,7 +6,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { spawnSync } from "node:child_process";
 import type { AddressInfo } from "node:net";
-import { serveBotAppStatic } from "../src/web/botapp.js";
+import { serveBotAppStatic } from "../src/botkit/static.js";
 import type { BotCatalog } from "../src/botkit/catalog.js";
 
 const require = createRequire(import.meta.url);

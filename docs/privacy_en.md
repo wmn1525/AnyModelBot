@@ -57,7 +57,7 @@ This document explains what AnyModelBot stores where, what leaves your device, a
 
 - Model requests go from the bundled magpie gateway to Modelflare, which forwards them to the provider you chose.
 - A request contains what the model needs to answer: the prompt, conversation context, memory in use, file contents, tool results and, with computer use, screenshots.
-- Requests carry an `X-Modelflare-Skill: anymodel-bot/<version>` header so Modelflare can identify the source; Modelflare links opened from the app carry `utm_source=anymodelbot`.
+- Requests carry an `X-Modelflare-Skill: anymodel-bot/<version>` header so Modelflare can identify the source; Modelflare links opened from the app carry `utm_source=anymodelbot`. When the app opens the top-up page, the URL carries the account identifier from the sign-in ID token after `#` (`#amb_account=…`, not a secret) so the Modelflare page can check that the browser is signed in to the same account; what follows `#` is not sent to servers, CDNs or analytics scripts. The "Key configuration changed" notice compares an HMAC of the key computed locally with a random salt; the key and its digest are neither stored for this nor uploaded.
 - Modelflare keeps request logs; see the [Modelflare Trust Center](https://modelflare.dev/trust?utm_source=anymodelbot&utm_campaign=amb_readme) for what is kept and for how long. How each model provider handles data is governed by its own terms.
 
 ## Using your own official API keys
@@ -85,6 +85,8 @@ Besides model requests, the app goes online to:
 - Feishu channel: keep a long connection to the Feishu Open Platform.
 - Telegram, Slack and Discord channels: once connected, talk to `api.telegram.org`, `slack.com`, `discord.com` and their file hosts to send and receive messages and the files you send.
 - On Windows, with agent mode on and no working PowerShell 7 on the system, download PowerShell 7 from Microsoft's official release location (turn this off with `AMB_PWSH_AUTO_INSTALL=0`; see the [development guide](./development_en.md)).
+- Installed desktop apps check GitHub for updates after startup and every 6 hours, and download update files in the background by default. You can turn automatic downloads off in Settings → General. Requests contain no account credentials or chat content. Installation requires you to click Restart and update, with no tasks running.
+- When you open What's new for a version you haven't installed yet, the app reads that version's changelog from GitHub (`raw.githubusercontent.com`). It only does so when you open it, with no account credentials or chat content. The changelog for installed versions ships with the app and needs no network.
 - Only when you explicitly set `AMB_CATALOG_URL` to use a remote bot catalog does the app fetch its list and download packages on demand, verifying signatures and hashes without uploading your data. By default, the official bot catalog, UIs, sample data and skills ship with the app; opening and installing them makes no such network requests.
 
 ## Computer use and screenshots

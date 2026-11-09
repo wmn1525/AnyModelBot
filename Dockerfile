@@ -53,7 +53,7 @@ COPY --from=magpie /out/magpie ./bin/magpie
 COPY --from=dsh /app/dsh-runtime/node_modules ./dsh-runtime/node_modules
 COPY dsh-runtime/package.json ./dsh-runtime/
 COPY dsh-runtime/plugins ./dsh-runtime/plugins
-COPY LICENSE THIRD_PARTY_NOTICES*.md ./
+COPY LICENSE THIRD_PARTY_NOTICES*.md CHANGELOG*.md ./
 RUN mkdir -p /data && chown node:node /data
 USER node
 VOLUME ["/data"]

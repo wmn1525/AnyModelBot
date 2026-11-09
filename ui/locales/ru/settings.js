@@ -476,7 +476,7 @@ export default {
       available: "Доступна версия {version}",
       latest: "У вас последняя версия",
       download: "Скачать ↗",
-      notes: "Что нового ↗",
+      notes: "Что нового",
     },
     licenses: {
       name: "Лицензии и уведомления третьих сторон",

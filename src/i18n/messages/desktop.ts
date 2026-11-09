@@ -2,6 +2,8 @@
 import type { Catalog } from "../types.js";
 
 export const zh = {
+  updateReady: "{version} 已下载，准备好后可重启并更新。",
+  updateInstallFailed: "更新安装未完成，应用将重新启动。请稍后重试。",
   trayOpen: "打开 {product}",
   trayOpenInBrowser: "在浏览器中打开",
   trayAutostart: "开机自启",
@@ -16,6 +18,8 @@ export const zh = {
 } satisfies Catalog;
 
 export const en: Catalog<typeof zh> = {
+  updateReady: "Version {version} has downloaded. Restart and update when you're ready.",
+  updateInstallFailed: "The update installation did not finish. The app will restart. Please try again later.",
   trayOpen: "Open {product}",
   trayOpenInBrowser: "Open in browser",
   trayAutostart: "Launch at login",

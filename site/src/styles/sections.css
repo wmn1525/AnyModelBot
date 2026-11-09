@@ -46,10 +46,11 @@
   .story__points b { color: var(--text); font-size: var(--fs-body-lg); font-weight: 600; line-height: 1.35; letter-spacing: -.01em; }
   :lang(zh) .story__points b { letter-spacing: 0; }
   .story__points p > span { color: var(--text-2); font-size: var(--fs-body-sm); line-height: 1.6; }
-  /* 两章故事下面的「还有这些」：一段标题 + 一排 crew-perks（样式在 home.css） */
+  /* 两章故事下面的「还有这些」：标题 + 纯文字清单（宽屏两列、窄屏一列），不加图标和卡片 */
   .caps { margin-top: var(--stack-block); }
-  .caps .crew-perks { margin-top: 0; }
-  .caps .subhead { margin-bottom: 8px; }
+  .caps__list { display: grid; gap: 12px var(--grid-gap); margin-top: 16px; color: var(--text-2); font-size: var(--fs-body-sm); line-height: 1.6; }
+  .caps__list b { margin-right: .5em; color: var(--text); font-weight: 600; }
+  @media (min-width: 768px) { .caps__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .story__note { margin-top: 24px; padding-left: 12px; box-shadow: inset 2px 0 0 var(--line-strong); color: var(--text-2); font-size: var(--fs-xs); line-height: 1.55; }
   /* 场景卡（窄屏上每幕一张）：底光用本章颜色 */
   .story__scene {

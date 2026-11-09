@@ -28,6 +28,8 @@ export interface BridgeHandlers {
   connections?(body: any, signal: AbortSignal): Promise<unknown>;
   /** amb-control 插件：长轮询取宿主的指令（signal = 连接断了）、回报结果 */
   control?: { poll(body: any, signal: AbortSignal): Promise<unknown>; result(body: any): void };
+  /** amb-computer-use-gate 插件：电脑操作工具调用前查系统权限（macOS 桌面版） */
+  cuPermission?(body: any): Promise<unknown>;
   /** 服务端压缩：长会话的 /v1/responses 换上上游压缩过的历史（见 server-compaction.ts） */
   compaction?: ServerCompaction;
   /** amb-tasks 插件：task_report（report）、收尾结束（settled）、聊天代理的任务工具（tool）、规则会话的配置（config） */
@@ -275,6 +277,7 @@ export class AgentBridge {
     else if (url === "/dsh/cancel") out = (await this.h.cancel(body), { ok: true });
     else if (url === "/dsh/memory" && this.h.memory) out = await this.h.memory(body);
     else if (url === "/dsh/steward" && this.h.steward) out = await this.h.steward(body);
+    else if (url === "/dsh/cu-permission" && this.h.cuPermission) out = await this.h.cuPermission(body);
     else if (url === "/dsh/media" && this.h.media) return this.longCall(res, this.h.media(body));
     else if (url === "/dsh/search" && this.h.search) {
       const ac = new AbortController();

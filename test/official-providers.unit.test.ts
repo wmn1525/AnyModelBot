@@ -2,7 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { gatewayModelInfo } from "../src/account/model-info.js";
 import { agentApi } from "../src/agent/host.js";
-import { OFFICIAL_PROVIDERS, officialBases, officialFailure, officialModelName, officialOf, officialPicks, officialProvider } from "../src/official-providers.js";
+import { OFFICIAL_PROVIDERS, officialBases, officialFailure, officialModelName, officialOf, officialPicks, officialProvider } from "../src/providers/official.js";
 // @ts-expect-error 界面代码是不经构建的 JS
 import { groupModels, modelFamily, officialSource, sameModel } from "../ui/lib/models.js";
 

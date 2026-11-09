@@ -2,10 +2,10 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { MediaService, pickDefault } from "../src/agent/media.js";
+import { MediaService, pickDefault } from "../src/tools/media/index.js";
 import { Store } from "../src/store/db.js";
 import { NewApiAccountManager } from "../src/account/newapi.js";
-import { playgroundModel, parsePlaygroundModel, type NewApiDesktop } from "../src/account/newapi-types.js";
+import { playgroundModel, parsePlaygroundModel, type NewApiDesktop } from "../src/providers/newapi.js";
 import type { AccountHooks } from "../src/account/manager.js";
 import { until } from "./helpers.js";
 // @ts-expect-error Native browser module
@@ -98,6 +98,19 @@ function fixture(options: { failGroup?: string; keyMode?: boolean; delayedImage?
 }
 
 describe("New API playground account", () => {
+  it("reports the OKINTO wallet without upstream credit offers and scopes first-use progress by account", async () => {
+    const f = fixture();
+    expect(f.account.ownerKey).toBe("local");
+    await f.signIn();
+    expect(f.account.ownerKey).toMatch(/^[a-f0-9]{64}$/);
+    expect(f.account.knownBalanceUsd()).toBe(4);
+    expect(f.account.status()).toMatchObject({ bot: null, topupUrl: origin + "/console/topup", balanceUnit: "USD" });
+    const owner = f.account.ownerKey;
+    await f.account.refresh();
+    expect(f.account.ownerKey).toBe(owner);
+    await f.account.logout();
+    expect(f.account.ownerKey).toBe("local");
+  });
   it("keeps the scoped image token until the complete response body is received", async () => {
     const f = fixture({ images: true, delayedImage: true }); await f.signIn();
     const response = await fetch(f.relay.baseUrl + "/images/generations", { method: "POST", headers: { authorization: `Bearer ${f.relay.apiKey}`, "content-type": "application/json" }, body: JSON.stringify({ model: playgroundModel("国模", "gpt-image-2.5"), prompt: "cat" }) });

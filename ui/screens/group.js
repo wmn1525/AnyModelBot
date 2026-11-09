@@ -72,11 +72,13 @@ export function GroupSheet({ group, bots, onClose, onSaved }) {
   };
   return html`<${Sheet} title=${group ? t("group.sheet.editTitle") : t("group.sheet.newTitle")} onClose=${onClose}>
     <form onSubmit=${submit}>
+      ${!group && html`<p class="hint">${t("firstUse.groupPurpose")}</p>`}
       <label class="set-field"><span class="k">${t("group.sheet.name")}</span>
-        <input class="field" maxlength="80" value=${name} placeholder=${t("group.sheet.namePlaceholder")} onInput=${(e) => setName(e.target.value)} data-autofocus />
+        <input class="field" maxlength="80" value=${name} placeholder=${t("firstUse.groupName")} onInput=${(e) => setName(e.target.value)} data-autofocus />
+        <span class="hint">${t("firstUse.groupNameHint")}</span>
       </label>
       <div class="set-field">
-        <span class="k">${t("group.sheet.members")}<span class="hint">${t("group.sheet.membersHint")}</span></span>
+        <span class="k">${t("group.sheet.members")}<span class="hint">${t("firstUse.groupMembers")}</span></span>
         <div class="group-picks">
           ${bots.map((b) => {
             const on = picked.includes(b.id);
@@ -355,6 +357,19 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
     return out;
   }, [items, history.context, live, pending, stopping, canOpen, bots, lang]);
 
+  // 示例按真实成员生成（第 17 项）：名字里像"写作助手"的用起草的例子，否则用第一位成员的通用例子。
+  // 只用在群里不重名的成员：填进去的 @名字 要能被服务端的点名解析（core/groups.ts mentionsIn）认成这个人
+  const nameKey = (b) => b.name.trim().toLowerCase();
+  const unique = members.filter((b) => b.name.trim() && members.filter((x) => nameKey(x) === nameKey(b)).length === 1);
+  const writerWords = t("firstUse.writerWords").split("|").map((w) => w.trim().toLowerCase()).filter(Boolean);
+  const writer = unique.find((b) => writerWords.some((w) => nameKey(b).includes(w)));
+  const exampleMember = writer || unique[0];
+  const example = exampleMember ? t(writer ? "firstUse.writerExample" : "firstUse.genericExample", { name: exampleMember.name.trim() }) : "";
+  const fillExample = () => {
+    // Append rather than discard a draft, using the member name the real mention parser accepts.
+    setText((v) => v.trim() ? `${v}\n${example}` : example);
+    requestAnimationFrame(() => { ta.current?.focus(); autoGrow(ta.current); });
+  };
   const empty = !history.context && items && items.length === 0 && !live;
   const canSend = !!text.trim();
   return html`<section class=${`chat${scrolled ? " scrolled" : ""}${findOpen || history.context || history.loading || history.error ? " has-chat-tools" : ""}`} data-screen="group" aria-label=${group.name}>
@@ -379,7 +394,10 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
         ${empty && html`<div class="chat-empty">
           <${GroupAvatars} bots=${members} size=${56} />
           <h2>${group.name}</h2>
-          <p>${t("group.empty")}</p>
+          <h3>${t("firstUse.groupTitle")}</h3>
+          <p>${t("firstUse.groupDesc")}</p>
+          <p class="group-rules">${t("firstUse.groupRules")}</p>
+          ${example && html`<button type="button" class="btn group-example" onClick=${fillExample}>${example}</button>`}
         </div>`}
         ${rows}
         <${HistoryPageButton} history=${history} direction="after" />
@@ -388,7 +406,7 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
     ${!atBottom && html`<button type="button" class="to-bottom" aria-label=${t("chat.toBottom")} onClick=${toBottom}><${Icon} name="down" size="md" /></button>`}
     <div class="composer-dock">
       <div class="composer">
-        <textarea ref=${ta} rows="1" placeholder=${t("group.placeholder")} aria-label=${t("chat.composer.label")} value=${text}
+        <textarea ref=${ta} rows="1" placeholder=${t("firstUse.groupComposer")} aria-label=${t("chat.composer.label")} value=${text}
           onInput=${(e) => { setText(e.target.value); readMention(e.target); autoGrow(e.target); }}
           onClick=${(e) => readMention(e.target)} onKeyDown=${onKey} />
         <div class="composer-bar">

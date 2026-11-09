@@ -1,6 +1,6 @@
 ﻿import { BrowserWindow, session, type Session } from "electron";
 import crypto from "node:crypto";
-import type { NewApiDesktop } from "../src/account/newapi-types.js";
+import type { NewApiDesktop } from "../src/providers/newapi.js";
 
 /** Dedicated browser profile per app data directory and New API origin. No credentials cross renderer IPC. */
 export function newApiDesktop(origin: string, dataDir: string): NewApiDesktop {

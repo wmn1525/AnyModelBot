@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 升级应用内置的 PowerShell 7 时用：打印某个版本 win-x64 / win-arm64 zip 的 SHA256 和大小，贴进 src/agent/pwsh-private.ts 的 PRIVATE_PWSH。
+// 升级应用内置的 PowerShell 7 时用：打印某个版本 win-x64 / win-arm64 zip 的 SHA256 和大小，贴进 src/tools/pwsh/private.ts 的 PRIVATE_PWSH。
 // 哈希取自该 release 里的 hashes.sha256，再和 GitHub API 的 asset digest 对一遍（不一致就报错）；--verify 时再把两个 zip 下载下来复算。
 // 选版本：最新的稳定版或 LTS（不要 preview / rc）；再看一眼 .NET 支持的最低 Windows 版本，必要时改 minBuild。
 //

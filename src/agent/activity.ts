@@ -2,30 +2,14 @@
  * 代理回合的活动记录：把 DSH 的会话事件折叠成看得懂的几类步骤（模型请求、工具调用、重试、子代理、压缩、出错）。
  * 网页对话里折叠在"用时"下面，微信/飞书会话在信息面板里看；/status 和看门狗用它说明卡在哪一步。
  */
+import type { ActivityStep } from "../domain/activity.js";
 import { summarizeCall } from "./host.js";
 import { t as tr } from "../i18n/index.js";
 import { localProxyFailureHint } from "../network-error.js";
-import { displayModel } from "../account/newapi-types.js";
+import { displayModel } from "../providers/newapi.js";
 import { redactText } from "../log.js";
 
-export interface ActivityStep {
-  /** 同一步的更新沿用同一个 id（工具调用 id、m<回合>.<步>…） */
-  id: string;
-  kind: "model" | "tool" | "retry" | "subagent" | "compact" | "error" | "job" | "steer";
-  /** 模型名、工具名… */
-  title: string;
-  /** 一行摘要：命令、路径、回复开头、失败原因 */
-  summary?: string;
-  /** 展开后看到的参数 / 输出（已截断） */
-  input?: string;
-  output?: string;
-  status: "running" | "ok" | "error";
-  /** 没做完就被打断（回合出错、/stop、看门狗、超时）：说明时仍按"正在做"来说 */
-  cut?: boolean;
-  at: number;
-  ms?: number;
-  tokens?: { input?: number; output?: number };
-}
+export type { ActivityStep };
 
 const MAX_STEPS = 120;
 const MAX_INPUT = 1000;

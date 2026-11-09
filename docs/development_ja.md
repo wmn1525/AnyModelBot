@@ -1,5 +1,9 @@
 # 開発ガイド
 
+
+> 0.1.31 · Windows インストール版と Linux AppImage は標準で更新をバックグラウンド取得します。インストールはユーザーが再起動を選んだ時のみ行い、実行中のタスクがあれば待ちます。現在の未署名 macOS 版は引き続き手動更新です。0.1.28 以前からは本版を一度手動インストールしてください。
+> 「更新内容」ダイアログとバージョン情報の更新履歴を追加。バージョン確認、ダウンロード、更新説明は本リポジトリを参照します。
+
 [简体中文](./development.md) | [English](./development_en.md) | 日本語 | [한국어](./development_ko.md) | [Русский](./development_ru.md)
 
 ソースからの実行、パッケージ作成、開発への参加を考えている方のためのガイドです。アプリを使うだけなら [Releases](https://github.com/modelflare-ai/AnyModelBot/releases) からインストーラーを入手してください。[README](../README_ja.md#-ダウンロード) に手順があります。
@@ -13,20 +17,27 @@
 ```
 src/
   core/          共通メッセージ型、セッションキューと重複排除、ランタイム（/model /reset、ストリーミング）、再起動通知、利用許可（所有者+許可リスト）、永続送信キュー
-  agent/         DSH ホストとブリッジ、承認、権限プリセット、記憶とコンテキスト管理、画像・動画生成、Web 検索、コンピューター操作、Windows PowerShell
+  delivery/      プロアクティブなメッセージの配信：サイレント時間帯、1 日の上限、まとめ送信、WeChat の 24 時間ウィンドウと更新リマインダー
+  agent/         DSH ホストとブリッジ、承認、権限プリセット、記憶とコンテキスト管理、DSH のセッションディレクトリ
     prompts/     モデルが読む全プロンプト：役割、会話ルール、記憶のガイド、区間の初回メッセージ、スキル
+  tools/         エージェントが使う機能：Web 検索（search.ts）、画像・動画生成（media/）、コンピューター操作（computer-use/）、Windows PowerShell（pwsh/）、接続済みの Notion・Feishu アカウント（accounts/）
   llm/           OpenAI 互換クライアント（モデルへのアクセス）
   magpie/        管理プロセス：隔離ディレクトリ、空きポート、秘密値の生成、ヘルスチェック、異常終了からの再起動、終了処理
   channels/      feishu/（持続接続+CardKit） weixin/（iLink、MIT 告知は LICENSE.openclaw-weixin） messenger/（Telegram・Slack・Discord 共通の送受信）
+  tasks/         バックグラウンドタスクとルール：実行、段階、費用、保持と削除、スケジュール
+  botkit/        カタログ Bot フレームワーク：パッケージ形式、検査、パックと署名、カタログ、インストール、UI の静的ルート（docs/bot-framework.md を参照）
+  skills/        ユーザーが自分で入れるスキル（ZIP パッケージ）
   store/         SQLite（node:sqlite、ネイティブビルド不要）
+  domain/        純粋なデータ型とルール：Bot 設定、サイレント時間帯、スケジュール、カタログ Bot の記録、エージェントのステップ。I/O なし、依存は i18n のみ。store はこれだけに依存（依存方向は test/architecture.unit.test.ts で検査）
   account/       Modelflare：PKCE ループバックログイン、トークン更新、残高と通知、ボット別予算キー、モデル機能と参考価格
-  web/           コンソールサーバー（JSON API+SSE の会話ストリーミング）
+  web/           コンソールサーバー：server.ts が起動・認証・振り分け、routes/ に領域ごとの API（JSON API+SSE の会話ストリーミング）、http.ts は共通の小さな関数
   cli/           初回設定 init、weixin-login
-  official-providers.ts  公式 API：提供元の一覧（アドレス固定）、モデル ID、キー確認に失敗したときの説明
-  modelflare.ts  Modelflare の経路、キー検証（GET /v1/models）、モデル振り分けと出所表示
+  providers/     モデルの提供元：modelflare.ts（経路、キー検証 GET /v1/models、モデル振り分けと出所表示）、modelflare-domains.ts（経路の速度テスト）、official.ts（公式 API の提供元一覧、アドレス固定）
+  updates/       更新：check.ts（新しいバージョンの確認）、desktop.ts（デスクトップ版のダウンロードと再起動）
   guide.ts       初回ガイドの進捗
   i18n/          サーバーの多言語化：エラー、状態、トレイ、システムメッセージ（messages/<namespace>.ts）
   diagnostics.ts 診断：疎通テスト、ログ末尾、秘密情報を除いたレポート
+  version.ts     アプリのバージョン（package.json）
   main.ts        CLI のエントリーポイント
 electron/        デスクトップのメインプロセス（起動とトレイ）
 ui/              コンソール画面（Preact+htm、ビルド不要）
@@ -64,7 +75,7 @@ npm run test:dsh-bundle  # build/dsh の実ランタイムを Electron でテス
 ```
 
 - DSH ランタイム：`scripts/prepare-dsh.mjs` が対象環境用の `dsh-runtime/` を用意し、`scripts/bundle-dsh.mjs` が `resources/dsh/dsh.asar`（全 JavaScript を 1 ファイル）と `resources/dsh/node_modules/`（ネイティブパッケージのみ、約 55 ファイル）にまとめます。Electron メインプロセスと `ELECTRON_RUN_AS_NODE` の子プロセスは asar を直接読み、初回展開はしません。インストール時の展開対象が数百ファイルに減り、Windows で時間のかかる展開とファイル別ウイルス検査を抑えます。開発時は `dsh-runtime/` を直接使います。
-- Windows のコマンド用 PowerShell：サンドボックスでは Windows PowerShell 5.1 が 1 コマンドに 20〜30 秒、PowerShell 7 が約 1 秒かかります。選択順は、システムの動作する PowerShell 7（DSH と同じ起動方法で一度バックグラウンドテストし、ダウンロードはしない）→アプリ専用の 7→5.1 です。使える 7 がなくエージェントが有効なら、公式 PowerShell 7.6.9（LTS）の zip を `%LOCALAPPDATA%\AnyModelBot\pwsh\` に取得します。管理者権限、レジストリ変更、PATH 変更は不要で、既存の PowerShell に影響しません。バージョンと x64・arm64 zip の SHA256 は `src/agent/pwsh-private.ts` で固定します（更新は `node scripts/pwsh-hashes.mjs <version>`）。取得後にハッシュ、展開後に Microsoft Authenticode 署名を検証し、DSH 形式の試運転（バージョン、仮ファイルの読み書き、外部プログラムの起動）を通過してから使います。失敗・未完了のものは使わず次回起動で掃除します。進捗は会話、設定 → 一般、`/status` に出し、準備が終わるまでは 5.1 を継続します。待機中のエージェントが裏で切り替わり、アプリ再起動は不要です。削除、ウイルス対策による隔離、ポリシーで起動不能になれば以前の選択肢に戻して理由を通知します。設定 → トラブルシューティングでインストール、再インストール、システム既定値への復帰が可能です。Windows 10 1607 / Server 2016 より古い環境では取得しません。デスクトップは Chromium のネットワーク機能でシステムプロキシを使い、CLI は Node fetch を使います（新しい Node は `NODE_USE_ENV_PROXY=1` で `HTTPS_PROXY` を反映）。`AMB_PWSH_MIRROR` はミラーの接頭辞を変えますがハッシュ・署名検証は維持し、`AMB_PWSH_AUTO_INSTALL=0` は自動取得を止めます。
+- Windows のコマンド用 PowerShell：サンドボックスでは Windows PowerShell 5.1 が 1 コマンドに 20〜30 秒、PowerShell 7 が約 1 秒かかります。選択順は、システムの動作する PowerShell 7（DSH と同じ起動方法で一度バックグラウンドテストし、ダウンロードはしない）→アプリ専用の 7→5.1 です。使える 7 がなくエージェントが有効なら、公式 PowerShell 7.6.9（LTS）の zip を `%LOCALAPPDATA%\AnyModelBot\pwsh\` に取得します。管理者権限、レジストリ変更、PATH 変更は不要で、既存の PowerShell に影響しません。バージョンと x64・arm64 zip の SHA256 は `src/tools/pwsh/private.ts` で固定します（更新は `node scripts/pwsh-hashes.mjs <version>`）。取得後にハッシュ、展開後に Microsoft Authenticode 署名を検証し、DSH 形式の試運転（バージョン、仮ファイルの読み書き、外部プログラムの起動）を通過してから使います。失敗・未完了のものは使わず次回起動で掃除します。進捗は会話、設定 → 一般、`/status` に出し、準備が終わるまでは 5.1 を継続します。待機中のエージェントが裏で切り替わり、アプリ再起動は不要です。削除、ウイルス対策による隔離、ポリシーで起動不能になれば以前の選択肢に戻して理由を通知します。設定 → トラブルシューティングでインストール、再インストール、システム既定値への復帰が可能です。Windows 10 1607 / Server 2016 より古い環境では取得しません。デスクトップは Chromium のネットワーク機能でシステムプロキシを使い、CLI は Node fetch を使います（新しい Node は `NODE_USE_ENV_PROXY=1` で `HTTPS_PROXY` を反映）。`AMB_PWSH_MIRROR` はミラーの接頭辞を変えますがハッシュ・署名検証は維持し、`AMB_PWSH_AUTO_INSTALL=0` は自動取得を止めます。
 - エージェントのコマンドはネットワークを使えます（サンドボックスは書き込みを制限）。`HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` / `NO_PROXY` と小文字版、証明書・パッケージ取得先の変数（`SSL_CERT_FILE`、`REQUESTS_CA_BUNDLE`、`NODE_EXTRA_CA_CERTS`、`PIP_INDEX_URL`、`npm_config_registry`、`GOPROXY` など）をアプリから引き継ぎます。環境変数にプロキシがなければ、デスクトップはエージェント起動ごとにシステム設定と PAC を調べ、`http://host:port` で渡します（`src/agent/proxy-env.ts`）。ループバックの `127.0.0.1`、`localhost`、`::1` は常に `NO_PROXY` に追加し、プロキシを通しません。
 - データ保存先：`<userData>/data`（macOS `~/Library/Application Support/anymodel bot/data`、Windows `%APPDATA%\anymodel bot\data`、Linux `~/.config/anymodel bot/data`）。ログはその中の `logs/app.log` です。
 - 単一インスタンスで動作し、閉じると既定ではトレイに入ります（設定 → 一般で終了に変更可能）。トレイには開く、ブラウザーで開く、ログイン時に起動（macOS・Windows）、データフォルダーを開く、終了があります。
@@ -72,7 +83,11 @@ npm run test:dsh-bundle  # build/dsh の実ランタイムを Electron でテス
 - コンソールは 127.0.0.1 のみで待ち受け、毎回ランダムなトークンを作り、他のローカルプログラムによる管理 API の直接利用を防ぎます。
 - 終了はチャネルを先に止め、その後 magpie を止めます。強制終了で残った magpie は次の起動時に処理します（Linux/macOS）。
 
-リリースでは `CHANGELOG.md` と `CHANGELOG_en.md` に当該版の項目を書きます。対象はユーザーが気付くアプリの変更であり、サイトや内部実装ではありません。英語サイトでは WeChat・Feishu に言及する行を除外します。`package.json` の `version` を更新、コミットし、`v<version>` タグをプッシュします。変更履歴がないとワークフローは最初に失敗し、あれば GitHub Release のノートとサイトに反映します。`.github/workflows/release.yml` は OS・アーキテクチャ別の 6 ランナーでビルドし、インストーラーと `SHA256SUMS` を公開します。署名・公証用のシークレットは同ファイル冒頭のコメントを参照してください。同じタグで `.github/workflows/docker.yml` も動き、x64+arm64 イメージを `ghcr.io/modelflare-ai/anymodel-bot` に `<version>`、`latest` タグで公開します。
+リリースでは `CHANGELOG.md`、`CHANGELOG_en.md`、`CHANGELOG_ja.md`、`CHANGELOG_ko.md`、`CHANGELOG_ru.md` に当該版の項目を書きます。対象はユーザーが気付くアプリの変更であり、サイトや内部実装ではありません。英語サイトでは WeChat・Feishu に言及する行を除外します。`package.json` の `version` を更新、コミットし、`v<version>` タグをプッシュします。変更履歴がないとワークフローは最初に失敗し、あれば GitHub Release のノートとサイトに反映します。アプリの「更新内容」ダイアログも同じ変更履歴を読みます。`CHANGELOG*.md` はインストーラーと Docker イメージに同梱され（`src/changelog.ts`）、未インストールの新バージョンの内容は、ユーザーが開いたときにそのバージョンのタグから読み込みます。`.github/workflows/release.yml` は OS・アーキテクチャ別の 6 ランナーでビルドし、インストーラーと `SHA256SUMS` を公開します。署名・公証用のシークレットは同ファイル冒頭のコメントを参照してください。同じタグで `.github/workflows/docker.yml` も動き、x64+arm64 イメージを `ghcr.io/modelflare-ai/anymodel-bot` に `<version>`、`latest` タグで公開します。 タグでのリリースでは macOS 版に Developer ID 署名と公証が必須で、パッケージ後に .app と DMG 内の .app を `spctl` などで検証し、通らなければ失敗します。正式版では開発者ツールを無効にしています。デバッグ版が必要なときは `npm run dist:debug`、または Release を手動実行するときに `debug_build` を選びます（ファイル名に `-debug-` が付き、タグでは使えず、`scripts/check-build-flavor.mjs` がパッケージ結果を確認します）。
+
+リリースごとに、公式サイト、関連ドキュメント、全 5 言語の README を更新します。`npm --prefix site run sync` でサイトの内容を同期し、GitHub Release と Docker イメージの公開後、[サイトのデプロイ手順](../site/README.md)に従って本番サイトを更新します。`/download`、`/changelog`、`/bots` のバージョン、ダウンロードリンク、説明が一致していることを確認し、本番サイトの更新まで完了して初めてリリース完了とします。
+
+アプリ内更新は 0.1.29 から、パッケージ済みの macOS、Windows、Linux AppImage で `electron-updater` を使います。`ui.autoDownloadUpdates` は標準で `true` で、「設定 → 一般」で変更できます。ダウンロード後は通知のみで、通常の終了では更新しません。再起動前に実行中のチャットとバックグラウンドタスクを確認します。0.1.28 以前のユーザーは一度手動インストールが必要です。GitHub は macOS の DMG と更新用 ZIP、アーキテクチャ別の `latest-${arch}` メタデータと blockmap を生成し、すべてのファイルのアップロード後に Release を公開します。CLI、Docker、未パッケージの開発実行は手動更新です。
 
 ## Docker
 
@@ -89,7 +104,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> を�
 
 ## モデル（Modelflare）
 
-- 初回は Modelflare へのログイン・登録ボタンを表示します。標準ブラウザーでログインまたは登録して認可し、アプリに戻ると専用 API キーを発行・接続します。既定モデルを選べば会話を始められます。Docker・リモート環境はブラウザーのコールバックを受けられないため、ログイン後に移動する開けない `127.0.0.1` アドレスのリンクを初回画面に貼り付けます（`POST /amb/api/account/login/complete`、state と PKCE の検証は同じ）。以前のバージョンで API キーを入力しログインしていない場合、アップグレード時にキーを端末から削除し、ログインが必要になります。
+- 初回は Modelflare へのログイン・登録ボタンを表示します。標準ブラウザーでログインまたは登録して認可し、アプリに戻ると専用 API キーを発行・接続します。既定モデルを選べば会話を始められます。Docker・リモート環境はブラウザーのコールバックを受けられないため、ログイン後に移動する開けない `127.0.0.1` アドレスのリンクを初回画面に貼り付けます（`POST /amb/api/account/login/complete`、state と PKCE の検証は同じ）。以前のバージョンで API キーを入力しログインしていない場合、アップグレード時にキーを端末から削除し、ログインが必要になります。 ブラウザーのコールバックページは最初に「ログインを完了しています」と表示し、トークン交換・アカウント読み取り・専用キー発行・ゲートウェイ接続がすべて成功してから「ログインしました」を表示します（失敗時は理由を表示）。デスクトップ版は `anymodelbot://` リンクを登録し、ページは読み込み時に一度アプリを開こうとします。「AnyModelBot を開く」で再試行でき、アプリが実際にそのリンクを受け取ったときだけ「戻りました」と表示します。自分の API キーのページからも Modelflare アカウントで直接ログインできます。初回接続でグローバルの既定モデルが空のときは、`src/account/first-model.ts` の規則（ツール呼び出し対応、1 回の予約額と代表的なタスクの費用がお試し枠内、DeepSeek 優先）で初回用モデルを一度だけ選びます。該当がなければ選ばず、ユーザーが選びます。
 - 認証方式：RFC 8252 に沿うネイティブアプリの OIDC 認可コード+PKCE（RFC 7636）。公開クライアント（`client_id` は `anymodel-bot`）で、クライアントシークレットは持たず不要です。結果は `127.0.0.1` の一時ポートへ返します。Modelflare プロフィールの認可済みアプリから取り消すと、アプリが検知してログイン画面に戻ります。
 - リフレッシュトークンはデータ内の `modelflare-account.json`（モード 600）に保存し、デスクトップでは OS キーチェーン（Electron safeStorage）で暗号化します。画面にはアカウント名だけを渡します。ログアウトは端末の認可を取り消し、ログイン時に端末とボットへ発行したキーを Modelflare が削除します。
 - 残高は常時表示せず、左下のアバターか設定 → モデル で確認します。いずれもウォレット残高を表示します。チャージは Modelflare を開き、アプリへ戻ると残高を更新します。既定 1 米ドルの通知基準（変更・無効化可能）を下回ると一度知らせ、WeChat・Feishu にも送れます。
@@ -100,7 +115,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> を�
 - 生成前の確認：既定では直ちに生成します。既定以外のモデルや曖昧な依頼を理由に質問せず、妥当に解釈して作成し、使った条件を一行で述べます。見積もりが 0.5 米ドルを超えるときだけ、モデル、プロンプト、条件、参考価格、確認理由を提示します。画像枚数、動画時間・解像度で計算し、費用不明の動画も確認対象です。承認・変更・中止ができ、WeChat は番号・モデル名、Feishu と Web はクリックで回答します。10 分応答がなければ生成しません。毎回確認するには、ボット設定 → 画像・動画 → 生成前に確認で常に確認する設定を選びます。
 - Web 検索：`web_search` は DeepSeek キーが必要な内蔵検索を使わず、`amb-web-search` がアプリへ委譲します。初期設定不要で、Exa 公開 MCP、Bing、DuckDuckGo を試し、前回成功したものを優先します。失敗（制限、ボット確認、無関係な Bing 結果）したものは 10 分避けます。設定 → ネットワークとアクセス → Web 検索でキー付きの Tavily・Exa・Bocha・Zhipu、または独自 SearXNG を指定すると最初に使い、失敗時は無料検索へ戻します。キーはローカル DB に保存し、エージェントへ渡しません。デスクトップはシステムプロキシ、CLI は Node fetch（`NODE_USE_ENV_PROXY=1` なら `HTTPS_PROXY`）を使います。
 - チャネルアカウント（`src/core/routes.ts`）：WeChat、Feishu、Telegram、Slack、Discord も設定 › 接続で全体管理し、別名を付けられます。送信者が `/bot` で選んだボット→アカウントの既定→先頭のボットの順で決定します。`/bot` は一覧、`/bot name` は選択を記憶します。各ボットのシステムプロンプトに他のボットと切り替え方を載せ、質問に答えられるようにします。所有者・許可リストはアカウント単位なので、許可された人は全ボットと話せます。アカウントキーは名前空間で、旧チャネルは旧ボット ID を維持し、ログイン、上限、許可、キュー、既定ボットを引き継ぎます。ボット削除はアカウントに影響しません。
-- 接続アカウント（`src/agent/accounts.ts`）：全ボットが設定 › 接続の一つの一覧を共有し、同サービスの複数アカウントを使えます。「1 つ目と 2 つ目の Feishu を調べて」と頼めます。`amb-connections` がブリッジで呼び出しをアプリに渡すためトークンはエージェントに届きません。`account` 引数で番号・名前を選び、`connected_accounts` で一覧化します。アカウントがあるサービスだけツールを出します。読み取り専用のボットと観察モードのルールは書き込めず、ホストも再検査します。チャネルアカウントは別項目で扱います。
+- 接続アカウント（`src/tools/accounts/index.ts`）：全ボットが設定 › 接続の一つの一覧を共有し、同サービスの複数アカウントを使えます。「1 つ目と 2 つ目の Feishu を調べて」と頼めます。`amb-connections` がブリッジで呼び出しをアプリに渡すためトークンはエージェントに届きません。`account` 引数で番号・名前を選び、`connected_accounts` で一覧化します。アカウントがあるサービスだけツールを出します。読み取り専用のボットと観察モードのルールは書き込めず、ホストも再検査します。チャネルアカウントは別項目で扱います。
   - **Notion**（`notion.ts`）：ワンクリック認可またはトークンを選びます。トークンは REST API、認可は PKCE・動的登録付き OAuth でローカル `/oauth/notion/callback` に戻り、公式リモート MCP（`mcp.notion.com`）を呼びます。どちらも `notion_search`、`notion_read_page`、`notion_query_database` を提供し、読み取り専用でなければ `notion_create_page` と `notion_update_page` も出します。削除ツールはありません。
   - **Feishu**（`feishu-account.ts`）：公式 lark-cli と同様、スキャンして個人アプリを作るか自分のアプリを入力し、デバイス認可でユーザートークンを取得します。`feishu_list_chats`、`feishu_read_chat`、`feishu_search_messages` の読み取り専用です。
 - 既定の画像・動画モデルは初回にテキストモデルと一緒に選び、後から設定 → モデル で変更できます。自動では、推奨順のうち参考素材が不要な最初のモデルを使います。
@@ -126,7 +141,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> を�
 
 ## 公式 API キー
 
-- 初回画面の「自分の API キーを使う」と「設定 → モデル」で入力できます。対応する提供元とアドレスは `src/official-providers.ts` に固定され、API（`GET /amb/api/official`、`PUT`/`DELETE /amb/api/official/<id>`）は一覧の ID だけを受け付け、アドレスは指定できません。
+- 初回画面の「自分の API キーを使う」と「設定 → モデル」で入力できます。対応する提供元とアドレスは `src/providers/official.ts` に固定され、API（`GET /amb/api/official`、`PUT`/`DELETE /amb/api/official/<id>`）は一覧の ID だけを受け付け、アドレスは指定できません。
 - それぞれ内蔵ゲートウェイの provider で、ID は `official-<提供元>`、モデル ID は `official-<提供元>/<モデル>` です。Modelflare の同名モデルとは区別されます。キーはコマンドライン引数を通らず、ゲートウェイのローカル API のリクエスト本文で隔離された設定に書き込まれます。
 - 確認にはゲートウェイのモデル一覧を使い（プロキシや提供元ごとの認証方式はゲートウェイ側にあります）、通過した場合のみ保存します。モデルは 1 時間ごとに提供元の一覧と照合し、会話できないモデル（音声、画像、埋め込みなど）は選択肢に入れません。
 - エージェントの API は提供元で決まります。OpenAI は Responses、Anthropic は Messages、その他は Chat Completions です。コンテキスト長、価格、推論の対応はゲートウェイのモデルカタログ（`/v1/models`）から取得します。公式キーのみのときは Modelflare のカタログとアカウントを読み取りません。
@@ -142,7 +157,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> を�
 - 言語：中国語簡体字、英語、日本語、韓国語、ロシア語を設定 → 一般 → 言語で選びます。初回画面右上やコマンドパレットでも選べます。既定はシステムに従い、未対応言語では英語です。選択は config.json の `ui.lang` に保存し、トレイ、サーバーのエラー・状態、WeChat/Feishu に送る `/help` や承認通知にも反映します。CLI・Docker のシステム設定は `AMB_LANG`、次に `LC_ALL` / `LC_MESSAGES` / `LANG` を見て、なければ中国語簡体字です。ログ、モデル用プロンプト、ユーザーが付けた名前は翻訳しません。
   - 画面文言は `ui/locales/<lang>/<namespace>.js` に置き、`t("namespace.key", { params })`（`ui/lib/i18n.js`）で使います。サーバー文言は `src/i18n/messages/<namespace>.ts` にあり、キーを型検査します。各画面リクエストの `x-amb-lang` と同じ言語でサーバーが返答します。
   - 新規文言は両方の基準言語へ追加します。`node scripts/i18n-check.mjs [files…]` は画面コードに残る中国語、存在しないキー、zh/en の不一致を検出します。`npm test` の `test/i18n.unit.test.ts` でも同じ内容を検査します。フォント名や中国語を照合する正規表現など必要な文字列には、その行に `// i18n-ignore` を付けます。
-- 初回チェックリスト：空の会話に、挨拶、モデル変更、WeChat 接続、作業依頼、記憶、画像生成の 6 段階を出します。最後は画像・動画モデルの有無にかかわらず内蔵デモです。通常どおり即生成して会話に表示しますが、ボットに送らずモデルも呼ばず課金しません。画像は `ui/assets/guide-demo.svg` です。費用をかけずに流れを学ぶ目的で、実際の描画依頼・画像受信でも完了になります。送信で直接試し、案内ボタンや左下の項目で該当操作をリングで強調するカードを出します。返信、モデル変更、ファイル・画像受信、チャネル接続、記憶への書き込みで自動完了し、config.json の `ui.guide`（API `/amb/api/guide`）に保存します。既存ユーザーの完了済み操作も数えます。左下に折りたたむ、完全に隠す、設定 → 一般からやり直すことができます。
+- 初回チェックリスト：空の会話に、挨拶、モデル変更、WeChat 接続、作業依頼、記憶、画像生成の 6 段階を出します。最後は画像・動画モデルの有無にかかわらず内蔵デモです。通常どおり即生成して会話に表示しますが、ボットに送らずモデルも呼ばず課金しません。画像は `ui/assets/guide-demo.svg` です。費用をかけずに流れを学ぶ目的で、実際の描画依頼・画像受信でも完了になります。送信で直接試し、案内ボタンや左下の項目で該当操作をリングで強調するカードを出します。返信、モデル変更、ファイル・画像受信、チャネル接続、記憶への書き込みで自動完了し、config.json の `ui.guide`（API `/amb/api/guide`）に保存します。既存ユーザーの完了済み操作も数えます。左下に折りたたむ、完全に隠す、設定 → 一般からやり直すことができます。 挨拶は実際の返信が必要で（エラー表示は数えません）、チャネルは実際に接続されている必要があります（設定だけでは完了しません）。「よく使うチャットアプリを接続」では WeChat、Feishu、Telegram、Slack、Discord を選べ、UI 言語はおすすめの初期値を決めるだけです。「覚えて…」と明示した場合は、ターン後の記憶整理を 90 秒待たずにすぐ行います。進捗はユーザーごとに保存し（Modelflare にログイン中はアカウントごとに KV の `guide.owner.*`、未ログイン時は従来どおり config.json の `ui.guide`）、すべて完了すると以後は自動で隠れます。自動で出る案内カードは、入力欄に下書きがあるときやタスク実行中は表示を待ちます。
 - 外観：無彩色とコンポーネントは magpie（MIT）を改変し、アクセントは Modelflare の蛍光イエローグリーン `#d7ff00` です。デザインシステムは `ui/design/README.md` にあります。
 
 ### ローカライズとリリース検証
@@ -214,7 +229,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> を�
   - **Codex Computer Use ブリッジ（任意、macOS のみ）：** kimi-computer-use です。OpenAI Codex Computer Use のローカルインストールが必要で、利用不能なら Cua Driver に戻ります。
 - **承認：** 読み取り、スクリーンショット、クリック、入力、キー、スクロール、ドラッグ、値設定は既定で**確認なしに自動実行**します。画面変更前に尋ねる設定もあり、読み取りは常に自動です。更新時は既定ボットを含め既存のボットも自動へ移行します。読み取り専用のボットには読むツールだけを出します。
 - **OS ごとの注意**
-  - macOS：システム設定 → プライバシーとセキュリティでアクセシビリティと画面収録を許可します。`--direct` モードで動き、実機検証は未完了です。
+  - macOS：システム設定 → プライバシーとセキュリティでアクセシビリティと画面収録を許可します。`--direct` モードで動き、実機検証は未完了です。 権限が足りないとコンピューター操作ツールの呼び出しを止め、このターンは「許可がないため続行できませんでした」で終わり、会話に不足している権限だけのカードを表示します（システム標準のリクエスト、該当するシステム設定を開く、再確認。画面収録は通常アプリの再起動が必要で、カードから開き直せ、送信前の下書きも戻ります）。初回起動時には何も要求しません。
   - Linux：X11 は AT-SPI（at-spi2-core とアプリのアクセシビリティ有効化が必要）で UI を読みます。Wayland は XWayland アプリの手前のウィンドウだけを操作し、画面にも制約を出します。DISPLAY / WAYLAND_DISPLAY のない環境では使えません。
   - Windows：ログイン中ユーザーの対話型デスクトップセッションが必要です。サービス・定期タスクの非対話セッションは対象外です。
 - スクリーンショットは画像対応モデルだけに送り、WeChat・Feishu の会話に中継しません。求められた場合だけファイルとして送ります。

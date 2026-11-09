@@ -2,9 +2,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { App, appVersion, type DesktopHooks } from "../src/app.js";
+import { App, type DesktopHooks } from "../src/app.js";
+import { appVersion } from "../src/version.js";
 import { loadConfig } from "../src/config.js";
-import { UpdateChecker, installerSuffix, isNewer } from "../src/update-check.js";
+import { UpdateChecker, installerSuffix, isNewer } from "../src/updates/check.js";
 
 const BASE = "https://github.com/wmn1525/AnyModelBot/releases";
 const ALL_ASSETS = ["win-x64.exe", "win-arm64.exe", "mac-x64.dmg", "mac-arm64.dmg", "linux-x86_64.AppImage", "linux-arm64.AppImage"].map((s) => ({
@@ -188,5 +189,51 @@ describe("接到应用上", () => {
     } finally {
       await app.stop();
     }
+  });
+
+  it("自动下载默认开启，关闭后保存到配置；更新操作需要令牌且忙时不能重启", async () => {
+    const updates = {
+      start: vi.fn(), stop: vi.fn(), check: vi.fn(async () => {}), download: vi.fn(), install: vi.fn(), setAutoDownload: vi.fn(),
+      status: () => ({ current: appVersion(), latest: "999.0.0", available: true, supported: true, phase: "ready" as const, downloadUrl: "", releaseUrl: "" }),
+    };
+    const { app, start } = await boot({ updates, autostart: () => ({ supported: false, on: false }) });
+    const base = app.web!.url.replace(/\/$/, "") + "/amb/api";
+    const headers = { "x-amb-token": TOKEN, "content-type": "application/json" };
+    try {
+      expect(start).not.toHaveBeenCalled();
+      expect(updates.start).toHaveBeenCalledOnce();
+      expect((await (await fetch(base + "/settings", { headers })).json()).autoDownloadUpdates).toBe(true);
+      const saved = await fetch(base + "/settings", { method: "PUT", headers, body: JSON.stringify({ autoDownloadUpdates: false }) });
+      expect(saved.status).toBe(200);
+      expect(updates.setAutoDownload).toHaveBeenCalledWith(false);
+      expect(loadConfig({ dataDir: app.config.dataDir, env: {} }).ui.autoDownloadUpdates).toBe(false);
+      const unauth = await fetch(base + "/update/install", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+      expect(unauth.status).toBe(401);
+      expect(updates.install).not.toHaveBeenCalled();
+      await fetch(base + "/update/download", { method: "POST", headers, body: "{}" });
+      expect(updates.download).toHaveBeenCalledOnce();
+      const busy = vi.spyOn(app.runtime, "busyBots").mockReturnValue(["default"]);
+      const blocked = await fetch(base + "/update/install", { method: "POST", headers, body: "{}" });
+      expect(blocked.status).toBe(409);
+      expect(await blocked.json()).toMatchObject({ code: "busy" });
+      expect(updates.install).not.toHaveBeenCalled();
+      busy.mockRestore();
+      const groupBusy = vi.spyOn(app.web!, "busy").mockReturnValue(true);
+      expect((await fetch(base + "/update/install", { method: "POST", headers, body: "{}" })).status).toBe(409);
+      expect(updates.install).not.toHaveBeenCalled();
+      groupBusy.mockRestore();
+      expect((await fetch(base + "/update/install", { method: "POST", headers, body: "{}" })).status).toBe(200);
+      expect(updates.install).toHaveBeenCalledOnce();
+    } finally { await app.stop(); }
+    expect(updates.stop).toHaveBeenCalledOnce();
+  });
+
+  it("CLI 和 Docker 不提供安装更新的操作", async () => {
+    const { app } = await boot();
+    try {
+      const res = await fetch(`${app.web!.url.replace(/\/$/, "")}/amb/api/update/install`, { method: "POST", headers: { "x-amb-token": TOKEN, "content-type": "application/json" }, body: "{}" });
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ code: "unsupported" });
+    } finally { await app.stop(); }
   });
 });

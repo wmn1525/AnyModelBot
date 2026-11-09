@@ -483,7 +483,7 @@ export default {
       "available": "버전 {version}을 사용할 수 있습니다",
       "latest": "최신 버전입니다",
       "download": "다운로드 ↗",
-      "notes": "새로운 기능 ↗"
+      "notes": "새로운 기능"
     },
     "licenses": {
       "name": "라이선스 및 제3자 고지",

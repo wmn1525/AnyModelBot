@@ -3,7 +3,7 @@
  * Modelflare 后台按它统计从本程序（应用、README、官网）来的注册与充值；改格式前先和后台对齐。
  */
 import { describe, it, expect } from "vitest";
-import { UTM, webUrl, SIGNUP_URL, TOPUP_URL, CONSOLE_URL } from "../src/modelflare.js";
+import { UTM, webUrl, SIGNUP_URL, TOPUP_URL, CONSOLE_URL } from "../src/providers/modelflare.js";
 // @ts-expect-error 前端模块是无类型的原生 ES 模块
 import { mfLink, tagLink, MF_CONSOLE, MF_DOCS_LINK, MF_PRICING, MF_SIGNUP, MF_TOPUP } from "../ui/lib/links.js";
 

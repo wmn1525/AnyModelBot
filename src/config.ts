@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { normalizeLine, type ModelflareLine } from "./modelflare.js";
+import { normalizeLine, type ModelflareLine } from "./providers/modelflare.js";
 import { normalizeGuide, type GuideState } from "./guide.js";
 import { normalizeLangPref, type LangPref } from "./i18n/index.js";
 
@@ -21,6 +21,8 @@ export interface AppConfig {
     zoom: number;
     /** 桌面版关闭窗口时：true 隐藏到托盘，false 退出 */
     closeToTray: boolean;
+    /** 桌面版自动下载应用更新；安装始终需要用户点击重启。 */
+    autoDownloadUpdates: boolean;
     /** Windows 上"建议安装 PowerShell 7"的提示点过"不再提示" */
     pwshHintDismissed: boolean;
     /** 新手引导（上手清单）的进度，见 src/guide.ts */
@@ -86,6 +88,7 @@ export function loadConfig(overrides: { dataDir?: string; env?: NodeJS.ProcessEn
       token: env.AMB_UI_TOKEN || file.ui?.token || "",
       zoom: ZOOMS.includes(Number(file.ui?.zoom)) ? Number(file.ui?.zoom) : 1,
       closeToTray: file.ui?.closeToTray !== false,
+      autoDownloadUpdates: file.ui?.autoDownloadUpdates !== false,
       pwshHintDismissed: file.ui?.pwshHintDismissed === true,
       guide: normalizeGuide(file.ui?.guide),
       lang: normalizeLangPref(file.ui?.lang),

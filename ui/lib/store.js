@@ -29,17 +29,27 @@ export function useStore(store) {
 export const toasts = createStore([]);
 let toastSeq = 0;
 /** 成功提示 1.6 秒后淡出；错误提示一直留着，直到点掉 */
-export function toast(text, kind = "ok") {
-  const id = ++toastSeq;
-  toasts.set((l) => [...l.filter((t) => !(t.kind === kind && t.text === text)), { id, text, kind }]);
-  if (kind !== "err") setTimeout(() => dismissToast(id), 1600);
+const toastTimers = new Map();
+export function toast(text, kind = "ok", scope = "") {
+  // 同一条提示还在（比如连续保存）：沿用那一条、重新计时，不叠一串、也不重播出现的动画
+  const same = toasts.get().find((t) => t.kind === kind && t.text === text && (t.scope || "") === scope && !t.leaving);
+  const id = same ? same.id : ++toastSeq;
+  if (!same) toasts.set((l) => [...l, { id, text, kind, scope }]);
+  clearTimeout(toastTimers.get(id));
+  if (kind !== "err") toastTimers.set(id, setTimeout(() => dismissToast(id), 1600));
   return id;
 }
+/** 收起某个区域里的提示（比如保存失败时，刚才那条"已保存"不能再留着） */
+export function clearToasts(scope) {
+  for (const t of toasts.get()) if ((t.scope || "") === scope) dismissToast(t.id);
+}
 export function dismissToast(id) {
+  clearTimeout(toastTimers.get(id));
+  toastTimers.delete(id);
   toasts.set((l) => l.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
   setTimeout(() => toasts.set((l) => l.filter((t) => t.id !== id)), ms("--dur-base", 180));
 }
-export const saved = () => toast(t("common.saved"));
+export const saved = (scope = "") => toast(t("common.saved"), "ok", scope);
 export const failed = (e) => toast(typeof e === "string" ? e : e?.message || t("common.error"), "err");
 
 // —— confirm sheet ——

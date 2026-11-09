@@ -1,13 +1,13 @@
 // 新手引导的界面：对话空状态里的「上手清单」卡、侧栏左下角的清单入口、指着要点的地方的引导卡片、全部完成时的彩带。
 // 状态与文案在 lib/guide.js；样式在 css/guide.css。
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
-import { html, Icon, IconButton, Menu } from "./ui.js";
+import { html, Icon, IconButton, Menu, MenuButton } from "./ui.js";
 import { ActivityLine } from "./activity.js";
 import { BotAvatar } from "./avatar.js";
 import { useStore } from "../lib/store.js";
 import { ms, reducedMotion } from "../design/motion.js";
 import {
-  STEPS, arm, completed, currentStep, fillComposer, guide, hideGuide, isActive, markDone, markSeen, nextStep, refreshGuide, runMediaDemo, setFocus, stepHow, stepText, visibleSteps,
+  GUIDE_CHANNELS, STEPS, channelLabel, composerBusy, guideChannel, arm, completed, currentStep, fillComposer, guide, hideGuide, isActive, markDone, markSeen, nextStep, refreshGuide, runMediaDemo, setFocus, setGuideChannel, stepHow, stepText, visibleSteps,
 } from "../lib/guide.js";
 import { t } from "../lib/i18n.js";
 import { MF_CONSOLE } from "../lib/links.js";
@@ -94,20 +94,22 @@ export function GuideChecklist({ bot, onSend }) {
   </section>`;
 }
 
-/** 侧栏左下角的清单入口：进度格 + n/6；点开是清单菜单，点一项就带你去做；全部完成后这次还留着，下次启动就不再出现 */
+/**
+ * 侧栏左下角的清单入口：进度格 + n/6；点开是清单菜单，点一项就带你去做。
+ * 全部完成后自动收起（completed 里程碑存在后端，按用户记），不用手动关。打开菜单时问一次后端，拿到最新的推导结果。
+ */
 export function GuidePill({ onGo }) {
   const g = useStore(guide);
-  const last = useStore(completed);
   const ref = useRef(null);
   const [open, setOpen] = useState(false);
   if (!isActive(g)) return null;
   const steps = visibleSteps(g);
   const n = steps.filter((s) => g.done.includes(s.id)).length;
   const finished = n === steps.length;
-  if (finished && !(last && last.all)) return null;
+  if (finished) return null;
   const cur = currentStep(g);
   return html`<button type="button" ref=${ref} class="guide-pill"
-      aria-haspopup="menu" aria-expanded=${open} title=${t("guide.title")} onClick=${() => setOpen((v) => !v)}>
+      aria-haspopup="menu" aria-expanded=${open} title=${t("guide.title")} onClick=${() => { if (!open) refreshGuide(); setOpen((v) => !v); }}>
       <${Progress} steps=${steps} done=${g.done} />
       <span class="v">${finished ? t("guide.allDone") : t("guide.title")}</span>
       <span class="num">${n}/${steps.length}</span>
@@ -164,9 +166,10 @@ function confetti() {
  * 引导卡片：指着当前步骤要点的地方（data-guide="…"），那里亮起一圈；卡片放在它旁边，跟着它移动。
  * 指着的东西被菜单盖住（模型菜单打开）时先藏起来；做完后同一张卡片换成「做好了 → 下一步」。
  */
-export function CoachMark({ bot, view, infoOpen }) {
+export function CoachMark({ bot, view, infoOpen, busy, onConnections }) {
   const g = useStore(guide);
   const last = useStore(completed);
+  const typing = useStore(composerBusy);
   const card = useRef(null);
   const [pos, setPos] = useState(null);
   // 第一次放好位置之后才开始"滑过去"，否则会从左上角飘过来
@@ -179,8 +182,10 @@ export function CoachMark({ bot, view, infoOpen }) {
   const id = g.focus;
   const step = id ? STEPS.find((s) => s.id === id) : null;
   const done = !!step && g.done.includes(id);
-  const active = isActive(g) && !!step && view === "chat" && !!bot;
-  const sel = !step ? "" : step.target === "weixin" ? (infoOpen ? '[data-guide="weixin"]' : '[data-guide="info"]') : `[data-guide="${step.target}"]`;
+  // 自己弹出来的（做完一步后接着说"下一步"）不打断：输入框里有没发出的草稿、或者任务正在运行时先不出来，
+  // 等草稿发出或清空、任务结束再出来；用户自己点"带我去"打开的照常显示
+  const active = isActive(g) && !!step && view === "chat" && !!bot && !(g.focusAuto && (busy || typing));
+  const sel = !step ? "" : step.target === "weixin" ? '[data-guide="info"]' : `[data-guide="${step.target}"]`;
 
   // 全部完成：撒彩带（只认挂载之后完成的，重新挂载时不重放）
   const born = useRef(Date.now());
@@ -190,7 +195,7 @@ export function CoachMark({ bot, view, infoOpen }) {
 
   // 渠道这一步：扫码发生在微信里，隔几秒问一次后端有没有连上
   useEffect(() => {
-    if (!active || done || id !== "weixin") return;
+    if (!active || done || !["weixin", "memory"].includes(id)) return;
     const timer = setInterval(refreshGuide, ms("--dur-pulse", 1400) * 2);
     return () => clearInterval(timer);
   }, [active, done, id]);
@@ -269,6 +274,10 @@ export function CoachMark({ bot, view, infoOpen }) {
       ${!done && html`<ol class=${`how${sub ? " steps" : ""}`}>${stepHow(step).map((h, i) => html`<li class=${sub && i + 1 === sub ? "cur" : sub && i + 1 < sub ? "past" : ""}>${h}</li>`)}</ol>`}
       ${!done && txt(step, "note") && html`<p class="t-meta">${txt(step, "note")}</p>`}
       ${!done && demoOnly && html`<p class="t-meta">${txt(step, "demoNote")}</p>`}
+      ${!done && id === "weixin" && html`<div class="guide-try">
+        <${MenuButton} label=${t("firstUse.channelTitle")} value=${guideChannel(g)} options=${GUIDE_CHANNELS.map((c) => [c, channelLabel(c)])} onChange=${setGuideChannel} />
+        <button type="button" class="btn" onClick=${() => onConnections?.(guideChannel(g))}>${t("firstUse.connectChannel", { channel: channelLabel(guideChannel(g)) })}</button>
+      </div>`}
       ${!done && sample && html`<div class="guide-try">
         <span class="txt">${sample}</span>
         ${demoOnly

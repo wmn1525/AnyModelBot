@@ -14,7 +14,8 @@ export default {
       "points": [
         "데스크톱, Docker, CLI 모두 무료",
         "구독이나 요금제 등급 없음",
-        "원하는 만큼 봇을 만들고 각자의 역할을 직접 설정"
+        "원하는 만큼 봇을 만들고 각자의 역할을 직접 설정",
+        "Modelflare 신규 가입 시 Bot 크레딧 $1 증정(AnyModelBot 전용)"
       ]
     },
     "usage": {
@@ -24,7 +25,8 @@ export default {
       "points": [
         "입력과 출력을 각각 토큰 단위로 과금",
         "공개된 가격표",
-        "모델을 언제든 변경하고 해당 모델 가격 적용"
+        "모델을 언제든 변경하고 해당 모델 가격 적용",
+        "Modelflare 구독 시 플랜 크레딧의 10%를 Bot 크레딧으로 추가 증정"
       ],
       "cta": "전체 가격표 보기 ↗"
     },
@@ -76,7 +78,7 @@ export default {
     "caption": "Modelflare 텍스트 모델 가격(기본 경로, 100만 토큰당 USD)",
     "col": {
       "model": "모델",
-      "route": "경로",
+      "route": "기본 경로",
       "input": "입력 / 100만",
       "output": "출력 / 100만",
       "official": "공식 가격(입력 / 출력)",

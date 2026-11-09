@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { MediaService, imageRoute } from "../src/agent/media.js";
+import { MediaService, imageRoute } from "../src/tools/media/index.js";
 
 const workspaces: string[] = [];
 afterEach(() => {

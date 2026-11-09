@@ -468,7 +468,7 @@ export default {
       available: "有新版本 {version}",
       latest: "已是最新版本",
       download: "下载 ↗",
-      notes: "更新内容 ↗",
+      notes: "更新内容",
     },
     licenses: {
       name: "许可与第三方声明",

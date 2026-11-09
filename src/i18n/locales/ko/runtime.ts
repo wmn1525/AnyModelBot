@@ -89,5 +89,8 @@ export default {
   "stoppedByUser": "중지됨({d} 동안 실행). {restarted}계속 메시지를 보낼 수 있습니다.",
   "stoppedIdle": "⚠️ 에이전트가 {d} 동안 진행하지 않아 자동으로 중지했습니다{restart}. {where}다시 보내거나 /model로 다른 모델을 시도하세요.",
   "stoppedLimit": "⚠️ 이 메시지가 제한 시간 {d}을(를) 초과해 중지했습니다{restart}. {where}작업을 더 작은 단위로 나눠 보세요.",
+  "stoppedPermission": "⚠️ 컴퓨터 제어에 macOS 권한({missing})이 필요해 작업을 계속할 수 없었습니다. AnyModelBot의 안내에 따라 권한을 허용한 뒤 다시 보내세요.",
+  "permAccessibility": "손쉬운 사용",
+  "permScreen": "화면 기록",
   "runtimeRestarted": "⚠️ 에이전트 프로세스가 다시 시작되어 이 메시지를 완료하지 못했습니다(같은 봇의 다른 대화에서 멈춘 메시지를 중지했을 수 있습니다). 다시 보내 주세요."
 } satisfies TranslatedCatalog["runtime"];

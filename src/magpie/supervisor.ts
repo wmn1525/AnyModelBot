@@ -6,8 +6,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { lineLogger, logger, registerSecret } from "../log.js";
 import { t } from "../i18n/index.js";
-import { BOT_PROVIDER_PREFIX, MODELFLARE_PROVIDER, botProviderId, keyTail, modelflareApiBases } from "../modelflare.js";
-import { OFFICIAL_PREFIX, officialBases, officialLabel, officialPicks, officialProviderId, type OfficialProvider } from "../official-providers.js";
+import { BOT_PROVIDER_PREFIX, MODELFLARE_PROVIDER, botProviderId, keyTail, modelflareApiBases } from "../providers/modelflare.js";
+import { OFFICIAL_PREFIX, officialBases, officialLabel, officialPicks, officialProviderId, type OfficialProvider } from "../providers/official.js";
 
 const log = logger("magpie");
 
@@ -413,7 +413,7 @@ export class MagpieSupervisor {
     this.state = "stopped";
   }
 
-  // ---------- 官方 API（用户自己的 Key，直连模型厂商，src/official-providers.ts） ----------
+  // ---------- 官方 API（用户自己的 Key，直连模型厂商，src/providers/official.ts） ----------
   /**
    * 问厂商这把 Key 能列出哪些模型，什么都不保存。经网关问，不自己发请求：代理设置、各家的鉴权写法
    * （Anthropic 的 x-api-key 等）都在网关里。失败时 error 是网关转述的厂商原话。

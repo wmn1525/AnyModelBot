@@ -13,6 +13,9 @@
   "jobs.sampleNote": "Fictional company, shown as a sample",
   "detail.empty": "Enter a company name to start your first report.",
   "job.stale": "This job hasn't made progress for a while and may have stopped. Select Continue to pick it up.",
+  "job.failedShort": "This research didn't finish. See the message in the chat for why.",
+  "job.errorDetails": "Error details",
+  "job.copyDetails": "Copy details",
   "status.pending": "Waiting",
   "status.grounding": "Identifying company",
   "status.researching": "Researching",
@@ -67,5 +70,16 @@
   "action.openPdf": "Open PDF",
   "action.delete": "Delete the research on {company}",
   "action.deleteLabel": "Delete",
-  "action.deleteConfirm": "Confirm delete"
+  "action.deleteConfirm": "Confirm delete",
+  "jobs.title": "Research jobs",
+  "jobs.new": "New",
+  "jobs.newTitle": "New research",
+  "jobs.newSub": "A company name is enough; a website and industry make the match more precise",
+  "form.cancel": "Cancel",
+  "form.hint": "You can also just say it in the box below, e.g. “Run full due diligence on Stripe.”",
+  "tab.process": "Pipeline",
+  "sources.filter": "Filter by area",
+  "sources.all": "All",
+  "sources.usedOnly": "Cited only",
+  "sources.none": "No sources match"
 }

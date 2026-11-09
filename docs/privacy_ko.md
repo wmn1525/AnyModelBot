@@ -57,7 +57,7 @@
 
 - 모델 요청은 내장 magpie 게이트웨이에서 Modelflare로 전달되고, Modelflare가 선택한 제공업체로 전달합니다.
 - 요청에는 답변에 필요한 프롬프트, 대화 맥락, 사용 중인 기억, 파일 내용, 도구 결과와 컴퓨터 사용 시의 스크린샷이 포함됩니다.
-- Modelflare가 요청 출처를 식별하도록 `X-Modelflare-Skill: anymodel-bot/<version>` 헤더를 보냅니다. 앱에서 여는 Modelflare 링크에는 `utm_source=anymodelbot`이 포함됩니다.
+- Modelflare가 요청 출처를 식별하도록 `X-Modelflare-Skill: anymodel-bot/<version>` 헤더를 보냅니다. 앱에서 여는 Modelflare 링크에는 `utm_source=anymodelbot`이 포함됩니다. 앱에서 충전 페이지를 열 때 URL의 `#` 뒤에 로그인 시 ID 토큰의 계정 식별자(`#amb_account=…`, 비밀 정보 아님)를 붙여 Modelflare 페이지가 브라우저에 같은 계정으로 로그인되어 있는지 확인합니다. `#` 뒤의 내용은 서버, CDN, 분석 스크립트로 전송되지 않습니다. ‘키 구성 변경’ 안내는 기기에서 임의의 솔트로 키의 HMAC을 계산해 비교할 뿐, 키나 그 요약을 저장하거나 전송하지 않습니다.
 - Modelflare는 요청 로그를 보관합니다. 항목과 기간은 [Modelflare 신뢰 센터](https://modelflare.dev/trust?utm_source=anymodelbot&utm_campaign=amb_readme)를 확인하세요. 각 모델 제공업체의 데이터 처리는 자체 약관을 따릅니다.
 
 ## 내 공식 API 키 사용
@@ -85,6 +85,8 @@
 - Feishu 채널: Feishu Open Platform과 지속 연결 유지.
 - Telegram, Slack, Discord 채널: 연결 후 `api.telegram.org`, `slack.com`, `discord.com` 및 파일 호스트와 통신해 메시지와 첨부 파일 송수신.
 - Windows에서 에이전트 모드가 켜져 있고 사용 가능한 PowerShell 7이 없으면 Microsoft 공식 릴리스 위치에서 PowerShell 7 다운로드(`AMB_PWSH_AUTO_INSTALL=0`으로 끌 수 있음, [개발 안내](./development_ko.md) 참조).
+- 데스크톱 설치 버전은 시작 후와 6시간마다 GitHub에서 업데이트를 확인하고 기본적으로 업데이트 파일을 백그라운드에서 내려받습니다. 설정 → 일반에서 자동 다운로드를 끌 수 있습니다. 요청에는 계정 인증 정보나 대화 내용이 포함되지 않습니다. 설치하려면 ‘재시작하여 업데이트’를 클릭해야 하며 실행 중인 작업이 없어야 합니다.
+- 아직 설치하지 않은 새 버전의 ‘업데이트 내용’을 열면 해당 버전의 변경 내역을 GitHub(`raw.githubusercontent.com`)에서 읽어 옵니다. 열 때만 요청하며 계정 인증 정보나 대화 내용은 포함하지 않습니다. 설치된 버전의 변경 내역은 앱에 포함되어 있어 네트워크를 쓰지 않습니다.
 - `AMB_CATALOG_URL`을 직접 설정해 원격 봇 목록을 사용할 때만 목록과 필요한 패키지를 내려받고 서명과 해시를 검증합니다. 사용자 데이터는 업로드하지 않습니다. 기본 공식 봇 목록, 화면, 예시 데이터와 스킬은 앱에 포함되어 있어 열거나 설치할 때 이러한 네트워크 요청이 발생하지 않습니다.
 
 ## 컴퓨터 사용과 스크린샷

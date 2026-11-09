@@ -1,5 +1,5 @@
 // 机器人头像：内置毛绒角色（6 个基础角色 + 12 个领域专家，蓝色的"天天"是默认头像），每个机器人配一个，只决定长相，和它做什么无关；会看指针、眨眼，并对平台里发生的事做出反应。
-// 图层由 scripts/build-bot-avatars.py 从 anymodelbot_design/logo avator/ 生成（ui/design/bots/<key>.webp）；
+// 图层由 scripts/build-bot-avatars.py 从 anymodelbot_design/logo avator/ 生成（ui/design/bots/<key>.webp，另有小档 <key>@<边长>.webp）；
 // 下面的几何是相对头像方框的百分比，和脚本输出的是同一套数，换图后要一起更新。
 import { useEffect, useRef, useState } from "preact/hooks";
 import { html } from "./ui.js";
@@ -81,6 +81,16 @@ export const EXPERT_KEYS = Object.keys(EXPERT_CHARS);
 Object.assign(BOT_CHARS, EXPERT_CHARS);
 export const CHAR_KEYS = Object.keys(BOT_CHARS);
 export const MAIN_CHAR = "blue";
+
+/**
+ * 精灵图分档（每格边长）：<key>.webp 是 448，另有这几档小的 <key>@<边长>.webp，都是脚本从原图直接缩出来的（和脚本的 TIERS 一致）。
+ * 按显示尺寸 × 设备像素比挑最小的够用的一档，浏览器最多再缩一倍：拿 448 的图实时缩到 20–40px，绒毛边缘会出锯齿，动起来还会闪。
+ */
+export const SPRITE_TIERS = [56, 112, 224];
+export function spriteUrl(key, px) {
+  const tier = SPRITE_TIERS.find((c) => c >= px);
+  return `/amb/static/design/bots/${key}${tier ? "@" + tier : ""}.webp`;
+}
 
 /** 角色的名字、介绍和领域（按当前语言）；基础角色没有领域 */
 export const charText = (key) => ({ name: t(`avatar.chars.${key}.name`), about: t(`avatar.chars.${key}.about`), field: EXPERT_CHARS[key] ? t(`avatar.chars.${key}.field`) : "" });
@@ -238,7 +248,7 @@ export function BotAvatar({ bot, id, name, char, size = 34, state = "idle", work
   const p = (pt) => `${pt[0]}% ${pt[1]}%`;
   const style = {
     "--s": size + "px",
-    "--bf-sprite": `url("/amb/static/design/bots/${key}.webp")`,
+    "--bf-sprite": `url("${spriteUrl(key, size * (window.devicePixelRatio || 1))}")`,
     "--o-el": p(c.earL),
     "--o-er": p(c.earR),
     "--o-top": p(c.top),

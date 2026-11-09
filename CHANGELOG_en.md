@@ -4,6 +4,17 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.31 - 2026-11-10
+
+### New features and improvements
+
+- Synced upstream through 819fc63 (0.1.30), retaining OKINTO sign-in, account wallets, grouped models, direct API keys and image generation.
+- Windows installers and Linux AppImages download updates in the background by default; installation requires clicking restart and waits while tasks are active. The current unsigned macOS builds continue to use manual installer downloads. Version 0.1.28 and earlier require a manual installation of this release first.
+- Added a What’s new dialog and changelog in About. Version checks, update downloads and release notes all use this repository.
+- All four official bots now have side-by-side project lists and workspaces with a full conversation view. Their shared composer supports model selection, attachments and slash commands.
+- Improved first-use model selection, actionable errors, Discover covers and recent conversation search; fixed verification-code handling and interface layouts.
+- Adapted OKINTO to the upstream directory and route refactor, preserving balance currencies, unlimited quotas and group endpoints without advertising upstream-only Bot credit promotions.
+
 ## 0.1.28 - 2026-11-08
 
 ### Improvements and fixes

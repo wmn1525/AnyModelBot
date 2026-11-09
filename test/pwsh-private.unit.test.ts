@@ -18,8 +18,8 @@ import {
   type PwshPin,
   type RunResult,
   type Runner,
-} from "../src/agent/pwsh-private.js";
-import { PwshProbe, pwshStatusLine, pwshReportLine, shellStartFailure, type PwshDeps, type PwshEvent } from "../src/agent/pwsh.js";
+} from "../src/tools/pwsh/private.js";
+import { PwshProbe, pwshStatusLine, pwshReportLine, shellStartFailure, type PwshDeps, type PwshEvent } from "../src/tools/pwsh/index.js";
 import { AgentHost } from "../src/agent/host.js";
 import { Store } from "../src/store/db.js";
 
@@ -546,7 +546,7 @@ describe("代理进程：PowerShell 换了就在空闲时重启；pwsh 工具结
   });
 
   it("pwsh 工具的结果（连同这个代理进程用的路径）交给探测器", async () => {
-    const { pwshProbe } = await import("../src/agent/pwsh.js");
+    const { pwshProbe } = await import("../src/tools/pwsh/index.js");
     const seen = vi.spyOn(pwshProbe, "observeToolResult").mockImplementation(() => undefined);
     const host = mkHost() as any;
     host.pwshPath = "C:\\pw\\pwsh.exe";

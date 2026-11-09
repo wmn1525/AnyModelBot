@@ -3,12 +3,12 @@
    中性色按主题逐个精调，直接写在这里，不经过原始色板。
 
    层次（见 README「容器与层次」，参考 Codex、Grok）：窗口底色和侧栏是同一个平面；主区和信息面板是白 / 浅一档的面板，
-   只有一道细线；内容里的组靠底色深一级。投影只给真正浮在内容上的东西，而且很淡。
-   填充、悬停、描边都是半透明的一层，放在哪种底上都对。
+   只靠底色和窗口分开，不画边；内容里的组靠底色深一级。投影只给真正浮在内容上的东西，而且很淡。
+   填充、悬停都是半透明的一层，放在哪种底上都对。
 
    容器（见 README「容器与层次」）：内容里的一组东西靠底色深一级（--well）和间距成组，不画描边、不加投影，
-   也不在一组里面再套一组；行与行之间需要分开时只用一条细线（--line-2）。描边只留给两种东西：
-   文字输入框（--ctl-edge，对所在表面 ≥ 3:1）和浮在内容上的玻璃（--glass-edge）。
+   也不在一组里面再套一组；组里的行靠间距分开，不画分隔线。输入框也是一块填充（--fill-field），不描边，
+   聚焦时一圈淡光晕（--ring）。界面里的线只剩：浮在内容上的玻璃的边（--glass-edge）、表格表头下沿、正文的 hr 和引文记号。
 
    主题可以局部生效：任何元素加 data-theme="light|dark"，它的子树就换一套取值。
    <html data-theme> 总是解析后的值，由 index.html 在首帧前设置、lib/theme.js 保持同步。 */
@@ -57,8 +57,10 @@
   --line-2: rgba(0, 0, 0, .06);       /* 行与行之间的细线：列表行、表格行、菜单里的分隔 */
   --line-strong: rgba(0, 0, 0, .18);  /* 聚焦时的边：对话输入框、侧栏搜索框 */
   --split-line: rgba(0, 0, 0, .2);    /* 分隔条：指针停住时空隙中间亮起的细线（拖动、键盘焦点时换成 --accent） */
-  --ctl-edge: rgba(0, 0, 0, .44);     /* 文字输入框的边：对主区、信息面板、对话框和 --well 都 ≥ 3:1（3.2:1） */
+  --ctl-edge: rgba(0, 0, 0, .44);     /* 需要明确轮廓的小件（主题缩略图悬停）；输入框不再用它描边 */
   --ctl-edge-hover: rgba(0, 0, 0, .6);
+  --fill-field: rgba(0, 0, 0, .045);       /* 输入框的填充：半透明，放在主区、对话框、--well 上都认得出 */
+  --fill-field-hover: rgba(0, 0, 0, .07);
 
   /* —— 文字 —— */
   --fg: #1a1a1a;
@@ -76,7 +78,7 @@
   --send-bg: #1a1a1a;        /* 发送 / 停止：墨色圆钮 + 黄绿箭头（墨色上的一点光） */
   --send-fg: var(--lime-500);
   --accent: #1a1a1a;         /* 焦点描边、勾选、链接 */
-  --signal: #1a1a1a;         /* "有新东西"的小点：未读、上新、回到底部。黄绿在白底上看不见，浅色下用墨色 */
+  --signal: var(--blue-500); /* "有新东西 / 等你处理"的蓝点：侧栏待处理、上新、未读、回到底部。侧栏不用数字标签，只用这个点 */
   --brand: var(--lime-500);  /* 品牌填充：只给应用标志 */
   --on-brand: var(--olive-950);
   --brand-line: color-mix(in srgb, var(--olive-500) 35%, transparent);
@@ -117,7 +119,7 @@
   --code-bg: color-mix(in srgb, var(--fg) 7%, transparent);
   --ring: 0 0 0 2px var(--accent-soft);   /* 焦点光晕，配合 accent 色描边 */
   --ring-danger: 0 0 0 2px color-mix(in srgb, var(--red) 18%, transparent);
-  --shadow-pane: 0 0 0 var(--hairline) var(--glass-edge);                       /* 面板：只有一道细线 */
+  --shadow-pane: none;                                                           /* 面板：靠底色和窗口分开，不画边 */
   --shadow-float: 0 0 0 var(--hairline) var(--glass-edge), var(--drop-float);   /* 常驻的浮件 */
   --shadow-pop: 0 0 0 var(--hairline) var(--glass-edge), var(--drop-pop);       /* 临时弹出 */
   --shadow-modal: 0 0 0 var(--hairline) var(--glass-edge), var(--drop-modal);   /* 模态 */
@@ -238,6 +240,8 @@
   --split-line: rgba(255, 255, 255, .22);
   --ctl-edge: rgba(255, 255, 255, .36);   /* 3.2:1 */
   --ctl-edge-hover: rgba(255, 255, 255, .5);
+  --fill-field: rgba(255, 255, 255, .06);
+  --fill-field-hover: rgba(255, 255, 255, .085);
 
   --fg: #ececec;
   --fg-2: #b4b4b4;
@@ -253,7 +257,7 @@
   --send-bg: #ececec;
   --send-fg: #141414;
   --accent: #ececec;
-  --signal: var(--lime-500);  /* 深色下这几个小点是黄绿 */
+  --signal: var(--blue-400);
   --brand-line: color-mix(in srgb, var(--lime-500) 30%, transparent);
   --accent-soft: rgba(255, 255, 255, .14);
   --mark: rgba(255, 255, 255, .2);

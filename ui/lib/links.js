@@ -1,6 +1,6 @@
 import { locale } from "./i18n.js";
 // OKINTO 官网链接：都带来源参数，后台用它统计从本程序来的注册与充值。
-// 全项目统一 utm_source=anymodelbot&utm_campaign=amb_<位置>（和 src/modelflare.ts 的 UTM 一致）。
+// 全项目统一 utm_source=anymodelbot&utm_campaign=amb_<位置>（和 src/providers/modelflare.ts 的 UTM 一致）。
 export const MF_SITE = "https://api.okinto.com";
 export const MF_DOCS = "https://docs.newapi.pro";
 
@@ -30,11 +30,11 @@ export function tagLink(url, campaign) {
   }
 }
 
-/** 美元金额：两位小数；很小的数保留四位，避免显示成 $0.00 */
-export function usd(n) {
+/** 美元金额：两位小数；很小的数保留四位，避免显示成 $0.00。digits 指定时一律按它（额度卡片的余额固定两位） */
+export function usd(n, digits) {
   if (n === null || n === undefined || !Number.isFinite(Number(n))) return "—";
   const v = Number(n);
-  const digits = Math.abs(v) > 0 && Math.abs(v) < 0.01 ? 4 : 2;
+  digits ??= Math.abs(v) > 0 && Math.abs(v) < 0.01 ? 4 : 2;
   return new Intl.NumberFormat(locale(), { style: "currency", currency: "USD", currencyDisplay: "narrowSymbol", minimumFractionDigits: digits, maximumFractionDigits: digits }).format(v);
 }
 

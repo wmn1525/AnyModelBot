@@ -1,46 +1,45 @@
-/* 三栏：任务、流水线、报告和来源。颜色、间距、字号只用设计系统的 token。窄屏依次变成两栏、一栏。 */
-.cr-layout { display: grid; gap: var(--space-6); grid-template-columns: minmax(200px, 240px) minmax(0, 1fr) minmax(0, 1.3fr); align-items: start; }
-.cr-col { display: grid; gap: var(--space-4); min-width: 0; }
-.cr-wide { grid-column: 2 / -1; }
+/* 桌面工作区（kit.css 的 .kit-ws）：左边尽调任务，右边工具栏 + 报告 / 来源 / 流程。颜色、间距、字号只用设计系统的 token。 */
+.cr-page { display: grid; gap: var(--space-6); min-width: 0; max-width: 46rem; }
+.cr-path { overflow-wrap: anywhere; }
 
-.cr-form { display: grid; gap: var(--space-2); }
-.cr-more summary { cursor: pointer; padding: var(--space-1) 0; }
-.cr-more .cr-form { margin-top: var(--space-2); }
+/* 新建：一列表单，选填的三项并排（窄了折行） */
+.cr-form { display: grid; gap: var(--space-4); max-width: 34rem; }
+.cr-form-more { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); gap: var(--space-3); }
 
-.cr-jobs { display: grid; gap: var(--space-1); }
-.cr-job { display: grid; gap: var(--space-1); width: 100%; padding: var(--space-2) var(--space-3); border: 0; border-radius: var(--r-lg); background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
-.cr-job:hover { background: var(--well-hover); }
-.cr-job.on { background: var(--well); }
-.cr-job-name { font-weight: var(--fw-medium); overflow-wrap: anywhere; }
-.cr-job-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.cr-sec { display: grid; gap: var(--space-3); min-width: 0; }
+.cr-sec > h2 { margin: 0; }
 
-.cr-job-head { display: grid; gap: var(--space-1); }
-.cr-job-head h2, .cr-job-head p { margin: 0; overflow-wrap: anywhere; }
-.cr-actions { --gap: var(--space-2); }
-.cr-path { margin: 0; overflow-wrap: anywhere; }
+/* 流程：一行一个阶段（状态点 + 名称）；四路研究并排四条横条，长度是取到的篇数 */
+.cr-flow, .cr-timeline, .cr-sources ul { margin: 0; padding: 0; list-style: none; }
+.cr-flow { display: grid; gap: var(--space-2-5); }
+.cr-flow > li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-3); }
+.cr-flow > li.cr-lanes { display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4); background: var(--well); border-radius: var(--r-well); }
+.cr-lane { display: grid; grid-template-columns: 7rem minmax(0, 1fr) 3.5rem; align-items: center; gap: var(--space-3); min-width: 0; }
+.cr-bar { display: block; height: var(--space-1-5); border-radius: var(--r-full); overflow: hidden; background: var(--pill); }
+.cr-bar > i { display: block; height: 100%; min-width: var(--space-1); border-radius: inherit; background: var(--fg-2); transition: width var(--dur-base) var(--ease-out); }
+.cr-count { font-size: var(--fs-xs); color: var(--muted); text-align: end; font-variant-numeric: tabular-nums; }
 
-.cr-section { display: grid; gap: var(--space-2); }
-.cr-section h2 { margin: 0; }
-.cr-note { margin: 0; }
-
-.cr-pipeline, .cr-parallel, .cr-timeline, .cr-sources ul { margin: 0; padding: 0; list-style: none; }
-.cr-pipeline { display: grid; gap: var(--space-2); }
-.cr-node { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
-.cr-parallel { display: grid; gap: var(--space-2); padding: var(--space-3); background: var(--well); border-radius: var(--r-lg); }
-
-.cr-timeline { display: grid; gap: var(--space-2); font-size: var(--fs-sm); }
-.cr-timeline li { display: grid; gap: var(--space-0-5); overflow-wrap: anywhere; }
-.cr-time { font-variant-numeric: tabular-nums; }
-
-.cr-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line-2); }
-.cr-tabs button { padding: var(--space-2) var(--space-3); border: 0; border-bottom: 2px solid transparent; background: none; color: var(--fg-2); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
-.cr-tabs button:hover { color: var(--fg); }
-.cr-tabs button.on { border-bottom-color: var(--fg); color: var(--fg); font-weight: var(--fw-medium); }
+.cr-timeline { display: grid; gap: var(--space-1-5); font-size: var(--fs-sm); }
+.cr-timeline li { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: var(--space-3); overflow-wrap: anywhere; }
+.cr-time { color: var(--muted); font-variant-numeric: tabular-nums; }
 
 .cr-sources { display: grid; gap: var(--space-3); }
 .cr-sources p { margin: 0; }
 .cr-sources ul { display: grid; gap: var(--space-3); }
-.cr-sources li { display: grid; gap: var(--space-0-5); min-width: 0; }
+.cr-sources li { display: grid; grid-template-columns: minmax(0, 1fr) 9rem; gap: var(--space-4); align-items: center; min-width: 0; }
+.cr-sources li.unused .cr-src-main > :first-child { color: var(--fg-2); }
+.cr-src-main { display: grid; gap: var(--space-0-5); min-width: 0; }
+.cr-score { display: grid; grid-template-columns: minmax(0, 1fr) 2.5rem; align-items: center; gap: var(--space-2); }
+.cr-filter { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); }
+.cr-n { color: var(--muted); font-variant-numeric: tabular-nums; }
+.cr-check { display: inline-flex; align-items: center; gap: var(--space-1-5); font-size: var(--fs-sm); color: var(--fg-2); cursor: pointer; }
+
+/* 报告目录：一排胶囊；跳过去时标题停在工具栏下面 */
+.cr-toc { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.wiz-chip { height: var(--ctl-md); padding: 0 var(--space-3); border-radius: var(--r-full); background: var(--pill); color: var(--fg-2); font: inherit; font-size: var(--fs-sm); cursor: pointer; transition: background var(--t-fast), color var(--t-fast); }
+.wiz-chip:hover { background: var(--pill-hover); color: var(--fg); }
+.cr-report h3 { scroll-margin-top: calc(var(--ctl-2xl) + var(--space-8)); }
+@media (max-width: 560px) { .cr-sources li { grid-template-columns: minmax(0, 1fr); } }
 
 .cr-report { display: grid; gap: var(--space-3); line-height: var(--lh-relaxed); min-width: 0; overflow-wrap: anywhere; }
 .cr-report h2, .cr-report h3, .cr-report h4, .cr-report p, .cr-report ul, .cr-report ol, .cr-report blockquote { margin: 0; }
@@ -53,11 +52,9 @@
 .cr-report code { font-family: var(--code); font-size: var(--fs-sm); }
 .cr-table { overflow-x: auto; }
 
-@media (max-width: 1180px) {
-  .cr-layout { grid-template-columns: minmax(200px, 240px) minmax(0, 1fr); }
-  .cr-layout > .cr-col:last-child { grid-column: 1 / -1; }
-}
-@media (max-width: 720px) {
-  .cr-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
-  .cr-wide { grid-column: auto; }
-}
+
+/* 出错信息：一句话 + 折叠的原文，长 JSON 在窄栏里换行、限高滚动 */
+.cr-error { display: block; }
+.cr-error-details { margin-top: var(--space-1-5); font-size: var(--fs-xs); min-width: 0; }
+.cr-error-details > summary { cursor: pointer; color: var(--muted); }
+.cr-error-details pre { margin: var(--space-1) 0; max-height: 10em; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--code); }

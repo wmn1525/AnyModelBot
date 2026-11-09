@@ -8,6 +8,8 @@ const log = logger("approvals");
 export const APPROVAL_TTL_MS = 10 * 60_000;
 /** 后台任务里的审批：任务会话的那次调用一直等着，12 小时没人批就拒绝（设计第 7 节） */
 export const TASK_APPROVAL_TTL_MS = 12 * 3600_000;
+/** 规则执行时的审批在「需要你」里等多久，过了就拒绝、这次运行失败 */
+export const RULE_APPROVAL_TTL_MS = 3600_000;
 
 export interface QuestionItem {
   id: string;

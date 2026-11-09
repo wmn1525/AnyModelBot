@@ -2,7 +2,7 @@ import type { ChannelStatus, InboundEvent, OutboundOp, Part, ReplySession } from
 import { Dedup, KeyedQueue } from "../../core/queue.js";
 import type { BotRuntime } from "../../core/runtime.js";
 import { Gone, Later, Outbox, ReplyIds, sentText, stableId } from "../../core/outbox.js";
-import type { Delivery } from "../../core/delivery.js";
+import type { Delivery } from "../../delivery/index.js";
 import type { OutboxBody, OutboxKind, OutboxRow } from "../../store/db.js";
 import { sniffImageMime } from "../weixin/api.js";
 import { logger } from "../../log.js";

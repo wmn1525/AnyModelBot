@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { MediaService, type MediaModel } from "../src/agent/media.js";
+import { MediaService, type MediaModel } from "../src/tools/media/index.js";
 
 const model: MediaModel = { id: "video-test", kind: "video", route: "videos", requiresReference: false, price: "", priority: 1 };
 

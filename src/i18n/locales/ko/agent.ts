@@ -38,6 +38,7 @@ export default {
   "endTurnLimit": "대화 한 차례의 한도 초과",
   "endUser": "사용자가 중지함",
   "endIdle": "오랫동안 진행이 없어 자동으로 중지함",
+  "endPermission": "시스템 권한이 없어 중지함",
   "mediaSavedNotDelivered": "‘{name}’ 봇이 생성한 {kind}을(를) 작업 공간({files})에 저장했습니다. 요청 메시지의 처리가 중지되어 대화에는 전송하지 않았습니다. 필요하면 대화에서 봇에게 보내 달라고 요청하세요.",
   "kindImage": "이미지",
   "kindVideo": "동영상",

@@ -14,11 +14,11 @@ import type { AgentManager } from "../agent/manager.js";
 import { promptButtons, promptText, questionsOf } from "../agent/approvals.js";
 import { segmentInput, type ChatPlace } from "../agent/prompts/index.js";
 import { clearInflight, markInflight, takeNotice } from "./recovery.js";
-import { pwshProbe, pwshStatusLine } from "../agent/pwsh.js";
-import { isBotProviderModel } from "../modelflare.js";
+import { pwshProbe, pwshStatusLine } from "../tools/pwsh/index.js";
+import { isBotProviderModel } from "../providers/modelflare.js";
 import type { ApprovalRow, Conversation } from "../store/db.js";
 import type { AccessControl } from "./access.js";
-import { takeTaskNotes } from "../tasks/service.js";
+import { takeTaskNotes } from "./task-notes.js";
 import { t } from "../i18n/index.js";
 import { localProxyFailureHint } from "../network-error.js";
 
@@ -230,6 +230,11 @@ export class BotRuntime {
     for (const t of set ?? []) t.abort.abort();
     const agentTurn = this.opts.agent?.stopTurn(conversationId) ?? false;
     return !!set?.size || agentTurn;
+  }
+
+  /** 正在处理消息的会话（纯对话和代理回合）：退出登录前停下它们用 */
+  activeConversations(): string[] {
+    return [...new Set([...[...this.inflight].filter(([, set]) => set.size > 0).map(([id]) => id), ...(this.opts.agent?.turnsInProgress.keys() ?? [])])];
   }
 
   /** 会话里最早那条还在处理的消息是什么时候收到的 */
@@ -971,6 +976,10 @@ export function turnFailedText(err: Error, steps: ActivityStep[]): string {
     const restart = err.restarted ? t("runtime.andRestarted") : "";
     if (err.reason === "user") return t("runtime.stoppedByUser", { d: fmtSecs(err.ms), restarted: err.restarted ? t("runtime.restartedNote") : "" });
     if (err.reason === "idle") return t("runtime.stoppedIdle", { d: fmtSecs(err.ms), restart, where });
+    if (err.reason === "permission") {
+      const names = err.missing.map((k) => t(k === "screen" ? "runtime.permScreen" : "runtime.permAccessibility"));
+      return t("runtime.stoppedPermission", { missing: names.join(t("runtime.listSep")) });
+    }
     return t("runtime.stoppedLimit", { d: fmtSecs(err.ms), restart, where });
   }
   if (/runtime (closed|exited)/i.test(err.message)) return t("runtime.runtimeRestarted");

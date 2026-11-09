@@ -10,6 +10,7 @@ export default {
   trust: [
     "無料・オープンソースのアプリ",
     "モデルは使った分だけお支払い",
+    "登録で Bot クレジット $1",
     "Windows / macOS / Linux",
   ],
   appUiNote: "",

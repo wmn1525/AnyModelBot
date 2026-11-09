@@ -133,7 +133,8 @@ export function useBot() {
 /** 挂载界面。出错时告诉父页面：父页面退回对话视图，顶部提示一行 */
 export function mount(App) {
   const fail = (message) => call("reportError", { message: String(message).slice(0, 500) }).catch(() => {});
-  window.addEventListener("error", (e) => fail(e.message));
+  // ResizeObserver 的"循环"提示是浏览器的无害警告（尺寸在同一帧里又变了一次），不是界面坏了，不能因此退回对话
+  window.addEventListener("error", (e) => !/ResizeObserver loop/i.test(String(e.message)) && fail(e.message));
   window.addEventListener("unhandledrejection", (e) => fail(e.reason?.message || e.reason));
   render(h(App, {}), document.getElementById("app") || document.body);
   call("rendered").catch(() => {});

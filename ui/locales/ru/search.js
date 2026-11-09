@@ -45,5 +45,12 @@ export default {
   "openBot": "Открыть бота",
   "filters": "Фильтры",
   "user": "Пользователь",
-  "appChannel": "Чат приложения"
+  "appChannel": "Чат приложения",
+  "recent": "Недавние чаты",
+  "recentDay": {
+    "today": "Сегодня",
+    "yesterday": "Вчера",
+    "week": "Последние 7 дней",
+    "earlier": "Раньше"
+  }
 };

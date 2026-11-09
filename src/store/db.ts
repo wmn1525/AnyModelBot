@@ -2,9 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
-import { normalizeSettings, type BotSettings } from "../agent/settings.js";
-import { normalizeAppRef, type BotAppRef } from "../botkit/format.js";
-import type { Schedule } from "../tasks/schedule.js";
+import { normalizeSettings, type BotSettings } from "../domain/bot-settings.js";
+import { normalizeAppRef, type BotAppRef } from "../domain/app-ref.js";
+import type { Schedule } from "../domain/schedule.js";
 import { ChatSearch } from "./chat-search.js";
 
 /**
@@ -604,7 +604,7 @@ const COLUMNS: Array<[string, string, string]> = [
   // 模型在回合中间说的话、交付的文件（JSON 字符串数组）；只在助手消息上
   ["messages", "interim", "TEXT NOT NULL DEFAULT ''"],
   ["messages", "files", "TEXT NOT NULL DEFAULT ''"],
-  // 主动消息的送达规则（core/delivery.ts）
+  // 主动消息的送达规则（delivery/index.ts）
   ["outbox", "purpose", "TEXT NOT NULL DEFAULT ''"],
   ["outbox", "subject", "TEXT NOT NULL DEFAULT ''"],
   ["outbox", "ref", "TEXT NOT NULL DEFAULT ''"],

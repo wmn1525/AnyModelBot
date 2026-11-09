@@ -10,12 +10,13 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { TaskService, type TaskHost } from "../src/tasks/service.js";
-import { DAY_MS, KEEP_MS, WARN_MS, dirBytes, taskSessionDirs } from "../src/tasks/retention.js";
+import { DAY_MS, KEEP_MS, WARN_MS } from "../src/tasks/retention.js";
+import { dirBytes, taskSessionDirs } from "../src/agent/session-dirs.js";
 import { exportFileName, ruleMarkdown, stampOf } from "../src/tasks/export.js";
 import { ApprovalCenter } from "../src/agent/approvals.js";
 import { DEFAULT_SETTINGS } from "../src/agent/settings.js";
 import { Outbox } from "../src/core/outbox.js";
-import { Delivery } from "../src/core/delivery.js";
+import { Delivery } from "../src/delivery/index.js";
 import { Store, type RunOutcome } from "../src/store/db.js";
 import { Attention } from "../src/tasks/attention.js";
 

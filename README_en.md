@@ -1,5 +1,9 @@
 <h1 align="center">okinto 中转</h1>
 
+> 0.1.31 · Windows installers and Linux AppImages download updates in the background by default; installation requires clicking restart and waits while tasks are active. The current unsigned macOS builds continue to use manual installer downloads. Version 0.1.28 and earlier require a manual installation of this release first.
+> Added a What’s new dialog and changelog in About. Version checks, update downloads and release notes all use this repository.
+
+
 <p align="center"><b>Your own AI bot, on your own computer. Any model, pay per use.</b></p>
 
 <p align="center">
@@ -118,12 +122,14 @@ A bot is more than a chat window: it has a persona, a default model, its own wor
 - **Approval cards, not surprises.** Out-of-bounds actions stop and wait for your answer.
 - **Told after a restart.** A message still in progress when the app quit or crashed is flagged in its conversation at the next start, so you can send it again; nothing is redone on its own.
 - **Group chats.** Create a group and add a few bots. Whoever you @ answers; with no @, the bot that answered last carries on. Bots can also @ another member to hand off. Each bot keeps its own model, workspace and memory, and costs are tracked per bot.
-- **Search chat history.** Search all messages saved on your device from the sidebar, filter by bot, conversation, channel or date, and jump to the original message. `Ctrl/Cmd+Shift+F` opens global search; `Ctrl/Cmd+F` searches the current chat. Searches do not call a model.
+- **Search chat history.** Search all messages saved on your device from the sidebar, filter by bot, conversation, channel or date, and jump to the original message. `Ctrl/Cmd+Shift+F` opens global search; `Ctrl/Cmd+F` searches the current chat. Searches do not call a model. Before you type, the search dialog lists recent chats by date.
 - **Slash commands** such as `/model` and `/reset` work in the app and in every chat channel. In a chat channel, `/bot` switches to another bot.
 
 ## 🧩 Ready-made bots
 
 If you don't want to write a persona, use a ready-made bot from Discover. Each has its own view. Opening one shows a sample, and it's only installed when you send your first message.
+
+Official bots include their UIs, samples, personas and skills in the installer. First preview and installation need no bot package downloads. Updates ship with app releases and preserve existing project data. Model calls and online research still need a network connection. Each bot is a desktop workspace: your work is listed on the left and the content is on the right, New starts a short guided form, the top bar switches to the full chat, and the input box has the model picker.
 
 - **Company Research:** Local company diligence with parallel research, curation, and sourced reports
 - **PPT Master:** Turn documents or topics into editable PPTX decks, or edit decks you have
@@ -147,7 +153,7 @@ The full story, in Chinese: [okinto 中转 超级智能体](./docs/blog/superage
 
 ## 🖥️ Operates your computer, and makes images and video
 
-- **Computer use** is powered by the bundled [Cua Driver](https://github.com/trycua/cua). By default, actions run automatically. Switch a bot to *ask before changing the screen* and every click and keystroke waits for you. Reading the screen never needs approval. On macOS, computer use is a Beta feature.
+- **Computer use** is powered by the bundled [Cua Driver](https://github.com/trycua/cua). By default, actions run automatically. Switch a bot to *ask before changing the screen* and every click and keystroke waits for you. Reading the screen never needs approval. On macOS, computer use is a Beta feature: Accessibility and Screen Recording permissions are requested only when a bot first needs them, and the chat explains which one is missing.
 - **Image and video generation** runs right away, taking the most reasonable reading of a loose request. It asks first only when the estimated cost is above 0.50 US dollars, so you see the model and prompt and can swap the model on the spot. To be asked every time, turn it on in the bot's settings.
 
 ## 🌐 Any model, through okinto 中转 or official APIs
@@ -172,7 +178,7 @@ The full story, in Chinese: [okinto 中转 超级智能体](./docs/blog/superage
 - **It answers to you.** By default a bot replies only to its owner (the WeChat account that scanned the QR code; on Feishu, Telegram, Slack and Discord, the first person to message it after you connect it, which is you) and the people you allow. Anyone else gets a one-line notice and no model is called; you let them in from the info panel, or by replying `yes <code>` in chat.
 - **Replies are not lost.** A reply is saved locally before it is sent; network errors are retried, sending resumes after a restart, and when WeChat's 24-hour window has closed the reply waits and arrives with your next message.
 - **Telemetry kept off.** Telemetry in the bundled computer-use driver is switched off, and the built-in gateway runs with auto-update disabled.
-- **You decide when to update.** The desktop app asks GitHub for the latest version number every 6 hours. The request carries only your current version. When a new version is out, the sidebar tells you, and you download and install it yourself.
+- **In-app updates.** From 0.1.29, installed desktop apps enable Settings → General → Automatically download updates by default. New versions download in the background and offer Restart and update when ready. Installation requires your click and no running tasks; turn the setting off for manual downloads. Users on 0.1.28 or earlier must manually install 0.1.29 or later once. Docker and source deployments still update manually. From 0.1.30, the first launch after an update shows what changed, the new-version notice shows the notes before you upgrade, and the changelog is always in Settings → About.
 - **Light, dark or follow the system.** Six bot characters, and their eyes follow your pointer.
 - **Tray and autostart.** Close the window to hide to the tray; autostart is available on macOS and Windows.
 

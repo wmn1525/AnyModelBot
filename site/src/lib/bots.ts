@@ -16,6 +16,8 @@ export const BOT_CHARS: Record<CharKey, CharGeo> = {
   },
 };
 export const CHAR_KEYS = Object.keys(BOT_CHARS) as CharKey[];
+/** 精灵图小档的每格边长（public/bots/<角色>@<边长>.webp / .avif），和 App 的 SPRITE_TIERS 一致；448 的是 <角色>.webp */
+export const SPRITE_TIERS = [56, 112, 224];
 // 官网给每个角色配的示例人设（文案在 i18n 的 bots.personas）。只是示例，不是角色的职责：产品里机器人的名字、人设、模型都是用户自己定的。
 export const CHAR_PERSONA = { blue: "pair", yellow: "editor", green: "secretary", red: "german", purple: "home", orange: "expenses" } as const satisfies Record<CharKey, string>;
 export type PersonaKey = (typeof CHAR_PERSONA)[CharKey];

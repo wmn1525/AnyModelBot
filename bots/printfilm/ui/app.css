@@ -1,40 +1,116 @@
-.kit-page { grid-template-columns: minmax(0, 1fr); }
-.pf-shell { display: grid; gap: var(--space-5); min-width: 0; }
-.pf-shell > *, .pf-form > *, .pf-toolbar > *, .pf-stat { min-width: 0; max-width: 100%; }
-.pf-form .field { min-width: 0; max-width: 100%; }
-.pf-stat { overflow-wrap: anywhere; }
-.pf-shell .btn { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
-.pf-toolbar, .pf-tabs, .pf-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
-.pf-toolbar { justify-content: space-between; }
-.pf-tabs { border-bottom: 1px solid var(--line); padding-bottom: var(--space-2); }
-.pf-tabs button[aria-selected="true"] { background: var(--well); color: var(--fg); font-weight: 600; }
-.pf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--space-4); }
-.pf-form, .pf-card, .pf-stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); min-width: 0; }
-.pf-shell .kit-empty { overflow-wrap: anywhere; }
-.pf-card { border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--space-4); background: var(--bg); }
-.pf-card h2, .pf-card h3, .pf-card p { margin: 0; overflow-wrap: anywhere; }
-.pf-form textarea { min-height: 8rem; resize: vertical; width: 100%; }
+/* 影视创作室的桌面工作区（kit.css 的 .kit-ws）。颜色、间距、字号都来自设计系统的 token；成组靠底色和留白，不画框 */
+.pf-stack, .pf-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); min-width: 0; }
+.pf-form { gap: var(--space-3); }
+.pf-narrow { max-width: 36rem; }
+.pf-form > *, .pf-stack > * { min-width: 0; max-width: 100%; }
 .pf-form label { display: grid; gap: var(--space-1); }
+.pf-form textarea { min-height: 5rem; resize: vertical; width: 100%; }
 .pf-form input[type="checkbox"] { width: auto; }
-.pf-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-4); }
-.pf-preview { display: grid; gap: var(--space-2); background: var(--well); border-radius: var(--r-md); padding: var(--space-2); overflow: hidden; }
-.pf-preview img, .pf-preview video { width: 100%; max-height: 26rem; object-fit: contain; }
+.pf-form h2 { margin: 0; }
+.pf-two { display: grid; grid-template-columns: minmax(0, 1fr) 7rem; gap: var(--space-3); }
+.pf-row, .pf-actions { display: flex; align-items: center; gap: var(--ctl-gap); flex-wrap: wrap; min-width: 0; }
+.pf-row .grow { flex: 1; }
+.pf-meta { margin: 0; color: var(--fg-2); font-size: var(--fs-sm); line-height: var(--lh-snug); overflow-wrap: anywhere; }
+.pf-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.pf-error { margin: 0; color: var(--fg); overflow-wrap: anywhere; }
+.pf-script { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: var(--lh-relaxed); }
+.pf-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: var(--space-6); }
+.pf-columns.even { grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: var(--space-3) var(--space-4); }
+.pf-panel { display: grid; gap: var(--space-3); padding: var(--space-4); background: var(--well); border-radius: var(--r-well); }
+.pf-editor { padding-top: var(--space-2); }
+.pf-refs { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; border: 0; }
+.pf-refs legend { padding: 0 0 var(--space-1); }
+.pf-refs label { display: inline-flex; align-items: center; gap: var(--space-1-5); }
+.pf-episode .field { height: var(--ctl-md); max-width: 14rem; }
+.pf-archived { justify-self: start; margin-top: var(--space-2); }
+
+/* "更多"菜单：<details> 展开成一块浮层（--glass-pop + --shadow-pop），项是平的行 */
+.pf-menu { position: relative; }
+.pf-menu > summary { list-style: none; cursor: pointer; }
+.pf-menu > summary::-webkit-details-marker { display: none; }
+.pf-menu > summary::after { content: "▾"; margin-inline-start: var(--space-1-5); color: var(--muted); font-size: var(--fs-2xs); }
+.pf-menu > summary.is-disabled { opacity: var(--o-disabled); pointer-events: none; }
+.pf-menu-list { position: absolute; z-index: var(--z-popover); top: calc(100% + var(--pop-offset)); inset-inline-start: 0; display: grid; min-width: 12rem; max-height: 60vh; overflow-y: auto; padding: var(--space-1); background: var(--glass-pop); backdrop-filter: var(--glass-filter); border-radius: var(--r-lg); box-shadow: var(--shadow-pop); }
+.pf-menu-list button { padding: var(--space-1-5) var(--space-2); border-radius: var(--r-sm); background: transparent; color: var(--fg); font: inherit; font-size: var(--fs-sm); text-align: start; white-space: nowrap; cursor: pointer; }
+.pf-menu-list button:hover:not(:disabled) { background: var(--pill); }
+.pf-menu-list button:disabled { color: var(--faint); cursor: default; }
+
+/* 时间轴：一镜一段，宽度 = 时长（--d 秒）× 每秒的长度，太短的镜头也留够放缩略图的宽度。横向滚动 */
+.pf-timeline { --pf-sec: 1.25rem; display: flex; gap: var(--space-1); overflow-x: auto; padding-bottom: var(--space-2); }
+.pf-seg { --focus-offset: -2px; flex: none; width: max(8.5rem, calc(var(--d) * var(--pf-sec))); display: grid; gap: var(--space-1); padding: var(--space-1-5); border-radius: var(--r-md); background: var(--well); color: var(--fg); font: inherit; text-align: start; cursor: pointer; transition: background var(--t-fast); }
+.pf-seg:hover { background: var(--well-hover); }
+.pf-seg.on { background: var(--well-press); box-shadow: inset 0 0 0 2px var(--accent); }
+.pf-seg-time { font-size: var(--fs-2xs); color: var(--muted); font-variant-numeric: tabular-nums; }
+.pf-seg-img { display: grid; place-items: center; height: 4.5rem; overflow: hidden; border-radius: var(--r-sm); background: var(--pill); }
+.pf-seg-img img { width: 100%; height: 100%; object-fit: cover; }
+.pf-seg-none { color: var(--muted); font-size: var(--fs-lg); }
+.pf-seg-name { display: flex; align-items: baseline; gap: var(--space-1); min-width: 0; font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-seg-dur { margin-inline-start: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pf-lanes { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-0-5); }
+.pf-lanes i { height: var(--space-1); border-radius: var(--r-full); background: var(--pill-hover); }
+.pf-lanes i.has { background: var(--fg-2); }
+
+/* 选中的镜头：左边预览（限高），右边文字和操作；窄了上下排 */
+.pf-detail { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+.pf-detail-media { display: grid; gap: var(--space-2); min-width: 0; }
+.pf-detail-text { display: grid; gap: var(--space-3); min-width: 0; }
+.pf-detail-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.pf-detail-head h2 { margin: 0; }
+.pf-quote { margin: 0; line-height: var(--lh-relaxed); overflow-wrap: anywhere; }
+.pf-status { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; font-size: var(--fs-sm); }
+.pf-preview { display: grid; gap: var(--space-2); justify-items: center; padding: var(--space-2); background: var(--well); border-radius: var(--r-well); overflow: hidden; }
+.pf-preview img, .pf-preview video { width: 100%; max-height: 42vh; object-fit: contain; border-radius: var(--r-sm); }
 .pf-preview audio { width: 100%; }
-.pf-shot-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
-.pf-meta { color: var(--fg-2); font-size: var(--fs-sm); }
-.pf-error { color: var(--fg); overflow-wrap: anywhere; }
-.pf-script { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
-.pf-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
-.pf-stat { background: var(--well); border-radius: var(--r-md); padding: var(--space-3); }
-.pf-stat strong { display: block; font-size: var(--fs-xl); }
-.pf-canvas-scroll { overflow: auto; max-height: 40rem; border: 1px solid var(--line); border-radius: var(--r-md); }
-.pf-canvas { position: relative; width: 1400px; height: 900px; background: var(--well); touch-action: none; }
+.pf-preview.audio { justify-items: stretch; }
+.pf-preview .pf-actions { justify-self: stretch; justify-content: center; }
+.pf-blank { place-items: center; min-height: 12rem; color: var(--muted); font-size: var(--fs-sm); }
+
+/* 资产：卡片网格（图 + 名称 + 一句描述 + 两个操作），编辑时这一张展开 */
+.pf-assets { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: var(--space-4); align-items: start; }
+.pf-asset { display: grid; gap: var(--space-2); min-width: 0; }
+.pf-asset.on { grid-column: 1 / -1; grid-template-columns: minmax(0, 13rem) minmax(0, 1fr); align-items: start; padding: var(--space-4); background: var(--well); border-radius: var(--r-well); }
+.pf-asset.on > :not(.pf-asset-img):not(.pf-asset-text) { grid-column: 2; }
+.pf-asset-img { --focus-offset: -2px; display: grid; place-items: center; aspect-ratio: 4 / 3; overflow: hidden; padding: 0; border-radius: var(--r-well); background: var(--well); color: var(--muted); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
+.pf-asset.on .pf-asset-img { background: var(--pill); }
+.pf-asset-img img { width: 100%; height: 100%; object-fit: cover; }
+.pf-initial { font-size: var(--fs-4xl); font-weight: var(--fw-semibold); color: var(--faint); }
+.pf-asset-text { display: grid; gap: var(--space-0-5); min-width: 0; }
+
+/* 画布：填满剩下的高度，自己滚动 */
+.pf-canvas-scroll { overflow: auto; height: max(20rem, calc(100vh - 15rem)); border-radius: var(--r-well); background: var(--well); }
+.pf-canvas { position: relative; width: 1400px; height: 900px; touch-action: none; }
 .pf-canvas svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .pf-canvas line { stroke: var(--fg-2); stroke-width: 2; }
-.pf-node { position: absolute; width: 180px; min-height: 80px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg); padding: var(--space-3); cursor: grab; text-align: start; touch-action: none; }
-.pf-node[aria-pressed="true"] { outline: 2px solid var(--fg); }
-.pf-node small { display: block; overflow-wrap: anywhere; }
-.pf-list { display: grid; gap: var(--space-2); }
-.pf-list > article { border-bottom: 1px solid var(--line); padding: var(--space-3) 0; }
-.pf-empty { padding: var(--space-5); }
-@media (max-width: 700px) { .pf-columns { grid-template-columns: 1fr; } .pf-summary { gap: var(--space-2); } }
+.pf-node { position: absolute; width: 180px; min-height: 80px; border: 0; border-radius: var(--r-md); background: var(--surface-solid); box-shadow: var(--shadow-float); padding: var(--space-3); color: var(--fg); font: inherit; cursor: grab; text-align: start; touch-action: none; }
+.pf-node[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent), var(--shadow-float); }
+.pf-node small { display: block; color: var(--muted); overflow-wrap: anywhere; }
+
+/* 成片、任务、历史 */
+.pf-exports { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); gap: var(--space-4); }
+.pf-export { display: grid; gap: var(--space-2); min-width: 0; }
+.pf-list { display: grid; gap: var(--space-3); }
+.pf-list > article { display: grid; gap: var(--space-1); justify-items: start; }
+
+/* 分镜表：表格不画格子，只有表头下沿一道细线；选中的一行深一级。画面列是一张小图 */
+.pf-sheet-wrap { overflow-x: auto; }
+.pf-sheet { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.pf-sheet th { padding: var(--space-1-5) var(--space-2); text-align: start; font-weight: var(--fw-medium); color: var(--fg-2); white-space: nowrap; border-bottom: 1px solid var(--line-2); }
+.pf-sheet td { padding: var(--space-2); vertical-align: top; }
+.pf-sheet td p { margin: var(--space-0-5) 0 0; line-height: var(--lh-snug); }
+.pf-sheet .num { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pf-sheet td.num .pf-meta { display: block; }
+.pf-sheet tbody tr { cursor: pointer; transition: background var(--t-fast); }
+.pf-sheet tbody tr:hover { background: var(--side-hover); }
+.pf-sheet tbody tr.on { background: var(--side-active); }
+.pf-sheet tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.pf-sheet-no { font-weight: var(--fw-semibold); }
+.pf-sheet-img { display: block; width: 6.5rem; aspect-ratio: 16 / 10; overflow: hidden; border-radius: var(--r-sm); background: var(--pill); }
+.pf-sheet-img img { width: 100%; height: 100%; object-fit: cover; }
+.pf-sheet-media { display: grid; gap: var(--space-0-5); white-space: nowrap; font-size: var(--fs-xs); }
+
+@media (max-width: 760px) {
+  .pf-columns, .pf-detail { grid-template-columns: minmax(0, 1fr); }
+  .pf-asset.on { grid-template-columns: minmax(0, 1fr); }
+  .pf-asset.on > * { grid-column: auto !important; }
+}

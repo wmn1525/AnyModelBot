@@ -1,5 +1,5 @@
 // media：zh 与 en 的键必须一一对应（en 的类型由 zh 推出，少一个多一个都过不了类型检查）。
-// 只有给用户看的部分（生成前的确认、参考价）在这里；工具结果与错误是给模型看的，留在 media.ts。
+// 只有给用户看的部分（生成前的确认、参考价）在这里；工具结果与错误是给模型看的，留在 tools/media/index.ts。
 import type { Catalog } from "../types.js";
 
 export const zh = {

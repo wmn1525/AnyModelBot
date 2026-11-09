@@ -45,5 +45,12 @@ export default {
   "openBot": "打开机器人",
   "filters": "筛选",
   "user": "用户",
-  "appChannel": "应用内聊天"
+  "appChannel": "应用内聊天",
+  "recent": "最近对话",
+  "recentDay": {
+    "today": "今天",
+    "yesterday": "昨天",
+    "week": "前 7 天",
+    "earlier": "更早"
+  }
 };

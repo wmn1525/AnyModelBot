@@ -106,6 +106,9 @@ export const isText = (m: RawModel) => m.billing_unit == null;
 export const round6 = (n: number) => Number(n.toFixed(6));
 export const fmtPrice = (n: number, locale = "en-US") => formatUSD(round6(n), locale);
 
+/** 线路前缀：openai-stable / openai-first-topup → openai */
+const routePrefix = (id: string) => id.split("-")[0];
+
 function kindOf(id: string, def?: { kind?: string }): GroupKind {
   if (id.endsWith("-enterprise")) return "enterprise";
   const k = def?.kind;
@@ -119,8 +122,26 @@ export function deriveRows(raw: RawPricing): PriceRow[] {
   // group_ratio 为准（group_ratio 与 group_definitions 的 id 偶有差异）；条件价线路的倍率在 first_topup_offers 里
   const ratioOf = (g: string) => raw.group_ratio[g] ?? offers.get(g)?.ratio ?? defs.get(g)?.ratio;
 
-  return raw.data.filter(isText).map((m) => {
-    const vendor = vendors.get(m.vendor_id ?? -1) ?? "—";
+  // 有的模型没带 vendor_id（如 codex-auto-review），按它的线路前缀（openai-stable → openai）找用同一前缀最多的厂商
+  const text = raw.data.filter(isText);
+  const prefixVotes = new Map<string, Map<string, number>>();
+  for (const m of text) {
+    const v = vendors.get(m.vendor_id ?? -1);
+    if (!v) continue;
+    for (const g of m.enable_groups) {
+      const votes = prefixVotes.get(routePrefix(g)) ?? new Map<string, number>();
+      votes.set(v, (votes.get(v) ?? 0) + 1);
+      prefixVotes.set(routePrefix(g), votes);
+    }
+  }
+  const guessVendor = (groups: string[]) => {
+    const tally = new Map<string, number>();
+    for (const g of groups) for (const [v, n] of prefixVotes.get(routePrefix(g)) ?? []) tally.set(v, (tally.get(v) ?? 0) + n);
+    return [...tally].sort((x, y) => y[1] - x[1])[0]?.[0];
+  };
+
+  return text.map((m) => {
+    const vendor = vendors.get(m.vendor_id ?? -1) ?? guessVendor(m.enable_groups) ?? "—";
     const tiers = baseTiers(m);
     const std = tiers[0];
     const groups: PriceGroup[] = m.enable_groups

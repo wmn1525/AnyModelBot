@@ -1,5 +1,7 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
+  "updateReady": "{version} 버전 다운로드가 완료되었습니다. 준비되면 재시작하여 업데이트하세요.",
+  "updateInstallFailed": "업데이트 설치가 완료되지 않았습니다. 앱을 다시 시작합니다. 잠시 후 다시 시도하세요.",
   "trayOpen": "{product} 열기",
   "trayOpenInBrowser": "브라우저에서 열기",
   "trayAutostart": "로그인 시 실행",

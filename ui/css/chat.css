@@ -17,7 +17,7 @@
   position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column;
 }
 
-/* —— 顶栏：对话页里盖在滚动内容上；内容滚到它底下时（.scrolled）才出现一条细线，不加投影 —— */
+/* —— 顶栏：对话页里盖在滚动内容上，靠毛玻璃和内容分开，不画线、不加投影 —— */
 .chat-head {
   flex: none; display: flex; align-items: center; gap: var(--bar-gap); height: var(--head-h); padding: 0 var(--head-px);
   -webkit-app-region: drag;
@@ -25,10 +25,7 @@
 .chat > .chat-head {
   position: absolute; z-index: var(--z-float); top: 0; left: 0; right: 0;
   background: var(--glass-chrome); backdrop-filter: var(--glass-filter);
-  box-shadow: 0 var(--hairline) 0 transparent;
-  transition: box-shadow var(--t-base);
 }
-.chat.scrolled > .chat-head { box-shadow: 0 var(--hairline) 0 var(--glass-edge); }
 .chat-head > * { -webkit-app-region: no-drag; }
 .chat-head .grow { -webkit-app-region: drag; align-self: stretch; }
 .chat-head .icon-btn { --ib-size: var(--ctl-md); }   /* 16 的图标四周各 6：最右的图标外沿落在 --head-px + 6 = 16，和左边的头像对称 */
@@ -88,28 +85,26 @@ button.head-bot:active { background: var(--pill-press); }
   animation: breathe var(--dur-pulse) var(--ease-in-out) infinite;
 }
 
-/* 回复上方的工作状态：进行中带微光，结束后变成一条细线上的"用时"（细线淡入）。
+/* 回复上方的工作状态：进行中带微光，结束后是一行灰字的"用时"，和正文之间只留间距，不画线。
    外面包一层可以收起的轨道 .work（grid 1fr → 0fr）：很快答完、不显示"用时"的回复，这一行平滑收起，
    正文不会一下跳上去。这是对话流里唯一的布局动画，只播一次 */
 .work { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--t-moderate), opacity var(--t-base); }
 .work.gone { grid-template-rows: 0fr; opacity: 0; }
 .work-in { min-height: 0; overflow: hidden; }
 .work-line {
-  display: flex; align-items: center; gap: var(--space-1-5); padding-bottom: var(--space-2); margin-bottom: var(--space-3);
-  font-size: var(--fs-md); color: var(--muted); border-bottom: 1px solid var(--line-2);
-  transition: border-color var(--t-moderate);
+  display: flex; align-items: center; gap: var(--space-1-5); padding-bottom: var(--space-1); margin-bottom: var(--space-3);
+  font-size: var(--fs-md); color: var(--muted);
 }
-.work-line.live { border-bottom-color: transparent; }
 .msg-row.assistant .work-line:last-child { margin-bottom: 0; }
 
-/* 处理过程（代理回合）：工作状态行可以展开，默认折叠；展开后是一块 --well，步骤之间一条 --line-2。
+/* 处理过程（代理回合）：工作状态行可以展开，默认折叠；展开后是一块 --well，步骤之间不画线。
    每步一行：状态点 + 类别图标 + 名称 + 等宽摘要 + 用时；有参数或输出的步骤再点开看全文 */
 .work-line.toggle { width: 100%; text-align: left; transition: color var(--t-fast); }
 .work-line.toggle:hover { color: var(--fg); }
 .work-line .chev, .act-head .chev { flex: none; transition: transform var(--t-fast); }
 [aria-expanded="true"] > .chev { transform: rotate(90deg); }
 .activity { display: grid; grid-template-columns: minmax(0, 1fr); }
-.activity.open > .work-line { border-bottom-color: transparent; margin-bottom: var(--space-2); }
+.activity.open > .work-line { margin-bottom: var(--space-2); }
 .msg-row.assistant .activity + .notice { margin-top: var(--space-1); }
 /* 一块 --well 里不画行间分隔线：步骤是内缩的行，悬停才浮出底色（与菜单项同一写法：列表离边 --space-1，项再缩 --space-2）；
    展开只是折叠打开：参数和输出直接排在这一行下面，不再套底色或内边距 */
@@ -182,11 +177,10 @@ button.act-head:active { background: var(--pill-hover); }
 .md a { text-decoration: underline; text-underline-offset: 2px; }
 .md .table-wrap { overflow-x: auto; margin: 0 0 var(--space-3); }
 .md table { border-collapse: collapse; font-size: var(--fs-md); line-height: var(--lh-normal); margin: 0; }
-/* 表格不画格子：表头下一条 --line，行与行之间一条 --line-2，没有外框、竖线和表头底色；列靠右边距分开，第一列贴着正文左边 */
+/* 表格不画格子：只有表头下一条 --line-2，行与行之间靠行高分开，没有外框、竖线和表头底色；列靠右边距分开，第一列贴着正文左边 */
 .md th, .md td { padding: var(--space-1-5) var(--space-5) var(--space-1-5) 0; text-align: left; vertical-align: top; }
 .md :is(th, td):last-child { padding-right: 0; }
-.md th { font-weight: var(--fw-semibold); border-bottom: 1px solid var(--line); }
-.md tr + tr > td { border-top: 1px solid var(--line-2); }
+.md th { font-weight: var(--fw-semibold); border-bottom: 1px solid var(--line-2); }
 /* 代码块：一块 --well，不描边 */
 .codeblock { margin: 0 0 var(--space-3); border-radius: var(--r-well); background: var(--well); overflow: hidden; }
 /* 语言名和代码左对齐；复制钮离右边和上边一样远（30 高的条里放 22 的按钮） */
@@ -286,28 +280,27 @@ a.file-card:active, .file-card:has(> .file-open:active) { background: var(--well
 .to-bottom .new { position: absolute; top: 0; right: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 2px var(--surface-solid); }   /* 描边：压在圆钮上的缺口（和底同色），不是边框 */
 .to-bottom .new { animation: fade-in var(--dur-base) var(--ease-out); }
 
-/* —— 输入框：文字区 + 工具栏两行，盖在对话流上的一块面（参考 Codex、Grok）：一道细边 + 很淡的投影。
-   聚焦时只是边深一级，投影不变大；拖入文件时 accent 描边 + 一层淡灰 —— */
+/* —— 输入框：文字区 + 工具栏两行，盖在对话流上的一块实色填充（比主区深一档），不描边、不加投影。
+   拖入文件时再深一级并加一圈淡光晕 —— */
 /* 底座是透明的、不接收指针 */
 .composer-dock {
   position: absolute; z-index: var(--z-float); left: 0; right: 0; bottom: 0; padding: var(--space-12) 0 var(--dock-pb); pointer-events: none;
   overflow: hidden; scrollbar-gutter: stable;
 }
 .composer {
-  --composer-edge: var(--line);
-  --composer-edge-w: 1px;
-  --composer-shadow: var(--drop-float);
+  --composer-bg: color-mix(in srgb, var(--fg) 4.5%, var(--surface-solid));   /* 实色：盖在滚动的内容上，不能透出底下的字 */
+  --composer-shadow: 0 0 transparent;
   --composer-tint: transparent;
   pointer-events: auto; position: relative;
   width: var(--col, auto); margin: 0 auto;
   display: flex; flex-direction: column;
-  background: linear-gradient(var(--composer-tint), var(--composer-tint)), var(--glass-float);
-  backdrop-filter: var(--glass-filter); border-radius: var(--r-3xl);
-  box-shadow: 0 0 0 var(--composer-edge-w) var(--composer-edge), var(--composer-shadow);   /* 描边：输入框的边；聚焦时深一级，拖入文件时换成 accent */
-  transition: box-shadow var(--t-fast);
+  background: linear-gradient(var(--composer-tint), var(--composer-tint)), var(--composer-bg);
+  border-radius: var(--r-3xl);
+  box-shadow: var(--composer-shadow);
+  transition: box-shadow var(--t-fast), background var(--t-fast);
 }
-.composer:focus-within { --composer-edge: var(--line-strong); }
-.composer.drag { --composer-edge: var(--accent); --composer-edge-w: 1.5px; --composer-shadow: var(--ring); --composer-tint: var(--pill); }
+.composer.drag { --composer-shadow: 0 0 0 3px var(--accent-soft); --composer-tint: var(--pill); }   /* 描边：拖入文件时的淡光晕（临时的），告诉你可以松手 */
+@media (forced-colors: active) { .composer { border: 1px solid CanvasText; } }   /* 描边：系统高对比度模式下没有填充，要一道系统色的边 */
 .composer textarea {
   display: block; width: 100%; min-width: 0; border: 0; outline: none; background: transparent; resize: none;
   font-size: var(--fs-xl); line-height: var(--composer-line); padding: var(--space-3-5) var(--space-4) var(--space-1);
@@ -407,3 +400,28 @@ button.task-origin:hover { color: var(--fg); }
 .group-pick.on { background: var(--pill-hover); }
 .group-pick .v { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .group-pick .ic { color: var(--accent); }
+
+@layer app {
+.chat-empty > .group-rules { font-size: var(--fs-sm); color: var(--muted); max-width: var(--col-w); }
+.group-example { white-space: normal; height: auto; padding-block: var(--space-2); text-align: left; overflow-wrap: anywhere; max-width: 100%; }
+
+/* 任务出错（第 9 项）：一句主提示，恢复入口在右边；原始报错折叠在"错误详情"里，长 JSON 不撑破双栏和窄窗口 */
+.notice .err-main { display: block; }
+.notice .err-hint { display: block; color: var(--muted); font-size: var(--fs-xs); margin-top: var(--space-0-5); }
+.notice .err-details { display: block; margin-top: var(--space-1-5); font-size: var(--fs-xs); min-width: 0; }
+.err-details > summary { cursor: pointer; color: var(--muted); width: fit-content; }
+.err-details > summary:hover { color: var(--fg); }
+.err-meta { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); margin-top: var(--space-1); color: var(--muted); }
+.err-meta code { font-family: var(--code); overflow-wrap: anywhere; }
+.err-raw { margin: var(--space-1) 0; max-height: calc(var(--fs-xs) * 12); overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; font-family: var(--code); font-size: var(--fs-2xs); color: var(--fg-2); }
+.notice:has(.err-details) { align-items: flex-start; flex-wrap: wrap; }
+.notice .notice-text { min-width: 0; overflow-wrap: anywhere; }
+
+/* 电脑操作的系统权限（第 18 项）：贴在输入框上面，按缺的那几项列出来 */
+.cu-perm { margin-bottom: var(--space-2); }
+.cu-perm .notice-text { display: grid; gap: var(--space-1-5); }
+.cu-perm-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-1) var(--space-3); }
+.cu-perm-what { display: grid; min-width: 0; }
+.cu-perm-what .hint, .cu-perm .hint { color: var(--muted); font-size: var(--fs-xs); }
+.cu-perm-actions { margin-top: var(--space-0-5); }
+}

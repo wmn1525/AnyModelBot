@@ -1,17 +1,37 @@
 @layer app {
   .route-content { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
-  .route-content[hidden], .message-search[hidden], .chat-tools[hidden] { display: none; }
-  .message-search { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
-  .search-head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--page-gutter); }
+  .route-content[hidden], .search-scrim[hidden], .chat-tools[hidden] { display: none; }
+  /* 搜索弹窗：靠上居中（像 Spotlight），高度固定，最近对话和搜索结果来回切换时弹窗不跳；里面头部固定、列表滚动 */
+  .search-scrim { place-items: start center; padding-top: max(var(--float-inset), 10vh); }
+  .search-dialog {
+    --sheet-w: 680px;
+    height: min(620px, calc(100vh - max(var(--float-inset), 10vh) - var(--float-inset)));
+    display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden;
+  }
+  .search-head { flex: none; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5); border-bottom: 1px solid var(--line); color: var(--muted); }
   .search-input { flex: 1; min-width: 0; font-size: var(--fs-lg); background: transparent; color: var(--fg); border: 0; outline: none; }
-  .search-input:focus-visible { box-shadow: var(--ring); border-radius: var(--r-sm); }
-  .search-filters { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0 var(--page-gutter) var(--space-3); border-bottom: 1px solid var(--line-2); }
+  .search-input::-webkit-search-cancel-button { display: none; }
+  /* 筛选收在按钮里，点开才出现；用了几个筛选，按钮上写着个数 */
+  .search-filters { flex: none; display: none; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-5); border-bottom: 1px solid var(--line); }
+  .search-filters.open { display: flex; }
   .search-filter { min-width: 0; max-width: 100%; }
-  .search-filter-toggle { display: none; }
+  .search-filter-toggle.on { color: var(--fg); background: var(--pill-hover); }
   .search-filter .field { max-width: 100%; min-width: 0; font-size: var(--fs-sm); }
-  .search-results { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-3) var(--page-gutter) var(--space-8); }
-  .search-result { display: grid; width: 100%; gap: var(--space-2); padding: var(--space-4) var(--space-2); border-bottom: 1px solid var(--line-2); text-align: start; color: var(--fg); border-radius: var(--r-sm); }
-  .search-result:hover, .search-result:focus-visible { background: var(--well); }
+  .search-results { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-2) var(--space-3) var(--space-4); scroll-padding-block: var(--space-2); }
+  .search-result { display: grid; width: 100%; gap: var(--space-2); padding: var(--space-3) var(--space-3); text-align: start; color: var(--fg); border-radius: var(--r-md); }
+  .search-result:hover, .search-result:focus-visible, .search-result.selected { background: var(--well); }
+  /* 没输入时：最近对话，按今天 / 昨天 / 前 7 天 / 更早分组；一行是头像、名字和最后一句话、时间 */
+  .search-recent { display: grid; }
+  .search-recent-day { padding: var(--space-3) var(--space-3) var(--space-1); color: var(--muted); }
+  .search-recent-row { display: flex; align-items: center; gap: var(--space-3); width: 100%; min-width: 0; padding: var(--space-2) var(--space-3); text-align: start; color: var(--fg); border-radius: var(--r-md); }
+  .search-recent-row:hover, .search-recent-row.selected, .search-recent-row:focus-visible { background: var(--well); }
+  .search-recent-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .search-recent-avatar { flex: none; display: grid; place-items: center; width: 32px; height: 32px; color: var(--muted); }
+  .search-recent-main { flex: 1; min-width: 0; display: grid; gap: var(--space-0-5); }
+  .search-recent-name, .search-recent-snippet { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .search-recent-name { font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+  .search-recent-snippet { font-size: var(--fs-xs); color: var(--fg-2); }
+  .search-recent-time { flex: none; align-self: flex-start; margin-top: var(--space-0-5); font-size: var(--fs-xs); color: var(--muted); }
   .search-result:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .search-result-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); font-size: var(--fs-sm); }
   .search-result-head strong { overflow-wrap: anywhere; }
@@ -21,12 +41,12 @@
   .search-result-body { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; line-height: var(--lh-relaxed); }
   .search-author { color: var(--fg-2); }
   .search-result mark, .search-names mark { color: var(--on-mark); background: var(--mark); border-radius: var(--r-xs); }
-  .search-empty { display: grid; justify-items: start; gap: var(--space-3); padding: var(--space-8) 0; color: var(--fg-2); }
+  .search-empty { display: grid; justify-items: start; gap: var(--space-3); padding: var(--space-8) var(--space-3); color: var(--fg-2); }
   .search-empty h2 { color: var(--fg); font-size: var(--fs-lg); }
-  .search-names { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); }
-  .search-count { display: flex; align-items: center; gap: var(--space-2); margin-block: var(--space-3); }
+  .search-names { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); padding: var(--space-2) var(--space-3) 0; }
+  .search-count { display: flex; align-items: center; gap: var(--space-2); margin-block: var(--space-3); padding-inline: var(--space-3); }
   .search-more, .history-page { align-self: center; margin: var(--space-4) auto; }
-  .chat-tools { flex: none; margin-top: var(--head-h); padding: 0 var(--head-px); border-bottom: 1px solid var(--line-2); background: var(--surface); }
+  .chat-tools { flex: none; margin-top: var(--head-h); padding: 0 var(--head-px); background: var(--surface); }
   .has-chat-tools .chat-col { padding-top: var(--space-4); }
   .has-chat-tools .chat-scroll { scroll-padding-top: var(--space-4); }
   .conversation-find { display: flex; align-items: center; gap: var(--space-1); padding: var(--space-2) 0; }
@@ -38,14 +58,15 @@
   .message-located { background: var(--mark); border-radius: var(--r-md); }
   ::highlight(amb-chat-search) { background: var(--mark); color: var(--on-mark); }
   @media (max-width: 600px) {
-    .app.searching, .app.search-reading { grid-template-columns: minmax(0, 1fr); }
-    .app.searching > .side, .app.search-reading > .side, .app.searching > .split-side, .app.search-reading > .split-side { display: none; }
-    .app.searching > .main, .app.search-reading > .main { grid-area: 1 / 1; margin: var(--pane-gap); }
-    .search-filter-toggle { display: inline-flex; }
-    .search-filters { display: none; }
-    .search-filters.open { display: flex; }
+    .app.search-reading { grid-template-columns: minmax(0, 1fr); }
+    .app.search-reading > .side, .app.search-reading > .split-side { display: none; }
+    .app.search-reading > .main { grid-area: 1 / 1; margin: var(--pane-gap); }
+    /* 手机宽度：弹窗铺满 */
+    .search-scrim { padding: 0; }
+    .search-dialog { width: 100%; height: 100%; max-height: none; border-radius: 0; }
     .search-head { padding-inline: var(--space-3); }
-    .search-filters, .search-results { padding-inline: var(--space-3); }
+    .search-filters { padding-inline: var(--space-3); }
+    .search-results { padding-inline: var(--space-1); }
     .find-count { max-width: 6em; white-space: normal; }
     .search-result-head time { width: 100%; margin-inline-start: 0; }
   }

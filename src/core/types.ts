@@ -2,7 +2,7 @@
  * 统一消息/事件模型：渠道把平台消息归一化成 InboundEvent，
  * 运行时只产出 OutboundOp，由渠道按自身能力（ChannelCapabilities）落地或降级。
  */
-import type { ActivityStep } from "../agent/activity.js";
+import type { ActivityStep } from "../domain/activity.js";
 import { t, type MessageKey } from "../i18n/index.js";
 
 /** 同一套接法的聊天平台（channels/messenger）：填 token 连上，单聊，流式靠改消息 */

@@ -19,8 +19,8 @@ vi.mock("node:child_process", async (orig) => {
   return { ...real, default: { ...real, execFile }, execFile };
 });
 
-import { PwshProbe, findPwsh, parsePwshVersion, pwshPatchLines, pwshReportLine, pwshStatusLine, readPwshVersion, PWSH_WINGET, type PwshDeps } from "../src/agent/pwsh.js";
-import { PrivatePwsh, depsJsonVersion, type Runner } from "../src/agent/pwsh-private.js";
+import { PwshProbe, findPwsh, parsePwshVersion, pwshPatchLines, pwshReportLine, pwshStatusLine, readPwshVersion, PWSH_WINGET, type PwshDeps } from "../src/tools/pwsh/index.js";
+import { PrivatePwsh, depsJsonVersion, type Runner } from "../src/tools/pwsh/private.js";
 import { App } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 

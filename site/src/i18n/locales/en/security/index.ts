@@ -10,7 +10,7 @@ export default {
     "Modelflare keeps request logs for a retention period (you can pick 7–365 days in your profile) per its “Data retention” doc; when a request ultimately fails, or a route fails before a fallback succeeds, the gateway keeps one copy of the raw request (without the Authorization header) for troubleshooting and deletes it after 72 hours (same doc).",
     "Messages in Slack, Telegram and Discord pass through those platforms' servers by nature.",
     "If you add a Notion account, what bots read and write goes to Notion, and what they read also goes into model requests.",
-    "The desktop app asks GitHub for the latest version number every 6 hours. The request carries only your current version, with no account or chat content. You download and install new versions yourself."
+    "Installed desktop apps check GitHub for updates after startup and every 6 hours, and download update files in the background by default. You can turn automatic downloads off in Settings → General. Requests contain no account credentials or chat content. Installation requires you to click Restart and update, with no tasks running."
   ],
   "guardsTitle": "Safeguards in the code",
   "limitsTitle": "Limits and promises we don't make",

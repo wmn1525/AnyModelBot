@@ -57,7 +57,7 @@
 
 - 模型请求由内置的 magpie 网关发往 Modelflare，再由 Modelflare 转给你选定的模型供应商。
 - 请求里包含模型回答所需的内容：提示词、对话上下文、被用到的记忆、文件内容、工具结果，以及电脑操作时的截图。
-- 请求带有 `X-Modelflare-Skill: anymodel-bot/<版本>` 头，用于在 Modelflare 侧标识来源；应用里打开的 Modelflare 链接带 `utm_source=anymodelbot`。
+- 请求带有 `X-Modelflare-Skill: anymodel-bot/<版本>` 头，用于在 Modelflare 侧标识来源；应用里打开的 Modelflare 链接带 `utm_source=anymodelbot`。 从应用打开充值页时，网址 `#` 后面带着登录时 ID Token 里的账户标识（`#amb_account=…`，不是密钥），Modelflare 网页据此核对浏览器里登录的是不是同一个账户；`#` 后面的内容不会发给服务器、CDN 或统计脚本。「已切换 Key 配置」的提示只在本机用随机盐对 Key 算 HMAC 做比较，不保存、也不上传 Key 或它的摘要。
 - Modelflare 会保留请求日志；保留什么、保留多久，见 [Modelflare 信任中心](https://modelflare.dev/trust?utm_source=anymodelbot&utm_campaign=amb_readme)。各模型供应商对数据的处理，以它们各自的条款为准。
 
 ## 用自己的官方 API Key
@@ -85,6 +85,8 @@
 - 飞书渠道：与飞书开放平台保持长连接。
 - Telegram、Slack、Discord 渠道：接入后与 `api.telegram.org`、`slack.com`、`discord.com` 及其文件地址通信，用来收发消息和你发来的文件。
 - Windows 上开启代理模式且系统里没有可用的 PowerShell 7 时，从微软官方发布地址下载 PowerShell 7（可用 `AMB_PWSH_AUTO_INSTALL=0` 关闭，详见[开发文档](./development.md)）。
+- 桌面安装版启动后及每 6 小时向 GitHub 检查应用更新，默认后台下载更新文件；可在「设置 → 常规」关闭自动下载。请求不带账户凭据或聊天内容，安装需要你点击「重启并更新」，且没有正在运行的任务。
+- 查看还没安装的新版本「更新了什么」时，从 GitHub（`raw.githubusercontent.com`）读取那个版本的更新日志。只在你点开时请求，不带账户凭据或聊天内容；已安装版本的更新日志随应用打包，不联网。
 - 仅当你显式设置 `AMB_CATALOG_URL` 使用远程 Bot 目录时，才会读取远程列表并按需下载经过签名和哈希校验的包，不上传你的数据。默认的官方 Bot 目录、界面、示例数据和技能均随应用内置，打开和安装不发起这些网络请求。
 
 ## 电脑操作与截图

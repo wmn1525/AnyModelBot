@@ -11,8 +11,6 @@ export default {
   app: {
     sample: "示例",
     placeholder: "说一句，界面就会变",
-    send: "发送",
-    stop: "停止",
     conversation: "完整对话",
     info: "信息",
     uiFailed: "界面出了问题，已切换到对话。",
@@ -20,6 +18,9 @@ export default {
     openUrlConfirm: "打开",
     removed: "这个 Bot 已下架，你的数据还在。",
     removedSecurity: "这个 Bot 因安全原因已下架，它的技能已经停用，你的数据还在。",
+    starters: "可以这样开始",
+    more: "展开",
+    less: "收起",
   },
   info: { what: "能做什么", skills: "用到的技能", perms: "需要的权限", settings: "机器人设置" },
   perm: {
@@ -28,6 +29,12 @@ export default {
     "channel-send": "主动发消息到聊天渠道",
     "computer-use": "操作电脑",
     accounts: "使用你授权的账号",
+  },
+  view: { label: "怎么看", app: "工作台", chat: "对话" },
+  intro: {
+    hello: "你好，我是{name}。",
+    try: "可以这样开始",
+    note: "也可以直接说你想做什么。发出第一条消息后我才开始工作，现在看到的都是示例。",
   },
   tip: { kept: "{name} 留在「我的」了，明天还在" },
   remove: {

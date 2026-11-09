@@ -20,6 +20,12 @@ const block = (name: string) => {
 const keysOf = (b: string) => [...b.matchAll(/^ {2}(\w+): \{$/gm)].map((m) => m[1]);
 const base = keysOf(block("BOT_CHARS"));
 const experts = keysOf(block("EXPERT_CHARS"));
+const numsOf = (s: string, re: RegExp) => {
+  const m = s.match(re);
+  if (!m) throw new Error(`没有找到 ${re}`);
+  return m[1].split(",").map((n) => Number(n.trim())).sort((a, b) => a - b);
+};
+const tiers = numsOf(src, /export const SPRITE_TIERS = \[([\d, ]+)\];/);
 
 describe("头像角色", () => {
   it("基础 6 个，专家 12 个，服务端认的和界面一样", () => {
@@ -35,6 +41,7 @@ describe("头像角色", () => {
     const zh = read("ui/locales/zh-CN/avatar.js");
     for (const k of [...base, ...experts]) {
       expect(fs.existsSync(path.join(process.cwd(), `ui/design/bots/${k}.webp`)), `${k}.webp`).toBe(true);
+      for (const t of tiers) expect(fs.existsSync(path.join(process.cwd(), `ui/design/bots/${k}@${t}.webp`)), `${k}@${t}.webp`).toBe(true);
       expect(tokens).toContain(`--bot-${k}-eye:`);
       expect(tokens).toContain(`--bot-${k}-glow:`);
       expect(zh).toMatch(new RegExp(`\\b${k}: \\{ name:`));
@@ -63,6 +70,15 @@ describe("头像角色", () => {
     const nums = block("BOT_CHARS").replace(/(name|role|pick): "[^"]*",?/g, "").match(/-?\d+(?:\.\d+)?/g) ?? [];
     const hash = crypto.createHash("sha256").update(nums.join(",")).digest("hex").slice(0, 16);
     expect(read("site/src/lib/bots.ts")).toContain(`BOT_CHARS_HASH = "${hash}"`);
-    expect(read("site/scripts/sync-from-app.ts")).toContain("siteChars.has(path.parse(f).name)");
+    expect(read("site/scripts/sync-from-app.ts")).toContain("siteChars.has(path.parse(f).name.split(\"@\")[0])");
+  });
+
+  it("精灵图分档在生成脚本、App 和官网是同一套数，官网有每一档的 WebP 和 AVIF", () => {
+    expect(tiers.length).toBeGreaterThan(0);
+    expect(numsOf(read("scripts/build-bot-avatars.py"), /^TIERS = \(([\d, ]+)\)/m)).toEqual(tiers);
+    expect(numsOf(read("site/src/lib/bots.ts"), /export const SPRITE_TIERS = \[([\d, ]+)\];/)).toEqual(tiers);
+    for (const k of base)
+      for (const t of ["", ...tiers.map((n) => `@${n}`)])
+        for (const ext of ["webp", "avif"]) expect(fs.existsSync(path.join(process.cwd(), `site/public/bots/${k}${t}.${ext}`)), `${k}${t}.${ext}`).toBe(true);
   });
 });

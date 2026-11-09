@@ -23,6 +23,10 @@ export default {
   login_fetching: "Получаем QR-код…",
   login_scanned: "Код отсканирован. Подтвердите в WeChat",
   login_need_code: "Введите код подтверждения из WeChat",
+  login_code_wrong: "Код не совпадает. Сверьтесь с числом в WeChat и введите его снова",
+  login_verifying: "Проверяем…",
+  login_code_blocked: "Слишком много неверных кодов. Отсканируйте новый QR-код ({n}/{max})",
+  login_code_blocked_stop: "Слишком много неверных кодов. Попробуйте войти позже",
   login_already_bound: "Этот аккаунт WeChat уже привязан к боту",
   login_qr_expired_too_often:
     "QR-код истекал слишком много раз. Начните заново",

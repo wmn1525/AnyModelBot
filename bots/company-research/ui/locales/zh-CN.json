@@ -13,6 +13,9 @@
   "jobs.sampleNote": "虚构公司，仅作示例",
   "detail.empty": "输入公司名开始第一份尽调。",
   "job.stale": "这个任务已经很久没有进展，可能中断了。可以点“继续”接着做。",
+  "job.failedShort": "这次调研没有完成。原因见对话里的提示。",
+  "job.errorDetails": "错误详情",
+  "job.copyDetails": "复制详情",
   "status.pending": "等待中",
   "status.grounding": "定位公司",
   "status.researching": "四路研究",
@@ -67,5 +70,16 @@
   "action.openPdf": "打开 PDF",
   "action.delete": "删除 {company} 的尽调记录",
   "action.deleteLabel": "删除",
-  "action.deleteConfirm": "确认删除"
+  "action.deleteConfirm": "确认删除",
+  "jobs.title": "尽调任务",
+  "jobs.new": "新建",
+  "jobs.newTitle": "新建尽调",
+  "jobs.newSub": "写上公司名就能开始，补充官网和行业能定位得更准",
+  "form.cancel": "取消",
+  "form.hint": "也可以直接在下面的输入框里说，比如：对 Stripe 做完整尽调。",
+  "tab.process": "流程",
+  "sources.filter": "按领域筛选",
+  "sources.all": "全部",
+  "sources.usedOnly": "只看引用的",
+  "sources.none": "没有符合条件的来源"
 }

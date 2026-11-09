@@ -14,7 +14,8 @@ export default {
       "points": [
         "Desktop, Docker and CLI are all free",
         "No subscription, no plan tiers",
-        "Create as many bots as you like, each one defined by you"
+        "Create as many bots as you like, each one defined by you",
+        "New Modelflare accounts get $1 in Bot credits, usable only in AnyModelBot"
       ]
     },
     "usage": {
@@ -24,7 +25,8 @@ export default {
       "points": [
         "Priced per token, input and output separately",
         "Public price list",
-        "Switch models any time; price follows the model"
+        "Switch models any time; price follows the model",
+        "Modelflare subscriptions add Bot credits worth 10% of the plan"
       ],
       "cta": "See the full price list ↗"
     },
@@ -76,7 +78,7 @@ export default {
     "caption": "Modelflare text model prices (default route, USD per 1M tokens)",
     "col": {
       "model": "Model",
-      "route": "Route",
+      "route": "Default route",
       "input": "Input / 1M",
       "output": "Output / 1M",
       "official": "Official (in / out)",

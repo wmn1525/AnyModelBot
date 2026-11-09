@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import { cuaConfig, cuaMcpEnv, cuaRoots, CUA_INPUT_TOOLS, CUA_READ_TOOLS, CUA_TOOLS, detectCua, linuxDesktopApps, uniqueApps, windowsAppsFrom, type CuaProbe } from "../src/agent/cua-driver.js";
+import { cuaConfig, cuaMcpEnv, cuaRoots, CUA_INPUT_TOOLS, CUA_READ_TOOLS, CUA_TOOLS, detectCua, linuxDesktopApps, uniqueApps, windowsAppsFrom, type CuaProbe } from "../src/tools/computer-use/cua-driver.js";
 import { Store } from "../src/store/db.js";
 import { skillZip } from "./skill-fixture.js";
 // @ts-expect-error 构建脚本是无类型的原生 ES 模块

@@ -126,6 +126,10 @@ export class GroupChats {
     return this.active.has(groupId);
   }
 
+  hasActive(): boolean {
+    return this.active.size > 0;
+  }
+
   /** 正在回答的机器人；没有返回空串 */
   current(groupId: string): string {
     return this.active.get(groupId)?.current ?? "";

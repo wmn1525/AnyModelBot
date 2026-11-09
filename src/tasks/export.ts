@@ -2,8 +2,8 @@
  * 导出成 Markdown（3f）：规则的运行记录、任务的每次运行（结果、花费和折叠起来的处理过程）。
  * 给人看的文字跟着当前语言（接口用请求里的语言），时间按主人的时区写成 2026-11-01 08:00。写库、取数据的是任务服务。
  */
-import type { ActivityStep } from "../agent/activity.js";
-import { localParts } from "../core/quiet.js";
+import type { ActivityStep } from "../domain/activity.js";
+import { localParts } from "../domain/quiet.js";
 import { t as tr, tMaybe } from "../i18n/index.js";
 import { usdText } from "./cost.js";
 import type { RuleRunView, RuleView } from "./rules.js";

@@ -32,6 +32,10 @@ export interface LoginSnapshot {
   qrDataUrl?: string;
   qrPngPath?: string;
   refreshCount: number;
+  /** 验证码已交上去，正在等服务端答复（界面上输入框先禁用、显示"正在验证"） */
+  verifying?: boolean;
+  /** 上一次交的验证码不对（服务端带着验证码查回来还是要验证码） */
+  codeError?: boolean;
 }
 
 export interface LoginResult {
@@ -44,7 +48,8 @@ export interface LoginResult {
 export class WeixinLogin {
   snapshot: LoginSnapshot = { state: "idle", message: "", refreshCount: 0 };
   private abort = new AbortController();
-  private verifyCode: string | undefined;
+  /** 正在等用户输入验证码时，交上来的验证码从这里递给轮询循环 */
+  private codeWaiter: ((code: string) => void) | undefined;
   private onUpdate: ((s: LoginSnapshot) => void) | undefined;
 
   constructor(
@@ -67,8 +72,36 @@ export class WeixinLogin {
     this.onUpdate?.(this.snapshot);
   }
 
-  submitVerifyCode(code: string): void {
-    this.verifyCode = code.trim();
+  /** 交验证码：只在等验证码的时候收（早到、重复交的不算），收下后循环立刻带着它去查 */
+  submitVerifyCode(code: string): boolean {
+    const c = code.trim();
+    const waiter = this.codeWaiter;
+    if (!c || !waiter) return false;
+    this.codeWaiter = undefined;
+    // 先改状态再交给循环：接口这次的回复里就是"正在验证"
+    this.set({ verifying: true, codeError: false, message: t("channel.login_verifying") });
+    waiter(c);
+    return true;
+  }
+
+  /**
+   * 等用户输入手机上显示的数字。等的时候不去查状态：不带验证码的查询服务端会挂着不回（约 30 秒），
+   * 用户交了验证码也得等它回来才能发出去（同 openclaw-weixin：读到验证码后立即带着它查询）。
+   * 取消或整个登录超时返回 undefined。
+   */
+  private nextCode(signal: AbortSignal, deadline: number): Promise<string | undefined> {
+    return new Promise((resolve) => {
+      const done = (code: string | undefined) => {
+        clearTimeout(timer);
+        signal.removeEventListener("abort", onAbort);
+        this.codeWaiter = undefined;
+        resolve(code);
+      };
+      const onAbort = () => done(undefined);
+      const timer = setTimeout(() => done(undefined), Math.max(0, deadline - Date.now()));
+      signal.addEventListener("abort", onAbort, { once: true });
+      this.codeWaiter = done;
+    });
   }
 
   cancel(): void {
@@ -89,52 +122,69 @@ export class WeixinLogin {
       qt.generate(content, { small: true }, (s: string) => process.stdout.write(`\n${t("channel.login_terminal_scan")}\n${s}\n`));
       if (this.opts.pngPath) process.stdout.write(`${t("channel.login_terminal_saved", { path: this.opts.pngPath })}\n`);
     }
-    this.set({ state: "wait", message: t("channel.login_wait"), qrContent: content, qrDataUrl, qrPngPath: this.opts.pngPath });
+    this.set({ state: "wait", message: t("channel.login_wait"), qrContent: content, qrDataUrl, qrPngPath: this.opts.pngPath, verifying: false, codeError: false });
     return qr.qrcode;
   }
 
   /** 运行完整登录流程，成功返回凭据，失败/取消返回 undefined。 */
   async run(): Promise<LoginResult | undefined> {
     const signal = this.abort.signal;
-    let client = new IlinkClient({ baseUrl: this.opts.apiBaseUrl, fetchImpl: this.opts.fetchImpl });
+    // 取二维码总在固定地址；扫码后服务端可能让轮询换到另一个机房（scaned_but_redirect），换了新二维码再回到固定地址
+    const home = new IlinkClient({ baseUrl: this.opts.apiBaseUrl, fetchImpl: this.opts.fetchImpl });
+    let client = home;
     const deadline = Date.now() + LOGIN_TIMEOUT_MS;
     let refreshCount = 0;
     try {
       this.set({ state: "fetching", message: t("channel.login_fetching"), refreshCount });
-      let qrcode = await this.showQr(client);
+      let qrcode = await this.showQr(home);
+      /** 下一次查询要带上的验证码（用户刚交的） */
+      let code: string | undefined;
+      let last = "wait";
       while (!signal.aborted && Date.now() < deadline) {
-        let st: QrStatusResp;
-        const code = this.verifyCode;
-        st = await client.getQrCodeStatus(qrcode, code, 35_000, signal);
-        if (code && this.verifyCode === code) this.verifyCode = undefined;
+        const sent = code;
+        code = undefined;
+        const st: QrStatusResp = await client.getQrCodeStatus(qrcode, sent, 35_000, signal);
+        // 状态变了才记（排查"扫了没反应"时能看出停在哪一步）
+        if (st.status !== last || sent) log.info("qr status", { status: st.status, withCode: !!sent });
+        last = st.status;
         switch (st.status) {
           case "wait":
+            // 带着验证码的那次请求没发出去（网络错误）：下次再带上；服务端还没给结论就接着等，界面保持"正在验证"
+            if (sent && st.failed) code = sent;
             break;
           case "scaned":
-            if (this.snapshot.state !== "scaned") this.set({ state: "scaned", message: t("channel.login_scanned") });
+            if (this.snapshot.state !== "scaned" || this.snapshot.verifying) this.set({ state: "scaned", message: t("channel.login_scanned"), verifying: false, codeError: false });
             break;
-          case "need_verifycode":
-            if (this.snapshot.state !== "need_verifycode") this.set({ state: "need_verifycode", message: t("channel.login_need_code") });
-            break;
+          case "need_verifycode": {
+            // 带着验证码查回来还是要验证码：输错了，让用户重输
+            this.set({ state: "need_verifycode", message: t(sent ? "channel.login_code_wrong" : "channel.login_need_code"), verifying: false, codeError: !!sent });
+            code = await this.nextCode(signal, deadline);
+            continue; // 立刻带着验证码查，不等那 1 秒（取消、超时时 while 条件会结束循环）
+          }
           case "scaned_but_redirect":
             if (st.redirect_host) {
               client = new IlinkClient({ baseUrl: `https://${st.redirect_host}`, fetchImpl: this.opts.fetchImpl });
               log.info("IDC redirect", { host: st.redirect_host });
-            }
+            } else log.warn("scaned_but_redirect without redirect_host, keep polling the current host");
             break;
           case "binded_redirect":
             this.set({ state: "already_bound", message: t("channel.login_already_bound") });
             return undefined;
           case "expired":
-          case "verify_code_blocked":
+          case "verify_code_blocked": {
+            const blocked = st.status === "verify_code_blocked";
             refreshCount++;
             if (refreshCount > MAX_QR_REFRESH) {
-              this.set({ state: "failed", message: t("channel.login_qr_expired_too_often") });
+              this.set({ state: "failed", message: t(blocked ? "channel.login_code_blocked_stop" : "channel.login_qr_expired_too_often") });
               return undefined;
             }
-            this.set({ refreshCount, message: t("channel.login_qr_refreshing", { n: refreshCount, max: MAX_QR_REFRESH }) });
-            qrcode = await this.showQr(client);
+            this.set({ refreshCount, verifying: false, message: t(blocked ? "channel.login_code_blocked" : "channel.login_qr_refreshing", { n: refreshCount, max: MAX_QR_REFRESH }) });
+            client = home;
+            qrcode = await this.showQr(home);
+            // 输错太多次换了新码：让"输错太多次"这句话留在新二维码下面，不然用户不知道为什么要重扫
+            if (blocked) this.set({ message: t("channel.login_code_blocked", { n: refreshCount, max: MAX_QR_REFRESH }) });
             break;
+          }
           case "confirmed": {
             if (!st.ilink_bot_id || !st.bot_token) {
               this.set({ state: "failed", message: t("channel.login_no_token") });

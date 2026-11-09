@@ -61,7 +61,7 @@ export function modelInfo() {
   return out;
 }
 
-/** 图片 / 视频模型（GET /media/models，按推荐顺序）与生图确认卡里的参考价（src/agent/media.ts priceNote） */
+/** 图片 / 视频模型（GET /media/models，按推荐顺序）与生图确认卡里的参考价（src/tools/media/index.ts priceNote） */
 export const MEDIA = {
   image: ["gemini-2.5-flash-image", "gpt-image-2", "seedream-5-0-lite-260128", "wan2.7-image"],
   video: ["kling-3.0-turbo", "seedance-2.0-fast", "wan2.7-t2v"],

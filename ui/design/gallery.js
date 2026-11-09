@@ -338,7 +338,7 @@ const STATE_ROWS = [
     ["空", () => html`<button type="button" class="send" disabled aria-label="发送"><${Icon} name="up" size="md" strong /></button>`],
     ...basic((c) => html`<button type="button" class=${`send ${c}`} aria-label="发送"><${Icon} name="up" size="md" strong /></button>`),
     ["停止", () => html`<button type="button" class="send stop" aria-label="停止"><${Icon} name="stop" size="md" /></button>`]] },
-  { name: "对话输入框", note: ".composer · 输入中描边更实、投影更大；拖入文件时 accent 描边 + 一层淡灰", cells: [["默认", () => composer("")], ["悬停", () => composer("is-hover")], ["输入中", () => composer("is-focus")], ["拖入文件", () => composer("drag")]] },
+  { name: "对话输入框", note: ".composer · 一块比主区深一档的实色，不描边；拖入文件时再深一级 + 一圈淡光晕", cells: [["默认", () => composer("")], ["悬停", () => composer("is-hover")], ["输入中", () => composer("is-focus")], ["拖入文件", () => composer("drag")]] },
   { name: "输入框工具", note: ".composer .model-chip / .plus · 打开时箭头翻转、加号转成叉", cells: [
     ...basic((c) => html`<div class="composer gal-bare"><button type="button" class=${`model-chip ${c}`}><span class="v">claude-sonnet-5-5</span><${Icon} name="chevDown" /></button></div>`),
     ["打开", () => html`<div class="composer gal-bare"><button type="button" class="model-chip" aria-expanded="true"><span class="v">claude-sonnet-5-5</span><${Icon} name="chevDown" /></button></div>`],
@@ -504,7 +504,7 @@ function Gallery() {
    utilities   .t-*（文字角色）.stack .cluster .grow .truncate .tone-* */`}>
           ${() => html`<${Notice} action=${html`<a class="btn" href="#custom">看定制示例</a>`}>写新界面前先在这里找现成的 token 和组件；找不到再加，并且加在 token 文件里。<//>`}
         <//>
-        <${Demo} col title="容器与层次" note="一组东西 = 底色深一级（--well）+ 间距；里面不再套框；描边只留给输入框（≥ 3:1）和浮层玻璃" code=${`.card { background: var(--well); border-radius: var(--r-well); }        /* 不描边、不加投影 */
+        <${Demo} col title="容器与层次" note="一组东西 = 底色深一级（--well）+ 间距；里面不再套框、行间不画线；常驻的边只留给浮层玻璃" code=${`.card { background: var(--well); border-radius: var(--r-well); }        /* 不描边、不加投影 */
 .card .cmd { font-family: var(--code); }                                /* 卡片里的命令是一行等宽字，不再套底 */
 .notice.red { --notice-bg: var(--red-wash); --notice-ic: var(--red); }  /* 提示：淡底 + 图标 + --fg 字，不描边、无色条 */`}>
           ${() => html`<div class="card"><div class="meta">需要你的批准 · <span class="num">A7K2</span></div><div class="q">机器人想在工作区之外写入文件</div>
@@ -607,7 +607,7 @@ const { mounted, leaving } = usePresence(open);   /* design/motion.js：退场�
       <//>
 
       <${Section} id="inputs" title="输入">
-        <${Demo} col title=".field" note="唯一常驻描边的控件：--ctl-edge 对所在表面 ≥ 3:1；聚焦：accent 描边 + --ring 光晕" code=${`<input class="field mono err" />  <div class="field-wrap"><input class="field" /><span class="tail">…</span></div>`}>
+        <${Demo} col title=".field" note="一块 --fill-field 填充，不描边；悬停、聚焦深一级，聚焦再加一圈淡光晕；错误铺淡红" code=${`<input class="field mono err" />  <div class="field-wrap"><input class="field" /><span class="tail">…</span></div>`}>
           ${() => html`<${FieldDemo} />`}
         <//>
       <//>

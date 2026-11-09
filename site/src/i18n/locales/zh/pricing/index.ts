@@ -14,7 +14,8 @@ export default {
       "points": [
         "桌面（Windows / macOS / Linux）、Docker、CLI 都免费",
         "没有订阅，没有套餐档位",
-        "机器人想建几个建几个，每个都由你定义"
+        "机器人想建几个建几个，每个都由你定义",
+        "新用户注册 Modelflare 即送 $1 Bot 额度，只能在 AnyModelBot 里使用"
       ]
     },
     "usage": {
@@ -24,7 +25,8 @@ export default {
       "points": [
         "按 token 计价，输入输出分开",
         "价格表公开可查",
-        "换模型随时换，价格跟着模型走"
+        "换模型随时换，价格跟着模型走",
+        "订阅 Modelflare 套餐，另送套餐额度 10% 的 Bot 额度"
       ],
       "cta": "查看完整价格表 ↗"
     },
@@ -76,7 +78,7 @@ export default {
     "caption": "Modelflare 文本模型价格（默认线路，USD / 100 万 tokens）",
     "col": {
       "model": "模型",
-      "route": "线路",
+      "route": "默认线路",
       "input": "输入 / 1M",
       "output": "输出 / 1M",
       "official": "官方价（输入 / 输出）",

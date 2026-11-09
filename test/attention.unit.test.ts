@@ -25,7 +25,7 @@ const item = (o: Partial<AttentionItem> & Pick<AttentionItem, "id" | "kind">): A
 const textOf = (v: any): string => (v == null || typeof v === "boolean" ? "" : typeof v !== "object" ? String(v) : Array.isArray(v) ? v.map(textOf).join("") : textOf(v.props?.children));
 
 describe("界面：侧栏的「需要你」行", () => {
-  it("没事时不画这一行；有事时是黄点、「需要你」和件数", async () => {
+  it("没事时不画这一行；有事时是导航行：图标、「需要你」和一个蓝点（不写件数，件数在 title 和读屏文字里）", async () => {
     // 界面模块在浏览器里跑：只补上它们加载时要的那一点
     (globalThis as any).window ??= { matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }), addEventListener() {}, removeEventListener() {} };
     // @ts-expect-error 界面代码是不经构建的 JS
@@ -36,11 +36,16 @@ describe("界面：侧栏的「需要你」行", () => {
     expect(NeedsRow({ count: undefined })).toBeNull();
     ui.setLangPref("zh-CN");
     const row = NeedsRow({ count: 3, on: true, onClick: () => {} }) as any;
-    expect(row.props.class).toBe("needs-row sel");
-    expect(textOf(row)).toBe("需要你3");
+    expect(row.props.class).toBe("nav-item needs-row sel");
+    expect(textOf(row)).toBe("需要你");
+    expect(row.props.title).toBe("3 件事需要你");
+    const dot = [row.props.children].flat(Infinity).find((c: any) => c?.props?.class === "needs-dot");
+    expect(dot?.props["aria-label"]).toBe("3 件事需要你");
     // 文字跟着界面语言
     ui.setLangPref("en");
-    expect(textOf(NeedsRow({ count: 3, on: true, onClick: () => {} }))).toBe("Needs you3");
+    const en = NeedsRow({ count: 3, on: true, onClick: () => {} }) as any;
+    expect(textOf(en)).toBe("Needs you");
+    expect(en.props.title).toBe("3 things need you");
     ui.setLangPref("zh-CN");
   });
 });

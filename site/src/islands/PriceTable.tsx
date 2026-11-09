@@ -1,4 +1,5 @@
 // 公开价格表（§6.5 C）：默认 6 个精选行；展开后可搜索、按厂商过滤；每行可展开看全部线路。
+// 每行显示的都是默认线路（列头写"默认线路"），所以行里不再挂"默认"标签；只在展开后的线路明细里标出哪条是默认。
 import { useMemo, useState } from "preact/hooks";
 import type { PriceRow } from "../lib/pricing";
 import { fmtPrice as priceUSD } from "../lib/pricing";
@@ -14,6 +15,8 @@ const percentage = (r: number, lang: string) => {
   if (!percentages.has(lang)) percentages.set(lang, new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 2 }));
   return percentages.get(lang)!.format(r);
 };
+// 型号按自然顺序倒排：同一系列挨在一起，新版本在前（gpt-6.1-terra → gpt-6-sol → gpt-5.5）
+const byName = new Intl.Collator("en", { numeric: true });
 const track = (n: string, p?: object) => { try { (window as any).umami?.track(n, p); } catch { /* 忽略 */ } };
 
 export default function PriceTable({ lang, rows, featured, t, mediaText, mediaHref, initialAll = false }: Props) {
@@ -23,16 +26,21 @@ export default function PriceTable({ lang, rows, featured, t, mediaText, mediaHr
   const [q, setQ] = useState("");
   const [vendor, setVendor] = useState("");
   const [open, setOpen] = useState<Set<string>>(new Set());
-  const vendors = useMemo(() => [...new Set(rows.map((r) => r.vendor))], [rows]);
+  // 厂商按模型数从多到少（同数保持数据里的先后），认不出厂商的（"—"）放最后；价格数据里的原始顺序每次抓取都会变
+  const vendors = useMemo(() => {
+    const n = new Map<string, number>();
+    rows.forEach((r) => n.set(r.vendor, (n.get(r.vendor) ?? 0) + 1));
+    return [...n.keys()].sort((a, b) => Number(a === "—") - Number(b === "—") || n.get(b)! - n.get(a)!);
+  }, [rows]);
   const list = useMemo(() => {
     if (!all) return featured.map((m) => rows.find((r) => r.model === m)!).filter(Boolean);
     const s = q.trim().toLowerCase();
     return rows.filter((r) => (!vendor || r.vendor === vendor) && (!s || r.model.toLowerCase().includes(s) || r.vendor.toLowerCase().includes(s)));
   }, [all, q, vendor, rows, featured]);
-  // 全部模型时按厂商分组（顺序同价格数据），精选时不分组
+  // 全部模型时按厂商分组（组的顺序同上面的厂商按钮），精选时不分组、保持精选的顺序
   const sections = useMemo(() => (all
-    ? [...new Set(list.map((r) => r.vendor))].map((v) => ({ vendor: v as string | null, rows: list.filter((r) => r.vendor === v) }))
-    : [{ vendor: null as string | null, rows: list }]), [all, list]);
+    ? vendors.map((v) => ({ vendor: v as string | null, rows: list.filter((r) => r.vendor === v).sort((a, b) => byName.compare(b.model, a.model)) })).filter((sec) => sec.rows.length)
+    : [{ vendor: null as string | null, rows: list }]), [all, list, vendors]);
   const toggle = (m: string) => {
     const n = new Set(open);
     if (n.has(m)) n.delete(m); else { n.add(m); track("pricing_row_expand", { model_id: m }); }
@@ -70,24 +78,26 @@ export default function PriceTable({ lang, rows, featured, t, mediaText, mediaHr
           {sections.map((sec) => [
             sec.vendor && (
               <tbody class="ptable__group" key={`g-${sec.vendor}`}>
-                <tr><th scope="rowgroup" colSpan={7}>{sec.vendor} <span class="muted">· {sec.rows.length}</span></th></tr>
+                <tr><th scope="rowgroup" colSpan={7}>{sec.vendor}<span class="ptable__count">{sec.rows.length}</span></th></tr>
               </tbody>
             ),
             ...sec.rows.map((r) => {
               const isOpen = open.has(r.model);
               const id = `pr-${r.model.replace(/[^a-z0-9]+/gi, "-")}`;
               const long = r.tiers.length > 1 ? r.tiers[r.tiers.length - 1] : null;
+              // 按厂商分组时厂商名已在组头，副标题只留上下文长度
+              const sub = [all ? "" : r.vendor, r.contextWindow ? f(t.context, { n: ctx(r.contextWindow) }) : ""].filter(Boolean).join(" · ");
               return (
                 <tbody class={isOpen ? "is-open" : ""} key={r.model}>
                   <tr>
                     <th scope="row" class="ptable__model">
                       <span class="mono">{r.model}</span>
-                      <small>{r.vendor}{r.contextWindow ? ` · ${f(t.context, { n: ctx(r.contextWindow) })}` : ""}</small>
+                      {sub && <small>{sub}</small>}
                     </th>
-                    <td data-label={t.col.route}><span class="badge badge--neutral">{r.defaultGroup}</span> <span class="badge badge--accent">{t.default}</span></td>
+                    <td data-label={t.col.route}><span class="ptable__route mono">{r.defaultGroup}</span></td>
                     <td class="num-col mono" data-label={t.col.input}>{fmtPrice(r.input)}</td>
                     <td class="num-col mono" data-label={t.col.output}>{fmtPrice(r.output)}</td>
-                    <td class="num-col mono hide-md" data-label={t.col.official}>{`${fmtPrice(r.officialInput)} / ${fmtPrice(r.officialOutput)}`}</td>
+                    <td class="num-col mono hide-md ptable__pair" data-label={t.col.official}><span>{fmtPrice(r.officialInput)}</span> / <span>{fmtPrice(r.officialOutput)}</span></td>
                     <td class="num-col mono hide-md" data-label={t.col.vs}>{pct(r.ratio)}</td>
                     <td class="ptable__toggle">
                       <button type="button" class="icon-btn" aria-expanded={isOpen} aria-controls={id} aria-label={f(t.expand, { model: r.model })} onClick={() => toggle(r.model)}>
@@ -106,8 +116,8 @@ export default function PriceTable({ lang, rows, featured, t, mediaText, mediaHr
                             <thead><tr><th scope="col">{t.detail.route}</th><th scope="col">{t.detail.positioning}</th><th scope="col" class="num-col">{t.detail.vs}</th><th scope="col" class="num-col">{t.detail.price}</th></tr></thead>
                             <tbody>
                               {r.groups.map((g) => (
-                                <tr>
-                                  <th scope="row"><span class="mono">{g.id}</span>{g.isDefault && <> <span class="badge badge--accent">{t.default}</span></>}{g.conditional && <svg class="ptable__lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>}</th>
+                                <tr class={g.isDefault ? "is-default" : undefined}>
+                                  <th scope="row"><span class="mono">{g.id}</span>{g.isDefault && <span class="pdetail__default">{t.default}</span>}{g.conditional && <svg class="ptable__lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2.5" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>}</th>
                                   <td>{t.positioning[g.kind]}{g.conditional && <><br /><small class="pdetail__unlock">{f(t.unlock, { amount: g.conditional.minTopupUSD })}</small></>}</td>
                                   <td class="num-col mono">{pct(g.ratio)}</td>
                                   <td class="num-col mono">{fmtPrice(g.input)} / {fmtPrice(g.output)}</td>
@@ -116,7 +126,7 @@ export default function PriceTable({ lang, rows, featured, t, mediaText, mediaHr
                             </tbody>
                           </table>
                           {long && long.maxInputTokens == null && r.tiers[0].maxInputTokens != null && (
-                            <p class="small muted">{f(t.tiers, { n: r.tiers[0].maxInputTokens.toLocaleString(lang), input: fmtPrice(long.input * r.ratio), output: fmtPrice(long.output * r.ratio) })}</p>
+                            <p class="pdetail__note">{f(t.tiers, { n: r.tiers[0].maxInputTokens.toLocaleString(lang), input: fmtPrice(long.input * r.ratio), output: fmtPrice(long.output * r.ratio) })}</p>
                           )}
                         </div>
                       )}

@@ -20,8 +20,6 @@ export const RULE_SUGGEST_AFTER = 3;
 export const MAX_RULES = 30;
 /** 一次运行最长多久（不算等批准的时间） */
 export const RULE_RUN_CAP_MS = 15 * 60_000;
-/** 执行时的审批在「需要你」里等多久，过了就拒绝、这次运行失败 */
-export const RULE_APPROVAL_TTL_MS = 3600_000;
 
 /**
  * 规则会话去掉的工具（只去掉注册了的；插件按 tools.restrict 的规矩过滤）。观察：能改变什么的都去掉，记忆只留 recall，已授权账号只留读取；

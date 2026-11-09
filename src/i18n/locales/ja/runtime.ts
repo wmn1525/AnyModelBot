@@ -89,5 +89,8 @@ export default {
   "stoppedByUser": "停止しました（実行時間 {d}）。{restarted}引き続きメッセージを送信できます。",
   "stoppedIdle": "⚠️ エージェントに {d} 間進捗がなかったため、自動停止しました{restart}。{where}再送するか、/model で別のモデルを試してください。",
   "stoppedLimit": "⚠️ このメッセージの処理が上限の {d} を超えたため、停止しました{restart}。{where}タスクを小さく分けて試してください。",
+  "stoppedPermission": "⚠️ コンピューター操作には macOS の許可（{missing}）が必要なため、タスクを続行できませんでした。AnyModelBot の案内に従って許可してから、もう一度送信してください。",
+  "permAccessibility": "アクセシビリティ",
+  "permScreen": "画面収録",
   "runtimeRestarted": "⚠️ エージェントプロセスが再起動したため、このメッセージの処理が完了しませんでした。同じボットの別の会話で、応答が止まった処理を停止した可能性があります。もう一度送信してください。"
 } satisfies TranslatedCatalog["runtime"];

@@ -8,7 +8,7 @@ import { Gone, Held, Later, Outbox, ReplyIds, sentText, stableId, type HeldGroup
 import { IlinkClient, MessageItemType, MessageType, WeixinApiError, hasDownloadableMedia, type InboundMedia, type MessageItem, type WeixinMessage } from "./api.js";
 import { StreamingMarkdownFilter } from "./markdown-filter.js";
 import { WeixinQuota } from "./quota.js";
-import type { Delivery } from "../../core/delivery.js";
+import type { Delivery } from "../../delivery/index.js";
 import { logger } from "../../log.js";
 import { t, t as tr, tl, TARGET_LANGS } from "../../i18n/index.js";
 
@@ -90,7 +90,7 @@ function transient(e: unknown): boolean {
 }
 
 /**
- * 这条能用几条配额：主动消息（任务结果、续期提醒…）用全部剩下的；聊天回复要给主动消息留出 reserved 条（core/delivery.ts）
+ * 这条能用几条配额：主动消息（任务结果、续期提醒…）用全部剩下的；聊天回复要给主动消息留出 reserved 条（delivery/index.ts）
  */
 function budgetOf(quota: WeixinQuota, userId: string, row: Pick<OutboxRow, "purpose">): number {
   const left = quota.remaining(userId);
@@ -353,6 +353,8 @@ export class WeixinChannel {
       return;
     }
     this.client = new IlinkClient({ baseUrl: acct.baseUrl, token: acct.botToken, fetchImpl: this.opts.fetchImpl, cdnBaseUrl: this.opts.cdnBaseUrl });
+    // 告诉服务端这个机器人上线了（同 openclaw-weixin）；失败不影响收消息
+    this.client.notifyStart().catch((e) => this.log.warn("notifystart failed (ignored)", { message: String((e as Error).message).slice(0, 200) }));
     this.abort = new AbortController();
     this.loop = this.run(this.abort.signal).finally(() => (this.loop = undefined));
     // 上线：出站队列里这个机器人的微信消息（含上次没发完的）由这里发
@@ -402,9 +404,12 @@ export class WeixinChannel {
   async stop(): Promise<void> {
     this.unregister?.();
     this.unregister = undefined;
+    const wasRunning = !!this.loop;
     this.abort?.abort();
     await this.loop?.catch(() => {});
     this.loop = undefined;
+    // 下线通知（同 openclaw-weixin）：只在真的跑过时发，失败忽略
+    if (wasRunning) await this.client?.notifyStop().catch((e) => this.log.warn("notifystop failed (ignored)", { message: String((e as Error).message).slice(0, 200) }));
     if (this.st.state !== "expired") this.st = { state: "disabled", since: Date.now() };
   }
 

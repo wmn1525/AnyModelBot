@@ -15,9 +15,9 @@ if (!fs.existsSync(path.join(app, "ui/components/avatar.js"))) {
 }
 const bots = path.join(app, "ui/design/bots");
 fs.mkdirSync(path.join(site, "public/bots"), { recursive: true });
-// App 里还有领域专家的精灵图，官网只用六个基础角色
+// App 里还有领域专家的精灵图，官网只用六个基础角色（连同它们的小档 <角色>@<边长>.webp）
 const siteChars = new Set<string>(CHAR_KEYS);
-for (const f of fs.readdirSync(bots).filter((f) => f.endsWith(".webp") && siteChars.has(path.parse(f).name))) {
+for (const f of fs.readdirSync(bots).filter((f) => f.endsWith(".webp") && siteChars.has(path.parse(f).name.split("@")[0]))) {
   fs.copyFileSync(path.join(bots, f), path.join(site, "public/bots", f));
 }
 fs.copyFileSync(path.join(app, "THIRD_PARTY_NOTICES.md"), path.join(site, "src/data/third-party.md"));

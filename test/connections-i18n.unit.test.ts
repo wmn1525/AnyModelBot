@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { AccountStore, ConnectionError, LocalizedConnectionError, connectionUserMessage } from "../src/agent/accounts.js";
-import { FeishuAccounts } from "../src/agent/feishu-account.js";
-import { NotionService } from "../src/agent/notion.js";
+import { AccountStore, ConnectionError, LocalizedConnectionError, connectionUserMessage } from "../src/tools/accounts/index.js";
+import { FeishuAccounts } from "../src/tools/accounts/feishu.js";
+import { NotionService } from "../src/tools/accounts/notion.js";
 import { requestLang, tl, withLang } from "../src/i18n/index.js";
 
 // No database or network: authorization state uses a plain in-memory map and fake responses.

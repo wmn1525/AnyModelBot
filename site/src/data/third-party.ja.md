@@ -81,6 +81,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - ws 8.22.0 — MIT
 - yauzl 3.4.0 — MIT
 - yaml 2.9.1 — ISC
+- electron-updater 6.8.12 — MIT
 
 間接依存のライセンスは node_modules の各パッケージに保持されています。デスクトップアプリには Electron（MIT）や Chromium なども含まれます。それらのライセンスはインストール先の LICENSE と LICENSES.chromium.html にあります。
 

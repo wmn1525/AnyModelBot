@@ -5,7 +5,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { dirHash, packFiles, walk, type BundleFile } from "./bundle.js";
-import { BOT_LANGS, KIT_SINCE, LICENSE_ALLOW, LIMITS, parseManifest, REQUIRED_LANGS, RESERVED_SKILLS, SAMPLE_FILES, sampleName, SKILL_NAME, versionGte, type BotManifest, type Issue } from "./format.js";
+import { BOT_LANGS, KIT_SINCE, LICENSE_ALLOW, LIMITS, parseManifest, REQUIRED_LANGS, SAMPLE_FILES, sampleName, SKILL_NAME, versionGte, type BotManifest, type Issue } from "./format.js";
+import { RESERVED_SKILLS } from "../skills/archive.js";
 import { unsupportedKeywords, validate, type JsonSchema } from "./schema.js";
 
 const REQUIRED_FILES = ["bot.json", "persona.md", "ui/index.html", "ui/locales/zh-CN.json", "ui/locales/en.json", "state.schema.json", ...REQUIRED_LANGS.map(sampleName), "evals/tasks.json", "evals/injection.json"];
@@ -240,6 +241,33 @@ export function runtimeBundleFiles(dir: string): BundleFile[] {
   return [{ path: "persona.md", data: fs.readFileSync(path.join(dir, "persona.md")) }, ...(fs.existsSync(skills) ? walk(skills, "skills") : [])];
 }
 
+const PNG_SIG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+/** 发现页封面 cover/light.png、cover/dark.png（可选）：客户端取远程缩略图时按界面包的上限拒绝，这里同样拦，免得上架后才显示不出来 */
+function checkCover(dir: string): Issue[] {
+  const issues: Issue[] = [];
+  for (const theme of ["light", "dark"]) {
+    const rel = `cover/${theme}.png`;
+    const f = path.join(dir, rel);
+    if (!fs.existsSync(f)) continue;
+    const st = fs.lstatSync(f);
+    if (!st.isFile()) {
+      issues.push({ rule: "format.cover", message: `${rel} 不是普通文件`, file: rel });
+      continue;
+    }
+    const head = Buffer.alloc(PNG_SIG.length);
+    const fd = fs.openSync(f, "r");
+    try {
+      fs.readSync(fd, head, 0, head.length, 0);
+    } finally {
+      fs.closeSync(fd);
+    }
+    if (!head.equals(PNG_SIG)) issues.push({ rule: "format.cover", message: `${rel} 不是 PNG`, file: rel });
+    if (st.size > LIMITS.uiBundleBytes) issues.push({ rule: "format.cover", message: `${rel} 有 ${Math.round(st.size / 1024)} KB，上限 ${LIMITS.uiBundleBytes / 1024} KB`, file: rel });
+  }
+  return issues;
+}
+
 export function checkStatic(dir: string): { manifest?: BotManifest; issues: Issue[] } {
   const issues: Issue[] = [];
   for (const f of REQUIRED_FILES) if (!fs.existsSync(path.join(dir, f))) issues.push({ rule: "format.missing", message: `缺少文件 ${f}`, file: f });
@@ -277,6 +305,7 @@ export function checkStatic(dir: string): { manifest?: BotManifest; issues: Issu
   issues.push(...lintUi(dir));
   issues.push(...checkKitVersion(dir, manifest));
   issues.push(...checkEvals(dir));
+  issues.push(...checkCover(dir));
   if (!issues.some((i) => i.rule === "format.missing" || i.rule.endsWith("symlink"))) {
     const uiFiles = uiBundleFiles(dir);
     const rtFiles = runtimeBundleFiles(dir);

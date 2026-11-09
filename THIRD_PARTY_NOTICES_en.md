@@ -85,6 +85,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - ws 8.22.0 — MIT
 - yauzl 3.4.0 — MIT
 - yaml 2.9.1 — ISC
+- electron-updater 6.8.12 — MIT
 
 Licenses of transitive dependencies are kept with each package in node_modules. The desktop app also includes Electron (MIT) and components such as Chromium; their licenses are in LICENSE and LICENSES.chromium.html in the install directory.
 

@@ -6,7 +6,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import type { AddressInfo } from "node:net";
-import { serveBotAppStatic } from "../web/botapp.js";
+import { serveBotAppStatic } from "./static.js";
 import type { BotCatalog } from "./catalog.js";
 import { samplePath, type BotManifest, type Issue } from "./format.js";
 
