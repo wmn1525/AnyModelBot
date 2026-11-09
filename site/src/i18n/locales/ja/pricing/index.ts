@@ -2,6 +2,7 @@ export default {
   eyebrow: "料金 · 従量課金",
   h2mark: "月額料金なし",
   h2rest: "。使った分だけお支払い。",
+  lead: "AnyModelBot は無料のオープンソース。サブスクリプションもプラン分けもありません。モデルの利用料は Modelflare がトークン単位で請求し、料金表はすべて公開しています。",
   source:
     "料金は modelflare.dev/pricing から取得。取得日時：{fetchedAt}（UTC+8）、料金バージョン：{pricingVersion}。",
   stale:
@@ -45,6 +46,7 @@ export default {
     caption: "従量課金と月額プランの比較",
     head: [
       "",
+      "従量課金（AnyModelBot + Modelflare）",
       "月額プラン（一般的な方式）",
     ],
     rows: [
@@ -150,4 +152,5 @@ export default {
   },
   pageTitle: "AnyModelBot の料金 — 従量課金と公開料金表",
   pageDescription:
+    "AnyModelBot は無料のオープンソースで、サブスクリプションは不要です。Modelflare のトークン単位の料金表と、月額費用の計算機をご覧いただけます。",
 };

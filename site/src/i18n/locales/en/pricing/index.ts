@@ -2,6 +2,7 @@ export default {
   "eyebrow": "PRICING · PAY PER USE",
   "h2mark": "No monthly fee",
   "h2rest": ". Pay only for what you use.",
+  "lead": "AnyModelBot is free and open source — no subscription, no tiers. Model usage is billed by Modelflare per token, and the price list is fully public.",
   "source": "Prices come from modelflare.dev/pricing, fetched {fetchedAt} (UTC+8), version {pricingVersion}.",
   "stale": "Price snapshot dated {snapshotDate} (couldn't refresh; modelflare.dev/pricing is the source of truth).",
   "cards": {
@@ -43,6 +44,7 @@ export default {
     "caption": "Pay per use compared with subscription tiers",
     "head": [
       "",
+      "Pay per use (AnyModelBot + Modelflare)",
       "Subscription tiers (common approach)"
     ],
     "rows": [
@@ -141,4 +143,5 @@ export default {
     "cta": "Open Modelflare ↗"
   },
   "pageTitle": "AnyModelBot pricing — pay per use, public price list",
+  "pageDescription": "AnyModelBot is free and open source with no subscription. Model usage is billed per token by Modelflare: the public price list and a monthly cost calculator."
 };
