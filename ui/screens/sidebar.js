@@ -88,6 +88,7 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
   const stackRef = useRef(null);
   const loginRef = useRef(null);
   const signedIn = account?.state === "signed_in";
+  const hasBalance = signedIn || account?.source === "key" && (account.unlimitedBalance || account.balanceUsd != null);
   const me = (signedIn && account.name?.trim()) || t("firstUse.myAccount");
   const changed = () => window.dispatchEvent(new Event("amb-connection-change"));
   const phase = update?.phase;
@@ -143,7 +144,7 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
       setLeaving(false);
     }
   };
-  const balance = !signedIn ? "" : account.error ? t("firstUse.balanceUnavailable") : account.balanceUsd == null ? t("firstUse.balanceLoading") : usd(account.balanceUsd);
+  const balance = !hasBalance ? "" : account.error ? t("firstUse.balanceUnavailable") : account.balanceUsd == null && !account.unlimitedBalance ? t("firstUse.balanceLoading") : accountBalance(account);
   const bot = signedIn && !account.error ? account.bot : null;
   const toggleQuota = () => {
     // 打开卡片时请后端读一次最新的额度（main.js 接这个事件）
@@ -151,7 +152,7 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
     setQuota(!quota);
   };
   return html`<div class="account-stack" ref=${stackRef}>
-    ${signedIn
+    ${hasBalance
       ? html`<div class=${`account-balance${account.lowBalance && !account.error ? " low" : ""}`} role="status">
           ${bot
             ? html`<button type="button" class="account-quota" ref=${quotaRef} aria-haspopup="dialog" aria-expanded=${quota} onClick=${toggleQuota}

@@ -2,7 +2,7 @@ export default {
   "login": "ログイン / 登録",
   "accountHint": "OKINTO アカウントで okbot にログイン",
   "signupHint": "アカウントがない場合は次の画面で登録できます",
-  "signupGift": "新規登録で Bot クレジット $1 をプレゼント",
+  "signupGift": "利用可能なクレジットと課金条件は OKINTO コンソールをご確認ください",
   "noKey": "API キーを設定せずに使いますか？",
   "useAccount": "OKINTO アカウントでログイン",
   "modelSettings": "モデル設定",

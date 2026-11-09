@@ -2,7 +2,7 @@ export default {
   "login": "Log in / Sign up",
   "accountHint": "Use your OKINTO account to sign in to okbot",
   "signupHint": "No account? Sign up in the next step.",
-  "signupGift": "New accounts get $1 in Bot credits",
+  "signupGift": "Available credit and billing rules are shown in the OKINTO console",
   "noKey": "Prefer not to configure an API key?",
   "useAccount": "Sign in with OKINTO",
   "modelSettings": "Model settings",
