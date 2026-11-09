@@ -3,13 +3,12 @@ export default {
   "h1pre": "",
   "h1mark": "住在你的电脑里",
   "h1b": "",
-  "lead": "登录 Modelflare，就能用 GPT、Claude 等模型。\n整理文件、查资料、做可编辑的 PPT，都可以交给它。",
+  "lead": "登录 OKINTO，就能用 GPT、Claude 等模型。\n整理文件、查资料、做可编辑的 PPT，都可以交给它。",
   "demo": "看演示",
   "github": "在 GitHub 上查看，{stars} 颗星",
   "trust": [
     "App 免费开源",
     "模型按量付费",
-    "注册送 $1 Bot 额度",
     "Windows / macOS / Linux"
   ],
   "appUiNote": "",

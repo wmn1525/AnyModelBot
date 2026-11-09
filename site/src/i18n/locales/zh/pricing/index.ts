@@ -2,7 +2,6 @@ export default {
   "eyebrow": "价格 · 按量付费",
   "h2mark": "没有月费",
   "h2rest": "。用多少，付多少。",
-  "lead": "AnyModelBot 免费开源，没有订阅、没有档位。模型用量由 Modelflare 按 token 计费，价格表完全公开。",
   "source": "价格取自 modelflare.dev/pricing，数据抓取于 {fetchedAt}（UTC+8），版本 {pricingVersion}。",
   "stale": "价格快照日期：{snapshotDate}（暂未能更新，请以 modelflare.dev/pricing 为准）。",
   "cards": {
@@ -15,7 +14,6 @@ export default {
         "桌面（Windows / macOS / Linux）、Docker、CLI 都免费",
         "没有订阅，没有套餐档位",
         "机器人想建几个建几个，每个都由你定义",
-        "新用户注册 Modelflare 即送 $1 Bot 额度，只能在 AnyModelBot 里使用"
       ]
     },
     "usage": {
@@ -26,7 +24,6 @@ export default {
         "按 token 计价，输入输出分开",
         "价格表公开可查",
         "换模型随时换，价格跟着模型走",
-        "订阅 Modelflare 套餐，另送套餐额度 10% 的 Bot 额度"
       ],
       "cta": "查看完整价格表 ↗"
     },
@@ -46,7 +43,6 @@ export default {
     "caption": "按量付费与订阅制档位的通用对照",
     "head": [
       "",
-      "按量付费（AnyModelBot + Modelflare）",
       "订阅制档位（同类产品的通常做法）"
     ],
     "rows": [
@@ -145,5 +141,4 @@ export default {
     "cta": "打开 Modelflare ↗"
   },
   "pageTitle": "AnyModelBot 价格｜按量付费，价格表公开",
-  "pageDescription": "AnyModelBot 免费开源、没有订阅。模型用量由 Modelflare 按 token 计费：公开价格表与每月费用计算器。"
 };

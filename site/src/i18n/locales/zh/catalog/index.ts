@@ -18,6 +18,6 @@ export default {
   },
   "minimumVersion": "需要 AnyModelBot {version} 及以上版本。",
   "requirements": {
-    "printfilm": "规划和编辑需要本机 Python 3.10+；素材校验与成片合成需要 FFmpeg（含 ffprobe）。AI 图片和视频需连接 Modelflare，按用量计费。"
+    "printfilm": "规划和编辑需要本机 Python 3.10+；素材校验与成片合成需要 FFmpeg（含 ffprobe）。AI 图片通过 OKINTO 按用量计费；当前版本尚不支持 OKINTO 视频生成，可导入本地视频进行剪辑。"
   }
 };

@@ -18,6 +18,6 @@ export default {
   },
   "minimumVersion": "AnyModelBot {version} 이상이 필요합니다.",
   "requirements": {
-    "printfilm": "기획과 편집에는 기기의 Python 3.10+, 미디어 검증과 영상 합성에는 FFmpeg(ffprobe 포함)가 필요합니다. AI 이미지·영상 생성은 Modelflare 연결이 필요하며 사용량에 따라 과금됩니다."
+    "printfilm": "기획과 편집에는 Python 3.10+, 미디어 검증과 렌더링에는 FFmpeg(ffprobe 포함)가 필요합니다. AI 이미지는 OKINTO 사용량에 따라 과금됩니다. 이번 버전은 OKINTO 영상 생성을 지원하지 않으며 로컬 영상을 가져와 편집할 수 있습니다."
   }
 };

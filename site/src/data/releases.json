@@ -1,11 +1,30 @@
 {
-  "version": "{VERSION}",
-  "publishedAt": "{PUBLISHED_AT}",
+  "version": "0.1.31",
+  "publishedAt": "2026-11-10",
   "platforms": {
-    "win-x64": { "url": "{WIN_X64_URL}", "sha256": "{WIN_X64_SHA256}", "sizeMB": 0 },
-    "mac-arm64": { "url": "{MAC_ARM64_URL}", "sha256": "{MAC_ARM64_SHA256}", "sizeMB": 0 },
-    "mac-x64": { "url": "{MAC_X64_URL}", "sha256": "{MAC_X64_SHA256}", "sizeMB": 0 },
-    "linux-x64": { "url": "{LINUX_X64_URL}", "sha256": "{LINUX_X64_SHA256}", "sizeMB": 0 },
-    "docker": { "image": "{DOCKER_IMAGE}", "command": "docker run -d --name amb -p 3600:3600 -v amb-data:/data {DOCKER_IMAGE}" }
+    "win-x64": {
+      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.31/okbot-0.1.31-win-x64.exe",
+      "sha256": "864d138d81706d5004b7929747c2d56d596af67146b095f23195526be8b84e9a",
+      "sizeMB": 185.3
+    },
+    "mac-arm64": {
+      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.31/okbot-0.1.31-mac-arm64.dmg",
+      "sha256": "1f7b9125f91dc4aa92e9ed0f87224afd37e7726ff297968d93fe32ea5c34dabe",
+      "sizeMB": 214.1
+    },
+    "mac-x64": {
+      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.31/okbot-0.1.31-mac-x64.dmg",
+      "sha256": "15f0db5587cd7f0c545c63288f1f9691ca2cff8d1f367b3ce37c7b23237f6308",
+      "sizeMB": 222.1
+    },
+    "linux-x64": {
+      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.31/okbot-0.1.31-linux-x86_64.AppImage",
+      "sha256": "de34310de912dcc848765b642405c0d6aca2f7f173651d4554917151357f17a8",
+      "sizeMB": 200.1
+    },
+    "docker": {
+      "image": "ghcr.io/wmn1525/okbot",
+      "command": "docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/wmn1525/okbot"
+    }
   }
 }

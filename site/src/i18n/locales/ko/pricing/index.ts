@@ -2,7 +2,6 @@ export default {
   "eyebrow": "요금 · 사용량 기반 결제",
   "h2mark": "월 이용료 없이",
   "h2rest": ", 쓴 만큼만 결제하세요.",
-  "lead": "AnyModelBot은 무료 오픈 소스입니다. 구독도, 요금제 등급도 없습니다. 모델 사용량은 Modelflare에서 토큰 단위로 과금하며 전체 가격표가 공개되어 있습니다.",
   "source": "가격 출처: modelflare.dev/pricing · 수집 시각 {fetchedAt}(UTC+8) · 버전 {pricingVersion}.",
   "stale": "{snapshotDate} 기준 가격입니다(새로고침 실패. 최신 기준은 modelflare.dev/pricing입니다).",
   "cards": {
@@ -15,7 +14,6 @@ export default {
         "데스크톱, Docker, CLI 모두 무료",
         "구독이나 요금제 등급 없음",
         "원하는 만큼 봇을 만들고 각자의 역할을 직접 설정",
-        "Modelflare 신규 가입 시 Bot 크레딧 $1 증정(AnyModelBot 전용)"
       ]
     },
     "usage": {
@@ -26,7 +24,6 @@ export default {
         "입력과 출력을 각각 토큰 단위로 과금",
         "공개된 가격표",
         "모델을 언제든 변경하고 해당 모델 가격 적용",
-        "Modelflare 구독 시 플랜 크레딧의 10%를 Bot 크레딧으로 추가 증정"
       ],
       "cta": "전체 가격표 보기 ↗"
     },
@@ -46,7 +43,6 @@ export default {
     "caption": "사용량 기반 결제와 등급별 구독 비교",
     "head": [
       "",
-      "사용량 기반(AnyModelBot + Modelflare)",
       "등급별 구독(일반적 방식)"
     ],
     "rows": [
@@ -145,5 +141,4 @@ export default {
     "cta": "Modelflare 열기 ↗"
   },
   "pageTitle": "AnyModelBot 요금 — 사용량 기반 결제, 공개 가격표",
-  "pageDescription": "AnyModelBot은 구독 없는 무료 오픈 소스입니다. 모델 사용량은 Modelflare에서 토큰 단위로 과금합니다. 공개 가격표와 월간 비용 계산기를 확인하세요."
 };

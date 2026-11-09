@@ -18,6 +18,6 @@ export default {
   },
   "minimumVersion": "Requires AnyModelBot {version} or later.",
   "requirements": {
-    "printfilm": "Planning and editing need Python 3.10+ on your device; media validation and rendering need FFmpeg (including ffprobe). AI image and video generation requires Modelflare and is billed by usage."
+    "printfilm": "Planning and editing require Python 3.10+; validation and rendering require FFmpeg including ffprobe. AI images use OKINTO and are billed by usage. OKINTO video generation is not supported in this release; local video can be imported for editing."
   }
 };
