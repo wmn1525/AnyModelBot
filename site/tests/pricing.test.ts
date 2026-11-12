@@ -117,7 +117,7 @@ describe("厂商", () => {
     const copy = structuredClone(raw) as typeof raw;
     const m = copy.data.find((x) => x.model_name === "gpt-5.6-sol")!;
     delete (m as { vendor_id?: number }).vendor_id;
-    const r = buildSnapshot(copy, pricingConfig, new Date("2026-10-30T13:24:41Z")).rows.find((x) => x.model === "gpt-5.6-sol")!;
+    const r = buildSnapshot(copy, fixtureConfig, new Date("2026-10-30T13:24:41Z")).rows.find((x) => x.model === "gpt-5.6-sol")!;
     expect(r.vendor).toBe(row("gpt-6.1-terra").vendor);
   });
 });
