@@ -11,6 +11,8 @@
  */
 import { Client, SSEClientTransport, StreamableHTTPClientTransport, UnauthorizedError, type AuthProvider, type Transport } from "@modelcontextprotocol/client";
 import { StdioClientTransport, getDefaultEnvironment } from "@modelcontextprotocol/client/stdio";
+import fs from "node:fs";
+import path from "node:path";
 import { redactText } from "../../log.js";
 import { userPath } from "./shell-path.js";
 import type { ToolAnnotations } from "./types.js";
@@ -223,6 +225,18 @@ export class McpSession {
 
   private static async openStdio(target: StdioTarget, timeoutMs: number): Promise<McpSession> {
     const env: Record<string, string> = { ...getDefaultEnvironment(), PATH: await userPath(), ...proxyEnv(), ...(target.env ?? {}) };
+    // Windows SDK transports can turn ENOENT into a cmd.exe exit, losing the useful
+    // "command not found" diagnosis. Resolve against the same PATH/PATHEXT first.
+    if (process.platform === "win32") {
+      const cwd = target.cwd ?? process.cwd();
+      const hasDirectory = /[\\/]/.test(target.command);
+      const dirs = hasDirectory ? [cwd] : [cwd, ...env.PATH.split(path.delimiter).map((dir) => dir.replace(/^"|"$/g, "")).filter(Boolean)];
+      const extensions = path.extname(target.command) ? [""] : ["", ...(env.PATHEXT ?? process.env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD").split(";").filter(Boolean)];
+      const exists = dirs.some((dir) => extensions.some((ext) => {
+        try { return fs.statSync(path.resolve(dir, target.command + ext)).isFile(); } catch { return false; }
+      }));
+      if (!exists) throw new McpFailure("spawn", "The command was not found.");
+    }
     const transport = new StdioClientTransport({ command: target.command, args: target.args, env, stderr: "pipe", ...(target.cwd ? { cwd: target.cwd } : {}) });
     const client = McpSession.newClient();
     const session = new McpSession(client, transport);
