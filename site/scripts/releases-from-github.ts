@@ -103,11 +103,11 @@ for (const id of ["win-x64", "mac-arm64", "mac-x64", "linux-x64"]) {
 }
 
 // 还没发布镜像（DOCKER_IMAGE 为空）时给"从源码构建"的命令，和 README 的写法一致
-const image = process.env.DOCKER_IMAGE || "okbot";
+const image = process.env.DOCKER_IMAGE || "ghcr.io/wmn1525/okbot";
 const runCmd = `docker run -d --name amb -p 3600:3600 -v amb-data:/data ${image}`;
 platforms.docker = {
   image,
-  command: process.env.DOCKER_IMAGE ? runCmd : `git clone ${repoUrl}.git && cd ${repo} && git submodule update --init --depth 1 vendor/magpie && docker build -t ${image} . && ${runCmd}`,
+  command: runCmd,
 };
 
 const out = {

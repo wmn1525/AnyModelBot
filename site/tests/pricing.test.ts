@@ -2,11 +2,12 @@
 import { describe, expect, it } from "vitest";
 import raw from "./fixtures/pricing-2026-10-30.json";
 import { buildSnapshot } from "../src/lib/snapshot";
-import { pricingConfig } from "../src/data/pricing.config";
 import { estimate, fmtMoney, fmtSmall, PRESETS, calcGroups } from "../src/lib/calc";
 import { fmtPrice, tierFor } from "../src/lib/pricing";
 
-const snap = buildSnapshot(raw, pricingConfig, new Date("2026-10-30T13:24:41Z"));
+// A historical fixture must not depend on today's live featured-model catalog.
+const fixtureConfig = { featuredModels: ["gpt-5.6-sol", "gpt-6.1-terra", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "deepseek-v4-flash"], sampleModel: "gpt-5.6-sol", sampleUsage: { days: 30, msgs: 50, inTok: 3000, outTok: 600 } };
+const snap = buildSnapshot(raw, fixtureConfig, new Date("2026-10-30T13:24:41Z"));
 const row = (m: string) => snap.rows.find((r) => r.model === m)!;
 
 describe("快照", () => {
@@ -60,7 +61,7 @@ describe("官方价规则（与 api.okinto.com/pricing 前端一致）", () => {
     const data = structuredClone(raw) as any;
     const m = data.data.find((x: any) => x.model_name === "claude-opus-5-5");
     m.official_input_price = 5; m.official_completion_ratio = 6;
-    const r = buildSnapshot(data, pricingConfig, new Date()).rows.find((x) => x.model === "claude-opus-5-5")!;
+    const r = buildSnapshot(data, fixtureConfig, new Date()).rows.find((x) => x.model === "claude-opus-5-5")!;
     expect([r.officialInput, r.officialOutput]).toEqual([5, 30]);
   });
 });

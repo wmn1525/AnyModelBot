@@ -344,7 +344,7 @@ Licenças e avisos completos: [THIRD_PARTY_NOTICES_pt.md](./THIRD_PARTY_NOTICES_
 
 
 <a href="https://www.star-history.com/#wmn1525/AnyModelBot&Date">
-  
+
 </a>
 
 # 📜 Licença
