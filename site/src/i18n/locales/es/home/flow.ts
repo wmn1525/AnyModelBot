@@ -31,8 +31,8 @@ export default {
     },
     "gateway": {
       "label": "Gateway de OKINTO",
-      "sub": "Reenvía esta solicitud · retención de registros configurable",
-      "body": "Reenvía la solicitud al proveedor que elijas; la retención de registros sigue el documento “Retención de datos” de OKINTO."
+      "sub": "Reenvía la solicitud al modelo seleccionado",
+      "body": "Las solicitudes pasan por okinto. Los registros, la caché y la retención dependen de su política de privacidad y de la configuración de la cuenta."
     },
     "vendors": {
       "label": "OpenAI / Anthropic / Google …",
@@ -44,8 +44,8 @@ export default {
       "body": "Por naturaleza, los mensajes de estas apps pasan por sus servidores."
     }
   },
-  "retentionLink": "Documento “Retención de datos” de OKINTO",
-  "retentionUrl": "https://docs.newapi.pro/es/guides/features/data-retention/?utm_source=anymodelbot&utm_campaign=amb_homepage",
+  "retentionLink": "Política de privacidad de okinto",
+  "retentionUrl": "https://api.okinto.com/privacy-policy",
   "compare": {
     "caption": "okbot frente a los asistentes típicos alojados en la nube",
     "head": [

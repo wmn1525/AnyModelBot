@@ -31,8 +31,8 @@ export default {
     },
     "gateway": {
       "label": "Gateway do OKINTO",
-      "sub": "Encaminha esta solicitação · retenção de logs configurável",
-      "body": "Encaminha a solicitação ao provedor que você escolher; a retenção de logs segue o documento “Retenção de dados” do OKINTO."
+      "sub": "Encaminha as solicitações ao modelo selecionado",
+      "body": "As solicitações passam pela okinto. Os logs, o cache e a retenção seguem sua política de privacidade e as configurações da conta."
     },
     "vendors": {
       "label": "OpenAI / Anthropic / Google …",
@@ -44,8 +44,8 @@ export default {
       "body": "As mensagens nesses apps passam, por natureza, pelos servidores deles."
     }
   },
-  "retentionLink": "Documento “Retenção de dados” do OKINTO",
-  "retentionUrl": "https://docs.newapi.pro/pt/guides/features/data-retention/?utm_source=anymodelbot&utm_campaign=amb_homepage",
+  "retentionLink": "Política de privacidade da okinto",
+  "retentionUrl": "https://api.okinto.com/privacy-policy",
   "compare": {
     "caption": "okbot comparado com assistentes típicos hospedados na nuvem",
     "head": [
