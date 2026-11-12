@@ -1,6 +1,6 @@
 # 更新日志
 
-简体中文 | [English](./CHANGELOG_en.md) | [日本語](./CHANGELOG_ja.md) | [한국어](./CHANGELOG_ko.md) | [Русский](./CHANGELOG_ru.md)
+简体中文 | [English](./CHANGELOG_en.md) | [日本語](./CHANGELOG_ja.md) | [한국어](./CHANGELOG_ko.md) | [Русский](./CHANGELOG_ru.md) | [Español](./CHANGELOG_es.md) | [Português (Brasil)](./CHANGELOG_pt.md)
 
 这里只写用户能感受到的变化。更早的版本见 [GitHub 发布页](https://github.com/modelflare-ai/AnyModelBot/releases)。
 

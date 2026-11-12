@@ -1,7 +1,8 @@
 # Development guide
 
 
-> 0.1.31 · Windows installers and Linux AppImages download updates in the background by default; installation requires clicking restart and waits while tasks are active. The current unsigned macOS builds continue to use manual installer downloads. Version 0.1.28 and earlier require a manual installation of this release first.
+> 0.1.32 · Windows installers and Linux AppImages download updates in the background by default; installation requires clicking restart and waits while tasks are active. The current unsigned macOS builds continue to use manual installer downloads. Version 0.1.28 and earlier require a manual installation of this release first.
+> App connectors and custom MCP, sidebar groups, right-panel tabs, and Spanish and Portuguese (Brazil); preserves OKINTO sign-in, balances, model groups and image generation.
 > Added a What’s new dialog and changelog in About. Version checks, update downloads and release notes all use this repository.
 
 [简体中文](./development.md) | English | [日本語](./development_ja.md) | [한국어](./development_ko.md) | [Русский](./development_ru.md) | [Español](./development_es.md) | [Português (Brasil)](./development_pt.md)

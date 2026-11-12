@@ -1,6 +1,6 @@
 # История изменений
 
-[简体中文](./CHANGELOG.md) | [English](./CHANGELOG_en.md) | [日本語](./CHANGELOG_ja.md) | [한국어](./CHANGELOG_ko.md) | Русский
+[简体中文](./CHANGELOG.md) | [English](./CHANGELOG_en.md) | [日本語](./CHANGELOG_ja.md) | [한국어](./CHANGELOG_ko.md) | Русский | [Español](./CHANGELOG_es.md) | [Português (Brasil)](./CHANGELOG_pt.md)
 
 Здесь описаны заметные пользователю изменения приложения. Предыдущие версии — на странице [выпусков GitHub](https://github.com/modelflare-ai/AnyModelBot/releases).
 

@@ -1,6 +1,6 @@
 # 変更履歴
 
-[简体中文](./CHANGELOG.md) | [English](./CHANGELOG_en.md) | 日本語 | [한국어](./CHANGELOG_ko.md) | [Русский](./CHANGELOG_ru.md)
+[简体中文](./CHANGELOG.md) | [English](./CHANGELOG_en.md) | 日本語 | [한국어](./CHANGELOG_ko.md) | [Русский](./CHANGELOG_ru.md) | [Español](./CHANGELOG_es.md) | [Português (Brasil)](./CHANGELOG_pt.md)
 
 アプリを使っていて気付く変更をまとめています。以前のバージョンは [GitHub Releases](https://github.com/modelflare-ai/AnyModelBot/releases) をご覧ください。
 
