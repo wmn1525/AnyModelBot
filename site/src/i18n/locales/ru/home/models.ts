@@ -2,7 +2,7 @@ export default {
   h2: "Один ключ.",
   h2dim: "Все модели.",
   lead: "Интеллект тоже выбираете вы: у каждого бота может быть своя модель, которую можно сменить в любой момент.",
-  marqueeLabel: "Поставщики и текстовые модели Modelflare",
+  marqueeLabel: "Поставщики и текстовые модели okinto",
   scenarios: {
     copy: "Написать текст",
     code: "Исправить код",
@@ -25,5 +25,5 @@ export default {
   keyOne: "Один ключ",
   keyAll: "Моделей: {modelCount} · поставщиков: {vendorCount}",
   priceLine: "{model} · вход {input} · выход {output} / 1 млн токенов",
-  cta: "Получить ключ Modelflare →",
+  cta: "Получить ключ okinto →",
 };

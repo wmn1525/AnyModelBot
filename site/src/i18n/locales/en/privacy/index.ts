@@ -1,12 +1,12 @@
 export default {
-  "title": "Privacy — AnyModelBot",
-  "description": "The AnyModelBot site uses no cookies and loads no third-party trackers.",
+  "title": "Privacy — okbot",
+  "description": "How the okbot site uses local storage, external links and AI services.",
   "h1": "Privacy",
   "body": [
-    "This site uses no cookies and loads no third-party trackers.",
-    "We use self-hosted, cookie-free aggregate analytics (no IP logging, no personal identification) and respect your browser's Do Not Track setting.",
-    "Fonts and on-site images are self-hosted. The exception is the “Featured on” badges in the footer: those images come from the listing sites, and your browser requests them as the footer nears the screen, so those sites can see your IP address and this site's domain. Downloads are served from {domain}.",
-    "For how the app itself handles data, see the data-flow diagram on the homepage and the security page."
+    "This site uses browser local storage for preferences such as the theme. Analytics are disabled.",
+    "Fonts, styles and on-site images are served with this site. Installers are hosted on the okbot GitHub Releases page. External services handle requests under their own policies.",
+    "AI services are provided by okinto. Model request handling follows the okinto privacy policy and account settings.",
+    "See the data-flow diagram and security page for how the okbot app handles data."
   ],
   "security": "Security →"
 };

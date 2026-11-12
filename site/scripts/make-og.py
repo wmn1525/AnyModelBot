@@ -99,7 +99,7 @@ def og(lang):
     # 品牌锁定组合
     m = mark(56)
     im.alpha_composite(m, (72, 64))
-    d.text((140, 70), "AnyModelBot", font=brand, fill=TEXT)
+    d.text((140, 70), "okbot", font=brand, fill=TEXT)
     # 标题（第二行带荧光笔）
     y = 176
     d.text((72, y), c["h1"][0], font=head, fill=TEXT)
@@ -147,7 +147,7 @@ def wechat_home():
     im.alpha_composite(m, ((S - m.width) // 2, 122))
     d = ImageDraw.Draw(im)
     d.text((S / 2, 660), "你的 AI 搭子", font=font(CJK, 180, 800), fill=TEXT, anchor="ma")
-    d.text((S / 2, 940), "AnyModelBot", font=font(CJK, 96, 700), fill=LIME, anchor="ma")
+    d.text((S / 2, 940), "okbot", font=font(CJK, 96, 700), fill=LIME, anchor="ma")
     out = os.path.join(PUB, "og", "wechat-home.png")
     im.resize((600, 600), Image.LANCZOS).convert("RGB").save(out, optimize=True)
     print(out, os.path.getsize(out) // 1024, "KB")

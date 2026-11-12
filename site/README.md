@@ -245,7 +245,7 @@ docker compose -f deploy/compose.yml --env-file deploy/.env up -d --build
 ```
 
 - `builder` 容器：启动时构建一次，之后每天 04:00（UTC+8）重新抓价格、重新构建；每次输出到共享卷的新目录，成功后原子切换 `current` 软链接，失败就继续用上一版（保留最近 3 版）。
-- `web` 容器：nginx 只在 `127.0.0.1:${SITE_PORT:-18490}` 提供静态文件。
+- `web` 容器：nginx 在 `0.0.0.0:${SITE_PORT:-18490}` 提供静态文件，默认可通过 `http://<服务器IP>:18490` 访问。
 - 域名与证书走宿主机的 Caddy，分两步：
   1. 先放只有 HTTP 的站点（`deploy/anymodelbot.Caddyfile.example`），带 `/.well-known/acme-challenge/` 给 certbot 验证用。宿主机 Caddy 关了自动 HTTPS（`auto_https off`）时，这一步不能引用还不存在的证书文件，否则整份 Caddy 配置校验失败，共用这个 Caddy 的其他站点也受影响。
   2. 域名解析到本机后，用 certbot（webroot）签证书，换成 HTTPS 站点（HTTP 跳 HTTPS、www 跳主域名），校验整份配置、确认已有站点一个不少再 reload，并装上每天的续期任务（续期后 `caddy reload --force` 才会重新读取证书文件）。

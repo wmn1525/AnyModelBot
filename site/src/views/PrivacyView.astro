@@ -1,7 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import { dict, fmt, href, type Lang } from "../i18n";
-import { PARTNERS_EMAIL, SITE_DOMAIN } from "../lib/site";
+import { CONTACT_URL, SITE_DOMAIN } from "../lib/site";
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const t = dict(lang);
@@ -11,7 +11,7 @@ const p = t.privacy;
   <article class="container page prose">
     <header class="page__head"><h1>{p.h1}</h1></header>
     {p.body.map((x) => <p>{fmt(x, { domain: SITE_DOMAIN })}</p>)}
-    <p>{fmt(t.partners.privacyNote, { email: PARTNERS_EMAIL })}</p>
+    <p><a href={CONTACT_URL} target="_blank" rel="noopener">{t.partners.privacyNote}</a></p>
     <p class="page__cta"><a href={href(lang, "/security")}>{p.security}</a></p>
   </article>
 </Base>

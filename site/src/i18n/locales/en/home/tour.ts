@@ -1,5 +1,5 @@
 export default {
-  "title": "AnyModelBot demo",
+  "title": "okbot demo",
   "note": "Animated walkthrough; the UI is illustrative.",
   "prev": "Previous step",
   "next": "Next step",
@@ -10,8 +10,8 @@ export default {
       "caption": "Grab the installer for your system (Windows, macOS, Linux), or run it on a server with one docker command."
     },
     {
-      "title": "Sign in to Modelflare",
-      "caption": "On first launch, sign in to Modelflare once in your browser and it connects by itself. On Docker or remote setups, paste the link you land on after signing in."
+      "title": "Sign in to okinto",
+      "caption": "On first launch, sign in to okinto once in your browser and it connects by itself. On Docker or remote setups, paste the link you land on after signing in."
     },
     {
       "title": "Pick a default model",
@@ -35,15 +35,15 @@ export default {
     }
   ],
   "ui": {
-    "installing": "Installing AnyModelBot…",
+    "installing": "Installing okbot…",
     "slogan": "Any model, one assistant",
-    "login": "Sign in / Sign up with Modelflare",
+    "login": "Sign in / Sign up with okinto",
     "loginWait": "Finish signing in in your browser — you'll come right back here",
     "loginReopen": "Reopen sign-in page ↗",
     "loginCopy": "Copy link",
     "loginCancel": "Cancel",
-    "authTitle": "Authorize AnyModelBot to use your account",
-    "authSub": "This creates a key on this computer that only AnyModelBot uses.",
+    "authTitle": "Authorize okbot to use your account",
+    "authSub": "This creates a key on this computer that only okbot uses.",
     "authBtn": "Authorize and return",
     "connected": "Connected · {n} models found",
     "pickHint": "Pick a default model; you can switch any time in the chat.",

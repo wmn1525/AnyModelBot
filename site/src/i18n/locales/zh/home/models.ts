@@ -2,7 +2,7 @@ export default {
   "h2": "一个 Key，",
   "h2dim": "所有模型。",
   "lead": "脑子也由你挑：每个机器人可以用不同的模型，随时换。",
-  "marqueeLabel": "Modelflare 上的厂商与文本模型",
+  "marqueeLabel": "okinto 上的厂商与文本模型",
   "scenarios": {
     "copy": "写文案",
     "code": "改代码",
@@ -24,5 +24,5 @@ export default {
   "keyOne": "1 个 Key",
   "keyAll": "{modelCount} 个模型 · {vendorCount} 家厂商",
   "priceLine": "{model} · 输入 {input} · 输出 {output} / 1M tokens",
-  "cta": "获取 Modelflare Key →"
+  "cta": "获取 okinto Key →"
 };

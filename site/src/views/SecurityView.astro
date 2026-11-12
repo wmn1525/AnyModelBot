@@ -1,7 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
-import { dict, fmt, type Lang } from "../i18n";
-import { SECURITY_EMAIL } from "../lib/site";
+import { dict, type Lang } from "../i18n";
+import { CONTACT_URL } from "../lib/site";
 import "../styles/pages.css";
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -31,6 +31,6 @@ const stays = (["chats", "memory", "workspace", "key", "console"] as const).map(
     <ol class="ticks" role="list">{t.home.oss.facts.map((f) => <li>{f.text} <code class="small muted">{f.path}</code></li>)}</ol>
     <h2>{s.limitsTitle}</h2>
     <ul class="ticks" role="list">{s.limits.map((x) => <li>{x}</li>)}</ul>
-    <p class="page__cta">{fmt(s.report, { email: SECURITY_EMAIL })}</p>
+    <p class="page__cta"><a href={CONTACT_URL} target="_blank" rel="noopener">{s.report}</a></p>
   </article>
 </Base>

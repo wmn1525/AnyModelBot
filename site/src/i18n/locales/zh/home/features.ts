@@ -31,7 +31,7 @@ export default {
       },
       {
         "title": "三个 API 域名",
-        "body": "modelflare.dev、origin.modelflare.dev 和 cf.modelflare.dev 均可选择，可在设置中测速，不会自动切换。"
+        "body": "api.okinto.com、origin.api.okinto.com 和 cf.api.okinto.com 均可选择，可在设置中测速，不会自动切换。"
       },
       {
         "title": "微信收发图片和文件",

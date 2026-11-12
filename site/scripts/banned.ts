@@ -10,7 +10,7 @@ export const BANNED: [RegExp, string][] = [
   [/离线可用|本地大模型|works offline(?!\?)/i, "离线/本地模型"],
   [/全平台|全设备|支持 ?iOS ?和 ?Android/, "平台夸大"],
   [/最便宜|最划算|省\s?\d+\s?%|比.{0,12}便宜|cheapest|save \d+%/i, "价格比较"],
-  [/Modelflare\s?(没有|无)(订阅|月费)|Modelflare (has )?no subscription/i, "Modelflare 订阅主语"],
+  [/okinto\s?(没有|无)(订阅|月费)|okinto (has )?no subscription/i, "okinto 订阅主语"],
   [/每次操作都会先征求你同意|asks? before every action/i, "审批夸大"],
   [/7\s?[×x]\s?24 ?自动|定时任务|教它一遍|多机器人协同|scheduled tasks|teach it once/i, "未实现能力"],
   [/群聊支持|supports group chats/i, "群聊"],

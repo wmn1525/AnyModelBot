@@ -14,7 +14,7 @@ export default {
     },
     {
       "q": "How is it different from Grok Bot, OpenAI dots or Claude Duet?",
-      "a": "They are the same kind of always-on personal AI agent: it works for you in the background and checks in when a decision is yours. The difference: AnyModelBot is open source (MIT) and runs on your own computer or server. It works with GPT, Claude, Gemini, Grok and more; the app is free and models are billed per use, with no single vendor's subscription. The README on GitHub has a full comparison table. Grok Bot, dots and Claude Duet are products of xAI, OpenAI and Anthropic respectively; AnyModelBot is not affiliated with them."
+      "a": "They are the same kind of always-on personal AI agent: it works for you in the background and checks in when a decision is yours. The difference: okbot is open source (MIT) and runs on your own computer or server. It works with GPT, Claude, Gemini, Grok and more; the app is free and models are billed per use, with no single vendor's subscription. The README on GitHub has a full comparison table. Grok Bot, dots and Claude Duet are products of xAI, OpenAI and Anthropic respectively; okbot is not affiliated with them."
     },
     {
       "q": "What's the difference between the six characters?",
@@ -22,11 +22,11 @@ export default {
     },
     {
       "q": "Is my data uploaded to your servers?",
-      "a": "Chats, memory, files and keys are stored on your device. Model requests go to the provider you choose: directly with your own official API key, otherwise through Modelflare, where log retention follows its “Data retention” doc. Screen content seen during computer use is sent to the chosen model."
+      "a": "Chats and memory stay on your device. Model requests, including screen content during computer use, go through okinto or your configured official API. Gateway data handling follows its privacy policy."
     },
     {
       "q": "Does it work offline?",
-      "a": "No. Models come from Modelflare or the providers' official APIs; local models aren't supported."
+      "a": "No. Models come from okinto or the providers' official APIs; local models aren't supported."
     },
     {
       "q": "Can I use it on my phone?",
@@ -41,8 +41,8 @@ export default {
       "a": "Yes, once you authorize it. Add accounts in Settings › Connections, as many as you like, then ask any bot about them by number or alias. Bots can read and edit pages but can't delete them, and read-only bots can only read."
     },
     {
-      "q": "I don't have a Modelflare account.",
-      "a": "At first launch, click Sign in / Sign up for Modelflare and sign up in your browser. The app connects itself when you come back, with no key to copy. On Docker or a remote server, paste the link you land on after signing in. All three API domains are available; compare response times and choose one in Settings. You can also skip the account: click Use your own API key and enter an official key from OpenAI, Anthropic, Google Gemini, DeepSeek or another provider, and model requests go straight to them."
+      "q": "I don't have a okinto account.",
+      "a": "Register at api.okinto.com and create an API key, then sign in to okinto in okbot or enter the key. The default API endpoint is https://api.okinto.com/v1. Supported providers can also be configured with official API keys."
     },
     {
       "q": "Is computer use safe?",

@@ -6,15 +6,15 @@ export default {
     },
     resources: {
       title: "Ресурсы",
-      links: ["Документация", "Безопасность", "GitHub", "Modelflare"],
+      links: ["Документация", "Безопасность", "GitHub", "okinto"],
     },
     legal: {
       title: "Правовая информация",
       links: ["Приватность", "Лицензии открытого ПО"],
     },
   },
-  copyright: "© 2026 AnyModelBot · MIT",
-  art: "Персонажи © проект AnyModelBot",
+  copyright: "© 2026 okbot · MIT",
+  art: "Персонажи © проект okbot",
   tagline:
     "ИИ-напарники на вашем компьютере. Один ключ для всех основных моделей — меняйте интеллект в любой момент.",
   featured: "О нас пишут",

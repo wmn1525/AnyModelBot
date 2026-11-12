@@ -1,8 +1,8 @@
 {
-  "name": "anymodelbot-site",
+  "name": "okbot-site",
   "private": true,
   "type": "module",
-  "description": "AnyModelBot 官网落地页（Astro 静态站）",
+  "description": "okbot 官网，使用 okinto AI 服务的静态 HTML 站点",
   "license": "MIT",
   "engines": {
     "node": ">=22.13"
@@ -22,7 +22,10 @@
     "badges:copies": "tsx scripts/make-badge-copies.ts",
     "releases": "tsx scripts/releases-from-github.ts",
     "releases:dir": "tsx scripts/releases-from-dir.ts",
-    "test:locales:browser": "tsx scripts/smoke-locales.ts"
+    "test:locales:browser": "tsx scripts/smoke-locales.ts",
+    "build:html": "tsx scripts/releases-from-github.ts && tsx scripts/fetch-pricing.ts && tsx scripts/check-i18n.ts --release && tsx scripts/check-images.ts && astro build && tsx scripts/banned.ts --dist && tsx scripts/check-links.ts && tsx scripts/check-placeholders.ts",
+    "package:html": "node scripts/package-html.mjs",
+    "check:html:browser": "node scripts/check-html-browser.mjs"
   },
   "dependencies": {
     "@astrojs/preact": "4.1.3",

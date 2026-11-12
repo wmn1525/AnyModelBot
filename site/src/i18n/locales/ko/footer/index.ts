@@ -16,7 +16,7 @@ export default {
         "문서",
         "보안",
         "GitHub",
-        "Modelflare"
+        "okinto"
       ]
     },
     "legal": {
@@ -27,8 +27,8 @@ export default {
       ]
     }
   },
-  "copyright": "© 2026 AnyModelBot · MIT",
-  "art": "캐릭터 아트 © AnyModelBot 프로젝트",
+  "copyright": "© 2026 okbot · MIT",
+  "art": "캐릭터 아트 © okbot 프로젝트",
   "tagline": "내 컴퓨터에 사는 AI 동료. 하나의 키로 주요 모델을 모두 사용하고 언제든 두뇌를 바꾸세요.",
   "featured": "소개된 곳",
   "featuredMore": "{count}개 모두 표시",

@@ -1,10 +1,10 @@
 export default {
-  "pageTitle": "Promote AnyModelBot and earn recurring commission — Partner Program",
-  "pageDescription": "Join the AnyModelBot partner program and share it with your students, readers and clients. When the users you bring pay, you earn recurring commission.",
+  "pageTitle": "Promote okbot and earn recurring commission — Partner Program",
+  "pageDescription": "Join the okbot partner program and share it with your students, readers and clients. When the users you bring pay, you earn recurring commission.",
   "footer": "Partners",
   "eyebrow": "Partner Program",
-  "h1": "Promote AnyModelBot,",
-  "lead": "Join the partner program and share AnyModelBot with your students, readers and clients. When the users you bring pay, you earn recurring commission. We'll settle the partnership and commission rate one-on-one.",
+  "h1": "Promote okbot,",
+  "lead": "Join the partner program and share okbot with your students, readers and clients. When the users you bring pay, you earn recurring commission. We'll settle the partnership and commission rate one-on-one.",
   "cta": "Join the partner program",
   "ctaProduct": "Learn about the product",
   "who": {
@@ -13,7 +13,7 @@ export default {
     "items": [
       {
         "title": "Training providers and instructors",
-        "body": "Build AnyModelBot into your courses and get your students using it.",
+        "body": "Build okbot into your courses and get your students using it.",
         "gain": "A new income stream for your courses"
       },
       {
@@ -63,7 +63,7 @@ export default {
       },
       {
         "title": "Share",
-        "body": "We'll settle the partnership with you and send product materials. Then share AnyModelBot with your students, readers and clients."
+        "body": "We'll settle the partnership with you and send product materials. Then share okbot with your students, readers and clients."
       },
       {
         "title": "Earn recurring commission",
@@ -76,12 +76,12 @@ export default {
     "lead": "Share some basics and how to reach you. We'll get in touch to settle the partnership and commission.",
     "mailLabel": "Or email us directly",
     "panel": {
-      "title": "Apply with your Modelflare account",
-      "body": "The application is in the Modelflare console: sign in and submit it there. Once you're approved, your personal coupon and commission figures are there too.",
+      "title": "Apply with your okinto account",
+      "body": "The application is in the okinto console: sign in and submit it there. Once you're approved, your personal coupon and commission figures are there too.",
       "action": "Fill in the application"
     },
     "mail": {
-      "subject": "AnyModelBot partner application"
+      "subject": "okbot partner application"
     },
     "dim": "we'll work with you one-on-one.",
     "points": [
@@ -90,7 +90,7 @@ export default {
       "Partnership and commission settled one-on-one"
     ]
   },
-  "privacyNote": "If you submit a partner application, we keep what you entered and use it only to contact you and assess the partnership. To change or delete it, email {email}.",
+  "privacyNote": "Contact the project through GitHub Issues for feedback or collaboration.",
   "h1Hl": "earn recurring commission.",
   "points": [
     "Recurring commission",
@@ -105,7 +105,7 @@ export default {
   },
   "feed": {
     "items": [
-      "A new user started using AnyModelBot through your recommendation",
+      "A new user started using okbot through your recommendation",
       "That user completed a payment",
       "You earned a commission"
     ],

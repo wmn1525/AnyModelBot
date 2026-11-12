@@ -33,7 +33,7 @@ export default {
   downloading: "ダウンロード中…",
   macNote:
     "macOS のコンピューター操作はベータ版です。直接操作モードは、さらに多くの実機での検証が必要です。「アクセシビリティ」と「画面収録」の権限は、ボットが初めて必要としたときに確認します。それ以外の機能は Windows / Linux 版と同じです。",
-  linuxHint: "chmod +x anymodel-bot-*.AppImage && ./anymodel-bot-*.AppImage",
+  linuxHint: "chmod +x okbot-*.AppImage && ./okbot-*.AppImage",
   winHint:
     "Windows の警告が表示されたら、「詳細情報」→「実行」を選択してください。",
   macHint:
@@ -46,11 +46,11 @@ export default {
   verifyUnixLabel: "macOS / Linux",
   verifyWin: "Get-FileHash .\\<file> -Algorithm SHA256",
   verifyUnix: "shasum -a 256 <file>",
-  pageTitle: "AnyModelBot をダウンロード",
+  pageTitle: "okbot をダウンロード",
   pageLead:
-    "無料・オープンソース。アプリ自体の登録は不要です。初回起動時に Modelflare にログインすれば準備完了です。",
+    "無料・オープンソース。アプリ自体の登録は不要です。初回起動時に okinto にログインすれば準備完了です。",
   pageDescription:
-    "Windows、macOS、Linux、Docker 向けの AnyModelBot をダウンロード。無料のオープンソースアプリで、モデルは従量課金です。",
+    "Windows、macOS、Linux、Docker 向けの okbot をダウンロード。無料のオープンソースアプリで、モデルは従量課金です。",
   altTitle: "ほかの起動方法",
   dockerTitle: "Docker",
   dockerSteps: {

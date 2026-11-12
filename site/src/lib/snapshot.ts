@@ -3,7 +3,9 @@ import { estimate } from "./calc";
 import { fmtMoney } from "./calc";
 import { deriveRows, fmtPrice, Pricing, type PricingConfig, type Snapshot } from "./pricing";
 
-export const SOURCE = "https://modelflare.dev/api/pricing";
+import { normalizeNewApi } from "./newapi-pricing";
+
+export const SOURCE = "https://api.okinto.com/api/pricing";
 
 /** 2026-10-30T21:24:41+08:00：时间一律按 UTC+8 写 */
 export function isoUtc8(d: Date): string {
@@ -12,7 +14,7 @@ export function isoUtc8(d: Date): string {
 }
 
 export function buildSnapshot(input: unknown, cfg: PricingConfig, now: Date): Snapshot {
-  const raw = Pricing.parse(input);
+  const raw = Pricing.parse(typeof input === "object" && input !== null && !("group_definitions" in input) ? normalizeNewApi(input) : input);
   const rows = deriveRows(raw);
   for (const id of [...cfg.featuredModels, cfg.sampleModel]) {
     if (!rows.some((r) => r.model === id)) throw new Error(`精选模型 ${id} 不在价格数据里`);

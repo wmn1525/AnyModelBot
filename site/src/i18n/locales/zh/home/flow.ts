@@ -30,9 +30,9 @@ export default {
       "body": "默认只监听 127.0.0.1 并校验 Host；Docker 模式必须带访问令牌。"
     },
     "gateway": {
-      "label": "Modelflare 网关",
-      "sub": "转发本次请求 · 日志保留期可选",
-      "body": "转发本次请求到你选择的厂商；日志保留期以 Modelflare 文档《Data retention》为准。"
+      "label": "okinto 网关",
+      "sub": "转发请求至所选模型",
+      "body": "模型请求经 okinto 转发；日志、缓存与数据保留规则以 okinto 公布的隐私政策和账户设置为准。"
     },
     "vendors": {
       "label": "OpenAI / Anthropic / Google …",
@@ -44,13 +44,13 @@ export default {
       "body": "这些平台的消息本来就经过它们的服务器。"
     }
   },
-  "retentionLink": "Modelflare 文档《数据保留》",
-  "retentionUrl": "https://docs.modelflare.dev/zh/guides/features/data-retention/?utm_source=anymodelbot&utm_campaign=amb_homepage",
+  "retentionLink": "okinto 隐私政策",
+  "retentionUrl": "https://api.okinto.com/privacy-policy",
   "compare": {
-    "caption": "AnyModelBot 与典型云端托管型助手的对照",
+    "caption": "okbot 与典型云端托管型助手的对照",
     "head": [
       "",
-      "AnyModelBot",
+      "okbot",
       "典型云端托管型助手"
     ],
     "rows": [
@@ -66,12 +66,12 @@ export default {
       ],
       [
         "模型",
-        "Modelflare 上任选，随时换",
+        "okinto 上任选，随时换",
         "通常绑定自家模型"
       ],
       [
         "计费",
-        "App 免费；模型按量付费给 Modelflare",
+        "App 免费；模型按量付费给 okinto",
         "通常按月订阅、分档"
       ],
       [
@@ -81,7 +81,7 @@ export default {
       ],
       [
         "推理请求是否出网",
-        "是，经 Modelflare 到模型厂商",
+        "是，经 okinto 到模型厂商",
         "是"
       ],
       [

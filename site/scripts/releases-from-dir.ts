@@ -1,5 +1,5 @@
 // 从安装包目录生成 src/data/releases.json（§12.3），不用手填版本、地址和 SHA-256。
-// 文件名按应用 electron-builder 的 artifactName：anymodel-bot-<版本>-<系统>-<架构>.<扩展名>
+// 文件名按应用 electron-builder 的 artifactName：okbot-<版本>-<系统>-<架构>.<扩展名>（兼容旧 anymodel-bot 前缀）
 //   win-x64 ← *-win-x64.exe（NSIS）   mac-arm64 / mac-x64 ← *-mac-<架构>.dmg   linux-x64 ← *-linux-(x64|x86_64).AppImage
 // 取目录里最高的版本；该版本缺的平台保留占位符（生产构建会因此失败，提醒补齐）。
 //   DOWNLOADS_DIR       安装包目录（必填）
@@ -14,7 +14,7 @@ const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const dir = process.env.DOWNLOADS_DIR;
 if (!dir) { console.error("缺少 DOWNLOADS_DIR"); process.exit(1); }
 
-const RE = /^anymodel-bot-(\d+\.\d+\.\d+)-(win|mac|linux)-(x64|arm64|x86_64)\.(exe|dmg|AppImage)$/;
+const RE = /^(?:okbot|anymodel-bot)-(\d+\.\d+\.\d+)-(win|mac|linux)-(x64|arm64|x86_64)\.(exe|dmg|AppImage)$/;
 const PLATFORM: Record<string, string> = { "win-x64-exe": "win-x64", "mac-arm64-dmg": "mac-arm64", "mac-x64-dmg": "mac-x64", "linux-x64-AppImage": "linux-x64", "linux-x86_64-AppImage": "linux-x64" };
 const cmpVer = (a: string, b: string) => a.split(".").map(Number).reduce((r, n, i) => r || n - Number(b.split(".")[i]), 0);
 
@@ -47,9 +47,9 @@ for (const id of ["win-x64", "mac-arm64", "mac-x64", "linux-x64"]) {
   platforms[id] = { url: `${base}/${encodeURIComponent(f.name)}`, sha256: await sha(full), sizeMB: Math.round((st.size / 1048576) * 10) / 10 };
 }
 // 还没发布镜像（DOCKER_IMAGE 为空）时给"从源码构建"的命令，和 README 的写法一致
-const image = process.env.DOCKER_IMAGE || "anymodel-bot";
+const image = process.env.DOCKER_IMAGE || "okbot";
 const runCmd = `docker run -d --name amb -p 3600:3600 -v amb-data:/data ${image}`;
-const repo = (process.env.GITHUB_URL || "https://github.com/modelflare-ai/AnyModelBot").replace(/\/+$/, "");
+const repo = (process.env.GITHUB_URL || "https://github.com/wmn1525/AnyModelBot").replace(/\/+$/, "");
 platforms.docker = {
   image,
   command: process.env.DOCKER_IMAGE ? runCmd : `git clone ${repo}.git && cd AnyModelBot && git submodule update --init --depth 1 vendor/magpie && docker build -t ${image} . && ${runCmd}`,

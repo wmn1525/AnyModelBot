@@ -2,7 +2,7 @@ export default {
   h2: "キーは1つ。",
   h2dim: "モデルは自由。",
   lead: "頭脳を選ぶのもあなた。ボットごとに別のモデルを使い、いつでも切り替えられます。",
-  marqueeLabel: "Modelflare の提供元とテキストモデル",
+  marqueeLabel: "okinto の提供元とテキストモデル",
   scenarios: { copy: "文章を書く", code: "コードを直す", research: "調べる" },
   question: {
     copy: "新サービスのキャッチコピーを一文で書いて。",
@@ -21,5 +21,5 @@ export default {
   keyOne: "キー1つで",
   keyAll: "{modelCount}モデル · {vendorCount}の提供元",
   priceLine: "{model} · 入力 {input} · 出力 {output} / 100万トークン",
-  cta: "Modelflare のキーを取得 →",
+  cta: "okinto のキーを取得 →",
 };

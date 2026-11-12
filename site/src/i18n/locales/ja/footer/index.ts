@@ -6,15 +6,15 @@ export default {
     },
     resources: {
       title: "リソース",
-      links: ["ドキュメント", "セキュリティ", "GitHub", "Modelflare"],
+      links: ["ドキュメント", "セキュリティ", "GitHub", "okinto"],
     },
     legal: {
       title: "ポリシー・ライセンス",
       links: ["プライバシー", "オープンソースライセンス"],
     },
   },
-  copyright: "© 2026 AnyModelBot · MIT",
-  art: "キャラクター画像 © AnyModelBot プロジェクト",
+  copyright: "© 2026 okbot · MIT",
+  art: "キャラクター画像 © okbot プロジェクト",
   tagline:
     "あなたのパソコンで動く AI の仲間。キー1つで主要モデルを使い、頭脳をいつでも切り替えられます。",
   featured: "掲載サイト",

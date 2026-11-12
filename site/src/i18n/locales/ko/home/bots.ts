@@ -5,7 +5,7 @@ export default {
   "tabsLabel": "캐릭터 선택",
   "cost": "월 약 {amount}",
   "badge": {
-    "org": "AnyModelBot",
+    "org": "okbot",
     "staff": "내가 정한 역할",
     "no": "ID",
     "persona": "역할",

@@ -1,10 +1,10 @@
 export default {
-  "pageTitle": "推广 AnyModelBot，拿持续佣金",
+  "pageTitle": "推广 okbot，拿持续佣金",
   "pageDescription": "电脑里的 AI 搭子，一个 Key 用上主流模型。推荐给朋友，持续拿佣金。",
   "footer": "合作伙伴",
   "eyebrow": "合作伙伴计划",
-  "h1": "推广 AnyModelBot，",
-  "lead": "加入合作伙伴计划，把 AnyModelBot 分享给你的学员、读者和客户。你带来的用户付费，你就能获得持续佣金。合作方式和佣金比例，我们一对一沟通。",
+  "h1": "推广 okbot，",
+  "lead": "加入合作伙伴计划，把 okbot 分享给你的学员、读者和客户。你带来的用户付费，你就能获得持续佣金。合作方式和佣金比例，我们一对一沟通。",
   "cta": "加入合作伙伴计划",
   "ctaProduct": "了解产品",
   "who": {
@@ -13,7 +13,7 @@ export default {
     "items": [
       {
         "title": "培训机构和讲师",
-        "body": "把 AnyModelBot 放进课程，带学员用起来。",
+        "body": "把 okbot 放进课程，带学员用起来。",
         "gain": "为课程多一份收入"
       },
       {
@@ -63,7 +63,7 @@ export default {
       },
       {
         "title": "分享推广",
-        "body": "我们和你确定合作方式、提供产品资料，你把 AnyModelBot 分享给学员、读者和客户。"
+        "body": "我们和你确定合作方式、提供产品资料，你把 okbot 分享给学员、读者和客户。"
       },
       {
         "title": "获得持续佣金",
@@ -76,12 +76,12 @@ export default {
     "lead": "留下基础信息和联系方式，我们会和你联系，确定合作方式和佣金。",
     "mailLabel": "也可以直接发邮件",
     "panel": {
-      "title": "用 Modelflare 账号申请",
-      "body": "申请在 Modelflare 控制台填写，登录后就能提交。通过后，你的专属优惠券和佣金数据也都在那里查看。",
+      "title": "用 okinto 账号申请",
+      "body": "申请在 okinto 控制台填写，登录后就能提交。通过后，你的专属优惠券和佣金数据也都在那里查看。",
       "action": "去填写申请"
     },
     "mail": {
-      "subject": "AnyModelBot 合作申请"
+      "subject": "okbot 合作申请"
     },
     "dim": "我们一对一对接。",
     "points": [
@@ -90,7 +90,7 @@ export default {
       "合作方式和佣金一对一确定"
     ]
   },
-  "privacyNote": "如果你提交合作申请，我们会保存你填写的信息，只用于联系你和评估合作。想修改或删除，请发邮件到 {email}。",
+  "privacyNote": "反馈与合作请通过项目 GitHub Issues 联系。",
   "h1Hl": "获得持续佣金。",
   "points": [
     "持续佣金",
@@ -105,7 +105,7 @@ export default {
   },
   "feed": {
     "items": [
-      "新用户通过你的推荐开始使用 AnyModelBot",
+      "新用户通过你的推荐开始使用 okbot",
       "这位用户完成了付费",
       "你获得了一笔佣金"
     ],

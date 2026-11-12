@@ -164,7 +164,7 @@
   .pt-stays .icon { width: 14px; height: 14px; color: var(--accent-fg); }
   .pt-bots { flex: none; display: flex; gap: clamp(8px, 1.4vw, 20px); }
 
-  /* 申请：左边说明和邮箱，右边去 Modelflare 控制台的入口 */
+  /* 申请：左边说明和邮箱，右边去 okinto 控制台的入口 */
   .pt-apply { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--grid-gap); align-items: start; }
   .pt-apply__intro { display: grid; gap: var(--space-6); }
   .pt-apply__points { display: grid; gap: var(--space-3); }
@@ -208,7 +208,7 @@
     .pt-bots .bot-face { --s: 44px !important; }
   }
 
-  /* —— 安全说明：对照表里 AnyModelBot 一列用正文色，最后两行（出网、可审计）加重 —— */
+  /* —— 安全说明：对照表里 okbot 一列用正文色，最后两行（出网、可审计）加重 —— */
   .compare td:nth-child(2) { color: var(--text); }
   .compare tbody tr:nth-last-child(-n+2) td:nth-child(2) { font-weight: 500; }
 

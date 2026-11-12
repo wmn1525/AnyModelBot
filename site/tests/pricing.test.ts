@@ -51,7 +51,7 @@ describe("精选行（默认线路，USD / 1M tokens）", () => {
   });
 });
 
-describe("官方价规则（与 modelflare.dev/pricing 前端一致）", () => {
+describe("官方价规则（与 api.okinto.com/pricing 前端一致）", () => {
   it("没有 official_input_price 时用基础价", () => {
     const r = row("deepseek-v4-flash");
     expect([r.officialInput, r.officialOutput]).toEqual([0.428571, 1.285714]);

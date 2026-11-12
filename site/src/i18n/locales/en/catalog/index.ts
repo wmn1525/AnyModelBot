@@ -1,16 +1,16 @@
 export default {
-  "title": "Ready-made bots | AnyModelBot",
-  "description": "Explore ready-made AnyModelBot bots for company research, presentations, short videos and episodic dramas, each with its own interface.",
+  "title": "Ready-made bots | okbot",
+  "description": "Discover in okbot has ready-made bots, each with its own view. Open one and start using it.",
   "h1": "Ready-made bots you can use right away",
   "lead": "Official bot UIs, samples and skills ship with the app, so opening a bot needs no package download. Preview a sample, then send your first message to start. Model calls still need a network connection.",
   "tryLabel": "Try saying",
   "howTitle": "How to use them",
   "how": [
-    "Download and open AnyModelBot",
+    "Download and open okbot",
     "Select Discover in the sidebar",
     "Open a bot and send your first message"
   ],
-  "cta": "Download AnyModelBot",
+  "cta": "Download okbot",
   "strip": {
     "title": "Or start with a ready-made bot",
     "lead": "Research companies, make presentations or create short videos and episodic dramas. Find bots with their own interfaces in Discover.",

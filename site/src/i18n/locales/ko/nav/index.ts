@@ -8,7 +8,7 @@ export default {
   "pricing": "요금",
   "docs": "문서",
   "skip": "본문으로 건너뛰기",
-  "home": "AnyModelBot 홈",
+  "home": "okbot 홈",
   "menu": "메뉴",
   "close": "닫기",
   "github": "GitHub",

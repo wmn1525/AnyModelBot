@@ -1,8 +1,8 @@
 export default {
-  "title": "오픈 소스 라이선스 — AnyModelBot",
-  "description": "AnyModelBot과 이 웹사이트가 사용하는 제3자 구성 요소 및 라이선스.",
+  "title": "오픈 소스 라이선스 — okbot",
+  "description": "okbot과 이 웹사이트가 사용하는 제3자 구성 요소 및 라이선스.",
   "h1": "오픈 소스 라이선스",
-  "lead": "AnyModelBot은 MIT 라이선스로 배포됩니다. 아래에는 앱에 포함된 제3자 고지(저장소의 THIRD_PARTY_NOTICES.md와 동기화)와 이 웹사이트에서 사용하는 구성 요소가 나옵니다.",
+  "lead": "okbot은 MIT 라이선스로 배포됩니다. 아래에는 앱에 포함된 제3자 고지(저장소의 THIRD_PARTY_NOTICES.md와 동기화)와 이 웹사이트에서 사용하는 구성 요소가 나옵니다.",
   "site": "이 웹사이트의 구성 요소",
   "siteItems": [
     "Geist / Geist Mono 글꼴(SIL Open Font License 1.1, /fonts/OFL.txt 참조)",

@@ -1,5 +1,5 @@
 import { formatUSD } from "./locale-format";
-// 价格数据：把 modelflare.dev/api/pricing 的原始数据整理成页面用的行。
+// 价格数据：把 api.okinto.com/api/pricing 的原始数据整理成页面用的行。
 // 构建脚本（scripts/fetch-pricing.ts）、价格表、计算器和单测共用这一份规则，页面上不手写任何价格。
 import { z } from "zod";
 
@@ -71,7 +71,7 @@ export interface PriceRow {
   /** 默认线路价，USD / 1M tokens（标准档） */
   input: number;
   output: number;
-  /** 官方价：与 modelflare.dev/pricing 一致——有 official_input_price 用它，否则用基础价 */
+  /** 官方价：与 api.okinto.com/pricing 一致——有 official_input_price 用它，否则用基础价 */
   officialInput: number;
   officialOutput: number;
   ratio: number;
@@ -196,7 +196,7 @@ function baseTiers(m: RawModel): PriceTier[] {
   return [{ label: "standard", maxInputTokens: null, input: m.input_price, output: m.input_price * m.completion_ratio }];
 }
 
-/** 官方价（modelflare.dev/pricing 的同一规则）：official_input_price > 0 时用它（输出 × official_completion_ratio ?? completion_ratio），否则用标准档基础价 */
+/** 官方价（api.okinto.com/pricing 的同一规则）：official_input_price > 0 时用它（输出 × official_completion_ratio ?? completion_ratio），否则用标准档基础价 */
 function officialOf(m: RawModel, std: PriceTier) {
   const o = m.official_input_price;
   if (o != null && Number.isFinite(o) && o > 0) {

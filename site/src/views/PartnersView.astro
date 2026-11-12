@@ -1,155 +1,18 @@
 ---
-// 合作伙伴页：告诉大家推广 AnyModelBot 能获得持续佣金，并把人带到 Modelflare 控制台申请。佣金比例、价格和结算规则不写，一对一谈。
-// 版式和首页同一种语言：首屏（背景和动画同首页 Hero：居中的页头 → 地平线托着三条佣金通知）→ 三步 → 适合谁 → 为什么好推广 → 申请。章节头用 SectionHead，样式在 pages.css 的“合作伙伴”。
-// 这里不收表单：优惠券和佣金都挂在 Modelflare 账号上，所以申请要登录后在控制台填（MF.partnerApply）。
-// 机器人不绑定任何一类合作方：只在小胶囊里排排站、主持章节、送通知，以及代表“可以自定义”。
 import Base from "../layouts/Base.astro";
-import BotFace from "../components/BotFace.astro";
-import HeroSky from "../components/HeroSky.astro";
-import Icon from "../components/Icon.astro";
-import SectionHead from "../components/SectionHead.astro";
-import VendorLogo from "../components/VendorLogo.astro";
-import VendorSprite from "../components/VendorSprite.astro";
-import { buildVars, dict, fmt, href, type Lang } from "../i18n";
-import { CHAR_KEYS } from "../lib/bots";
-import { MF, ORIGIN, PARTNERS_EMAIL, pricing } from "../lib/site";
-import { vendorLogo } from "../lib/vendors";
+import { brandCopy } from "../data/brand-copy";
+import { CONTACT_URL, MF } from "../lib/site";
+import type { Lang } from "../i18n";
 import "../styles/pages.css";
 interface Props { lang: Lang }
 const { lang } = Astro.props;
-const t = dict(lang);
-const p = t.partners;
-const a = p.apply;
-const vars = buildVars(lang);
-const applyUrl = MF.partnerApply(lang);
-const whoIcons = ["monitor", "chat", "server"] as const;
-// 模型数最多的几家，有标志的才放
-const count = (vd: string) => pricing.rows.filter((r) => r.vendor === vd).length;
-const vendors = pricing.vendors.filter((vd) => vendorLogo(vd)).map((vd, i) => ({ vd, n: count(vd), i })).sort((x, y) => y.n - x.n || x.i - y.i).map((x) => x.vd).slice(0, 9);
-const [dataItem, keyItem, botsItem] = p.why.items;
-// 微信分享卡片用方图，只有中文页用；其他语言继续用各自语言的默认分享图
-const share = lang === "zh" ? { ogImage: { url: `${ORIGIN}/og/wechat-share.png`, width: 600, height: 600 }, twitterCard: "summary" as const } : {};
+const c = brandCopy[lang];
 ---
-<Base lang={lang} path="/partners" title={p.pageTitle} description={p.pageDescription} {...share}>
-  <VendorSprite vendors={vendors} color />
-  <div class="page pt-page">
-    <div class="scene-top hero-scene">
-      <div class="hero__beam"></div>
-      <HeroSky />
-      <div class="container">
-        <header class="pt-hero">
-          <div class="pt-eyebrow"><div class="pt-crew">{CHAR_KEYS.map((k) => <BotFace char={k} size={22} />)}</div><span>{p.eyebrow}</span></div>
-          <h1><span>{p.h1}</span> <em>{p.h1Hl}</em></h1>
-          <p class="lead">{p.lead}</p>
-          <div class="pt-hero__cta">
-            <a class="btn btn--primary" href={applyUrl} target="_blank" rel="noopener" data-track="cta_click" data-track-location="partners-hero">{p.cta}</a>
-            <a class="btn btn--secondary" href={href(lang, "/")} data-track="cta_click" data-track-location="partners-product">{p.ctaProduct}</a>
-          </div>
-          <ul class="pt-hero__points" role="list">
-            {p.points.map((x) => <li><Icon name="check" />{x}</li>)}
-          </ul>
-        </header>
-        <div class="scene-stage">
-          <div class="hero__glow"></div>
-          <div class="hero__horizon"></div>
-          <figure class="pt-feed">
-            <ol role="list">
-              <li class="pt-feed__item" style="--i:0"><BotFace char={CHAR_KEYS[0]} size={40} lively /><span>{p.feed.items[0]}</span></li>
-              <li class="pt-feed__item" style="--i:1"><BotFace char={CHAR_KEYS[1]} size={40} lively /><span>{p.feed.items[1]}</span></li>
-              <li class="pt-feed__item pt-feed__item--earn" style="--i:2"><span class="pt-feed__coin"><Icon name="check" /></span><span>{p.feed.items[2]}</span></li>
-            </ol>
-            <figcaption>{p.feed.note}</figcaption>
-          </figure>
-        </div>
-      </div>
-    </div>
-
-    <div class="container">
-      <section class="pt-sec" aria-labelledby="pt-steps-h">
-        <SectionHead n={1} label={p.kicker.path} id="pt-steps-h" title={p.steps.title} dim={p.steps.dim} host="blue" />
-        <ol class="pt-path" role="list">
-          {p.steps.items.map((x, i) => (
-            <li>
-              <span class="pt-path__no" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
-              <h3 class="h3">{x.title}</h3>
-              <p class="pt-body">{x.body}</p>
-            </li>
-          ))}
-        </ol>
-        <a class="btn btn--primary pt-path__cta" href={applyUrl} target="_blank" rel="noopener" data-track="cta_click" data-track-location="partners-steps">{p.cta}</a>
-      </section>
-
-      <section class="pt-sec" aria-labelledby="pt-who-h">
-        <SectionHead n={2} label={p.kicker.who} id="pt-who-h" title={p.who.title} dim={p.who.dim} host="yellow" />
-        <ul class="pt-who" role="list">
-          {p.who.items.map((x, i) => (
-            <li class="card pt-who__card">
-              <span class="dl-ico"><Icon name={whoIcons[i]} size={22} /></span>
-              <h3 class="h3">{x.title}</h3>
-              <p class="pt-body">{x.body}</p>
-              <p class="pt-who__gain"><Icon name="arrow" />{x.gain}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section class="pt-sec" aria-labelledby="pt-why-h">
-        <SectionHead n={3} label={p.kicker.why} id="pt-why-h" title={p.why.title} dim={p.why.dim} />
-        <div class="pt-bento">
-          <article class="card pt-bento__card pt-bento__card--models">
-            <div>
-              <h3 class="h3">{keyItem.title}</h3>
-              <p class="pt-body">{fmt(keyItem.body, vars)}</p>
-            </div>
-            <ul class="pt-tiles" role="list" aria-hidden="true">
-              {vendors.map((vd) => <li class="pt-tile"><VendorLogo vendor={vd} size={26} /></li>)}
-            </ul>
-          </article>
-          <article class="card pt-bento__card pt-bento__card--data">
-            <div>
-              <h3 class="h3">{dataItem.title}</h3>
-              <p class="pt-body">{dataItem.body} <a href={href(lang, "/security")}>{p.why.dataLink}</a></p>
-            </div>
-            <ul class="pt-stays" role="list">
-              {p.why.stays.map((x) => <li><Icon name="lock" />{x}</li>)}
-            </ul>
-          </article>
-          <article class="card pt-bento__card pt-bento__card--bots">
-            <div>
-              <h3 class="h3">{botsItem.title}</h3>
-              <p class="pt-body">{botsItem.body}</p>
-            </div>
-            <div class="pt-bots" aria-hidden="true">{CHAR_KEYS.map((k) => <BotFace char={k} size={64} lively pokeable />)}</div>
-          </article>
-        </div>
-      </section>
-
-      <section class="pt-sec" id="apply" aria-labelledby="pt-apply-h">
-        <SectionHead n={4} label={p.kicker.apply} id="pt-apply-h" title={a.title} dim={a.dim} host="purple" />
-        <div class="pt-apply">
-          <div class="pt-apply__intro">
-            <p class="lead">{a.lead}</p>
-            <ul class="pt-apply__points" role="list">
-              {a.points.map((x) => <li><Icon name="check" />{x}</li>)}
-            </ul>
-            <div class="pt-apply__mail">
-              <p>{a.mailLabel}</p>
-              <p class="pt-mail">
-                <a href={`mailto:${PARTNERS_EMAIL}?subject=${encodeURIComponent(a.mail.subject)}`} data-track="cta_click" data-track-location="partners-email">{PARTNERS_EMAIL}</a>
-                <button type="button" class="copy-btn" data-copy-text={PARTNERS_EMAIL} aria-label={t.ui.copy} title={t.ui.copy}><Icon name="copy" /></button>
-              </p>
-            </div>
-          </div>
-
-          <div class="card pt-panel">
-            <h3 class="h3">{a.panel.title}</h3>
-            <p class="pt-body">{a.panel.body}</p>
-            <div class="pt-panel__actions">
-              <a class="btn btn--primary" href={applyUrl} target="_blank" rel="noopener" data-track="cta_click" data-track-location="partners-apply">{a.panel.action}</a>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-  </div>
+<Base lang={lang} path="/partners" title={c.partnerTitle} description={c.partnerLead}>
+  <article class="container page prose">
+    <header class="page__head"><h1>{c.partnerTitle}</h1><p class="lead">{c.partnerLead}</p></header>
+    <p>{c.contact}</p>
+    <p class="page__cta"><a class="btn btn--primary" href={MF.home(lang)} target="_blank" rel="noopener">{c.register} ↗</a></p>
+    <p><a href={CONTACT_URL} target="_blank" rel="noopener">{c.issues} ↗</a></p>
+  </article>
 </Base>

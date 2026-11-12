@@ -31,7 +31,7 @@ export default {
       },
       {
         "title": "세 가지 API 도메인",
-        "body": "modelflare.dev, origin.modelflare.dev, cf.modelflare.dev 중 선택하고 설정에서 응답 시간을 비교하세요. 자동으로 전환되지 않습니다."
+        "body": "api.okinto.com, origin.api.okinto.com, cf.api.okinto.com 중 선택하고 설정에서 응답 시간을 비교하세요. 자동으로 전환되지 않습니다."
       },
       {
         "title": "채팅 앱에서 이미지와 파일 주고받기",

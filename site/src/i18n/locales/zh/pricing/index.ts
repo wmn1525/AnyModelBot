@@ -2,12 +2,12 @@ export default {
   "eyebrow": "价格 · 按量付费",
   "h2mark": "没有月费",
   "h2rest": "。用多少，付多少。",
-  "lead": "AnyModelBot 免费开源，没有订阅、没有档位。模型用量由 Modelflare 按 token 计费，价格表完全公开。",
-  "source": "价格取自 modelflare.dev/pricing，数据抓取于 {fetchedAt}（UTC+8），版本 {pricingVersion}。",
-  "stale": "价格快照日期：{snapshotDate}（暂未能更新，请以 modelflare.dev/pricing 为准）。",
+  "lead": "okbot 免费开源，没有订阅、没有档位。模型用量由 okinto 按 token 计费，价格表完全公开。",
+  "source": "价格取自 api.okinto.com/pricing，数据抓取于 {fetchedAt}（UTC+8），版本 {pricingVersion}。",
+  "stale": "价格快照日期：{snapshotDate}（暂未能更新，请以 api.okinto.com/pricing 为准）。",
   "cards": {
     "app": {
-      "tag": "AnyModelBot",
+      "tag": "okbot",
       "price": "$0",
       "unit": "/ 永久",
       "note": "免费开源（MIT）",
@@ -18,9 +18,9 @@ export default {
       ]
     },
     "usage": {
-      "tag": "模型用量 · 由 Modelflare 计费",
+      "tag": "模型用量 · 由 okinto 计费",
       "unit": "/ 100 万输入 tokens",
-      "note": "示例：{model} · 默认线路 · 输出 {output} / 100 万 tokens；官方价 {officialIn} / {officialOut}",
+      "note": "示例：{model} · 默认分组 · 输出 {output} / 100 万 tokens。",
       "points": [
         "按 token 计价，输入输出分开",
         "价格表公开可查",
@@ -35,7 +35,7 @@ export default {
       "points": [
         "用下面的计算器换成你的用量",
         "估算不含缓存折扣与特殊请求倍率",
-        "实际以 Modelflare 账单为准"
+        "实际以 okinto 账单为准"
       ],
       "cta": "打开计算器"
     }
@@ -44,7 +44,7 @@ export default {
     "caption": "按量付费与订阅制档位的通用对照",
     "head": [
       "",
-      "按量付费（AnyModelBot + Modelflare）",
+      "按量付费（okbot + okinto）",
       "订阅制档位（同类产品的通常做法）"
     ],
     "rows": [
@@ -73,14 +73,14 @@ export default {
   },
   "table": {
     "more": "查看全部 {textCount} 个文本模型的价格 →",
-    "caption": "Modelflare 文本模型价格（默认线路，USD / 100 万 tokens）",
+    "caption": "okinto 文本模型价格（默认线路，USD / 100 万 tokens）",
     "col": {
       "model": "模型",
       "route": "默认线路",
       "input": "输入 / 1M",
       "output": "输出 / 1M",
-      "official": "官方价（输入 / 输出）",
-      "vs": "相当于官方价"
+      "official": "分组倍率前基准价（输入 / 输出）",
+      "vs": "相当于基准价"
     },
     "default": "默认",
     "context": "上下文 {n}",
@@ -88,12 +88,12 @@ export default {
     "showFeatured": "只看精选",
     "search": "搜索模型",
     "allVendors": "全部厂商",
-    "media": "图像与视频模型（{mediaCount} 个）请见 modelflare.dev/pricing ↗",
+    "media": "图像与视频模型（{mediaCount} 个）请见 api.okinto.com/pricing ↗",
     "expand": "展开 {model} 的全部线路",
     "detail": {
       "route": "线路",
       "positioning": "定位",
-      "vs": "相当于官方价",
+      "vs": "相当于基准价",
       "price": "输入 / 输出"
     },
     "positioning": {
@@ -103,10 +103,10 @@ export default {
       "enterprise": "高稳定线路（仅限授权的企业生产场景）",
       "other": "其他线路"
     },
-    "unlock": "单次充值达 US${amount} 解锁（限时活动，规则以 Modelflare 为准）",
+    "unlock": "单次充值达 US${amount} 解锁（限时活动，规则以 okinto 为准）",
     "tiers": "超过 {n} tokens 的单条请求按长上下文档计价：输入 {input} · 输出 {output}",
     "none": "没有找到匹配的模型。",
-    "note": "价格单位为美元 / 100 万 tokens，显示的是“默认线路”的价格；你的账户可能有不同的权限或折扣（Modelflare 页面同样说明）。数据取自 modelflare.dev/pricing，抓取于 {fetchedAt}（UTC+8），版本 {pricingVersion}。"
+    "note": "数据来自 okinto 公开 API，抓取于 {fetchedAt}（UTC+8），版本 {pricingVersion}。单位为账户计费美元 / 100 万 tokens，未计入充值折算、缓存与其他请求级优惠；实际以 okinto 账单为准。"
   },
   "calc": {
     "title": "算算你每月大概花多少",
@@ -131,17 +131,17 @@ export default {
     "result": "≈ {amount} / 月",
     "split": "输入 {input} · 输出 {output}",
     "perMsg": "每条消息约 {amount}",
-    "official": "按官方价约 {amount}",
-    "disclaimer": "估算值，不含缓存折扣与请求级倍率（如 priority 服务层）；超过该模型分档阈值的请求按更高档计价（已计入）；实际以 Modelflare 账单为准。",
+    "official": "按基准价约 {amount}",
+    "disclaimer": "估算值，不含缓存折扣与请求级倍率（如 priority 服务层）；超过该模型分档阈值的请求按更高档计价（已计入）；实际以 okinto 账单为准。",
     "copy": "复制估算",
-    "copyText": "AnyModelBot 用量估算：{model}（{route}），每天 {msgs} 条，每条 {inTok} 输入 + {outTok} 输出 tokens，约 {amount} / 月（按 30 天，价格抓取于 {fetchedAt}）",
+    "copyText": "okbot 用量估算：{model}（{route}），每天 {msgs} 条，每条 {inTok} 输入 + {outTok} 输出 tokens，约 {amount} / 月（按 30 天，价格抓取于 {fetchedAt}）",
     "full": "查看这个模型的完整价格 ↗",
     "expandBar": "展开"
   },
   "banner": {
-    "text": "已有 Modelflare 账号？在 App 里登录一次就能用，用量按价格表计费。",
-    "cta": "打开 Modelflare ↗"
+    "text": "已有 okinto 账号？在 App 里登录一次就能用，用量按价格表计费。",
+    "cta": "打开 okinto ↗"
   },
-  "pageTitle": "AnyModelBot 价格｜按量付费，价格表公开",
-  "pageDescription": "AnyModelBot 免费开源、没有订阅。模型用量由 Modelflare 按 token 计费：公开价格表与每月费用计算器。"
+  "pageTitle": "okbot 价格｜按量付费，价格表公开",
+  "pageDescription": "okbot 免费开源、没有订阅。模型用量由 okinto 按 token 计费：公开价格表与每月费用计算器。"
 };

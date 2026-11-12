@@ -57,11 +57,11 @@ const dlData = {
     <title>{pageTitle}</title>
     <meta name="description" content={desc} />
     {noindex && <meta name="robots" content="noindex" />}
-    <link rel="canonical" href={canonical} />
-    {!noindex && READY_LANGS.map((l) => <link rel="alternate" hreflang={LOCALES[l].tag} href={`${ORIGIN}${href(l, path)}`} />)}
-    {!noindex && <link rel="alternate" hreflang="x-default" href={`${ORIGIN}${href("zh", path)}`} />}
+    {ORIGIN && <link rel="canonical" href={canonical} />}
+    {ORIGIN && !noindex && READY_LANGS.map((l) => <link rel="alternate" hreflang={LOCALES[l].tag} href={`${ORIGIN}${href(l, path)}`} />)}
+    {ORIGIN && !noindex && <link rel="alternate" hreflang="x-default" href={`${ORIGIN}${href("zh", path)}`} />}
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="AnyModelBot" />
+    <meta property="og:site_name" content="okbot" />
     <meta property="og:title" content={cardTitle} />
     <meta property="og:description" content={cardDesc} />
     <meta property="og:url" content={canonical} />

@@ -8,7 +8,7 @@ export default {
   "pricing": "价格",
   "docs": "文档",
   "skip": "跳到主要内容",
-  "home": "AnyModelBot 首页",
+  "home": "okbot 首页",
   "menu": "菜单",
   "close": "关闭",
   "github": "GitHub",

@@ -9,7 +9,7 @@ export default {
   pricing: "料金",
   docs: "ドキュメント",
   skip: "本文へ移動",
-  home: "AnyModelBot ホーム",
+  home: "okbot ホーム",
   menu: "メニュー",
   close: "閉じる",
   github: "GitHub",

@@ -2,12 +2,12 @@ export default {
   "eyebrow": "요금 · 사용량 기반 결제",
   "h2mark": "월 이용료 없이",
   "h2rest": ", 쓴 만큼만 결제하세요.",
-  "lead": "AnyModelBot은 무료 오픈 소스입니다. 구독도, 요금제 등급도 없습니다. 모델 사용량은 Modelflare에서 토큰 단위로 과금하며 전체 가격표가 공개되어 있습니다.",
-  "source": "가격 출처: modelflare.dev/pricing · 수집 시각 {fetchedAt}(UTC+8) · 버전 {pricingVersion}.",
-  "stale": "{snapshotDate} 기준 가격입니다(새로고침 실패. 최신 기준은 modelflare.dev/pricing입니다).",
+  "lead": "okbot은 무료 오픈 소스입니다. 구독도, 요금제 등급도 없습니다. 모델 사용량은 okinto에서 토큰 단위로 과금하며 전체 가격표가 공개되어 있습니다.",
+  "source": "가격 출처: api.okinto.com/pricing · 수집 시각 {fetchedAt}(UTC+8) · 버전 {pricingVersion}.",
+  "stale": "{snapshotDate} 기준 가격입니다(새로고침 실패. 최신 기준은 api.okinto.com/pricing입니다).",
   "cards": {
     "app": {
-      "tag": "AnyModelBot",
+      "tag": "okbot",
       "price": "$0",
       "unit": "/ 영구",
       "note": "무료 오픈 소스(MIT)",
@@ -18,9 +18,9 @@ export default {
       ]
     },
     "usage": {
-      "tag": "모델 사용량 · Modelflare 과금",
+      "tag": "모델 사용량 · okinto 과금",
       "unit": "/ 입력 100만 토큰",
-      "note": "예: {model}, 기본 경로, 출력 100만 토큰당 {output}; 공식 가격 {officialIn} / {officialOut}",
+      "note": "예: {model}, 기본 그룹, 출력 {output} / 100만 토큰.",
       "points": [
         "입력과 출력을 각각 토큰 단위로 과금",
         "공개된 가격표",
@@ -35,7 +35,7 @@ export default {
       "points": [
         "아래 계산기에 내 사용량 입력",
         "캐시 할인과 특별 요청 배수는 예상 비용에 미포함",
-        "최종 금액은 Modelflare 청구서 기준"
+        "최종 금액은 okinto 청구서 기준"
       ],
       "cta": "계산기 열기"
     }
@@ -44,7 +44,7 @@ export default {
     "caption": "사용량 기반 결제와 등급별 구독 비교",
     "head": [
       "",
-      "사용량 기반(AnyModelBot + Modelflare)",
+      "사용량 기반(okbot + okinto)",
       "등급별 구독(일반적 방식)"
     ],
     "rows": [
@@ -73,14 +73,14 @@ export default {
   },
   "table": {
     "more": "텍스트 모델 {textCount}개 전체 가격 보기 →",
-    "caption": "Modelflare 텍스트 모델 가격(기본 경로, 100만 토큰당 USD)",
+    "caption": "okinto 텍스트 모델 가격(기본 경로, 100만 토큰당 USD)",
     "col": {
       "model": "모델",
       "route": "기본 경로",
       "input": "입력 / 100만",
       "output": "출력 / 100만",
-      "official": "공식 가격(입력 / 출력)",
-      "vs": "공식 가격 대비"
+      "official": "그룹 배율 적용 전 (입력 / 출력)",
+      "vs": "기준 가격 대비"
     },
     "default": "기본",
     "context": "컨텍스트 {n}",
@@ -88,12 +88,12 @@ export default {
     "showFeatured": "주요 모델만",
     "search": "모델 검색",
     "allVendors": "모든 제공업체",
-    "media": "이미지 및 동영상 모델 {mediaCount}개는 modelflare.dev/pricing에서 확인하세요 ↗",
+    "media": "이미지 및 동영상 모델 {mediaCount}개는 api.okinto.com/pricing에서 확인하세요 ↗",
     "expand": "{model}의 모든 경로 표시",
     "detail": {
       "route": "경로",
       "positioning": "특성",
-      "vs": "공식 가격 대비",
+      "vs": "기준 가격 대비",
       "price": "입력 / 출력"
     },
     "positioning": {
@@ -103,10 +103,10 @@ export default {
       "enterprise": "안정성 우선 경로(승인된 기업 운영 환경 전용)",
       "other": "기타 경로"
     },
-    "unlock": "한 번에 US${amount} 충전 시 사용 가능(기간 한정, Modelflare 규정 적용)",
+    "unlock": "한 번에 US${amount} 충전 시 사용 가능(기간 한정, okinto 규정 적용)",
     "tiers": "단일 요청이 {n}토큰을 초과하면 긴 컨텍스트 요금이 적용됩니다: 입력 {input} · 출력 {output}",
     "none": "일치하는 모델이 없습니다.",
-    "note": "기본 경로의 100만 토큰당 USD 가격입니다. Modelflare 안내에 따라 계정별 접근 권한이나 할인은 다를 수 있습니다. 출처: modelflare.dev/pricing · 수집 시각 {fetchedAt}(UTC+8) · 버전 {pricingVersion}."
+    "note": "okinto 공개 API에서 {fetchedAt} (UTC+8)에 가져옴, 버전 {pricingVersion}. 단위는 과금 USD / 100만 토큰입니다. 충전 환산, 캐시 등은 제외하며 실제 okinto 청구가 우선합니다."
   },
   "calc": {
     "title": "월간 비용 예상하기",
@@ -131,17 +131,17 @@ export default {
     "result": "월 약 {amount}",
     "split": "입력 {input} · 출력 {output}",
     "perMsg": "메시지당 약 {amount}",
-    "official": "공식 가격 기준 약 {amount}",
-    "disclaimer": "예상치입니다. 캐시 할인과 요청별 배수(예: 우선 서비스 등급)는 제외됩니다. 모델의 구간 기준을 초과하는 요청에는 상위 구간 가격이 적용되며 계산에 반영됩니다. 최종 금액은 Modelflare 청구서 기준입니다.",
+    "official": "기준 가격 약 {amount}",
+    "disclaimer": "예상치입니다. 캐시 할인과 요청별 배수(예: 우선 서비스 등급)는 제외됩니다. 모델의 구간 기준을 초과하는 요청에는 상위 구간 가격이 적용되며 계산에 반영됩니다. 최종 금액은 okinto 청구서 기준입니다.",
     "copy": "예상 비용 복사",
-    "copyText": "AnyModelBot 예상 사용 비용: {model}({route}), 하루 메시지 {msgs}개, 각각 입력 {inTok} + 출력 {outTok}토큰 — 월 약 {amount}(30일 기준, 가격 수집 시각 {fetchedAt})",
+    "copyText": "okbot 예상 사용 비용: {model}({route}), 하루 메시지 {msgs}개, 각각 입력 {inTok} + 출력 {outTok}토큰 — 월 약 {amount}(30일 기준, 가격 수집 시각 {fetchedAt})",
     "full": "이 모델의 전체 가격 보기 ↗",
     "expandBar": "세부 정보"
   },
   "banner": {
-    "text": "이미 Modelflare 계정이 있나요? 앱에서 한 번 로그인하면 바로 시작할 수 있습니다. 사용량은 가격표에 따라 과금됩니다.",
-    "cta": "Modelflare 열기 ↗"
+    "text": "이미 okinto 계정이 있나요? 앱에서 한 번 로그인하면 바로 시작할 수 있습니다. 사용량은 가격표에 따라 과금됩니다.",
+    "cta": "okinto 열기 ↗"
   },
-  "pageTitle": "AnyModelBot 요금 — 사용량 기반 결제, 공개 가격표",
-  "pageDescription": "AnyModelBot은 구독 없는 무료 오픈 소스입니다. 모델 사용량은 Modelflare에서 토큰 단위로 과금합니다. 공개 가격표와 월간 비용 계산기를 확인하세요."
+  "pageTitle": "okbot 요금 — 사용량 기반 결제, 공개 가격표",
+  "pageDescription": "okbot은 구독 없는 무료 오픈 소스입니다. 모델 사용량은 okinto에서 토큰 단위로 과금합니다. 공개 가격표와 월간 비용 계산기를 확인하세요."
 };

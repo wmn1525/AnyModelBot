@@ -1,16 +1,16 @@
 export default {
-  "title": "现成的 Bot｜AnyModelBot",
-  "description": "从公司研究、PPT 到短视频和分集短剧，AnyModelBot 的发现页提供带专属界面的现成 Bot。",
+  "title": "现成的 Bot｜okbot",
+  "description": "okbot 的发现页里有备好的 Bot，每个都有自己的界面，点开就能用。",
   "h1": "现成的 Bot，点开就能用",
   "lead": "官方 Bot 的界面、示例和技能随应用内置，打开无需下载 Bot 包。先看示例，发第一句话开始使用；模型调用仍需联网。",
   "tryLabel": "可以这样说",
   "howTitle": "怎么用",
   "how": [
-    "下载并打开 AnyModelBot",
+    "下载并打开 okbot",
     "在侧边栏点「发现」",
     "打开一个 Bot，发第一句话"
   ],
-  "cta": "下载 AnyModelBot",
+  "cta": "下载 okbot",
   "strip": {
     "title": "也可以直接用现成的 Bot",
     "lead": "做研究、做 PPT，或制作短视频与分集短剧。完成首次设置后，在侧边栏点「发现」，选择带专属界面的 Bot。",

@@ -25,7 +25,7 @@ export default {
       },
       {
         title: "3つの API ドメイン",
-        body: "modelflare.dev、origin.modelflare.dev、cf.modelflare.dev から選び、設定で応答時間を比較できます。自動では切り替わりません。",
+        body: "api.okinto.com、origin.api.okinto.com、cf.api.okinto.com から選び、設定で応答時間を比較できます。自動では切り替わりません。",
       },
       {
         title: "チャットで画像やファイルを送受信",

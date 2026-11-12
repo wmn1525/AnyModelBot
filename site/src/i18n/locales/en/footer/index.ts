@@ -16,7 +16,7 @@ export default {
         "Docs",
         "Security",
         "GitHub",
-        "Modelflare"
+        "okinto"
       ]
     },
     "legal": {
@@ -27,8 +27,8 @@ export default {
       ]
     }
   },
-  "copyright": "© 2026 AnyModelBot · MIT",
-  "art": "Character art © the AnyModelBot project",
+  "copyright": "© 2026 okbot · MIT",
+  "art": "Character art © the okbot project",
   "tagline": "AI teammates that live on your machine. One key for every major model — swap brains any time.",
   "featured": "Featured on",
   "featuredMore": "Show all {count}",

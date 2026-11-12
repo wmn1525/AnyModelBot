@@ -30,9 +30,9 @@ export default {
       "body": "Listens on 127.0.0.1 and checks the Host header by default; Docker mode requires an access token."
     },
     "gateway": {
-      "label": "Modelflare gateway",
-      "sub": "Forwards this request · configurable log retention",
-      "body": "Forwards the request to the provider you choose; log retention follows Modelflare's “Data retention” doc."
+      "label": "okinto gateway",
+      "sub": "Forwards requests to the selected model",
+      "body": "Model requests pass through okinto. Log retention, caching and data handling follow the published okinto privacy policy and account settings."
     },
     "vendors": {
       "label": "OpenAI / Anthropic / Google …",
@@ -44,13 +44,13 @@ export default {
       "body": "Messages in these apps pass through their servers by nature."
     }
   },
-  "retentionLink": "Modelflare’s “Data retention” doc",
-  "retentionUrl": "https://docs.modelflare.dev/guides/features/data-retention/?utm_source=anymodelbot&utm_campaign=amb_homepage",
+  "retentionLink": "okinto privacy policy",
+  "retentionUrl": "https://api.okinto.com/privacy-policy",
   "compare": {
-    "caption": "AnyModelBot compared with typical cloud-hosted assistants",
+    "caption": "okbot compared with typical cloud-hosted assistants",
     "head": [
       "",
-      "AnyModelBot",
+      "okbot",
       "Typical cloud-hosted assistants"
     ],
     "rows": [
@@ -66,12 +66,12 @@ export default {
       ],
       [
         "Models",
-        "Any model on Modelflare, swap any time",
+        "Any model on okinto, swap any time",
         "Usually tied to the vendor's own models"
       ],
       [
         "Billing",
-        "Free app; models billed per use by Modelflare",
+        "Free app; models billed per use by okinto",
         "Usually a monthly subscription with tiers"
       ],
       [
@@ -81,7 +81,7 @@ export default {
       ],
       [
         "Do inference requests leave your device?",
-        "Yes, via Modelflare to the model provider",
+        "Yes, via okinto to the model provider",
         "Yes"
       ],
       [

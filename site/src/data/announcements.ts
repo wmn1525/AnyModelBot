@@ -45,7 +45,7 @@ export const RELEASE = {
   enabled: true,
   /** 发布后显示多少天；releases.json 里没有有效发布日期时一直显示 */
   days: 30,
-  /** 各版本的一句话亮点（可选），没有就显示"AnyModelBot {version} 已发布" */
+  /** 各版本的一句话亮点（可选），没有就显示"okbot {version} 已发布" */
   highlights: {
     "0.1.31": {
       zh: "自动更新、更新说明和 Bot 工作台",

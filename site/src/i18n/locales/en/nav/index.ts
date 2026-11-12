@@ -8,7 +8,7 @@ export default {
   "pricing": "Pricing",
   "docs": "Docs",
   "skip": "Skip to main content",
-  "home": "AnyModelBot home",
+  "home": "okbot home",
   "menu": "Menu",
   "close": "Close",
   "github": "GitHub",

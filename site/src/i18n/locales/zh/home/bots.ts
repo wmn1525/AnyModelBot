@@ -5,7 +5,7 @@ export default {
   "tabsLabel": "选择角色",
   "cost": "≈ {amount} / 月",
   "badge": {
-    "org": "AnyModelBot",
+    "org": "okbot",
     "staff": "岗位自定",
     "no": "工号",
     "persona": "人设",

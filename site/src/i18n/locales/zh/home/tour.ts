@@ -1,5 +1,5 @@
 export default {
-  "title": "AnyModelBot 演示",
+  "title": "okbot 演示",
   "note": "演示动画，界面为示意。",
   "prev": "上一步",
   "next": "下一步",
@@ -10,8 +10,8 @@ export default {
       "caption": "按系统下载安装包（Windows / macOS / Linux），或者用一条 docker 命令放到服务器上。"
     },
     {
-      "title": "登录 Modelflare",
-      "caption": "首次启动在浏览器里登录一次 Modelflare，回来就自动连好；Docker / 远程部署登录后把链接贴回来即可。"
+      "title": "登录 okinto",
+      "caption": "首次启动在浏览器里登录一次 okinto，回来就自动连好；Docker / 远程部署登录后把链接贴回来即可。"
     },
     {
       "title": "选默认模型",
@@ -35,14 +35,14 @@ export default {
     }
   ],
   "ui": {
-    "installing": "正在安装 AnyModelBot…",
+    "installing": "正在安装 okbot…",
     "slogan": "任意模型，一个助手",
-    "login": "登录 / 注册 Modelflare",
+    "login": "登录 / 注册 okinto",
     "loginWait": "在浏览器里完成登录后，会自动回到这里",
     "loginReopen": "重新打开登录页 ↗",
     "loginCopy": "复制链接",
     "loginCancel": "取消",
-    "authTitle": "授权 AnyModelBot 使用你的账户",
+    "authTitle": "授权 okbot 使用你的账户",
     "authSub": "授权后会在这台电脑上生成一把只给它用的 Key。",
     "authBtn": "授权并返回",
     "connected": "已连接 · 找到 {n} 个模型",

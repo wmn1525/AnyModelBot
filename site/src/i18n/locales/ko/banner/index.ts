@@ -13,7 +13,7 @@ export default {
   },
   "release": {
     "tag": "새 버전 v{version}",
-    "text": "AnyModelBot {version} 출시",
+    "text": "okbot {version} 출시",
     "cta": "다운로드",
     "link": "변경 내역"
   }

@@ -5,7 +5,7 @@ import { href, READY_LANGS, LOCALES } from "../i18n";
 
 const PATHS = ["/", "/download", "/security", "/pricing", "/partners", "/bots", "/changelog", "/privacy", "/licenses"];
 export const GET: APIRoute = () => {
-  const urls = PATHS.flatMap((p) =>
+  const urls = (ORIGIN ? PATHS : []).flatMap((p) =>
     READY_LANGS.map((lang) => {
       const alt = READY_LANGS.map((l) => `<xhtml:link rel="alternate" hreflang="${LOCALES[l].tag}" href="${ORIGIN}${href(l, p)}"/>`).join("");
       return `<url><loc>${ORIGIN}${href(lang, p)}</loc>${alt}<xhtml:link rel="alternate" hreflang="x-default" href="${ORIGIN}${href("zh", p)}"/></url>`;

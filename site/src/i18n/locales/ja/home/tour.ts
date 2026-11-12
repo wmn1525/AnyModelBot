@@ -1,5 +1,5 @@
 export default {
-  title: "AnyModelBot のデモ",
+  title: "okbot のデモ",
   note: "アニメーションによる操作ガイドです。画面はイメージです。",
   prev: "前のステップ",
   next: "次のステップ",
@@ -11,7 +11,7 @@ export default {
         "Windows、macOS、Linux 用のインストーラーを選ぶか、docker コマンド1つでサーバー上に起動できます。",
     },
     {
-      title: "Modelflare にログイン",
+      title: "okinto にログイン",
       caption:
         "初回起動時にブラウザーで一度ログインすれば、自動で接続されます。Docker やリモート環境では、ログイン後のリンクを貼り付けてください。",
     },
@@ -42,15 +42,15 @@ export default {
     },
   ],
   ui: {
-    installing: "AnyModelBot をインストール中…",
+    installing: "okbot をインストール中…",
     slogan: "どんなモデルも、ひとつのアシスタントに",
-    login: "Modelflare にログイン / 新規登録",
+    login: "okinto にログイン / 新規登録",
     loginWait: "ブラウザーでログインを完了すると、自動でここに戻ります",
     loginReopen: "ログインページを開き直す ↗",
     loginCopy: "リンクをコピー",
     loginCancel: "キャンセル",
-    authTitle: "AnyModelBot にアカウントの利用を許可",
-    authSub: "このパソコンに AnyModelBot 専用のキーを作成します。",
+    authTitle: "okbot にアカウントの利用を許可",
+    authSub: "このパソコンに okbot 専用のキーを作成します。",
     authBtn: "許可して戻る",
     connected: "接続しました · {n}モデルが見つかりました",
     pickHint: "既定のモデルを選んでください。チャット中も切り替えられます。",

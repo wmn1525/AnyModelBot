@@ -2,7 +2,7 @@ export default {
   "h2": "하나의 키로",
   "h2dim": "모든 모델을.",
   "lead": "어떤 두뇌를 쓸지도 내 선택입니다. 봇마다 다른 모델을 지정하고 언제든 바꾸세요.",
-  "marqueeLabel": "Modelflare의 제공업체와 텍스트 모델",
+  "marqueeLabel": "okinto의 제공업체와 텍스트 모델",
   "scenarios": {
     "copy": "카피 작성",
     "code": "코드 수정",
@@ -24,5 +24,5 @@ export default {
   "keyOne": "하나의 키",
   "keyAll": "모델 {modelCount}개 · 제공업체 {vendorCount}곳",
   "priceLine": "{model} · 입력 {input} · 출력 {output} / 100만 토큰",
-  "cta": "Modelflare 키 발급 →"
+  "cta": "okinto 키 발급 →"
 };

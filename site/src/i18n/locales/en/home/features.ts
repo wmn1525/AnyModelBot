@@ -31,7 +31,7 @@ export default {
       },
       {
         "title": "Three API domains",
-        "body": "Choose modelflare.dev, origin.modelflare.dev or cf.modelflare.dev and compare response times in Settings. The app never switches automatically."
+        "body": "Choose api.okinto.com, origin.api.okinto.com or cf.api.okinto.com and compare response times in Settings. The app never switches automatically."
       },
       {
         "title": "Pictures and files in chat apps",

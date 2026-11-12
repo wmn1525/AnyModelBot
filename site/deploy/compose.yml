@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
     depends_on: [builder]
     ports:
-      - "127.0.0.1:${SITE_PORT:-18490}:8080"
+      - "0.0.0.0:${SITE_PORT:-18490}:8080"
     volumes:
       - site:/srv/site:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro

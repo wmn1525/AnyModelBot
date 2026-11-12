@@ -1,5 +1,5 @@
 export default {
-  "title": "AnyModelBot 데모",
+  "title": "okbot 데모",
   "note": "애니메이션으로 보는 사용 흐름입니다. 화면은 예시입니다.",
   "prev": "이전 단계",
   "next": "다음 단계",
@@ -10,8 +10,8 @@ export default {
       "caption": "운영체제(Windows, macOS, Linux)에 맞는 설치 파일을 받거나 Docker 명령 하나로 서버에서 실행하세요."
     },
     {
-      "title": "Modelflare 로그인",
-      "caption": "처음 실행할 때 브라우저에서 Modelflare에 한 번 로그인하면 자동으로 연결됩니다. Docker나 원격 환경에서는 로그인 후의 링크를 붙여 넣으면 됩니다."
+      "title": "okinto 로그인",
+      "caption": "처음 실행할 때 브라우저에서 okinto에 한 번 로그인하면 자동으로 연결됩니다. Docker나 원격 환경에서는 로그인 후의 링크를 붙여 넣으면 됩니다."
     },
     {
       "title": "기본 모델 선택",
@@ -35,15 +35,15 @@ export default {
     }
   ],
   "ui": {
-    "installing": "AnyModelBot 설치 중…",
+    "installing": "okbot 설치 중…",
     "slogan": "어떤 모델이든, 하나의 도우미로",
-    "login": "Modelflare 로그인 / 회원가입",
+    "login": "okinto 로그인 / 회원가입",
     "loginWait": "브라우저에서 로그인을 마치면 여기로 돌아옵니다",
     "loginReopen": "로그인 페이지 다시 열기 ↗",
     "loginCopy": "링크 복사",
     "loginCancel": "취소",
-    "authTitle": "AnyModelBot의 계정 사용 허용",
-    "authSub": "이 컴퓨터에 AnyModelBot 전용 키를 만듭니다.",
+    "authTitle": "okbot의 계정 사용 허용",
+    "authSub": "이 컴퓨터에 okbot 전용 키를 만듭니다.",
     "authBtn": "허용하고 돌아가기",
     "connected": "연결됨 · 모델 {n}개 발견",
     "pickHint": "기본 모델을 선택하세요. 대화 중 언제든 변경할 수 있습니다.",

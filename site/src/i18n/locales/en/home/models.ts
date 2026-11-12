@@ -2,7 +2,7 @@ export default {
   "h2": "One key.",
   "h2dim": "Every model.",
   "lead": "The brain is your call too: each bot can run a different model, and you can swap any time.",
-  "marqueeLabel": "Vendors and text models on Modelflare",
+  "marqueeLabel": "Vendors and text models on okinto",
   "scenarios": {
     "copy": "Write copy",
     "code": "Fix code",
@@ -24,5 +24,5 @@ export default {
   "keyOne": "One key",
   "keyAll": "{modelCount} models · {vendorCount} vendors",
   "priceLine": "{model} · input {input} · output {output} / 1M tokens",
-  "cta": "Get a Modelflare key →"
+  "cta": "Get a okinto key →"
 };

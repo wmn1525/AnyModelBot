@@ -30,9 +30,9 @@ export default {
       "body": "기본적으로 127.0.0.1에서 수신 대기하고 Host 헤더를 검사합니다. Docker 모드에는 접근 토큰이 필요합니다."
     },
     "gateway": {
-      "label": "Modelflare 게이트웨이",
-      "sub": "현재 요청 전달 · 로그 보존 설정 가능",
-      "body": "선택한 제공업체로 요청을 전달합니다. 로그 보존은 Modelflare의 ‘데이터 보존’ 문서를 따릅니다."
+      "label": "okinto 게이트웨이",
+      "sub": "선택한 모델에 요청 전달",
+      "body": "모델 요청은 okinto를 거칩니다. 로그, 캐시 및 데이터 보관은 okinto 개인정보 처리방침과 계정 설정을 따릅니다."
     },
     "vendors": {
       "label": "OpenAI / Anthropic / Google …",
@@ -44,13 +44,13 @@ export default {
       "body": "이 앱에서 주고받는 메시지는 해당 서비스의 서버를 거칩니다."
     }
   },
-  "retentionLink": "Modelflare ‘데이터 보존’ 문서",
-  "retentionUrl": "https://docs.modelflare.dev/ko/guides/features/data-retention/?utm_source=anymodelbot&utm_campaign=amb_homepage",
+  "retentionLink": "okinto 개인정보 처리방침",
+  "retentionUrl": "https://api.okinto.com/privacy-policy",
   "compare": {
-    "caption": "AnyModelBot과 일반적인 클라우드 도우미 비교",
+    "caption": "okbot과 일반적인 클라우드 도우미 비교",
     "head": [
       "",
-      "AnyModelBot",
+      "okbot",
       "일반적인 클라우드 도우미"
     ],
     "rows": [
@@ -66,12 +66,12 @@ export default {
       ],
       [
         "모델",
-        "Modelflare의 모든 모델, 언제든 변경",
+        "okinto의 모든 모델, 언제든 변경",
         "대개 제공업체 자체 모델로 제한"
       ],
       [
         "과금",
-        "앱 무료, 모델은 Modelflare에서 사용량에 따라 결제",
+        "앱 무료, 모델은 okinto에서 사용량에 따라 결제",
         "대개 등급별 월간 구독"
       ],
       [
@@ -81,7 +81,7 @@ export default {
       ],
       [
         "추론 요청이 기기 외부로 나가나요?",
-        "예, Modelflare를 거쳐 모델 제공업체로 전송",
+        "예, okinto를 거쳐 모델 제공업체로 전송",
         "예"
       ],
       [

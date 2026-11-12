@@ -9,7 +9,7 @@ export default {
   pricing: "Цены",
   docs: "Документация",
   skip: "Перейти к содержимому",
-  home: "Главная AnyModelBot",
+  home: "Главная okbot",
   menu: "Меню",
   close: "Закрыть",
   github: "GitHub",
