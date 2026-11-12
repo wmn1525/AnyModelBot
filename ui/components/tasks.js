@@ -230,9 +230,10 @@ const freshRule = (r, now = Date.now()) => r.state.key !== "done" || now - (r.la
 /**
  * 信息面板的「任务」组：这个机器人的任务和规则。进行中、等你的任务（GET /tasks?group=working,needs，每 4 秒）在前，规则其次，
  * 结束了的（group=ended，留 30 天）收在最后一行「已结束 3」里，点开才列出来。什么都没有时整组不画。
- * 一次只展开一个任务或规则；onOpenConv(任务) 打开任务来自的那个会话。tasks / rules / ended 给了就不去取（样例页）
+ * 一次只展开一个任务或规则；onOpenConv(任务) 打开任务来自的那个会话。tasks / rules / ended 给了就不去取（样例页）。
+ * 右侧面板的「任务」标签里：head=false 不画组名（标签就是组名），empty 是读完了什么都没有时的一行字
  */
-export function TaskGroup({ botId, onOpenConv, tasks: givenTasks, rules: givenRules, ended: givenEnded, details }) {
+export function TaskGroup({ botId, onOpenConv, tasks: givenTasks, rules: givenRules, ended: givenEnded, details, head = true, empty = "" }) {
   const sample = !!givenTasks;
   const [tasks, setTasks] = useState(givenTasks || null);
   const [rules, setRules] = useState(givenRules || null);
@@ -254,11 +255,12 @@ export function TaskGroup({ botId, onOpenConv, tasks: givenTasks, rules: givenRu
   const list = (tasks || []).slice(0, 12);
   const rs = (rules || []).filter((r) => freshRule(r));
   const done = ended || [];
-  if (!list.length && !rs.length && !done.length) return null;
+  if (!list.length && !rs.length && !done.length)
+    return empty && tasks && rules && ended ? html`<div class="list"><div class="row"><span class="hint">${empty}</span></div></div>` : null;
   const toggle = (id) => setOpenId(openId === id ? "" : id);
   const row = (x) => html`<${TaskRow} key=${x.id} task=${x} open=${openId === x.id} onToggle=${() => toggle(x.id)} onChanged=${reload} data=${details?.[x.id]}
     onOpenConv=${onOpenConv && (() => onOpenConv(x))} />`;
-  return html`<div class="list-head">${t("info.tasks")}</div>
+  return html`${head && html`<div class="list-head">${t("info.tasks")}</div>`}
     <div class="list task-group">
       ${list.map(row)}
       ${rs.map((r) => html`<${RuleRow} key=${r.id} rule=${r} open=${openId === r.id} onToggle=${() => toggle(r.id)} onChanged=${reload} />`)}

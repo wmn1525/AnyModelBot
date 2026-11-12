@@ -1,6 +1,6 @@
 # 第三方声明 / Third-Party Notices
 
-简体中文 | [English](./THIRD_PARTY_NOTICES_en.md) | [日本語](./THIRD_PARTY_NOTICES_ja.md) | [한국어](./THIRD_PARTY_NOTICES_ko.md) | [Русский](./THIRD_PARTY_NOTICES_ru.md)
+简体中文 | [English](./THIRD_PARTY_NOTICES_en.md) | [日本語](./THIRD_PARTY_NOTICES_ja.md) | [한국어](./THIRD_PARTY_NOTICES_ko.md) | [Русский](./THIRD_PARTY_NOTICES_ru.md) | [Español](./THIRD_PARTY_NOTICES_es.md) | [Português (Brasil)](./THIRD_PARTY_NOTICES_pt.md)
 
 anymodel bot 自身以 MIT 许可发布（见 LICENSE）。以下组件随本程序分发或被移植，各自保留原许可。
 
@@ -86,6 +86,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - yauzl 3.4.0 — MIT
 - yaml 2.9.1 — ISC
 - electron-updater 6.8.12 — MIT
+- @modelcontextprotocol/client 2.2.0 — MIT
 
 传递依赖的许可证随各自包保存在 node_modules 中。桌面版另含 Electron（MIT）及 Chromium 等组件，其许可证位于安装目录的 LICENSE 与 LICENSES.chromium.html。
 
@@ -248,3 +249,33 @@ SOFTWARE.
 
 Cua Driver 自身依赖的第三方组件声明见其随附的 THIRD_PARTY_NOTICES.md。
 
+## yuque-mcp（语雀官方 MCP，以单文件形式随附 — MIT）
+
+来源：https://github.com/yuque/yuque-mcp-server （npm 包 yuque-mcp 1.0.0）
+
+- 以打包后的单个文件随附（`vendor/yuque-mcp/yuque-mcp.mjs`，由 `scripts/vendor-yuque-mcp.mjs` 生成；唯一的改动是把运行时读取 `package.json` 版本号的地方换成常量）。「连接应用 › 语雀」用它连接语雀。
+- 打进这个文件的依赖及其许可见随附的 `THIRD_PARTY_LICENSES.txt`（仓库里在 `vendor/yuque-mcp/`，安装包里在 `resources/yuque-mcp/`）。
+
+```
+MIT License
+
+Copyright (c) 2026 cwg
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

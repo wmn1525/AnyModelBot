@@ -1,13 +1,15 @@
 /* 目录 Bot：发现页、专属界面容器（screens/discover.js、screens/bot-app.js）。 */
 /* 发现页：居中一列（最宽 --discover-w），标题 + 一句话，下面按分组排卡片。
-   卡片 = 封面 + 头像、名字、一句话。封面是一张图（cover/light|dark.png），圆角和模板卡同一个 --r-well；
+   卡片 = 封面 + 头像、名字、一句话。封面是一张图（cover/light|dark.png），封面是大卡片（--r-card-lg），和模板卡同一个圆角；
    没有封面时是 --well 上一个大头像。精选最多两列、封面 16:9，其余最多三列、封面 16:10；窗口窄了自动少一列 */
-.discover { --discover-w: 960px; --page-px: max(var(--page-gutter), calc((100% - var(--discover-w)) / 2)); height: 100%; overflow: auto; padding: var(--page-top) var(--page-px) var(--page-bottom); display: grid; gap: var(--section-gap); align-content: start; }
-.discover-head { display: grid; gap: var(--space-1); -webkit-app-region: drag; }
+.discover { --discover-w: 960px; --page-px: max(var(--page-gutter), calc((100% - var(--discover-w)) / 2)); height: 100%; overflow: auto; padding: 0 var(--page-px) var(--page-bottom); display: grid; gap: var(--section-gap); align-content: start; }
+/* 标题这一条是通栏的拖动区（和设置页、对话页的顶栏一样）：往两边伸到窗格的边、往上包住页面顶部的留白，空白处按住就能拖动窗口；
+   里面的标题、说明、搜索框照常点选。应用页（screens/apps.js）用的也是这一条 */
+.discover-head { display: grid; gap: var(--space-1-5); margin: 0 calc(-1 * var(--page-px)) calc(var(--title-gap) - var(--section-gap)); padding: var(--page-top) var(--page-px) 0; -webkit-app-region: drag; }   /* 标题到第一组和设置页一样是 --title-gap，组与组之间才是 --section-gap */
 .discover-head > * { -webkit-app-region: no-drag; }
 .discover-head h1, .discover-head p { margin: 0; }
-.discover-head p { font-size: var(--fs-md); color: var(--muted); }
-.discover-sec { display: grid; gap: var(--space-3); min-width: 0; }
+.discover-head p { font-size: var(--fs-lg); color: var(--muted); }
+.discover-sec { display: grid; gap: var(--heading-gap); min-width: 0; }
 .discover-part { margin: 0; font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--fg-2); }
 .discover-search { margin: var(--space-3) 0 0; }
 /* 列数：小卡最多三列、精选最多两列（每列至少占 1/3、1/2），窗口窄到放不下 --discover-col 时再少一列 */
@@ -15,7 +17,7 @@
 .discover-grid.big { --discover-col: 260px; --discover-cols: 2; }
 .discover-card { all: unset; cursor: pointer; display: grid; gap: var(--space-3); align-content: start; min-width: 0; }
 .discover-card:focus-visible .discover-cover { outline: 2px solid var(--accent); }
-.discover-cover { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 10; overflow: hidden; background: var(--well); border-radius: var(--r-well); }
+.discover-cover { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 10; overflow: hidden; background: var(--well); border-radius: var(--r-card-lg); }
 .discover-card.big .discover-cover { aspect-ratio: 16 / 9; }
 .discover-cover img { width: 100%; height: 100%; object-fit: cover; }
 /* 悬停：和可点的组一样叠深一级（浅色压暗、深色提亮），不浮起、不缩放 */
@@ -28,38 +30,30 @@
 .discover-card.big .discover-text .title { font-size: var(--fs-xl); }
 .discover-text .summary { font-size: var(--fs-sm); color: var(--muted); line-height: var(--lh-snug); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 
-/* 专属界面容器：顶栏 + Bot 的界面（iframe，填满剩下的高度）+ 底部输入区。
-   输入区和对话页是同一列：--col、--dock-pb 和 chat.css 的 .chat 同一个算法，输入框就是对话页那个 .composer，
-   宽、高、圆角、发送钮都一样；上方依次是最新回复、等你确认的卡片、示例，全都对齐这一列。 */
-.botapp { --botapp-side-w: var(--panel-w); height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
-.botapp.with-side { grid-template-columns: minmax(0, 1fr) var(--botapp-side-w); }
-.botapp-main {
+/* 专业 Bot 的页面（screens/bot-app.js）：有实例时主区就是对话页（.chat），这里只管还没有实例时的那一页（.botapp）和右侧面板里的工作台（.work-app）。
+   还没有实例：顶栏 + Bot 的开场白和示例（可滚动）+ 底部输入区。输入区和对话页是同一列：--col、--dock-pb 和 chat.css 的 .chat 同一个算法，
+   输入框就是对话页那个 .composer，宽、高、圆角、发送钮都一样；建实例失败时上方一条提示，也对齐这一列。 */
+.botapp {
   --col: min(var(--col-w), calc(100% - 2 * var(--page-gutter)));
   --dock-pb: var(--space-4);
-  min-width: 0; min-height: 0; display: flex; flex-direction: column;
+  position: relative; flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column;
 }
-.botapp-main > .notice { flex: none; }
-/* 提示条数量会变；界面始终填满顶栏和输入区之间的剩余空间。界面是桌面工作区（列表、内容各自滚动），下沿不再淡出：
-   淡出会把列表最后一行、固定在底部的东西也一起抹掉 */
-.botapp-stage { position: relative; flex: 1; min-width: 0; min-height: 0; display: grid; overflow: hidden; }
-.botapp-frame { width: 100%; height: 100%; border: 0; background: transparent; }
-/* 对话页的输入区悬浮在消息上；这里要占位，不盖住 Bot 的界面。子项都是 --col 宽、居中 */
-/* 和对话页的 .composer-dock 一样给滚动条留出那一条（scrollbar-gutter），两边切换时输入框的位置一像素不差 */
+.botapp > .chat-head { flex: none; }
+.botapp > .notice { flex: none; width: var(--col); margin-inline: auto; }
+.botapp > .botapp-intro, .botapp > .botapp-loading { flex: 1; }
+/* 对话页的输入区悬浮在消息上；这里要占位，不盖住开场白。子项都是 --col 宽、居中。
+   和对话页的 .composer-dock 一样给滚动条留出那一条（scrollbar-gutter），建好实例换成对话页时输入框的位置一像素不差 */
 .botapp-dock { flex: none; display: grid; gap: var(--space-2-5); padding: var(--space-2) 0 var(--dock-pb); overflow: hidden; scrollbar-gutter: stable; }
 .botapp-dock > * { width: var(--col); margin-inline: auto; }
 .botapp-loading { display: grid; place-items: center; }
-/* 顶栏中间的两种看法：静止的分段控件（选中的一格是 thumb 的底色），所有 Bot 都一样 */
-.botapp-views { flex: none; display: inline-flex; gap: var(--space-0-5); padding: var(--space-0-5); border-radius: var(--r-md); background: var(--seg-track); }
-.botapp-views button {
-  --focus-offset: -2px;
-  height: var(--ctl-sm); padding: 0 var(--space-3); border-radius: var(--r-sm); font-size: var(--fs-sm); color: var(--ctl-fg); white-space: nowrap;
-  transition: color var(--t-fast), background var(--t-fast);
-}
-.botapp-views button:hover:not([aria-selected="true"]) { color: var(--fg); background: var(--pill); }
-.botapp-views button[aria-selected="true"] { background: var(--seg-thumb-bg); box-shadow: var(--seg-edge); color: var(--fg); font-weight: var(--fw-medium); }
-/* 对话页：完整对话放在顶栏下面，它自己的顶栏不再出现（名字、信息按钮已经在上面了） */
-.botapp-stage.chat-view > .chat { --head-h: 0px; }
-.botapp-stage.chat-view > .chat > .chat-head { display: none; }
+/* 右侧面板「工作台」标签里的东西：下架 / 界面出错的提示，Bot 的界面填满剩下的高度。界面是桌面工作区（列表、内容各自滚动），下沿不淡出 */
+.work-app { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.work-app > .notice { flex: none; margin: 0 var(--pane-px) var(--space-2); }
+.work-app > .botapp-frame { flex: 1; min-height: 0; width: 100%; border: 0; background: transparent; }
+.work-app > .botapp-loading { flex: 1; }
+/* 有实例时空对话里的示例就是 Bot 自己的那几句（对话页的 starters）：句子长，一句一行、自动换行，不用一排定高的胶囊 */
+.chat-empty .chips.starters { flex-direction: column; align-items: center; width: min(100%, var(--bubble-w)); }
+.chat-empty .chips.starters .chip { height: auto; min-height: var(--ctl-lg); max-width: 100%; padding-block: var(--space-2); line-height: var(--lh-snug); text-align: center; }
 /* 还没有实例时的对话页：和对话列同宽，Bot 的开场白 + 完整的示例 */
 .botapp-intro { min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
 .botapp-intro-col { width: var(--col); margin: 0 auto; padding: var(--space-8) 0 var(--space-6); display: grid; gap: var(--space-6); align-content: start; }
@@ -72,7 +66,7 @@
 .botapp-intro-try { display: grid; gap: var(--space-2); }
 .botapp-intro-try h3 { margin: 0 0 var(--space-0-5); }
 .botapp-intro-starter {
-  display: block; width: 100%; padding: var(--space-2-5) var(--space-3-5); border-radius: var(--r-well); background: var(--pill); color: var(--fg-2);
+  display: block; width: 100%; padding: var(--space-2-5) var(--group-pad); border-radius: var(--r-card); background: var(--pill); color: var(--fg-2);
   font-size: var(--fs-md); line-height: var(--lh-snug); text-align: start; transition: background var(--t-fast), color var(--t-fast);
 }
 .botapp-intro-starter:hover:not(:disabled) { background: var(--pill-hover); color: var(--fg); }
@@ -80,40 +74,36 @@
 .botapp-intro-starter:disabled { color: var(--faint); cursor: default; }
 .botapp-intro-note { margin: 0; font-size: var(--fs-xs); color: var(--muted); }
 .botapp-sample { font-size: var(--fs-sm); color: var(--fg-2); }
-.botapp-side { min-height: 0; min-width: 0; overflow: auto; background: var(--well); }
-.botapp-info { display: grid; gap: var(--space-5); padding: var(--space-5); align-content: start; }
-.botapp-info section { display: grid; gap: var(--space-2); }
-.botapp-info h3 { margin: 0; }
-.botapp-info ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-1); }
-.botapp-skills li { display: grid; }
-/* 示例：一排单行胶囊，高度固定一个 --ctl-md，不折行、不随句子变高——底部的高度要留给 Bot 的界面。
-   放不下时按各自的长度一起收窄、句尾省略，悬停看全文（title）。和对话页的建议胶囊一样是一层静默填充，不描边、不浮起 */
-.botapp-starters { display: flex; gap: var(--space-2); min-width: 0; overflow: hidden; }
-.botapp-starter {
-  flex: 0 1 auto; display: flex; align-items: center; min-width: 5em; height: var(--ctl-md); padding: 0 var(--space-3); border-radius: var(--r-full);
-  background: var(--pill); color: var(--fg-2); font-size: var(--fs-sm); text-align: start;
-  transition: background var(--t-fast), color var(--t-fast);
-}
-.botapp-starter:hover:not(:disabled) { background: var(--pill-hover); color: var(--fg); }
-.botapp-starter:active:not(:disabled) { background: var(--pill-press); }
-.botapp-starter:disabled { color: var(--faint); cursor: default; }
-.botapp-starter, .botapp-starter-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.botapp-starter-text { min-width: 0; }
-/* 最新回复：头像 + 对话里那样的回复正文（同字号、同行距、同 Markdown 排版），平时露两行，展开后限高滚动 */
-.botapp-reply { --reply-lines: 2; display: flex; gap: var(--space-3); align-items: flex-start; min-width: 0; }
-.botapp-reply > :first-child { flex: none; margin-top: var(--space-0-5); }   /* 微调：22 的头像和 15/1.7 的首行居中对齐 */
-.botapp-reply-main { flex: 1; min-width: 0; display: grid; gap: var(--space-1); }
-.botapp-reply-body { color: var(--fg); line-height: var(--lh-prose); max-height: calc(1em * var(--lh-prose) * var(--reply-lines)); overflow: hidden; }
-.botapp-reply.long:not(.open) .botapp-reply-body { mask-image: linear-gradient(to top, transparent, var(--black) 1.2em); }
-.botapp-reply.open .botapp-reply-body { max-height: 40vh; overflow-y: auto; }
-.botapp-reply-bar { display: flex; gap: var(--space-1); margin-inline-start: calc(-1 * var(--space-2-5)); }   /* 微调：幽灵按钮的字和正文左对齐 */
-.botapp-reply-wait { line-height: var(--ctl-sm); color: var(--muted); font-size: var(--fs-md); }
 
-.side-group { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--side-row-px) var(--space-1); }
+.side-group { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--side-row-px) var(--space-1); border-radius: var(--r-row); }   /* 侧栏里的一行：圆角和别的行一样，不是文字按钮的胶囊 */
 .side-group .text { color: var(--fg-2); }
-.thread-new-dot { width: var(--space-2); height: var(--space-2); border-radius: var(--r-full); background: var(--signal); flex: none; }
-
-@media (max-width: 720px) {
-  .botapp.with-side { grid-template-columns: minmax(0, 1fr); }
-  .botapp.with-side .botapp-main { display: none; }
+.thread-new-dot { width: var(--space-2); height: var(--space-2); border-radius: 50%; background: var(--signal); flex: none; }
+/* 侧栏分组（screens/sidebar.js、lib/sections.js）：标题点一下折叠；悬停时右边出现"更多"，盖住折叠箭头（和行上的"更多"盖住时间一样）。
+   标题和行都能拖：落点是一条 2px 的线（--accent），画在两行 / 两个分组之间的空隙里；拖进分组的空处（放到末尾）时标题亮一层底；拖着的那一项变淡 */
+.side-sec { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--side-row-gap); }
+.side-sec-head { position: relative; min-width: 0; }
+.side-sec-head > .side-group { width: 100%; }
+.side-sec-head > .side-group .text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 里面的名字也带 .text（取颜色），别让它在整行的悬停底上再叠一层文字按钮的底 */
+.side-sec-head > .side-group > .text:hover { background: none; }
+.side-sec-head > .side-group .ic { transition: opacity var(--t-fast); }
+.side-sec-more {
+  --ib-size: var(--ctl-sm); --ib-fg: var(--muted);
+  position: absolute; top: var(--space-1-5); right: var(--space-1-5);
+  opacity: 0; transition: opacity var(--t-fast), background var(--t-fast), color var(--t-fast);
 }
+.side-sec-head:hover > .side-sec-more, .side-sec-more:focus-visible, .side-sec-more[aria-expanded="true"] { opacity: 1; }
+.side-sec-head:is(:hover, :has(> .side-sec-more:focus-visible), :has(> .side-sec-more[aria-expanded="true"])) > .side-group .ic { opacity: 0; }
+.side-sec-head.editing { padding: var(--space-2) 0 var(--space-1); }
+.side-sec-head .field { --field-h: var(--ctl-md); }
+.side-sec-drop { padding: var(--space-2) var(--side-row-px); font-size: var(--fs-sm); color: var(--muted); }
+.side-list .drag-src { opacity: var(--o-disabled); }
+.side-list :is(.thread-item.drop-before, .side-sec.drop-before)::before,
+.side-list :is(.thread-item.drop-after, .side-sec.drop-after)::after {
+  content: ""; position: absolute; left: var(--side-row-px); right: var(--side-row-px); height: 2px;
+  border-radius: var(--r-ctl); background: var(--accent); pointer-events: none;
+}
+.side-list .drop-before::before { top: calc(var(--side-row-gap) / -2 - 1px); }
+.side-list .drop-after::after { bottom: calc(var(--side-row-gap) / -2 - 1px); }
+.side-sec.drop-into > .side-sec-head > .side-group { background: var(--pill); }
+

@@ -64,7 +64,7 @@ bots/<id>/
 发现页卡片上方是一张封面：`cover/light.png`、`cover/dark.png`，跟着界面主题换。打包时先用它，没有时退回 `.check/` 里的界面截图，再没有就显示头像。
 
 - 画这个 Bot 在做的事（场景、道具），不画单独的机器人头像——头像已经在卡片的名字旁边。
-- 官方 Bot 的封面是一套：哑光黏土 + 磨砂玻璃的静物，暖灰底，少量墨色，只有一个很小的黄绿 `#d7ff00` 亮点；不写字、不放标志和人物。深色版是同一张图换成炭灰底重新打光。用 gpt-image（Codex 的生图）画 1536×1024，再裁成 16:10 压成 256 色 PNG：
+- 官方 Bot 的封面是一套：用这个 Bot 头像的材质和配色，把它头顶的配件和工作里的道具做成一小组毛毡、布艺的静物（PPT 大师是薰衣草紫毛毡底座上的三张幻灯片卡，尽调助手是芥黄人字呢卷宗 + 黄铜放大镜，影视创作室是黑毛毡场记板 + 黄铜胶片盘，美股研报是黄绿毛绒柱 + 霓虹走势箭头）。浅中性灰无缝背景，物件居中、四周留足空白（大卡会再裁成 16:9），颜色只来自物件；不写字、不放标志、人物和机器人。深色版用图片编辑（images/edits）把浅色版换成炭灰底重新打光，构图不变。用 gpt-image-2.5 画 1536×1024，再裁成 16:10 压成 256 色 PNG：
 
   ```bash
   ffmpeg -i in.png -vf "crop=1536:960,scale=1200:750:flags=lanczos,split[a][b];[a]palettegen=max_colors=256:stats_mode=full[p];[b][p]paletteuse=dither=sierra2_4a" -compression_level 9 cover/light.png
@@ -81,11 +81,11 @@ bots/<id>/
 | `name`、`summary` | 名称（≤ 24 字符）、一句话（≤ 80 字符） |
 | `about` | 1–3 行说明，显示在信息面板 |
 | `starters` | 2–3 句可点的话，每句都要让界面发生看得见的变化。还没用过时显示在输入框上方的一排单行胶囊里，放不下时省略、悬停看全文，写短一点（中文 20 字左右以内） |
-| `avatar` | 基础角色 `blue`、`yellow`、`green`、`red`、`purple`、`orange`，或领域专家 `law`、`health`、`finance`、`code`、`design`、`writing`、`education`、`science`、`data`、`marketing`、`cooking`、`translate`；只决定长相。专家要新版 App 才认得，用了就把 `minAppVersion` 设到发布它们的那个版本 |
+| `avatar` | 基础角色 `blue`、`yellow`、`green`、`red`、`purple`、`orange`，或领域专家 `law`、`health`、`finance`、`code`、`design`、`writing`、`education`、`science`、`data`、`marketing`、`cooking`、`translate`；只决定长相。专家要新版 App 才认得，用了就把 `minAppVersion` 设到发布它们的那个版本。不能和目录里别的 Bot 撞头像（打包时拦）。`slides`、`film`、`dossier`、`ticker` 是 PPT 大师、影视创作室、尽调助手、美股研报的专属形象，别的 Bot 不能用 |
 | `permissions` | 见下表 |
 | `skills` | 引入的技能：`name`、`source`、`sha256`（`amb-bot hash` 算）、`author`、`license`、`url`。自己写的不用列 |
 
-文案字段都写成 `{ "zh-CN": …, "en": … }`。框架要求这两种，`ja`、`ko`、`ru` 缺了退回 `en`。这个仓库里上架的 Bot 五种语言都要有，文案、界面和示例数据都算，`test/bot-catalog-site.unit.test.ts` 会检查。
+文案字段都写成 `{ "zh-CN": …, "en": … }`。框架要求这两种，`ja`、`ko`、`ru`、`es`、`pt` 缺了退回 `en`。这个仓库里上架的 Bot 七种语言都要有，文案、界面和示例数据都算，`test/bot-catalog-site.unit.test.ts` 会检查。
 
 ### 权限
 
@@ -252,7 +252,7 @@ npm run bot -- check bots/<id> --full   # 可选：再跑渲染和真实模型�
 
 ## 发布和下架
 
-官方 Bot 随 App 一起发布。`npm run build` 自动运行 `build:catalog`，检查 `bots/` 下的全部 Bot，把界面、五种语言的示例数据、人设、技能和可用缩略图打到 `dist/catalog/`。Electron 的 `dist/**` 打包规则和 Docker 镜像都会包含这些资源，不需要目录签名私钥。首次预览和安装只从内置包读取，按 sha256 校验后解压到数据目录；旧的线上目录缓存不会覆盖内置目录。
+官方 Bot 随 App 一起发布。`npm run build` 自动运行 `build:catalog`，检查 `bots/` 下的全部 Bot，把界面、各语言的示例数据、人设、技能和可用缩略图打到 `dist/catalog/`。Electron 的 `dist/**` 打包规则和 Docker 镜像都会包含这些资源，不需要目录签名私钥。首次预览和安装只从内置包读取，按 sha256 校验后解压到数据目录；旧的线上目录缓存不会覆盖内置目录。
 
 `npm start`、`npm run dev` 和 `npm run init` 会先生成内置目录；直接运行 `tsx src/main.ts` 前，先执行 `npm run build:catalog`。官方 Bot 的上新、升级和下架跟随 App 版本发布。GitHub Release 工作流会用打包后的可执行文件验证所有内置 Bot 能在禁止网络请求的条件下加载和安装。
 

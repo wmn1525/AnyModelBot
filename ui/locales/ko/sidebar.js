@@ -1,4 +1,5 @@
 export default {
+  botQuotaOpen: "봇 크레딧 보기: {percent}% 남음",
   "localUser": "로컬 사용자",
   "settingsTitle": "설정 (⌘,)",
   "settings": "설정",
@@ -11,8 +12,9 @@ export default {
   "belowLine": "알림 기준 {amount} 미만",
   "botQuota": "Bot 크레딧",
   "botLeft": "{percent}% 남음",
-  "botQuotaOpen": "Bot 크레딧 {percent}% 남음, 자세히 보기",
-  "botQuotaScope": "AnyModelBot에서만 사용할 수 있습니다",
+  "botQuotaScope": "Bot 크레딧은 AnyModelBot에서만 사용할 수 있습니다",
+  "quotaTip": "Bot 크레딧 {percent}% 남음",
+  "balanceTip": "잔액 {amount}",
   "subscribeBonus": "구독하면 플랜 크레딧의 10%를 Bot 크레딧으로 추가 증정",
   "update": "{version} 버전을 사용할 수 있습니다 — 다운로드 ↗",
   "updateDismiss": "이 버전 알림 숨기기",
@@ -27,6 +29,9 @@ export default {
     "confirm": "영구 삭제"
   },
   "bots": "봇",
+  "collapse": "사이드바 숨기기",
+  "expand": "사이드바 표시",
+  "searchShortcut": "대화 기록 검색 ({keys})",
   "newShortcut": "새 봇 (⌘N)",
   "newMenu": "새로 만들기",
   "newBotItem": "새 봇",
@@ -57,5 +62,22 @@ export default {
   },
   "needs": {
     "other": "내 확인 필요 {count}건"
+  },
+  "section": {
+    "name": "섹션 이름",
+    "untitled": "새 섹션",
+    "new": "새 섹션",
+    "moreFor": "“{name}” 섹션의 추가 작업",
+    "actionsFor": "“{name}” 섹션 작업",
+    "up": "위로 이동",
+    "down": "아래로 이동",
+    "delete": "섹션 삭제",
+    "deleteTitle": "“{name}” 섹션을 삭제할까요?",
+    "deleteMove": "안에 있는 봇과 그룹 채팅은 “{name}”(으)로 옮겨지며, 삭제되지 않습니다.",
+    "deleteInbox": "앞으로 새로 나온 봇은 “둘러보기”에만 표시됩니다.",
+    "moveTo": "섹션으로 이동",
+    "moveItem": "섹션으로 이동…",
+    "moveFor": "“{name}” 이동",
+    "dropHere": "여기에 놓기"
   }
 };

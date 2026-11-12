@@ -1,20 +1,24 @@
 {
   "id": "ppt-master",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "minAppVersion": "0.1.20",
   "name": {
     "zh-CN": "PPT 大师",
     "en": "PPT Master",
     "ja": "PPT マスター",
     "ko": "PPT 마스터",
-    "ru": "Мастер PPT"
+    "ru": "Мастер PPT",
+    "es": "PPT Master",
+    "pt": "PPT Master"
   },
   "summary": {
-    "zh-CN": "把文档或主题做成可编辑的 PPTX，也能做模板、改现有的 PPT",
-    "en": "Turn documents or topics into editable PPTX decks, or edit decks you have",
-    "ja": "文書やテーマから編集可能な PPTX を作成。テンプレート作成や既存の PPT の編集も",
-    "ko": "문서나 주제를 편집 가능한 PPTX로 만들고, 템플릿 제작과 기존 PPT 수정도 합니다",
-    "ru": "Делает редактируемые PPTX из документов и тем, создаёт шаблоны, правит слайды"
+    "zh-CN": "把文档或主题做成可编辑的 PPT，也能改现有的演示文稿。",
+    "en": "Turn documents or topics into editable slides, or edit decks you already have.",
+    "ja": "文書やテーマから編集可能なスライドを作成。既存のプレゼン資料も編集できます。",
+    "ko": "문서나 주제를 편집 가능한 슬라이드로 만들고, 기존 발표 자료도 수정합니다.",
+    "ru": "Делает редактируемые слайды из документов и тем, правит готовые презентации.",
+    "es": "Crea diapositivas editables a partir de documentos o temas, o edita las tuyas.",
+    "pt": "Transforma documentos e temas em slides editáveis ou edita suas apresentações."
   },
   "about": {
     "zh-CN": [
@@ -41,9 +45,19 @@
       "Использует рабочий процесс и инструменты экспорта открытого проекта PPT Master (hugohe3/ppt-master)",
       "Файлы проекта и PPTX остаются на устройстве, а содержимое документов уходит выбранной модели",
       "Слайды экспортируются как обычные фигуры, их можно править в PowerPoint. Качество зависит от модели"
+    ],
+    "es": [
+      "Basado en el flujo de trabajo y las herramientas de exportación del proyecto de código abierto PPT Master (hugohe3/ppt-master)",
+      "Los archivos del proyecto y las presentaciones se quedan en tu dispositivo; el contenido de los documentos se envía al modelo que elijas",
+      "Las diapositivas se exportan como formas nativas que puedes seguir editando en PowerPoint; la calidad depende del modelo elegido"
+    ],
+    "pt": [
+      "Baseado no fluxo de trabalho e nas ferramentas de exportação do projeto de código aberto PPT Master (hugohe3/ppt-master)",
+      "Os arquivos do projeto e as apresentações ficam no seu dispositivo; o conteúdo dos documentos é enviado ao modelo que você escolher",
+      "Os slides são exportados como formas nativas que você pode continuar editando no PowerPoint; a qualidade depende do modelo escolhido"
     ]
   },
-  "avatar": "design",
+  "avatar": "slides",
   "permissions": [
     "workspace-write",
     "network",
@@ -74,6 +88,16 @@
       "Быстро сделай презентацию 16:9 на 5 слайдов о том, как лучше проводить удалённые планёрки, подтверждение не нужно",
       "Сделай презентацию запуска продукта на 8 слайдов, сначала покажи план",
       "Сделай многоразовый шаблон квартального обзора в простом стиле"
+    ],
+    "es": [
+      "Haz rápidamente una presentación 16:9 de 5 páginas sobre cómo mejorar las reuniones semanales remotas, sin pedirme confirmación",
+      "Haz una presentación de lanzamiento de producto de 8 páginas y muéstrame primero el plan",
+      "Crea una plantilla reutilizable para revisiones trimestrales, con un estilo limpio"
+    ],
+    "pt": [
+      "Faça rapidamente uma apresentação 16:9 com 5 slides sobre como melhorar as reuniões semanais remotas, sem precisar confirmar",
+      "Faça uma apresentação de lançamento de produto com 8 slides e me mostre o plano antes",
+      "Crie um template reutilizável de revisão trimestral com um estilo limpo"
     ]
   },
   "skills": [

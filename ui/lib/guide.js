@@ -164,6 +164,8 @@ export function hideGuide() {
 }
 
 export const fillComposer = (text) => fill.set({ text, at: Date.now() });
+/** 把一句话直接发给当前对话的机器人（输入框里有草稿时只填进去，不替用户发） */
+export const sendToChat = (text) => fill.set({ text, at: Date.now(), send: true });
 
 /** 放一遍生图的预置演示：流程和真的一样（直接生成 → 图片显示在对话里），图是客户端自带的示例，不调用模型、不扣费 */
 export function runMediaDemo() {

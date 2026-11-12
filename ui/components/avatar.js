@@ -1,4 +1,4 @@
-// 机器人头像：内置毛绒角色（6 个基础角色 + 12 个领域专家，蓝色的"天天"是默认头像），每个机器人配一个，只决定长相，和它做什么无关；会看指针、眨眼，并对平台里发生的事做出反应。
+// 机器人头像：内置毛绒角色（6 个基础角色 + 12 个领域专家 + 4 个目录 Bot 专属形象，蓝色的"天天"是默认头像），每个机器人配一个，只决定长相，和它做什么无关；会看指针、眨眼，并对平台里发生的事做出反应。
 // 图层由 scripts/build-bot-avatars.py 从 anymodelbot_design/logo avator/ 生成（ui/design/bots/<key>.webp，另有小档 <key>@<边长>.webp）；
 // 下面的几何是相对头像方框的百分比，和脚本输出的是同一套数，换图后要一起更新。
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -78,9 +78,38 @@ export const EXPERT_CHARS = {
   },
 };
 export const EXPERT_KEYS = Object.keys(EXPERT_CHARS);
-Object.assign(BOT_CHARS, EXPERT_CHARS);
+/**
+ * 4 个目录 Bot 的专属形象：用户 2026-11-09 要的，比专家更大胆、更精细（双材质、耳朵和额头也有设计）。
+ * 一个形象只属于一个目录 Bot（owner 是目录 id，和服务端 CATALOG_AVATARS 一致）：选择器只在这个 Bot 自己的设置里列出，
+ * 别的 Bot 不能选，目录里两个 Bot 也不能撞头像。字段同上，原图在 anymodelbot_design/logo avator/目录/。
+ */
+export const CATALOG_CHARS = {
+  slides: {
+    owner: "ppt-master",
+    eyes: [[38.82, 62.94], [60.89, 62.95]], r: 3.49, earL: [18.53, 62.33], earR: [81.47, 62.33], top: [49.15, 32.4], tip: [49.4, 21.6],
+  },
+  film: {
+    owner: "printfilm",
+    eyes: [[38.81, 62.94], [60.89, 62.95]], r: 3.49, earL: [18.53, 61.94], earR: [81.47, 61.94], top: [49.5, 32.71], tip: [50.1, 23.3],
+  },
+  dossier: {
+    owner: "company-research",
+    eyes: [[38.82, 62.93], [60.89, 62.96]], r: 3.49, earL: [18.53, 62.25], earR: [81.63, 62.25], top: [49.3, 32.56], tip: [52.2, 24.6],
+  },
+  ticker: {
+    owner: "us-stock-research",
+    eyes: [[38.81, 62.94], [60.89, 62.95]], r: 3.41, earL: [18.76, 62.21], earR: [81.24, 62.21], top: [49.22, 32.79], tip: [51.4, 24.1],
+  },
+};
+export const CATALOG_KEYS = Object.keys(CATALOG_CHARS);
+Object.assign(BOT_CHARS, EXPERT_CHARS, CATALOG_CHARS);
 export const CHAR_KEYS = Object.keys(BOT_CHARS);
 export const MAIN_CHAR = "blue";
+/** 目录 Bot 的专属形象（不是目录 Bot、或者目录里没给它专属形象时为空） */
+export const ownCharOf = (bot) => {
+  const id = bot && bot.app && bot.app.catalogId;
+  return (id && CATALOG_KEYS.find((k) => CATALOG_CHARS[k].owner === id)) || "";
+};
 
 /**
  * 精灵图分档（每格边长）：<key>.webp 是 448，另有这几档小的 <key>@<边长>.webp，都是脚本从原图直接缩出来的（和脚本的 TIERS 一致）。
@@ -92,8 +121,8 @@ export function spriteUrl(key, px) {
   return `/amb/static/design/bots/${key}${tier ? "@" + tier : ""}.webp`;
 }
 
-/** 角色的名字、介绍和领域（按当前语言）；基础角色没有领域 */
-export const charText = (key) => ({ name: t(`avatar.chars.${key}.name`), about: t(`avatar.chars.${key}.about`), field: EXPERT_CHARS[key] ? t(`avatar.chars.${key}.field`) : "" });
+/** 角色的名字、介绍和领域（按当前语言）；基础角色没有领域，专属形象的领域就是它主人做的事 */
+export const charText = (key) => ({ name: t(`avatar.chars.${key}.name`), about: t(`avatar.chars.${key}.about`), field: EXPERT_CHARS[key] || CATALOG_CHARS[key] ? t(`avatar.chars.${key}.field`) : "" });
 for (const k of CHAR_KEYS)
   for (const f of ["name", "about"]) Object.defineProperty(BOT_CHARS[k], f, { get: () => t(`avatar.chars.${k}.${f}`), enumerable: true });
 
@@ -282,8 +311,11 @@ export function BotAvatar({ bot, id, name, char, size = 34, state = "idle", work
   </div>`;
 }
 
-/** 选角色（单选）：基础角色一组，领域专家一组，每行 6 个。value 为空时高亮 fallback（当前由 id 决定的那个） */
-export function AvatarPicker({ value, fallback, onChange, size = 44, label = t("avatar.label") }) {
+/**
+ * 选角色（单选）：基础角色一组，领域专家一组，每行 6 个。value 为空时高亮 fallback（当前由 id 决定的那个）。
+ * own：目录 Bot 的专属形象（ownCharOf），只有它自己的设置里传，排在最前面单独一组；别处不列专属形象。
+ */
+export function AvatarPicker({ value, fallback, own = "", onChange, size = 44, label = t("avatar.label") }) {
   const cur = value || fallback;
   const opt = (k) => {
     const c = charText(k);
@@ -295,6 +327,9 @@ export function AvatarPicker({ value, fallback, onChange, size = 44, label = t("
     </button>`;
   };
   return html`<div class="avatar-picker" role="radiogroup" aria-label=${label}>
+    ${CATALOG_CHARS[own] && html`<div class="t-label">${t("avatar.groups.own")}</div>
+    <div class="avatar-group">${opt(own)}</div>
+    <div class="t-label">${t("avatar.groups.base")}</div>`}
     <div class="avatar-group">${BASE_KEYS.map(opt)}</div>
     <div class="t-label">${t("avatar.groups.expert")}</div>
     <div class="avatar-group">${EXPERT_KEYS.map(opt)}</div>

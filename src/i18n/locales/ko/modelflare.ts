@@ -1,6 +1,6 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
-  "unreachable": "{host}에 연결할 수 없습니다({reason})",
+  "unreachable": "{host}에 연결할 수 없습니다({reason}). 네트워크를 확인하세요. 프록시나 VPN을 사용 중이라면 시스템 프록시 또는 TUN 모드를 켜고 다시 시도하세요",
   "timeout": "시간 초과",
   "invalid_key": "키가 올바르지 않거나 폐기되었습니다",
   "forbidden": "이 키로는 이 모델이나 그룹을 사용할 수 없습니다",

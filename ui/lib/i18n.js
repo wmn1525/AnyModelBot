@@ -1,6 +1,6 @@
 // 界面多语言：目标语言和就绪状态见 locales/manifest.json。
 //
-// 语言偏好（system | zh-CN | en | ja | ko | ru）是应用级设置，以服务端配置 config.ui.lang 为准：托盘菜单、服务端报错、
+// 语言偏好（system | zh-CN | en | ja | ko | ru | es | pt）是应用级设置，以服务端配置 config.ui.lang 为准：托盘菜单、服务端报错、
 // 机器人发到微信 / 飞书的系统消息都跟着它。localStorage 只缓存一份给首帧用（index.html 先按它设 <html lang>），
 // 启动后 App 读到 /settings 里的 lang 再以服务端为准（adoptServerLang）。
 // 每个 API 请求带 x-amb-lang（解析后的语言），服务端据此返回同一种语言的报错和状态文字。
@@ -20,12 +20,14 @@ import manifest from "../locales/manifest.json" with { type: "json" };
 import ja from "../locales/ja/index.js";
 import ko from "../locales/ko/index.js";
 import ru from "../locales/ru/index.js";
+import es from "../locales/es/index.js";
+import pt from "../locales/pt/index.js";
 
 export const TARGET_LANGS = manifest.locales.map((l) => l.code);
 export const LANGS = manifest.locales.filter((l) => l.ready).map((l) => l.code);
 /** 各语言用自己的文字写名字（语言菜单的惯例），不随界面语言翻译 */
 export const LANG_NAMES = Object.fromEntries(manifest.locales.map((l) => [l.code, l.name]));
-const DICTS = { "zh-CN": zhCN, en, ja, ko, ru };
+const DICTS = { "zh-CN": zhCN, en, ja, ko, ru, es, pt };
 const FALLBACK = "zh-CN";
 const KEY = "amb-lang";
 
@@ -34,7 +36,7 @@ export function normalizeLang(s) {
   const v = String(s || "").trim().toLowerCase();
   const base = v.split(/[-_.@]/)[0];
   if (base === "zh") return "zh-CN";
-  if (["en", "ja", "ko", "ru"].includes(base)) return base;
+  if (["en", "ja", "ko", "ru", "es", "pt"].includes(base)) return base;
   return null;
 }
 export const normalizePref = (s) => (s === "system" ? "system" : normalizeLang(s) || "system");
@@ -61,9 +63,9 @@ let pref = readPref();
 let current = pref === "system" ? systemLang() : pref;
 const subs = new Set();
 
-/** 当前界面语言（解析后的 zh-CN | en | ja | ko | ru） */
+/** 当前界面语言（解析后的 zh-CN | en | ja | ko | ru | es | pt） */
 export const getLang = () => current;
-/** 语言偏好（system | zh-CN | en | ja | ko | ru） */
+/** 语言偏好（system | zh-CN | en | ja | ko | ru | es | pt） */
 export const getLangPref = () => pref;
 /** 给 Intl / toLocaleString 用的语言标签 */
 export const locale = () => current;

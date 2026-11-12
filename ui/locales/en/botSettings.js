@@ -143,7 +143,7 @@ export default {
     nudgeSub: "When messages are still waiting to be sent, ask you for a reply before the 24-hour window closes",
     rules: "Rules",
     rulesSub: "Scheduled checks and reminders",
-    rulesCount: { one: "{count} rule, in the info panel under Tasks", other: "{count} rules, in the info panel under Tasks" },
+    rulesCount: { one: "{count} rule, in the right panel under Tasks", other: "{count} rules, in the right panel under Tasks" },
     newRule: "New",
   },
 };

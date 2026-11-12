@@ -1,0 +1,43 @@
+export default {
+  "palette": {
+    "title": "Paleta de comandos",
+    "placeholder": "Digite um comando ou o nome de um bot",
+    "inputLabel": "Comando",
+    "empty": "Nenhum comando encontrado"
+  },
+  "cmd": {
+    "needs": "Precisa de você ({count})",
+    "needsKeys": "precisa de você pendências atenção aguardando needs attention to-do",
+    "tasks": "Tarefas e regras",
+    "tasksKeys": "tarefas regras segundo plano trabalhos tasks rules background jobs",
+    "settings": "Abrir Configurações",
+    "settingsKeys": "configurações preferências opções ajustes settings preferences options",
+    "newBot": "Novo bot",
+    "newBotKeys": "novo bot criar adicionar new bot create add",
+    "openInfo": "Abrir painel direito",
+    "closeInfo": "Fechar painel direito",
+    "infoKeys": "informações painel detalhes painel direito lateral espaço de trabalho info panel details right panel side workspace",
+    "botSettings": "Configurações de “{name}”",
+    "botSettingsKeys": "configurações do bot configurar bot settings configure",
+    "modelflare": "Configurações de modelos",
+    "modelflareKeys": "modelos modelflare oficial chave api models official key",
+    "appearance": "Configurações de aparência",
+    "appearanceKeys": "aparência fonte texto tamanho movimento animação vidro desfoque largura appearance font text size motion animation glass blur width",
+    "themeSystem": "Tema: sistema",
+    "themeKeys": "tema aparência theme appearance",
+    "themeLight": "Tema: claro",
+    "themeLightKeys": "tema claro aparência theme light appearance",
+    "themeDark": "Tema: escuro",
+    "themeDarkKeys": "tema escuro noite aparência theme dark night appearance",
+    "lang": "Idioma: {name}",
+    "langKeys": "idioma língua português inglês chinês japonês coreano russo espanhol language english chinese japanese korean russian spanish portuguese 中文 English 日本語 한국어 Русский Español Português",
+    "switchBot": "Mudar para “{name}”"
+  },
+  "lowBalance": "Seu saldo no OKINTO caiu para ${amount}",
+  "serviceDown": "Não foi possível acessar o serviço local: {error}",
+  "resizeSide": "Redimensionar barra lateral",
+  "resizePanel": "Redimensionar painel direito",
+  "botMissing": "Bot não encontrado",
+  "groupMissing": "Esta conversa em grupo não existe mais",
+  "backToChat": "Voltar ao chat"
+};

@@ -8,18 +8,18 @@
   animation: fade-in var(--dur-base) var(--ease-out);
 }
 .sheet {
-  --sheet-w: 440px;
+  --sheet-w: 460px;
   --sheet-r: var(--r-pane);
   width: min(var(--sheet-w), 100%); max-height: calc(100vh - 2 * var(--float-inset)); overflow: auto;
   background: var(--glass-sheet); backdrop-filter: var(--glass-filter-lg);
   border-radius: var(--sheet-r); box-shadow: var(--shadow-modal);
-  padding: var(--sheet-pad); display: grid; gap: var(--space-3);
+  padding: var(--sheet-pad); display: grid; gap: var(--space-4);
 }
 .sheet.wide { --sheet-w: 640px; }
 /* 标题一行：右边是关闭钮（确认框没有，它有"取消"）。关闭钮往外探一点，图标的右沿落在内容的右边上 */
 .sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
-.sheet h2 { min-width: 0; font-size: var(--fs-xl); font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); line-height: var(--lh-snug); overflow-wrap: anywhere; }
-.sheet-close { --ib-size: var(--ctl-md); margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-1-5)) 0 0; }
+.sheet h2 { min-width: 0; font-size: var(--fs-2xl); font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); line-height: var(--lh-snug); overflow-wrap: anywhere; }
+.sheet-close { --ib-size: var(--ctl-md); margin: calc(-1 * var(--space-1)) calc(-1 * var(--ib-inset)) 0 0; }
 .sheet p { line-height: var(--lh-normal); }
 .sheet .body { color: var(--fg-2); line-height: var(--lh-relaxed); overflow-wrap: anywhere; }
 .sheet .actions { display: flex; justify-content: flex-end; gap: var(--ctl-gap); margin-top: var(--space-1); }
@@ -33,7 +33,7 @@
 /* 扫码和等待授权：内容在对话框里居中。二维码任何主题下都是白底，四周留白才好扫；还没拿到时先占一块一样大的位置，不跳 */
 .qr-flow { display: grid; justify-items: center; gap: var(--space-3); padding: var(--space-2) 0; text-align: center; }
 .qr-flow p { max-width: 36em; }
-.qr-img { display: block; width: 200px; height: 200px; padding: var(--space-3); border-radius: var(--r-xl); background: var(--qr-bg); image-rendering: pixelated; box-shadow: 0 0 0 1px var(--line); }   /* 描边：白底二维码放在浅色对话框上要一道细边 */
+.qr-img { display: block; width: 200px; height: 200px; padding: var(--space-3); border-radius: var(--r-card); background: var(--qr-bg); image-rendering: pixelated; box-shadow: 0 0 0 1px var(--line); }   /* 描边：白底二维码放在浅色对话框上要一道细边 */
 .qr-img.empty { display: grid; place-items: center; background: var(--well); box-shadow: none; }
 .qr-wait, .qr-status { display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: var(--space-1-5); font-size: var(--fs-xs); line-height: var(--lh-snug); color: var(--muted); }
 .qr-code { display: flex; align-items: center; gap: var(--ctl-gap); }

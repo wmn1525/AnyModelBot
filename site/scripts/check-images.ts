@@ -11,7 +11,9 @@ const KB = 1024;
 const RULES: [RegExp, number, string][] = [
   [/^og\/.+\.png$/, 300 * KB, "OG 图 ≤ 300 KB"],
   [/^bots\/.+\.(webp|avif)$/, 120 * KB, "机器人精灵图 ≤ 120 KB"],
-  [/^(favicon|apple-touch-icon|icon-).+\.png$/, 40 * KB, "图标 ≤ 40 KB"],
+  [/^favicon.*\.(png|ico)$/, 40 * KB, "标签页图标 ≤ 40 KB"],
+  // 主屏 / Web App 清单 / 结构化数据 logo：毛绒照片质感的 App 图标，压成调色板会出色带；只在加到主屏、安装或搜索引擎取 logo 时下载，页面加载不请求
+  [/^(apple-touch-icon|icon-).+\.png$/, 400 * KB, "主屏与清单图标 ≤ 400 KB"],
   [/\.svg$/, 4 * KB, "SVG ≤ 4 KB"],
   [/\.(png|jpe?g|webp|avif|gif)$/, 200 * KB, "其他图片 ≤ 200 KB"],
 ];

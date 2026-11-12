@@ -9,7 +9,7 @@ import { LiveTurns, type LiveTurn } from "./live.js";
 import { describeFile } from "./files.js";
 import type { ApprovalRow, BotGroup, Message, Store } from "../store/db.js";
 import { GroupChats } from "../core/groups.js";
-import { defaultLine } from "../agent/approvals.js";
+import { appConnectOf, appToolOf, defaultLine } from "../agent/approvals.js";
 import { shortPeer, whoText } from "../core/access.js";
 import type { AccessEntry } from "../store/db.js";
 import { exportFileName } from "../tasks/export.js";
@@ -112,7 +112,11 @@ export function publicApproval(r: ApprovalRow, store?: Store) {
   }
   const taskTitle = r.taskId ? store?.getTask(r.taskId)?.title : undefined;
   const note = r.taskId && r.status === "pending" ? defaultLine(r) : undefined;
-  return { ...rest, questions, ...(taskTitle ? { taskTitle } : {}), ...(note ? { note } : {}) };
+  // 连接应用的两种卡片（应用工具的审批、去连接 / 修复）：界面按这两个字段画
+  const appTool = appToolOf(r);
+  const appConnect = appConnectOf(r);
+  const always = r.kind === "approval" && r.status === "allowed" && result === "always";
+  return { ...rest, questions, ...(taskTitle ? { taskTitle } : {}), ...(note ? { note } : {}), ...(appTool ? { appTool: { ...appTool, botName: store?.getBot(r.botId)?.name ?? "" } } : {}), ...(appConnect ? { appConnect } : {}), ...(always ? { always: true } : {}) };
 }
 
 /** 允许名单 / 使用请求：界面要的字段（平台 id 只给末尾几位，界面不需要完整的） */

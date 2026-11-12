@@ -1,6 +1,6 @@
 # Data and privacy
 
-[简体中文](./privacy.md) | English | [日本語](./privacy_ja.md) | [한국어](./privacy_ko.md) | [Русский](./privacy_ru.md)
+[简体中文](./privacy.md) | English | [日本語](./privacy_ja.md) | [한국어](./privacy_ko.md) | [Русский](./privacy_ru.md) | [Español](./privacy_es.md) | [Português (Brasil)](./privacy_pt.md)
 
 **In one sentence:** conversations, memory, files and keys are stored on your device; whatever you send to a model goes to the model provider you chose, directly with your own official API key and otherwise through Modelflare. We do not claim your data is beyond all risk — anything sent to a model leaves your device.
 
@@ -25,7 +25,7 @@ This document explains what AnyModelBot stores where, what leaves your device, a
 | Chat search index | `message_search` and its full-text index in `anymodel.db` | No | Searches saved messages inside the instance without model calls |
 | Memory | `memory/` (Markdown: `bots/`, `groups/`, `team/`) | When it is used | Included as context in model requests; anything that looks like a secret is filtered before it is written |
 | Bot workspace files | `workspaces/<bot>/` (including received files in `inbox/` and generated images and video in `media/`) | When a bot reads them and sends them to a model | Same as above |
-| Modelflare sign-in credential | `modelflare-account.json` (mode 600; encrypted with the system keychain in the desktop app) | Only to modelflare.dev when refreshing tokens | Modelflare |
+| Modelflare sign-in credential | `modelflare-account.json` (mode 600) | Only to modelflare.dev when refreshing tokens | Modelflare |
 | API key | The gateway's isolated config in `magpie/config/` | As authentication on every model request to Modelflare | Modelflare |
 | Official API key (if you add one) | The gateway's isolated config in `magpie/config/` | As authentication on every model request to that provider | That model provider |
 | WeChat sign-in state and sync cursor | Inside the data directory (`weixin/` and others) | When talking to the WeChat iLink API | Tencent WeChat |
@@ -36,8 +36,9 @@ This document explains what AnyModelBot stores where, what leaves your device, a
 | Background tasks and rules | `anymodel.db` (tasks, rules and run logs, kept 30 days); task folders in `workspaces/<bot>/tasks/`, deleted after 30 days unused (you are told first in Needs you); their session files in `dsh/<bot>/sessions/`, deleted with the task | While they run | As for chats: context in model requests, sent through Modelflare to the provider you chose |
 | Settings | `config.json` | No | — |
 | Logs | `logs/app.log` (rotated by size) | No; "Copy diagnostics" is something you copy by hand, with keys replaced by `***` | — |
-| Tokens for connected accounts (Notion, Feishu, only if you add them) | `anymodel.db`; shared by all bots | Sent to that service as authentication each time a bot reads or writes | Notion, Feishu |
-| Notion content and Feishu messages a bot reads | Not stored separately; once in a chat they're stored with that chat | Yes | Sent as context in model requests, through Modelflare to the provider you chose |
+| Credentials for connected apps (only if you connect them): sign-in tokens, pasted tokens and keys, dedicated URLs, and the headers / query parameters / environment variables of custom MCP connectors | `app-secrets.json` (permission 600, outside the database); masked in logs, diagnostics and the interface | Sent to that service as authentication each time a bot reads or writes; environment variables of a local command only go to the local program you added | The apps you connect (Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian, Canva), or the custom MCP servers you add |
+| Names, addresses, status and tool lists of connections | `anymodel.db` (dedicated URLs and addresses that contain a key are stored masked) | No | — |
+| Content a bot reads from connected apps (docs, messages, issues…) | Not stored separately; once in a chat it's stored with that chat | Yes | Sent as context in model requests, through Modelflare to the provider you chose |
 | Screenshots (computer use) | Not kept long-term | Yes | Sent as part of the model request through Modelflare to a vision-capable model; never forwarded to WeChat or Feishu chats unless you ask for them as files |
 
 ## Local console access control
@@ -105,4 +106,4 @@ Besides model requests, the app goes online to:
 1. Quit AnyModelBot (tray menu → Quit).
 2. Delete the data directory from the table above. Docker: `docker rm -f amb && docker volume rm amb-data`.
 3. Revoke AnyModelBot under "Authorized apps" on your Modelflare profile page.
-4. If needed, disable the apps you created on the Feishu Open Platform (including any created by scanning), unbind the bot in WeChat, delete the bots you created on Telegram (@BotFather), Slack and Discord, and in Notion disconnect AnyModelBot and delete any tokens you created.
+4. If needed, disable the apps you created on the Feishu Open Platform (including any created by scanning), unbind the bot in WeChat, delete the bots you created on Telegram (@BotFather), Slack and Discord, and in each app's own settings (Notion, Feishu, GitHub and so on) revoke AnyModelBot's authorization and delete any tokens and keys you created.

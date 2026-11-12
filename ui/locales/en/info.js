@@ -1,13 +1,13 @@
 // info · en
 export default {
-  aria: "Info panel",
+  aria: "Right panel",
   botSettings: "Bot settings",
   closeTitle: "Close (⌘⇧I)",
-  closeAria: "Close info panel",
+  closeAria: "Close right panel",
   channels: "Channels",
   channelsDefault: "This bot replies by default",
   channelsManage: "Manage chat channels",
-  channelsSub: "All bots share these accounts. Add them in Settings > Connections",
+  channelsSub: "All bots share these accounts. Add them in Settings > Chat channels",
   approvals: "Pending approvals",
   due: "Expires {time}",
   noApprovals: "No pending approvals",
@@ -100,4 +100,7 @@ export default {
     activity: "Activity",
   },
   tasks: "Tasks",
+  tabsLabel: "Panel tabs",
+  tab: { app: "Workspace", overview: "Overview", tasks: "Tasks", memory: "Memory" },
+  noTasks: "No tasks or rules yet",
 };

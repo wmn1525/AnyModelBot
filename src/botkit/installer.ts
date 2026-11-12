@@ -41,6 +41,18 @@ export interface InstallerOptions {
   startBot: (botId: string) => Promise<void>;
 }
 
+/**
+ * 0.1.30 及以前目录 Bot 借用领域专家当头像（PPT 大师和影视创作室还共用一个），那时装的实例没记 app.avatar。
+ * 头像还是当年目录给的这个，就当用户没换过，跟着换成现在的专属形象。
+ */
+const BORROWED_AVATARS: Record<string, string> = { "ppt-master": "design", printfilm: "design", "company-research": "data", "us-stock-research": "finance" };
+
+/** 目录 Bot 现在该用的头像：用户自己换过的不动，否则跟着目录 */
+export function followedAvatar<A extends string>(current: A | "", ref: Pick<BotAppRef, "catalogId" | "avatar">, entryAvatar: A): A | "" {
+  const fromCatalog = ref.avatar ?? BORROWED_AVATARS[ref.catalogId];
+  return !current || current === fromCatalog ? entryAvatar : current;
+}
+
 export function settingsFor(entry: Pick<CatalogEntry, "permissions" | "avatar">): BotSettings {
   return normalizeSettings({
     avatar: entry.avatar,
@@ -126,7 +138,7 @@ export class BotInstaller {
       fs.mkdirSync(path.dirname(state), { recursive: true });
       fs.copyFileSync(samplePath(uiDir, lang), state);
     }
-    const ref: BotAppRef = { catalogId, version: entry.version, ui: entry.ui.sha256, runtime: entry.runtime.sha256, permissions: entry.permissions, skills };
+    const ref: BotAppRef = { catalogId, version: entry.version, ui: entry.ui.sha256, runtime: entry.runtime.sha256, permissions: entry.permissions, skills, avatar: entry.avatar };
     const bot = this.o.store.createBot({ id, name: localized(entry.name, lang) ?? catalogId, systemPrompt: persona, settings: settingsFor(entry), origin: "catalog", app: ref });
     await this.o.startBot(id);
     return bot;
@@ -162,8 +174,8 @@ export class BotInstaller {
     await this.o.stopAgent(botId);
     this.o.store.updateBot(botId, {
       systemPrompt: persona,
-      settings: { ...bot.settings, ...settingsFor(entry), avatar: bot.settings.avatar || entry.avatar },
-      app: { ...ref, version: entry.version, ui: entry.ui.sha256, runtime: entry.runtime.sha256, permissions: entry.permissions, skills },
+      settings: { ...bot.settings, ...settingsFor(entry), avatar: followedAvatar(bot.settings.avatar, ref, entry.avatar) },
+      app: { ...ref, version: entry.version, ui: entry.ui.sha256, runtime: entry.runtime.sha256, permissions: entry.permissions, skills, avatar: entry.avatar },
     });
     return "updated";
   }
@@ -172,6 +184,20 @@ export class BotInstaller {
   markCustomized(botId: string): void {
     const bot = this.o.store.getBot(botId);
     if (bot?.app && !bot.app.customized) this.o.store.updateBot(botId, { app: { ...bot.app, customized: true } });
+  }
+
+  /**
+   * 目录更新后调：目录换了头像，没换过头像的实例跟着换（不用等 Bot 升级，人设被改过、不再跟随升级的也换：头像和人设无关）。
+   * 用户自己选过别的头像的不动。
+   */
+  followAvatars(): void {
+    for (const bot of this.o.store.listBots()) {
+      const ref = bot.app;
+      const entry = ref && !ref.removed ? this.o.catalog.get(ref.catalogId) : undefined;
+      if (!ref || !entry || entry.removed || ref.avatar === entry.avatar) continue;
+      const avatar = followedAvatar(bot.settings.avatar, ref, entry.avatar);
+      this.o.store.updateBot(bot.id, { ...(avatar !== bot.settings.avatar ? { settings: { ...bot.settings, avatar } } : {}), app: { ...ref, avatar: entry.avatar } });
+    }
   }
 
   /** 目录更新后调：下架的记下来；安全原因下架的立刻停掉进程、删掉技能，用户的数据不动 */

@@ -6,6 +6,15 @@ import { fileURLToPath } from "node:url";
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const BANNED: [RegExp, string][] = [
   [/绝对(的)?(数据)?安全|100% ?安全|零风险|军事级|银行级/, "安全夸大"],
+  // 西班牙语 / 葡萄牙语页面的同类说法
+  [/absolutamente segur[oa]|100 ?% segur[oa]|riesgo cero|risco zero|grado militar|nível militar|grado bancario|nível bancário/i, "安全夸大（es/pt）"],
+  [/cero telemetría|telemetría cero|zero telemetria|telemetria zero|no recopilamos ningún dato|não coletamos nenhum dado/i, "遥测夸大（es/pt）"],
+  [/funciona sin conexión(?!\?)|funciona (offline|sem internet)(?!\?)/i, "离线（es/pt）"],
+  [/todas (las|as) plataformas/i, "平台夸大（es/pt）"],
+  [/(el|la|lo) más barat[oa]|(o|a) mais barat[oa]|ahorra \d+ ?%|economize \d+ ?%/i, "价格比较（es/pt）"],
+  [/Modelflare no tiene (suscripción|cuota mensual)|Modelflare não tem (assinatura|mensalidade)/i, "Modelflare 订阅主语（es/pt）"],
+  [/(pide permiso|te pregunta) antes de cada acción|pede (permissão|sua aprovação) antes de cada ação/i, "审批夸大（es/pt）"],
+  [/tareas programadas|tarefas (agendadas|programadas)|enséñale una vez|ensine uma vez|admite chats grupales|suporta conversas em grupo/i, "未实现能力 / 群聊（es/pt）"],
   [/零遥测|不收集任何数据|不上传任何数据|zero[- ]telemetry(?!”|")|absolutely secure|military[- ]grade|bank[- ]grade/i, "安全/遥测夸大"],
   [/离线可用|本地大模型|works offline(?!\?)/i, "离线/本地模型"],
   [/全平台|全设备|支持 ?iOS ?和 ?Android/, "平台夸大"],
@@ -17,7 +26,7 @@ export const BANNED: [RegExp, string][] = [
 ];
 // "零遥测"在安全页里是以否定形式出现的（我们不声称零遥测）——允许"不声称“零遥测”"这一种写法
 // 竞品（Grok Bot、OpenAI dots、Claude Duet）可以用文字名称做对比；仍不用它们的 Logo、配色和素材。
-const ALLOW = [/不声称“零遥测”/, /don't claim “zero telemetry”/];
+const ALLOW = [/不声称“零遥测”/, /don't claim “zero telemetry”/, /no afirmamos tener “cero telemetría”/, /não afirmamos “telemetria zero”/];
 
 function walk(dir: string, exts: string[], out: string[] = []) {
   if (!fs.existsSync(dir)) return out;

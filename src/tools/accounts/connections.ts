@@ -5,10 +5,13 @@
 import { ACCOUNT_SERVICES, AccountStore, ConnectionError, type AccountService } from "./index.js";
 import { FeishuAccounts } from "./feishu.js";
 import { NOTION_WRITE_OPS, NotionService } from "./notion.js";
+import type { SecretStore } from "../apps/secrets.js";
 
 export interface ConnectionServiceOptions {
   kv: { getKV(key: string): string | undefined; setKV(key: string, value: string): void };
   fetch?: () => typeof fetch | undefined;
+  /** 令牌放的地方（apps/secrets.ts）；没给时和账号一起放在 kv 里（测试） */
+  secrets?: SecretStore;
 }
 
 export class ConnectionService {
@@ -17,7 +20,7 @@ export class ConnectionService {
   readonly feishu: FeishuAccounts;
 
   constructor(o: ConnectionServiceOptions) {
-    this.accounts = new AccountStore(o.kv);
+    this.accounts = new AccountStore(o.kv, o.secrets);
     this.notion = new NotionService({ accounts: this.accounts, kv: o.kv, fetch: o.fetch });
     this.feishu = new FeishuAccounts({ accounts: this.accounts, fetch: o.fetch });
   }
@@ -38,7 +41,7 @@ export class ConnectionService {
     const parts: string[] = [];
     if (this.accounts.list("notion").length) parts.push(`Notion:\n${this.accounts.listText("notion")}`);
     if (this.accounts.list("feishu").length) parts.push(`Feishu:\n${this.accounts.listText("feishu")}`);
-    return parts.join("\n\n") || "No accounts are connected. The user can add them in Settings > Connections.";
+    return parts.join("\n\n") || "No accounts are connected. The user can connect them under Connect apps.";
   }
 
   async run(service: string, op: string, args: Record<string, unknown>, signal?: AbortSignal): Promise<string> {

@@ -1,6 +1,6 @@
 # 第三者に関する告知
 
-[简体中文](./THIRD_PARTY_NOTICES.md) | [English](./THIRD_PARTY_NOTICES_en.md) | 日本語 | [한국어](./THIRD_PARTY_NOTICES_ko.md) | [Русский](./THIRD_PARTY_NOTICES_ru.md)
+[简体中文](./THIRD_PARTY_NOTICES.md) | [English](./THIRD_PARTY_NOTICES_en.md) | 日本語 | [한국어](./THIRD_PARTY_NOTICES_ko.md) | [Русский](./THIRD_PARTY_NOTICES_ru.md) | [Español](./THIRD_PARTY_NOTICES_es.md) | [Português (Brasil)](./THIRD_PARTY_NOTICES_pt.md)
 
 anymodel bot 自体は MIT ライセンスで公開されています（LICENSE 参照）。以下は本プログラムに同梱、または移植されたコンポーネントです。それぞれ元のライセンスが適用されます。
 
@@ -82,6 +82,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - yauzl 3.4.0 — MIT
 - yaml 2.9.1 — ISC
 - electron-updater 6.8.12 — MIT
+- @modelcontextprotocol/client 2.2.0 — MIT
 
 間接依存のライセンスは node_modules の各パッケージに保持されています。デスクトップアプリには Electron（MIT）や Chromium なども含まれます。それらのライセンスはインストール先の LICENSE と LICENSES.chromium.html にあります。
 
@@ -235,3 +236,34 @@ SOFTWARE.
 ```
 
 Cua Driver 自体の依存関係の告知は、ドライバーに同梱する THIRD_PARTY_NOTICES.md にあります。
+
+## yuque-mcp（Yuque 公式 MCP サーバー、単一ファイルとして同梱 — MIT）
+
+出典：https://github.com/yuque/yuque-mcp-server （npm パッケージ yuque-mcp 1.0.0）
+
+- バンドルした 1 つのファイルとして同梱しています（`vendor/yuque-mcp/yuque-mcp.mjs`、`scripts/vendor-yuque-mcp.mjs` で生成。変更点は、実行時に `package.json` からバージョンを読む箇所を定数に置き換えたことだけです）。「アプリを接続 › Yuque」が Yuque への接続に使います。
+- このファイルに含まれる依存パッケージとそのライセンスは、同梱の `THIRD_PARTY_LICENSES.txt` に記載しています（リポジトリでは `vendor/yuque-mcp/`、インストール後は `resources/yuque-mcp/`）。
+
+```
+MIT License
+
+Copyright (c) 2026 cwg
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

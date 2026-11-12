@@ -21,7 +21,8 @@ import runtime from "./runtime.js";
 import tasks from "./tasks.js";
 import web from "./web.js";
 import connections from "./connections.js";
-export default { connections,
+import apps from "./apps.js";
+export default { connections, apps,
   access,
   account,
   activity,

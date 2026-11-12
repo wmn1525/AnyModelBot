@@ -13,10 +13,10 @@ export default {
   "cta": "Download okbot",
   "strip": {
     "title": "Or start with a ready-made bot",
-    "lead": "Research companies, make presentations or create short videos and episodic dramas. Find bots with their own interfaces in Discover.",
+    "lead": "Research, slides, or short videos — pick one in Discover.",
     "all": "See all bots"
   },
-  "minimumVersion": "Requires AnyModelBot {version} or later.",
+  "minimumVersion": "Requires okbot {version} or later.",
   "requirements": {
     "printfilm": "Planning and editing require Python 3.10+; validation and rendering require FFmpeg including ffprobe. AI images use OKINTO and are billed by usage. OKINTO video generation is not supported in this release; local video can be imported for editing."
   }

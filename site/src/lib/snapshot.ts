@@ -14,7 +14,7 @@ export function isoUtc8(d: Date): string {
 }
 
 export function buildSnapshot(input: unknown, cfg: PricingConfig, now: Date): Snapshot {
-  const raw = Pricing.parse(typeof input === "object" && input !== null && !("group_definitions" in input) ? normalizeNewApi(input) : input);
+  const raw = Pricing.parse(typeof input === "object" && input !== null && !("group_definitions" in input) ? normalizeNewApi(input, now) : input);
   const rows = deriveRows(raw);
   for (const id of [...cfg.featuredModels, cfg.sampleModel]) {
     if (!rows.some((r) => r.model === id)) throw new Error(`精选模型 ${id} 不在价格数据里`);

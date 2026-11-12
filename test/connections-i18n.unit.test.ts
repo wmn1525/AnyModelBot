@@ -39,7 +39,7 @@ describe("connection authorization error localization", () => {
     expect(error).toBeInstanceOf(ConnectionError);
     expect(error.status).toBe(400);
     expect(error.message).toBe("This sign-in link has expired. Start again from Settings.");
-    for (const locale of ["zh-CN", "en", "ja", "ko", "ru"] as const) {
+    for (const locale of ["zh-CN", "en", "ja", "ko", "ru", "es", "pt"] as const) {
       expect(withLang(locale, () => connectionUserMessage(error))).toBe(tl(locale, "connections.notionLinkExpired"));
     }
     expect(withLang("ko", () => error.userMessage())).toContain("로그인 링크");
@@ -56,7 +56,7 @@ describe("connection authorization error localization", () => {
     const flow = initialRequest.run(() => feishu.startFlow());
     initialRequest.end();
     await failedFlow(feishu, flow.id);
-    for (const locale of ["en", "ja", "ko", "ru"] as const) {
+    for (const locale of ["en", "ja", "ko", "ru", "es", "pt"] as const) {
       const poll = requestLang(locale);
       expect(poll.run(() => feishu.flow(flow.id)?.error)).toBe(tl(locale, "connections.feishuDeclined"));
       poll.end();

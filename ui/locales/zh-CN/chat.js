@@ -1,7 +1,7 @@
 // chat · zh-CN（screens/chat.js：对话页、输入框、审批 / 提问卡片）
 export default {
   aria: "和 {name} 的对话",
-  infoPanel: "信息面板（⌘⇧I）",
+  infoPanel: "右侧面板（⌘⇧I）",
   newConvCmd: "开始新的一段对话（/new）",
   toBottom: "回到底部",
   copyMessage: "复制这条消息",
@@ -78,7 +78,7 @@ export default {
     guideTitle: "嗨，我是{name}",
     guideBody: "花 5 分钟，跟着清单认识一下我能做什么。",
     title: "和 {name} 开始对话",
-    body: "在这里直接测试机器人；微信、飞书、Telegram、Slack、Discord 在信息面板里接入。",
+    body: "在这里直接测试机器人；微信、飞书、Telegram、Slack、Discord 在右侧面板里接入。",
     /** 点一下就发给机器人的示例问题 */
     sample: "你能帮我做什么？",
     helpChip: "/help 查看命令",

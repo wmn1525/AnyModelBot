@@ -1,0 +1,356 @@
+export default {
+  "menu": "Conectar apps",
+  "commandKeys": "conectar apps app aplicativos mcp conector feishu lark notion github connect connector",
+  "attention": "Um app precisa da sua atenção",
+  "title": "Apps",
+  "lead": "Conecte seus apps para que seus bots possam ler e escrever o conteúdo deles.",
+  "tab": {
+    "all": "Todos",
+    "connected": "Conectados"
+  },
+  "search": "Pesquisar apps, usos ou contas",
+  "suggested": "Apps sugeridos",
+  "mine": "Meus MCPs",
+  "addCustom": "Adicionar conector personalizado",
+  "customEmpty": "Nenhum conector personalizado ainda",
+  "searchEmpty": "Nenhum resultado. Você pode adicionar um conector personalizado.",
+  "connectedEmpty": "Nenhum app conectado ainda",
+  "goConnect": "Conectar um app",
+  "loadFailed": "Não foi possível carregar a lista de apps.",
+  "limit": "Você pode adicionar no máximo {max} conectores personalizados",
+  "show": "Mostrar",
+  "hide": "Ocultar",
+  "card": {
+    "connect": "Conectar",
+    "manage": "Gerenciar",
+    "connectedAccounts": "Conectado · {n} contas",
+    "toolTitle": "{bot} quer usar uma ferramenta de app",
+    "always": "Sempre permitir esta ferramenta",
+    "notNow": "Agora não",
+    "connected": "Conectado. Continuando a tarefa atual.",
+    "connectedTitle": "{app} conectado",
+    "title": {
+      "connect": "Conecte {app} para continuar",
+      "reauthorize": "Autorize {app} de novo",
+      "signin": "Entre no {app}",
+      "key": "Atualize a chave do {app}",
+      "link": "Atualize o link do {app}"
+    },
+    "fix": {
+      "connect": "Conectar",
+      "reauthorize": "Reautorizar",
+      "signin": "Entrar",
+      "key": "Atualizar chave",
+      "link": "Atualizar link"
+    }
+  },
+  "state": {
+    "connected": "Conectado",
+    "connectedTools": "Conectado · {n} ferramentas",
+    "off": "Desativado",
+    "testing": "Testando…",
+    "needs-login": "Login necessário",
+    "key-rejected": "Chave recusada",
+    "link-invalid": "Link inválido",
+    "unreachable": "Não foi possível conectar",
+    "local-failed": "O programa local não iniciou",
+    "expired": "Autorização expirada"
+  },
+  "fix": {
+    "enable": "Ativar",
+    "authorize": "Autorizar",
+    "signIn": "Entrar",
+    "reauthorize": "Reautorizar",
+    "key": "Atualizar chave",
+    "link": "Atualizar link",
+    "retry": "Tentar de novo",
+    "network": "Verificar configurações de rede",
+    "logs": "Ver logs",
+    "edit": "Editar comando"
+  },
+  "method": {
+    "auto": "Automático",
+    "none": "Sem autenticação",
+    "headers": "Cabeçalhos",
+    "query": "Parâmetros de consulta",
+    "dedicatedUrl": "URL dedicada",
+    "oauth": "Login",
+    "token": "Token pessoal",
+    "env": "Variáveis de ambiente"
+  },
+  "category": {
+    "label": "Tipo",
+    "read": "Somente leitura",
+    "write": "Gravação",
+    "delete": "Exclusão",
+    "send": "Envio externo",
+    "reset": "Restaurar padrão"
+  },
+  "repair": {
+    "reauthorize": "Reautorizar {app}",
+    "signIn": "Entrar no {app}",
+    "key": "Atualizar a chave do {app}",
+    "link": "Atualizar o link do {app}"
+  },
+  "connect": {
+    "title": "Conectar {name}",
+    "method": "Forma de conexão",
+    "methodSignIn": "Login",
+    "methodToken": "Colar token",
+    "submit": "Conectar",
+    "connecting": "Conectando…",
+    "preparing": "Preparando a autorização…",
+    "authWaiting": "Conclua a autorização no navegador",
+    "authWaitingSub": "Você vai voltar para cá automaticamente ao terminar.",
+    "reopen": "Reabrir a página de autorização",
+    "copyLink": "O navegador não abriu? Copie o link de autorização",
+    "waitingButton": "Aguardando autorização…",
+    "authUnfinished": "A autorização não foi concluída. Você pode reabrir a página e tentar de novo.",
+    "noReturn": "Não voltou para cá depois de autorizar?",
+    "pasteHint": "Quando você usa o app em outro computador ou no Docker, a página de autorização pode não conseguir voltar para cá. Cole o endereço em que o navegador parou.",
+    "pasteLabel": "Endereço de redirecionamento",
+    "pasteSubmit": "Enviar",
+    "tokenLabel": "Token pessoal",
+    "tokenPlaceholder": "Cole o token",
+    "urlLabel": "URL dedicada",
+    "urlPlaceholder": "Cole a URL dedicada",
+    "keyLabel": "Chave",
+    "keyPlaceholder": "Cole a chave",
+    "get": "Obter",
+    "terms": "Abrir os termos da API",
+    "docs": "Documentação oficial",
+    "done": "Conectado",
+    "next": "Agora você pode dizer ao seu bot:",
+    "sendToBot": "Enviar ao bot atual",
+    "copyExample": "Copiar exemplo",
+    "finish": "Concluir"
+  },
+  "manage": {
+    "alias": "Apelido",
+    "primary": "Conta principal",
+    "setPrimary": "Definir como conta principal",
+    "addAccount": "Adicionar conta",
+    "who": "Quem pode usar",
+    "allBots": "Todos os bots",
+    "someBots": "Bots selecionados",
+    "noBots": "Ainda não há bots.",
+    "tools": "{n} ferramentas",
+    "categoryHint": "O tipo decide se um bot pergunta antes de usar uma ferramenta: ferramentas somente leitura rodam na hora, as de gravação seguem o nível de permissão do bot, e as de exclusão e envio externo sempre perguntam. O que um servidor informa nem sempre é exato; você pode alterar aqui.",
+    "disconnect": "Desconectar",
+    "disconnectTitle": "Desconectar “{name}”?",
+    "disconnectBody": "Depois de desconectar, nenhum dos seus bots vai poder usar este app.",
+    "disconnectAccountBody": "Depois de desconectar, nenhum dos seus bots vai poder usar esta conta.",
+    "on": "Ativado",
+    "off": "Desativado",
+    "enable": "Ativar este conector",
+    "edit": "Editar",
+    "log": "Saída da última inicialização",
+    "feishuLegacy": "só mensagens",
+    "feishuUpgrade": "Autorizar documentos"
+  },
+  "custom": {
+    "title": "Adicionar conector personalizado",
+    "editTitle": "Editar conector personalizado",
+    "pasteLabel": "Cole uma URL, configuração ou comando MCP",
+    "pastePlaceholder": "Cole uma URL, um JSON mcpServers ou um comando claude mcp add",
+    "pasteHelp": "Cole uma URL remota, um comando claude mcp add ou um JSON mcpServers. A maioria dos serviços usa login, e geralmente não é preciso um ID do cliente.",
+    "sourceModelscope": "ModelScope MCP",
+    "sourceBailian": "Alibaba Cloud Model Studio",
+    "recognized": "Vai adicionar “{name}” ({type} · {auth})",
+    "unrecognized": "Não foi possível reconhecer isto. Cole uma URL MCP, um JSON mcpServers, um comando claude mcp add ou um comando local — ou use o formulário ou o JSON abaixo.",
+    "many": "{n} servidores encontrados",
+    "addMany": "Adicionar {n}",
+    "addedMany": "{n} conectores adicionados",
+    "skipped": "Não adicionados: {names}",
+    "placeholder": "Substitua os marcadores por chaves ou tokens reais.",
+    "placeholderShort": "tem marcadores",
+    "view": "Editor",
+    "form": "Formulário",
+    "jsonHint": "Formato mcpServers; os segredos ficam mascarados",
+    "jsonError": {
+      "json": "Isto não é um JSON válido",
+      "missing": "Falta o nome ou a URL",
+      "headers": "Formato de cabeçalho inválido",
+      "query": "Formato de parâmetro de consulta inválido",
+      "env": "Formato de variável de ambiente inválido",
+      "auth": "Os campos de autenticação estão incompletos"
+    },
+    "name": "Nome",
+    "namePlaceholder": "Opcional — vamos dar um nome com base na URL",
+    "namePlaceholderLocal": "Opcional — vamos dar um nome com base no comando",
+    "typeLabel": "Tipo",
+    "type": {
+      "remote": "Remoto",
+      "local": "Comando local"
+    },
+    "switched": "Os campos do outro tipo foram apagados.",
+    "url": "URL do servidor",
+    "urlPlaceholder": "https://mcp.example.com/mcp",
+    "problem": {
+      "url": "Use um endereço completo que comece com http:// ou https://."
+    },
+    "auth": "Autenticação",
+    "authNote": {
+      "auto": "Testado ao salvar: conecta diretamente se puder e faz login se o serviço pedir; se for recusado, mude para cabeçalhos, parâmetros de consulta ou URL dedicada.",
+      "none": "Um serviço público; nenhuma credencial é enviada.",
+      "headers": "Uma chave de API ou token Bearer enviado nos cabeçalhos da requisição.",
+      "query": "Um token colocado nos parâmetros de consulta da URL.",
+      "dedicatedUrl": "Um endereço diferente para cada pessoa. O próprio endereço é a credencial e é armazenado como segredo.",
+      "oauth": "Faça login e autorize no navegador (OAuth 2.0). Geralmente não é preciso um ID do cliente."
+    },
+    "headers": "Cabeçalhos",
+    "query": "Parâmetros de consulta",
+    "env": "Variáveis de ambiente",
+    "key": "Chave",
+    "value": "Valor",
+    "addRow": "Adicionar linha",
+    "removeRow": "Remover esta linha",
+    "advanced": "Avançado",
+    "clientId": "ID do cliente",
+    "clientSecret": "Segredo do cliente",
+    "pkce": "Usar PKCE",
+    "command": "Comando",
+    "args": "Argumentos",
+    "argsHint": "um por linha",
+    "runTitle": "Executar este programa no seu computador?",
+    "runBody": "Este programa vai ser executado no seu computador: {command}",
+    "runConfirm": "Executar e adicionar",
+    "add": "Adicionar",
+    "savedOff": "Salvo, mas ainda não ativado: {state}.",
+    "backToEdit": "Voltar à edição"
+  },
+  "bot": {
+    "head": "Apps",
+    "useAll": "Usar todos os apps conectados",
+    "useAllSub": "Todos os apps conectados no momento ficam disponíveis para este bot.",
+    "selectedSub": "Usar só os apps selecionados. Apps que você conectar depois não são adicionados automaticamente.",
+    "notShared": "Este app não está compartilhado com este bot",
+    "none": "Nenhum app conectado ainda.",
+    "more": "Conectar mais apps",
+    "tools": "Ferramentas de {name}",
+    "showAll": "Mostrar todas as {n} ferramentas",
+    "always": "Sempre permitida",
+    "revoke": "Revogar",
+    "barred": "Este bot não pediu a permissão “Usar as contas que você conectou”, por isso não pode usar apps conectados."
+  },
+  "catalog": {
+    "feishu": {
+      "desc": "Pesquisar, ler e escrever documentos na nuvem, e ler mensagens de conversas em grupo.",
+      "steps": {
+        "oauth": {
+          "0": "Entre com sua conta do Feishu ou Lark no navegador.",
+          "1": "Depois de aprovar, você volta para cá automaticamente."
+        }
+      },
+      "example": "Transforme as anotações das reuniões desta semana em um documento do Feishu"
+    },
+    "tencent-docs": {
+      "desc": "Criar documentos, planilhas e apresentações on-line, e ler ou editar os existentes.",
+      "steps": {
+        "oauth": {
+          "0": "Entre no Tencent Docs com QQ ou WeChat no navegador.",
+          "1": "Depois de aprovar, você volta para cá automaticamente."
+        },
+        "header": {
+          "0": "Abra a página de autorização MCP do Tencent Docs, entre e gere um token.",
+          "1": "Cole o token abaixo."
+        }
+      },
+      "tokenLabel": "Token MCP",
+      "example": "Organize estes dados em uma planilha do Tencent Docs"
+    },
+    "dingtalk": {
+      "desc": "Depende do MCP que você escolher, como agenda, pendências, documentos e contatos.",
+      "steps": {
+        "dedicatedUrl": {
+          "0": "Abra o marketplace de MCP do DingTalk e escolha o serviço MCP que quiser.",
+          "1": "Copie o endereço dedicado que ele fornecer.",
+          "2": "Cole abaixo."
+        }
+      },
+      "placeholder": "Cole sua URL MCP do DingTalk",
+      "example": "Mostre minha agenda e minhas pendências de hoje no DingTalk"
+    },
+    "amap": {
+      "desc": "Planejamento de rotas, busca por lugares próximos, clima e consulta de endereços.",
+      "steps": {
+        "key": {
+          "0": "Crie um app na Amap Open Platform e adicione uma chave do tipo “Web Service”.",
+          "1": "Cole a chave abaixo."
+        }
+      },
+      "placeholder": "Cole sua chave do Amap",
+      "example": "Planeje uma rota de carro do escritório até o Aeroporto de Hongqiao"
+    },
+    "yuque": {
+      "desc": "Pesquisar e resumir suas bases de conhecimento, ou escrever conteúdo em um documento de uma base de conhecimento escolhida.",
+      "requires": "Tokens pessoais exigem a assinatura Super do Yuque",
+      "notice": "O Yuque considera os tokens pessoais de API um benefício da assinatura Super. Sem esse benefício, não é possível criar nem usar um token pessoal.",
+      "steps": {
+        "localToken": {
+          "0": "Crie um token pessoal nas configurações de desenvolvedor do Yuque.",
+          "1": "Cole o token abaixo."
+        }
+      },
+      "tokenLabel": "Token pessoal",
+      "placeholder": "Cole seu token pessoal do Yuque",
+      "getLabel": "Configurações de desenvolvedor",
+      "example": "Pesquise na minha base de conhecimento do Yuque e resuma o que ela diz sobre planejamento de produto"
+    },
+    "notion": {
+      "desc": "Pesquisar, ler e escrever páginas e bancos de dados.",
+      "steps": {
+        "notion-oauth": {
+          "0": "Entre no Notion pelo navegador e escolha as páginas a compartilhar.",
+          "1": "Depois de confirmar, você volta para cá automaticamente."
+        },
+        "notion-token": {
+          "0": "Crie uma integração interna na página de desenvolvedores do Notion e copie o token dela.",
+          "1": "Em cada página que você quiser usar, adicione a integração em Conexões.",
+          "2": "Cole o token abaixo."
+        }
+      },
+      "example": "Crie uma página no Notion com as pendências de hoje"
+    },
+    "github": {
+      "desc": "Ver e criar issues, revisar pull requests e pesquisar código.",
+      "steps": {
+        "header": {
+          "0": "Crie um token de acesso pessoal nas configurações do GitHub e escolha os repositórios e as permissões necessários.",
+          "1": "Cole o token abaixo."
+        }
+      },
+      "example": "Mostre as issues mais recentes dos meus repositórios"
+    },
+    "linear": {
+      "desc": "Ver e criar issues, atualizar status e acompanhar o progresso dos projetos.",
+      "steps": {
+        "oauth": {
+          "0": "Entre no Linear pelo navegador.",
+          "1": "Depois de aprovar, você volta para cá automaticamente."
+        }
+      },
+      "example": "Liste as issues do Linear atribuídas a mim que ainda não foram concluídas"
+    },
+    "atlassian": {
+      "desc": "Ver e atualizar issues do Jira, e ler e escrever páginas do Confluence.",
+      "steps": {
+        "oauth": {
+          "0": "Entre na Atlassian pelo navegador e escolha o site a autorizar.",
+          "1": "Depois de aprovar, você volta para cá automaticamente."
+        }
+      },
+      "example": "Registre este problema como uma issue no Jira"
+    },
+    "canva": {
+      "desc": "Gerar designs e encontrar ou exportar designs existentes.",
+      "steps": {
+        "oauth": {
+          "0": "Entre no Canva pelo navegador.",
+          "1": "Depois de aprovar, você volta para cá automaticamente."
+        }
+      },
+      "example": "Crie um rascunho de cartaz de evento no Canva"
+    }
+  }
+};

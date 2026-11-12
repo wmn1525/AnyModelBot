@@ -1,12 +1,13 @@
 /**
  * 头像角色在几处各有一份：界面（avatar.js）、精灵图、颜色、样式、服务端校验、文案。加角色时漏一处，这里会拦下。
+ * 目录 Bot 的专属形象只属于一个 Bot：目录里不能有两个 Bot 长得一样。
  * 另外守住两条容易被加角色破坏的约定：老机器人的头像不能变，官网只用六个基础角色。
  */
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { BOT_AVATARS, normalizeSettings } from "../src/agent/settings.js";
+import { BOT_AVATARS, CATALOG_AVATARS, PICKABLE_AVATARS, normalizeSettings } from "../src/agent/settings.js";
 // @ts-expect-error Browser i18n is an unbundled JS module.
 import * as ui from "../ui/lib/i18n.js";
 
@@ -20,6 +21,7 @@ const block = (name: string) => {
 const keysOf = (b: string) => [...b.matchAll(/^ {2}(\w+): \{$/gm)].map((m) => m[1]);
 const base = keysOf(block("BOT_CHARS"));
 const experts = keysOf(block("EXPERT_CHARS"));
+const catalog = keysOf(block("CATALOG_CHARS"));
 const numsOf = (s: string, re: RegExp) => {
   const m = s.match(re);
   if (!m) throw new Error(`没有找到 ${re}`);
@@ -28,35 +30,46 @@ const numsOf = (s: string, re: RegExp) => {
 const tiers = numsOf(src, /export const SPRITE_TIERS = \[([\d, ]+)\];/);
 
 describe("头像角色", () => {
-  it("基础 6 个，专家 12 个，服务端认的和界面一样", () => {
+  it("基础 6 个，专家 12 个，目录专属 4 个，服务端认的和界面一样", () => {
     expect(base).toEqual(["blue", "yellow", "green", "red", "purple", "orange"]);
     expect(experts).toHaveLength(12);
-    expect([...BOT_AVATARS]).toEqual([...base, ...experts]);
-    for (const k of experts) expect(normalizeSettings({ avatar: k }).avatar).toBe(k);
+    expect(catalog).toHaveLength(4);
+    expect([...PICKABLE_AVATARS]).toEqual([...base, ...experts]);
+    expect([...BOT_AVATARS]).toEqual([...base, ...experts, ...catalog]);
+    for (const k of [...experts, ...catalog]) expect(normalizeSettings({ avatar: k }).avatar).toBe(k);
+    const owners = Object.fromEntries([...block("CATALOG_CHARS").matchAll(/^ {2}(\w+): \{\n {4}owner: "([\w-]+)",$/gm)].map((m) => [m[1], m[2]]));
+    expect(owners).toEqual(CATALOG_AVATARS);
+  });
+
+  it("专属形象只给它的主人用，目录里没有两个 Bot 撞头像", () => {
+    const bots = fs.readdirSync(path.join(process.cwd(), "bots")).filter((d) => fs.existsSync(path.join(process.cwd(), "bots", d, "bot.json")));
+    const avatarOf = Object.fromEntries(bots.map((d) => [d, JSON.parse(read(`bots/${d}/bot.json`)).avatar as string]));
+    expect(new Set(Object.values(avatarOf)).size).toBe(bots.length);
+    for (const [key, owner] of Object.entries(CATALOG_AVATARS)) expect(avatarOf[owner], owner).toBe(key);
   });
 
   it("每个角色都有精灵图、颜色、样式和文案", () => {
     const tokens = read("ui/design/tokens/primitives.css");
     const css = read("ui/design/components/avatar.css");
     const zh = read("ui/locales/zh-CN/avatar.js");
-    for (const k of [...base, ...experts]) {
+    for (const k of [...base, ...experts, ...catalog]) {
       expect(fs.existsSync(path.join(process.cwd(), `ui/design/bots/${k}.webp`)), `${k}.webp`).toBe(true);
       for (const t of tiers) expect(fs.existsSync(path.join(process.cwd(), `ui/design/bots/${k}@${t}.webp`)), `${k}@${t}.webp`).toBe(true);
       expect(tokens).toContain(`--bot-${k}-eye:`);
       expect(tokens).toContain(`--bot-${k}-glow:`);
       expect(zh).toMatch(new RegExp(`\\b${k}: \\{ name:`));
     }
-    for (const k of experts) {
+    for (const k of [...experts, ...catalog]) {
       expect(css).toContain(`.bot-face[data-char="${k}"] { --bf-eye: var(--bot-${k}-eye);`);
       expect(zh).toMatch(new RegExp(`\\b${k}: \\{ name: "[^"]+", field: "[^"]+"`));
     }
   });
 
-  it("专家的名字、领域、介绍和分组标题，五种语言都取得到", () => {
+  it("专家和专属形象的名字、领域、介绍和分组标题，每种语言都取得到", () => {
     for (const lang of ui.LANGS) {
       ui.setLangPref(lang);
-      expect(ui.t("avatar.groups.expert"), lang).not.toBe("avatar.groups.expert");
-      for (const k of experts)
+      for (const g of ["expert", "own", "base"]) expect(ui.t(`avatar.groups.${g}`), lang).not.toBe(`avatar.groups.${g}`);
+      for (const k of [...experts, ...catalog])
         for (const f of ["name", "field", "about"]) expect(ui.t(`avatar.chars.${k}.${f}`), `${lang} ${k}.${f}`).not.toBe(`avatar.chars.${k}.${f}`);
     }
     ui.setLangPref("system");

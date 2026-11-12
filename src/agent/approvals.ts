@@ -54,6 +54,60 @@ export interface ReplyContext {
 
 export type ApprovalEvent = { type: "created" | "decided"; row: ApprovalRow };
 
+/**
+ * 连接应用（tools/apps）的两种卡片，都是 kind = "approval" 的行，区别写在 payload 里：
+ * - appTool：机器人想用一个应用工具（写入 / 删除 / 对外发送）。写入的可以「以后这个工具都允许」（result = "always"）
+ * - appConnect：要用户去连接或修复一个应用。不是批准不批准的事：连上了由主程序把它记成 allowed（by = APPS_BY），
+ *   用户只能关掉（拒绝）；渠道里回 y 也不算数，只提示回到电脑上处理
+ */
+export interface AppToolPayload {
+  /** 内置应用的 id，或 custom:<连接 id> */
+  app: string;
+  appName: string;
+  custom: boolean;
+  tool: string;
+  toolTitle: string;
+  category: "read" | "write" | "delete" | "send";
+  /** 能不能「以后这个工具都允许」（只有写入类能） */
+  always: boolean;
+  /** 关键参数（标题、目标、收件人…），不含密钥 */
+  params: Array<[string, string]>;
+  /** 当时工具定义的指纹：批了「以后都允许」记的是它 */
+  hash: string;
+}
+export interface AppConnectPayload {
+  app: string;
+  appName: string;
+  custom: boolean;
+  /** connect 去连接 · reauthorize 重新授权 · signin 去登录 · key 更新密钥 · link 更新链接 */
+  kind: "connect" | "reauthorize" | "signin" | "key" | "link";
+  /** 为什么要连（这次任务的意图，一两句） */
+  reason: string;
+  accountId?: string;
+}
+/** 主程序自己做的决定（连上了、连接没了）记的 by */
+export const APPS_BY = "apps";
+/** 「以后这个工具都允许」记在 result 里 */
+export const ALWAYS_RESULT = "always";
+
+function payloadOf(row: Pick<ApprovalRow, "kind" | "payload">): any {
+  if (row.kind !== "approval" || !row.payload) return undefined;
+  try {
+    const p = JSON.parse(row.payload);
+    return p && typeof p === "object" ? p : undefined;
+  } catch {
+    return undefined;
+  }
+}
+export function appToolOf(row: Pick<ApprovalRow, "kind" | "payload">): AppToolPayload | undefined {
+  const p = payloadOf(row)?.appTool;
+  return p && typeof p === "object" && typeof p.app === "string" && typeof p.tool === "string" ? (p as AppToolPayload) : undefined;
+}
+export function appConnectOf(row: Pick<ApprovalRow, "kind" | "payload">): AppConnectPayload | undefined {
+  const p = payloadOf(row)?.appConnect;
+  return p && typeof p === "object" && typeof p.app === "string" && typeof p.kind === "string" ? (p as AppConnectPayload) : undefined;
+}
+
 const YES = /^(y|yes|ok|是|同意|批准|允许)$/i;
 const YES_NO = /^(y|yes|ok|是|同意|批准|允许|n|no|否|拒绝|不)\s*[#:：]?\s*(\d{4})?$/i;
 
@@ -201,14 +255,18 @@ export class ApprovalCenter {
     return ok;
   }
 
-  decide(id: string, allow: boolean, by: string): boolean {
+  /** always：应用工具的「以后这个工具都允许」（只有卡片上给了这个选项的才算，见 AppToolPayload） */
+  decide(id: string, allow: boolean, by: string, opts: { always?: boolean } = {}): boolean {
     const r = this.store.getApproval(id);
     if (!r || r.kind !== "approval") return false;
     if (!this.alive(r)) {
       this.finish(id, "expired", "timeout");
       return false;
     }
-    return this.finish(id, allow ? "allowed" : "rejected", by);
+    // 连接应用的卡片：只有主程序在连上之后能把它记成允许；用户（界面、渠道）只能关掉
+    if (allow && by !== APPS_BY && appConnectOf(r)) return false;
+    const always = allow && opts.always === true && appToolOf(r)?.always === true;
+    return this.finish(id, allow ? "allowed" : "rejected", by, always ? ALWAYS_RESULT : "");
   }
 
   answer(id: string, answer: QuestionAnswer, by: string): boolean {
@@ -276,7 +334,8 @@ export class ApprovalCenter {
   handleReply(conversationId: string, text: string, by: string, ctx: ReplyContext = {}): ReplyResult {
     const msg = text.trim();
     if (!msg || msg.startsWith("/")) return { handled: false };
-    const all = this.pending(conversationId);
+    // 连接应用的卡片不是回 y / n 能办的：不参与（渠道里只提示回到电脑上处理）
+    const all = this.pending(conversationId).filter((r) => !appConnectOf(r));
     const chat = all.filter((r) => !r.taskId && !r.ruleId);
     const task = all.filter((r) => r.taskId);
     // 引用了任务的提示
@@ -286,7 +345,7 @@ export class ApprovalCenter {
     const m = YES_NO.exec(msg);
     if (m && m[2]) {
       const row = this.store.pendingApprovalByCode(m[2]);
-      if (!row || row.conversationId !== conversationId || row.kind !== "approval") {
+      if (!row || row.conversationId !== conversationId || row.kind !== "approval" || appConnectOf(row)) {
         return { handled: true, ack: t("approvals.noSuchCode", { code: m[2] }) };
       }
       return this.decideReply(row, YES.test(m[1]), by);
@@ -396,6 +455,9 @@ export function parseAnswer(questions: QuestionItem[], text: string): QuestionAn
 
 /** 微信/纯文本渠道的提示文案。 */
 export function promptText(row: ApprovalRow): string {
+  const connect = appConnectOf(row);
+  // 渠道里跳不了浏览器，也不方便粘贴密钥：请用户回到电脑上处理（电脑上的同一个对话里有卡片）
+  if (connect) return t(connect.kind === "connect" ? "apps.channelConnect" : "apps.channelRepair", { app: connect.appName });
   if (row.kind === "approval") {
     const cmd = row.detail ? ` \`${row.detail.replace(/`/g, "'").slice(0, 300)}\`` : "";
     const why = row.reason && !row.detail ? t("approvals.promptWhy", { reason: row.reason.slice(0, 200) }) : "";
@@ -423,6 +485,8 @@ export function promptText(row: ApprovalRow): string {
  * 审批「需批准（任务「清理旧构建」）：`rm -rf build/` — 回复 y 4821 / n 4821」。
  */
 export function taskPromptText(row: ApprovalRow, title: string): string {
+  const connect = appConnectOf(row);
+  if (connect) return t(connect.kind === "connect" ? "apps.channelConnect" : "apps.channelRepair", { app: connect.appName });
   if (row.kind === "approval") {
     const what = row.detail ? `\`${row.detail.replace(/`/g, "'").slice(0, 300)}\`` : `${row.tool}${row.reason ? `（${row.reason.slice(0, 200)}）` : ""}`;
     return t("approvals.taskApproval", { title, what, code: row.code });
@@ -436,6 +500,7 @@ export function taskPromptText(row: ApprovalRow, title: string): string {
 
 /** 卡片渠道（飞书）的按钮：审批是允许 / 拒绝；单选的提问是每个选项一个按钮 */
 export function promptButtons(row: ApprovalRow): Array<{ label: string; value: Record<string, string>; style: "primary" | "danger" | "default" }> | undefined {
+  if (appConnectOf(row)) return undefined;
   if (row.kind === "approval") {
     return [
       { label: t("approvals.allowOnce"), value: { amb: "approval", id: row.id, decision: "allow" }, style: "primary" },

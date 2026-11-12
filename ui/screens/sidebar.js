@@ -1,10 +1,13 @@
-// 侧栏 280（参考 Grok Bot，宽度可以拖右边的分隔条调整）：顶部只有新建按钮，常驻搜索框，
+// 侧栏 280（参考 Grok Bot，宽度可以拖右边的分隔条调整）：顶部三个按钮（收起侧栏 | 搜索 | 新建，见 SideActions），
 // 机器人行（头像 + 名称 + 时间 + 一行预览；悬停出现"更多"，和右键是同一份菜单），左下角账户（点头像看余额，点齿轮打开设置）。
+// 侧栏收起后，同样三个按钮浮在主区左上角（SideRail）。
 // 新建在主区的新建页（screens/new-bot.js）；新建页打开时，机器人列表末尾（建好后它就在这）有一行占位，跟着显示头像和名字。
 // 机器人和群聊的增删：新行淡入并定位到它（新机器人的头像打个招呼），删掉的行淡出（design/motion.js 的 useListPresence）。
 // 群聊排在机器人后面（screens/group.js）；有两个以上机器人时，新建按钮是一个菜单（机器人 / 群聊）。
-// 搜索框下面是固定的导航（和设置导航同一种行）：「发现」，有事在等你时下面多一行「需要你 N」（没事时没有这一行）；
-// 导航之下才是可滚动的「我的」列表。有事在等的机器人，行的第二行换成最早那件事。
+// 顶部按钮下面是固定的导航（和设置导航同一种行）：「发现」，有事在等你时下面多一行「需要你 N」（没事时没有这一行）；
+// 导航之下才是可滚动的分组列表（lib/sections.js）：默认「我的」和「上新」，用户可以新建、改名、删除分组，拖分组标题上下排；
+// 机器人、群聊和目录 Bot 的行可以拖到别的分组（或用行菜单里的「移到分组」）。分组标题点一下折叠。
+// 有事在等的机器人，行的第二行换成最早那件事。
 import { useEffect, useRef, useState } from "preact/hooks";
 import { html, Icon, IconButton, Menu, Popover, Skeleton } from "../components/ui.js";
 import { BotAvatar } from "../components/avatar.js";
@@ -21,9 +24,11 @@ import { fmtAgo } from "../lib/format.js";
 import { MF_TOPUP, usd, accountBalance } from "../lib/links.js";
 import { t, useLang } from "../lib/i18n.js";
 import { NeedsRow } from "./needs-you.js";
-import { catalogFold, catalogSeen, latestOf, setCatalogFold, tr } from "../lib/catalog.js";
+import { catalogSeen, tr } from "../lib/catalog.js";
+import { addSection, defaultLayout, deleteSection, keyOfBot, keyOfEntry, keyOfGroup, loadSideLayout, markSideLayoutPruned, moveItem, moveSection, place, prune, renameSection, saveSideLayout, sectionOf, sideFold, sideLayout, sideLayoutLoaded, sideLayoutPruned, toggleSideFold } from "../lib/sections.js";
 import { AccountLogin } from "./onboarding.js";
 import { previewText } from "../lib/errors.js";
+import { appsStore } from "../lib/apps.js";
 import { GroupAvatars } from "./group.js";
 
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
@@ -38,31 +43,44 @@ export function Balance({ account, note }) {
   </div>`;
 }
 
-/** Bot 额度的圆环：剩余百分比画成一段弧（12 点起顺时针），中性色；0% 时只剩底圈 */
+/**
+ * 账户行右边的圆环（参考截图）：有 Bot 额度时把剩余百分比画成一段弧（12 点起顺时针）；没有 Bot 额度时只画底圈。
+ * 中间一个小菱形是记号，和百分比无关。中性色。
+ */
 export function QuotaRing({ percent }) {
-  const r = 6;
+  const r = 7;
   const c = 2 * Math.PI * r;
-  const p = Math.min(100, Math.max(0, Number(percent) || 0));
-  return html`<svg class="quota-ring" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-    <circle class="quota-ring-track" cx="8" cy="8" r=${r} />
-    ${p > 0 && html`<circle class="quota-ring-arc" cx="8" cy="8" r=${r} stroke-dasharray=${`${((c * p) / 100).toFixed(2)} ${c.toFixed(2)}`} transform="rotate(-90 8 8)" />`}
+  const p = percent === null || percent === undefined ? 0 : Math.min(100, Math.max(0, Number(percent) || 0));
+  return html`<svg class="quota-ring" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+    <circle class="quota-ring-track" cx="9" cy="9" r=${r} />
+    ${p > 0 && html`<circle class="quota-ring-arc" cx="9" cy="9" r=${r} stroke-dasharray=${`${((c * p) / 100).toFixed(2)} ${c.toFixed(2)}`} transform="rotate(-90 9 9)" />`}
+    <rect class="quota-ring-mark" x="7.25" y="7.25" width="3.5" height="3.5" rx="0.75" transform="rotate(45 9 9)" />
   </svg>`;
 }
 
+/** 圆环上悬停显示的一句：有 Bot 额度时是剩余百分比，没有时是余额；余额低于提醒线时补一句 */
+export function quotaTip(account) {
+  const bot = account.error ? null : account.bot;
+  const balance = account.error ? t("firstUse.balanceUnavailable") : account.balanceUsd == null ? t("firstUse.balanceLoading") : usd(account.balanceUsd);
+  const tip = bot ? t("sidebar.quotaTip", { percent: bot.remainingPercent }) : t("sidebar.balanceTip", { amount: balance });
+  return account.lowBalance && !account.error ? `${tip} · ${t("firstUse.lowBalance")}` : tip;
+}
+
 /**
- * 点圆环弹出的卡片：顶上一行说明 Bot 额度只能在 AnyModelBot 里用；Bot 额度剩余百分比、账户余额（两位小数）；
- * 充值入口，下面一行小字说订阅套餐另送 Bot 额度。
- * 那一行叫"余额"不叫"充值额度"：账户余额里还有 Modelflare 的赠额，不全是充值的钱。
+ * 点圆环弹出的卡片（照截图排）：有 Bot 额度时顶上一行灰字"Bot 额度只能在 AnyModelBot 里使用"，细线下面是
+ * "Bot 额度 · 剩余 N%"和"余额 · $12.34"（两位小数），再一道细线，最下面是充值（有 Bot 额度时带一行订阅加赠的小字）。
+ * 没有 Bot 额度时只有余额和充值。那一行叫"余额"不叫"充值额度"：账户余额里还有 Modelflare 的赠额，不全是充值的钱。
  */
-export function BotQuotaCard({ account }) {
-  const bot = account.bot;
-  return html`<div class="account-menu quota-card">
-    <p class="quota-scope">${t("sidebar.botQuotaScope")}</p>
-    <div class="quota-row"><span>${t("sidebar.botQuota")}</span><span class="num">${t("sidebar.botLeft", { percent: bot.remainingPercent })}</span></div>
-    <div class="quota-row"><span>${t("sidebar.balance")}</span><span class="num">${usd(account.balanceUsd, 2)}</span></div>
-    ${account.lowBalance && html`<div class="quota-note"><span class="dot warn"></span>${t("sidebar.belowLine", { amount: usd(account.alerts?.lowBalanceUsd) })}</div>`}
+export function QuotaCard({ account }) {
+  const bot = account.error ? null : account.bot;
+  const balance = account.error ? t("firstUse.balanceUnavailable") : account.balanceUsd == null ? t("firstUse.balanceLoading") : usd(account.balanceUsd, 2);
+  return html`<div class="quota-card">
+    ${bot && html`<p class="quota-head">${t("sidebar.botQuotaScope")}</p><hr />`}
+    ${bot && html`<div class="quota-row"><span>${t("sidebar.botQuota")}</span><span class="num">${t("sidebar.botLeft", { percent: bot.remainingPercent })}</span></div>`}
+    <div class="quota-row"><span>${t("sidebar.balance")}</span><span class="num">${balance}</span></div>
+    ${account.lowBalance && !account.error && html`<div class="quota-note"><span class="dot warn"></span>${t("sidebar.belowLine", { amount: usd(account.alerts?.lowBalanceUsd) })}</div>`}
     <hr />
-    <a href=${account.topupUrl || MF_TOPUP} target="_blank" rel="noopener noreferrer"><span>${t("firstUse.topUp")}</span><span class="hint">${t("sidebar.subscribeBonus")}</span></a>
+    <a class="quota-action" href=${account.topupUrl || MF_TOPUP} target="_blank" rel="noopener noreferrer"><span>${t("firstUse.topUp")}</span>${bot && html`<span class="hint">${t("sidebar.subscribeBonus")}</span>`}</a>
   </div>`;
 }
 
@@ -70,14 +88,18 @@ export function BotQuotaCard({ account }) {
  * 左下角账户区（第 12、10、19 项）：
  * - 头像 + 昵称常驻，整行可点（悬停、打开时只有头像变深，不给整行铺底），向上展开菜单：设置、意见和反馈、检查更新、
  *   分隔线、退出登录（顺序固定）。设置只放在这个菜单里（还有 ⌘, 快捷键），账户行旁边不再单独摆齿轮。
- *   菜单贴着整个账户区往上开、和账户区一样宽，不盖住上面的余额条。
- * - 上面一条：登录了 Modelflare 时是余额 + 充值（低于提醒线时多一行"余额较低"，充值一直能点，不用先关掉提示）；
- *   用自己的 API Key、没登录 Modelflare 时是"登录 Modelflare"的独立入口，不显示不存在的余额。
+ *   菜单贴着整个账户区往上开、和账户区一样宽。
+ * - 登录了 Modelflare 时，账户行右边是一个圆环按钮（参考截图），侧栏里不再摆余额条：悬停显示"Bot 额度剩余 N%"
+ *   （没有 Bot 额度时是余额），点开额度卡片（打开时刷新一次）。余额低于提醒线时圆环上有个琥珀色小点。
+ * - 用自己的 API Key、没登录 Modelflare 时，账户行上面是"登录 Modelflare"的独立入口，没有圆环，不显示不存在的余额。
  * - 余额加载中 / 读取失败不显示成 0；名字缺失时显示"我的账号"，不拿内部生成的用户名冒充昵称。
- * - 有 Bot 额度的账户：余额那一条换成圆环 + "Bot 额度 剩余 N%"，点开是额度卡片（打开时刷新一次）。没有 Bot 额度
- *   （或连的是还不返回这个字段的服务端）时这一条和以前完全一样。
  */
 export function AccountButton({ account, onSettings, update, onUpdateChanged }) {
+  // 连接应用：侧栏和设置页的账户菜单都有这一项，直接改地址（main.js 的路由）；提醒点读共享的应用状态
+  const appsAttention = useStore(appsStore).attention;
+  const onApps = () => {
+    location.hash = "/apps";
+  };
   const [open, setOpen] = useState(false);
   const [login, setLogin] = useState(false);
   const [quota, setQuota] = useState(false);
@@ -151,6 +173,7 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
     if (!quota) window.dispatchEvent(new Event("amb-account-refresh"));
     setQuota(!quota);
   };
+  const tip = signedIn ? quotaTip(account) : "";
   return html`<div class="account-stack" ref=${stackRef}>
     ${hasBalance
       ? html`<div class=${`account-balance${account.lowBalance && !account.error ? " low" : ""}`} role="status">
@@ -174,22 +197,28 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
       <button type="button" class=${`account${open ? " on" : ""}`} ref=${ref} title=${me} aria-label=${t("firstUse.accountMenu", { name: me })} aria-haspopup="menu" aria-expanded=${open} onClick=${() => setOpen((v) => !v)}>
         <span class="me" aria-hidden="true">${me.slice(0, 1).toUpperCase()}</span><span class="who">${me}</span>
         ${update?.available && html`<span class="dot new account-dot" title=${t("sidebar.update", { version: update.latest || "" })}></span>`}
+        ${!update?.available && appsAttention && html`<span class="dot warn account-dot" title=${t("apps.attention")}></span>`}
       </button>
+      ${signedIn && html`<button type="button" class="icon-btn account-ring" ref=${quotaRef} title=${tip} aria-label=${tip} aria-haspopup="dialog" aria-expanded=${quota} onClick=${toggleQuota}>
+        <${QuotaRing} percent=${account.error ? null : account.bot?.remainingPercent} />${account.lowBalance && !account.error && html`<span class="dot warn account-ring-dot"></span>`}
+      </button>`}
     </div>
     ${open && html`<${Popover} anchor=${stackRef.current} trigger=${ref.current} prefer="up" width=${stackRef.current?.offsetWidth || 280} label=${t("sidebar.account")} onClose=${() => setOpen(false)}>
       <div class="account-menu primary" role="menu">
         <button type="button" role="menuitem" onClick=${() => { setOpen(false); onSettings?.(); }}>
           <span>${t("sidebar.settings")}</span><kbd>${isMac ? "⌘," : "Ctrl+,"}</kbd></button>
+        <button type="button" role="menuitem" onClick=${() => { setOpen(false); onApps?.(); }}>
+          <span>${t("apps.menu")}</span>${appsAttention && html`<span class="dot warn" title=${t("apps.attention")}></span>`}</button>
         <a role="menuitem" href="https://github.com/wmn1525/AnyModelBot/issues/new/choose" target="_blank" rel="noopener noreferrer" onClick=${() => setOpen(false)}>
-          <span>${t("firstUse.feedback")}</span><span class="hint">${t("firstUse.feedbackNote")}</span></a>
+          <span>${t("firstUse.feedback")}</span></a>
         <button type="button" role="menuitem" disabled=${check === "checking" || updateWorking || (ready && update.busy)} title=${ready && update.busy ? t("updates.busy") : ""} onClick=${checkUpdate}>
           ${update?.available && html`<span class="dot new"></span>`}<span role="status">${checkLabel}</span></button>
         <hr />
         <button type="button" role="menuitem" class="danger" disabled=${leaving} onClick=${leave}>${t(signedIn ? "firstUse.logout" : "firstUse.backConfig")}</button>
       </div>
     <//>`}
-    ${quota && bot && html`<${Popover} anchor=${quotaRef.current} prefer="up" width=${260} label=${t("sidebar.botQuota")} onClose=${() => setQuota(false)}>
-      <${BotQuotaCard} account=${account} />
+    ${quota && signedIn && html`<${Popover} anchor=${quotaRef.current} prefer="up" align="right" width=${280} label=${t(account.bot && !account.error ? "sidebar.botQuota" : "sidebar.balance")} onClose=${() => setQuota(false)}>
+      <${QuotaCard} account=${account} />
     <//>`}
     ${login && html`<${Popover} anchor=${loginRef.current} prefer="up" width=${300} label=${t("firstUse.signIn")} onClose=${() => setLogin(false)}>
       <div class="account-pop"><p class="hint">${t("firstUse.signInKeep")}</p>
@@ -216,15 +245,50 @@ export function UpdateNotice({ update }) {
   </div>`;
 }
 
-export function Sidebar({ bots, botsError, reloadBots, selectedId, view, previews, pending, working, needs = { n: 0, bots: {} }, username, account, update, onUpdateChanged, onNew, onSelect, onNeeds, onDeleted, onOpenSettings, onBotSettings, onGuide, groups = [], groupsLoaded = true, groupId, onNewGroup, onSelectGroup, onEditGroup, onDeletedGroup, catalog = [], catalogId, onDiscover, onOpenCatalog, onOpenSearch }) {
+/**
+ * 顶部三个按钮，从左到右：收起侧栏 | 搜索 | 新建。分量从轻到重：
+ * - 收起是窗口的开关，图标最浅，单独靠左（macOS 紧挨红绿灯）；
+ * - 搜索（打开搜索聊天记录的弹窗）是普通的静默按钮；
+ * - 新建是这里唯一的主操作：常驻一层底、图标用正文色。和搜索一起靠右。
+ * 有两个以上机器人时，新建是一个菜单（机器人 / 群聊）。children 放在收起钮和搜索之间（侧栏里是 Windows 的应用名和撑开的空白）。
+ */
+function SideActions({ collapsed, bots, view, onToggleSide, onOpenSearch, onNew, onNewGroup, children }) {
+  const [newMenu, setNewMenu] = useState(null); // 新建菜单的锚点
+  const canGroup = !!bots && bots.length >= 2;
+  return html`
+    <${IconButton} icon="sidebar" iconSize="md" class="side-toggle" label=${t(collapsed ? "sidebar.expand" : "sidebar.collapse")} onClick=${onToggleSide} />
+    ${children}
+    <${IconButton} icon="search" iconSize="md" label=${t("sidebar.searchShortcut", { keys: isMac ? "⌘⇧F" : "Ctrl+Shift+F" })} aria-haspopup="dialog" onClick=${() => onOpenSearch?.()} />
+    <${IconButton} icon="plus" iconSize="md" class="side-new" label=${canGroup ? t("sidebar.newMenu") : t("sidebar.newShortcut")} on=${view === "new"} aria-haspopup=${canGroup ? "menu" : undefined} aria-expanded=${canGroup ? !!newMenu : undefined}
+      onClick=${(e) => { if (!canGroup) return onNew(); const el = e.currentTarget; setNewMenu((m) => (m ? null : el)); }} />
+    ${newMenu && html`<${Menu} anchor=${newMenu} align=${collapsed ? undefined : "right"} width=${180} label=${t("sidebar.newMenu")} onClose=${() => setNewMenu(null)}
+      items=${[
+        { label: t("sidebar.newBotItem"), onSelect: onNew },
+        { label: t("sidebar.newGroupItem"), onSelect: onNewGroup },
+      ]} />`}`;
+}
+
+/** 侧栏收起后：顶部三个按钮浮在主区左上角，收起钮停在原来的位置，点同一个地方就能展开 */
+export function SideRail(props) {
+  return html`<div class="side-rail anim-fade-in"><${SideActions} collapsed ...${props} /></div>`;
+}
+
+export function Sidebar({ bots, botsError, reloadBots, selectedId, view, previews, pending, working, needs = { n: 0, bots: {} }, username, account, update, onUpdateChanged, onNew, onSelect, onNeeds, onDeleted, onOpenSettings, onBotSettings, onGuide, groups = [], groupsLoaded = true, groupId, onNewGroup, onSelectGroup, onEditGroup, onDeletedGroup, catalog = [], catalogId, onDiscover, onOpenCatalog, onOpenSearch, collapsed, onToggleSide }) {
   const lang = useLang();
   const seen = useStore(catalogSeen);
-  const fold = useStore(catalogFold);
-  const latest = latestOf(catalog);
+  const fold = useStore(sideFold);
+  const stored = useStore(sideLayout);
   const hasNew = catalog.some((e) => !e.instanceId && !seen.includes(e.id));
   const [ctx, setCtx] = useState(null); // 行的操作菜单：右键 { bot, x, y }，或者"更多"按钮 { bot, el }
   const [groupCtx, setGroupCtx] = useState(null); // 群聊行的操作菜单：{ group, x, y } 或 { group, el }
-  const [newMenu, setNewMenu] = useState(null); // 新建菜单的锚点
+  const [secCtx, setSecCtx] = useState(null); // 分组标题的操作菜单：{ sec, x, y } 或 { sec, el }
+  const [moveCtx, setMoveCtx] = useState(null); // 「移到分组」菜单：{ key, x, y } 或 { key, el }
+  const [secRenaming, setSecRenaming] = useState("");
+  const [secText, setSecText] = useState("");
+  const secRenameRef = useRef(null);
+  const secCancel = useRef(false); // 按了 Esc：输入框随后失焦时不保存
+  const [drag, setDrag] = useState(null); // 正在拖的：{ type: "item", key } 或 { type: "section", id }
+  const [drop, setDrop] = useState(null); // 落点：{ sec, key?, where: "before" | "after" | "into" }
   const [renaming, setRenaming] = useState("");
   const [renameText, setRenameText] = useState("");
   const root = useRef(null);
@@ -232,6 +296,10 @@ export function Sidebar({ bots, botsError, reloadBots, selectedId, view, preview
   useEffect(() => {
     if (renaming) requestAnimationFrame(() => (renameRef.current?.focus(), renameRef.current?.select()));
   }, [renaming]);
+  useEffect(() => {
+    if (secRenaming) requestAnimationFrame(() => (secRenameRef.current?.focus(), secRenameRef.current?.select()));
+  }, [secRenaming]);
+  useEffect(() => void loadSideLayout(), []);
 
   const rename = async (bot) => {
     const n = renameText.trim();
@@ -263,95 +331,256 @@ export function Sidebar({ bots, botsError, reloadBots, selectedId, view, preview
   const draft = useStore(newBotDraft);
   const botRows = useListPresence(bots);
   const groupRows = useListPresence(groupsLoaded ? groups : null);
-  const list = botRows;
-  const shownGroups = groupRows;
+  // 还不在任何分组里的行放进去（新机器人 / 群聊进默认分组，新上架的目录 Bot 进「上新」），放好的结果存回服务端
+  const layout = place(stored || defaultLayout(), { bots, groups: groupsLoaded ? groups : null, catalog });
+  useEffect(() => {
+    if (!stored || !sideLayoutLoaded()) return;
+    let next = layout;
+    // 打开应用后第一次读齐机器人和群聊时，顺手丢掉已经删掉的那些的键
+    if (bots && groupsLoaded && !sideLayoutPruned()) {
+      markSideLayoutPruned();
+      const alive = new Set([...bots.map(keyOfBot), ...groups.map(keyOfGroup)]);
+      next = prune(next, (k) => alive.has(k));
+    }
+    if (next !== stored) saveSideLayout(next).catch(() => {});
+  }, [layout, !!bots, groupsLoaded]);
+  // 拖回原处、移到本来就在的分组：内容没变就不存
+  const save = (next) => JSON.stringify(next) !== JSON.stringify(layout) && saveSideLayout(next).catch(failed);
+  // 键 → 行。淡出中的行也在（useListPresence），删掉的机器人在原来的位置淡出
+  const botByKey = new Map(botRows.map((r) => [keyOfBot(r.item), r]));
+  const groupByKey = new Map(groupRows.map((r) => [keyOfGroup(r.item), r]));
+  const entryByKey = new Map(catalog.filter((e) => !e.instanceId).map((e) => [keyOfEntry(e), e]));
+  const rowOf = (key) => {
+    if (botByKey.has(key)) return { kind: "bot", key, row: botByKey.get(key) };
+    if (bots && groupByKey.has(key)) return { kind: "group", key, row: groupByKey.get(key) }; // 群聊行要用到机器人列表
+    if (entryByKey.has(key)) return { kind: "entry", key, entry: entryByKey.get(key) };
+    return null; // 已经删掉的行：键留到下次打开应用时再丢（prune）
+  };
+  const rowsIn = (s) => s.items.map(rowOf).filter(Boolean);
+  // 没有目录时空着的「上新」不显示
+  const sections = layout.sections.filter((s) => !(s.inbox && !catalog.length && !rowsIn(s).length));
+  const secName = (s) => s.name || (s.preset ? t(`botapp.sidebar.${s.preset}`) : t("sidebar.section.untitled"));
   // 新行可能在列表下面看不见的地方：滚过去
   const entered = [...botRows, ...groupRows].filter((r) => r.state === "enter").map((r) => r.item.id).join();
   useEffect(() => {
     if (entered || view === "new") root.current?.querySelector(".thread-item.anim-fade-in, .thread.draft")?.scrollIntoView({ block: "nearest" });
   }, [entered, view === "new"]);
-  const canGroup = !!bots && bots.length >= 2;
-  // 搜索框下面固定的导航：「发现」（有目录 Bot 时）和「需要你」（有事时）。不跟着机器人列表滚动
+  // 顶部按钮下面固定的导航：「发现」（有目录 Bot 时）和「需要你」（有事时）。不跟着机器人列表滚动
   const hasNav = catalog.length > 0 || needs.n > 0;
   const discoverOn = view === "discover";
+  // 只有一个分组、上面也没有导航时，不显示分组标题（和以前只有机器人列表时一样）
+  const showHeads = sections.length > 1 || hasNav;
 
-  return html`<aside class="side" ref=${root} aria-label=${t("sidebar.bots")}>
+  // —— 分组操作 ——
+  const newSection = ({ afterId, items } = {}) => {
+    const name = t("sidebar.section.untitled");
+    const { layout: next, id } = addSection(layout, name, { afterId, items });
+    save(next);
+    startRenameSec(id, name);
+  };
+  const startRenameSec = (id, text) => {
+    secCancel.current = false;
+    setSecText(text);
+    setSecRenaming(id);
+  };
+  const renameSec = (s) => {
+    const text = secText.trim();
+    setSecRenaming("");
+    if (secCancel.current) return void (secCancel.current = false);
+    // 清空名字：预设的分组回到预设名（跟着语言变），自己建的保持原名
+    if (text === s.name || (!text && !s.preset)) return;
+    save(renameSection(layout, s.id, text));
+  };
+  const delSection = async (s) => {
+    const moving = rowsIn(s).filter((r) => r.kind !== "entry").length;
+    const to = s.default ? layout.sections.find((x) => x.id !== s.id) : layout.sections.find((x) => x.default);
+    // 没有要移走的机器人和群聊时直接删（没用过的目录 Bot 回到「上新」或只在发现页，都还找得到）
+    if (moving || s.inbox) {
+      const body = [moving ? t("sidebar.section.deleteMove", { name: to ? secName(to) : "" }) : "", s.inbox ? t("sidebar.section.deleteInbox") : ""].filter(Boolean).join(" ");
+      if (!(await confirmSheet({ title: t("sidebar.section.deleteTitle", { name: secName(s) }), body, confirmLabel: t("sidebar.section.delete"), danger: true }))) return;
+    }
+    // 确认框开着时布局可能变了：按现在的布局删
+    const now = place(sideLayout.get() || defaultLayout(), { bots, groups: groupsLoaded ? groups : null, catalog });
+    saveSideLayout(deleteSection(now, s.id, (k) => botByKey.has(k) || groupByKey.has(k)).layout).catch(failed);
+  };
+  const moveTo = (key, secId) => save(moveItem(layout, key, secId));
+  const at = (c) => c.el || { left: c.x, right: c.x, top: c.y, bottom: c.y, width: 0 };
+
+  // —— 拖动：行拖到行的上半 / 下半（插在前面 / 后面）或分组里的空处（放到末尾）；分组标题拖到别的分组的上半 / 下半 ——
+  const startDrag = (e, d) => {
+    e.stopPropagation();
+    try {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("application/x-amb-side", d.key || d.id);
+    } catch {
+      /* 个别浏览器不让写：照样拖 */
+    }
+    setDrag(d);
+  };
+  const endDrag = () => (setDrag(null), setDrop(null));
+  const half = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    return e.clientY < r.top + r.height / 2 ? "before" : "after";
+  };
+  const over = (e, next) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    setDrop((d) => (d?.sec === next?.sec && d?.key === next?.key && d?.where === next?.where ? d : next));
+  };
+  const onDropHere = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const d = drag;
+    const to = drop;
+    endDrag();
+    if (!d || !to) return;
+    if (d.type === "item") {
+      if (to.key === d.key) return;
+      let before = null;
+      if (to.key) {
+        const keys = rowsIn(layout.sections.find((s) => s.id === to.sec) || { items: [] }).map((r) => r.key);
+        before = to.where === "before" ? to.key : keys[keys.indexOf(to.key) + 1] ?? null;
+      }
+      save(moveItem(layout, d.key, to.sec, before));
+    } else {
+      const ids = sections.map((s) => s.id);
+      const before = to.where === "before" ? to.sec : ids[ids.indexOf(to.sec) + 1] ?? null;
+      if (to.sec === d.id || before === d.id) return;
+      save(moveSection(layout, d.id, before));
+    }
+  };
+  /** 行的拖动属性；淡出中、改名中的行不能拖 */
+  const itemDnd = (key, sec, on = true) =>
+    on
+      ? {
+          draggable: true,
+          onDragStart: (e) => startDrag(e, { type: "item", key }),
+          onDragEnd: endDrag,
+          onDragOver: (e) => drag?.type === "item" && over(e, drag.key === key ? null : { sec, key, where: half(e) }),
+          onDrop: onDropHere,
+        }
+      : {};
+  const itemFx = (key) => (drop?.key === key ? ` drop-${drop.where}` : "") + (drag?.type === "item" && drag.key === key ? " drag-src" : "");
+
+  /** 机器人行 */
+  const botRow = ({ item: b, state: rowState }, key, sec) => {
+    const sel = (view === "chat" || view === "bot-settings" || view === "app") && b.id === selectedId;
+    // 等你的：「需要你」里这个机器人的件数和最早那件（没有时退回待审批数）
+    const nd = needs.bots[b.id];
+    const n = nd?.n || pending[b.id] || 0;
+    if (renaming === b.id)
+      return html`<div class="thread sel" key=${b.id}><${BotAvatar} bot=${b} size=${38} />
+        <input class="field" value=${renameText} aria-label=${t("sidebar.newName")} ref=${renameRef}
+          onInput=${(e) => setRenameText(e.target.value)} onBlur=${() => rename(b)}
+          onKeyDown=${(e) => { if (e.isComposing || e.keyCode === 229) return; if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) e.target.blur(); if (e.key === "Escape") { e.stopPropagation(); setRenaming(""); } }} /></div>`;
+    const pv = previews[b.id];
+    const menuOpen = !!(ctx && ctx.el && ctx.bot.id === b.id);
+    const rowFx = rowState === "enter" ? " anim-fade-in" : rowState === "leave" ? " anim-fade-out" : "";
+    return html`<div class=${`thread-item${rowFx}${itemFx(key)}`} key=${b.id} inert=${rowState === "leave" || undefined} ...${itemDnd(key, sec, rowState !== "leave")}>
+      <button type="button" class=${`thread bot-hover${sel && rowState !== "leave" ? " sel" : ""}`} aria-current=${sel ? "page" : undefined}
+        onClick=${() => onSelect(b.id)} onContextMenu=${(e) => { e.preventDefault(); setCtx({ bot: b, x: e.clientX, y: e.clientY }); }}>
+        <span class="avatar-wrap"><${BotAvatar} bot=${b} size=${38} greet=${rowState === "enter"} state=${n > 0 ? "waiting" : working[b.id] ? "working" : "idle"} />${working[b.id] && html`<span class="working-dot" title=${t("sidebar.working")}></span>`}</span>
+        <span class="body">
+          <span class="line"><span class="title">${b.name}</span>${pv?.at && html`<span class="when num">${fmtAgo(pv.at)}</span>`}</span>
+          <span class="line"><span class="snip">${nd?.line || (working[b.id] ? t("sidebar.workingNow") : pv?.text || t("sidebar.noChats"))}</span>${n > 0 && html`<span class="needs-dot" role="img" title=${t("sidebar.needs", { count: n })} aria-label=${t("sidebar.needs", { count: n })}></span>`}</span>
+        </span>
+      </button>
+      <${IconButton} icon="more" class="thread-more" label=${t("sidebar.moreFor", { name: b.name })} aria-haspopup="menu" aria-expanded=${menuOpen}
+        onClick=${(e) => { const el = e.currentTarget; setCtx((c) => (c && c.el && c.bot.id === b.id ? null : { bot: b, el })); }} />
+    </div>`;
+  };
+  /** 群聊行 */
+  const groupRow = ({ item: g, state: rowState }, key, sec) => {
+    const sel = view === "group" && g.id === groupId && rowState !== "leave";
+    const who = g.last?.botId ? (bots.find((b) => b.id === g.last.botId)?.name ?? "") : "";
+    const line = g.running && g.current ? t("group.working", { name: bots.find((b) => b.id === g.current)?.name ?? "" }) : g.last ? `${who ? `${who}: ` : ""}${previewText(g.last.text)}` : t("group.noMessages");
+    const menuOpen = !!(groupCtx && groupCtx.el && groupCtx.group.id === g.id);
+    const rowFx = rowState === "enter" ? " anim-fade-in" : rowState === "leave" ? " anim-fade-out" : "";
+    return html`<div class=${`thread-item${rowFx}${itemFx(key)}`} key=${"g" + g.id} inert=${rowState === "leave" || undefined} ...${itemDnd(key, sec, rowState !== "leave")}>
+      <button type="button" class=${`thread${sel ? " sel" : ""}`} aria-current=${sel ? "page" : undefined}
+        onClick=${() => onSelectGroup(g.id)} onContextMenu=${(e) => { e.preventDefault(); setGroupCtx({ group: g, x: e.clientX, y: e.clientY }); }}>
+        <span class="avatar-wrap"><${GroupAvatars} bots=${groupBots(g)} size=${38} pile />${g.running && html`<span class="working-dot" title=${t("sidebar.working")}></span>`}</span>
+        <span class="body">
+          <span class="line"><span class="title">${g.name}</span>${g.last?.at && html`<span class="when num">${fmtAgo(g.last.at)}</span>`}</span>
+          <span class="line"><span class="snip">${line}</span></span>
+        </span>
+      </button>
+      <${IconButton} icon="more" class="thread-more" label=${t("sidebar.moreFor", { name: g.name })} aria-haspopup="menu" aria-expanded=${menuOpen}
+        onClick=${(e) => { const el = e.currentTarget; setGroupCtx((c) => (c && c.el && c.group.id === g.id ? null : { group: g, el })); }} />
+    </div>`;
+  };
+  /** 还没用过的目录 Bot：点开是示例界面；"更多"里只有「移到分组」 */
+  const entryRow = (e, key, sec) => {
+    const on = view === "preview" && catalogId === e.id;
+    return html`<div class=${`thread-item${itemFx(key)}`} key=${"c" + e.id} ...${itemDnd(key, sec)}>
+      <button type="button" class=${`thread bot-hover${on ? " sel" : ""}`} aria-current=${on ? "page" : undefined} onClick=${() => onOpenCatalog(e)}
+        onContextMenu=${(ev) => { ev.preventDefault(); setMoveCtx({ key, x: ev.clientX, y: ev.clientY }); }}>
+        <span class="avatar-wrap"><${BotAvatar} char=${e.avatar} size=${38} /></span>
+        <span class="body">
+          <span class="line"><span class="title">${tr(e.name, lang)}</span>${!seen.includes(e.id) && html`<span class="thread-new-dot" title=${t("botapp.sidebar.new")}></span>`}</span>
+          <span class="line"><span class="snip">${tr(e.summary, lang)}</span></span>
+        </span>
+      </button>
+      <${IconButton} icon="more" class="thread-more" label=${t("sidebar.section.moveFor", { name: tr(e.name, lang) })} aria-haspopup="menu" aria-expanded=${!!(moveCtx && moveCtx.el && moveCtx.key === key)}
+        onClick=${(ev) => { const el = ev.currentTarget; setMoveCtx((c) => (c && c.el && c.key === key ? null : { key, el })); }} />
+    </div>`;
+  };
+
+  // 收起时侧栏滑出窗口（shell.css 的 .side-off），这期间和收起之后都不让它拿到焦点
+  return html`<aside class="side" ref=${root} aria-label=${t("sidebar.bots")} inert=${collapsed || undefined}>
     <div class="side-top">
-      <span class="side-brand"><img src="/amb/static/assets/favicon-64.png" alt="" /><span>okbot</span></span>
-      <${IconButton} icon="plus" iconSize="md" label=${canGroup ? t("sidebar.newMenu") : t("sidebar.newShortcut")} on=${view === "new"} aria-haspopup=${canGroup ? "menu" : undefined} aria-expanded=${canGroup ? !!newMenu : undefined}
-        onClick=${(e) => { if (!canGroup) return onNew(); const el = e.currentTarget; setNewMenu((m) => (m ? null : el)); }} />
+      <${SideActions} bots=${bots} view=${view} onToggleSide=${onToggleSide} onOpenSearch=${onOpenSearch} onNew=${onNew} onNewGroup=${onNewGroup}>
+        <span class="side-brand"><img src="/amb/static/assets/favicon-64.png" alt="" /><span>okbot</span></span>
+        <span class="grow"></span>
+      <//>
     </div>
-    <button type="button" class="side-search" data-global-search-entry aria-haspopup="dialog" aria-label=${t("search.title")} onClick=${() => onOpenSearch?.()}>
-      <${Icon} name="search" size="sm" /><span class="side-search-label">${t("search.placeholder")}</span><kbd>${isMac ? "⌘⇧F" : "Ctrl+Shift+F"}</kbd>
-    </button>
     ${hasNav && html`<div class="side-nav">
       ${catalog.length > 0 && html`<button type="button" class=${`nav-item${discoverOn ? " sel" : ""}`} aria-current=${discoverOn ? "page" : undefined} onClick=${onDiscover}>
         <${Icon} name="compass" size="md" /><span class="label">${t("botapp.sidebar.discover")}</span>${hasNew && html`<span class="thread-new-dot" title=${t("botapp.sidebar.new")}></span>`}
       </button>`}
       <${NeedsRow} count=${needs.n} on=${view === "needs"} onClick=${onNeeds} />
     </div>`}
-    <nav class="side-list" aria-label=${t("sidebar.list")}>
-      ${hasNav && html`<div class="side-group"><span class="text t-label">${t("botapp.sidebar.mine")}</span></div>`}
-      ${botsError && html`<div class="side-empty"><span>${t("sidebar.loadFailed")}</span><button type="button" class="btn" onClick=${reloadBots}>${t("common.retry")}</button></div>`}
-      ${!bots && !botsError && [0, 1, 2].map((k) => html`<div class="thread" key=${k}><${Skeleton} w="38px" circle /><span class="thread-skel"><${Skeleton} w="50%" /><${Skeleton} w="75%" /></span></div>`)}
-      ${bots && !bots.length && view !== "new" && html`<div class="side-empty"><span>${t("sidebar.empty")}</span><button type="button" class="btn primary" onClick=${onNew}>${t("sidebar.create")}</button></div>`}
-      ${list.map(({ item: b, state: rowState }) => {
-        const sel = (view === "chat" || view === "bot-settings" || view === "app") && b.id === selectedId;
-        // 等你的：「需要你」里这个机器人的件数和最早那件（没有时退回待审批数）
-        const nd = needs.bots[b.id];
-        const n = nd?.n || pending[b.id] || 0;
-        if (renaming === b.id)
-          return html`<div class="thread sel" key=${b.id}><${BotAvatar} bot=${b} size=${38} />
-            <input class="field" value=${renameText} aria-label=${t("sidebar.newName")} ref=${renameRef}
-              onInput=${(e) => setRenameText(e.target.value)} onBlur=${() => rename(b)}
-              onKeyDown=${(e) => { if (e.isComposing || e.keyCode === 229) return; if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) e.target.blur(); if (e.key === "Escape") { e.stopPropagation(); setRenaming(""); } }} /></div>`;
-        const pv = previews[b.id];
-        const menuOpen = !!(ctx && ctx.el && ctx.bot.id === b.id);
-        const rowFx = rowState === "enter" ? " anim-fade-in" : rowState === "leave" ? " anim-fade-out" : "";
-        return html`<div class=${`thread-item${rowFx}`} key=${b.id} inert=${rowState === "leave" || undefined}>
-          <button type="button" class=${`thread bot-hover${sel && rowState !== "leave" ? " sel" : ""}`} aria-current=${sel ? "page" : undefined}
-            onClick=${() => onSelect(b.id)} onContextMenu=${(e) => { e.preventDefault(); setCtx({ bot: b, x: e.clientX, y: e.clientY }); }}>
-            <span class="avatar-wrap"><${BotAvatar} bot=${b} size=${38} greet=${rowState === "enter"} state=${n > 0 ? "waiting" : working[b.id] ? "working" : "idle"} />${working[b.id] && html`<span class="working-dot" title=${t("sidebar.working")}></span>`}</span>
-            <span class="body">
-              <span class="line"><span class="title">${b.name}</span>${pv?.at && html`<span class="when num">${fmtAgo(pv.at)}</span>`}</span>
-              <span class="line"><span class="snip">${nd?.line || (working[b.id] ? t("sidebar.workingNow") : pv?.text || t("sidebar.noChats"))}</span>${n > 0 && html`<span class="needs-dot" role="img" title=${t("sidebar.needs", { count: n })} aria-label=${t("sidebar.needs", { count: n })}></span>`}</span>
-            </span>
-          </button>
-          <${IconButton} icon="more" class="thread-more" label=${t("sidebar.moreFor", { name: b.name })} aria-haspopup="menu" aria-expanded=${menuOpen}
-            onClick=${(e) => { const el = e.currentTarget; setCtx((c) => (c && c.el && c.bot.id === b.id ? null : { bot: b, el })); }} />
+    <nav class="side-list" aria-label=${t("sidebar.list")} onDragLeave=${(e) => drag && !e.currentTarget.contains(e.relatedTarget) && setDrop(null)}>
+      ${sections.map((s) => {
+        const rows = rowsIn(s);
+        const name = secName(s);
+        const folded = showHeads && fold.includes(s.id);
+        const secFx = (drop?.sec === s.id && !drop.key ? ` drop-${drop.where}` : "") + (drag?.type === "section" && drag.id === s.id ? " drag-src" : "");
+        const menuOpen = !!(secCtx && secCtx.el && secCtx.sec.id === s.id);
+        return html`<div role="group" aria-label=${name} class=${`side-sec${secFx}`} key=${"s" + s.id}
+          onDragOver=${(e) => drag && over(e, drag.type === "section" ? (drag.id === s.id ? null : { sec: s.id, where: half(e) }) : { sec: s.id, where: "into" })}
+          onDrop=${onDropHere}>
+          ${showHeads && (secRenaming === s.id
+            ? html`<div class="side-sec-head editing"><input class="field" value=${secText} maxlength="40" aria-label=${t("sidebar.section.name")} ref=${secRenameRef}
+                onInput=${(e) => setSecText(e.target.value)} onBlur=${() => renameSec(s)}
+                onKeyDown=${(e) => { if (e.isComposing || e.keyCode === 229) return; if (e.key === "Enter") e.target.blur(); if (e.key === "Escape") { e.stopPropagation(); secCancel.current = true; setSecRenaming(""); } }} /></div>`
+            : html`<div class="side-sec-head" draggable="true" onDragStart=${(e) => startDrag(e, { type: "section", id: s.id })} onDragEnd=${endDrag}
+                onContextMenu=${(e) => { e.preventDefault(); setSecCtx({ sec: s, x: e.clientX, y: e.clientY }); }}>
+                <button type="button" class="side-group text" aria-expanded=${!folded} onClick=${() => toggleSideFold(s.id)}>
+                  <span class="text t-label">${name}</span><${Icon} name=${folded ? "chevRight" : "chevDown"} size="sm" />
+                </button>
+                <${IconButton} icon="more" class="side-sec-more" label=${t("sidebar.section.moreFor", { name })} aria-haspopup="menu" aria-expanded=${menuOpen}
+                  onClick=${(e) => { const el = e.currentTarget; setSecCtx((c) => (c && c.el && c.sec.id === s.id ? null : { sec: s, el })); }} />
+              </div>`)}
+          ${s.default && !folded && html`
+          ${botsError && html`<div class="side-empty"><span>${t("sidebar.loadFailed")}</span><button type="button" class="btn" onClick=${reloadBots}>${t("common.retry")}</button></div>`}
+          ${!bots && !botsError && [0, 1, 2].map((k) => html`<div class="thread" key=${k}><${Skeleton} w="38px" circle /><span class="thread-skel"><${Skeleton} w="50%" /><${Skeleton} w="75%" /></span></div>`)}
+          ${bots && !bots.length && view !== "new" && html`<div class="side-empty"><span>${t("sidebar.empty")}</span><button type="button" class="btn primary" onClick=${onNew}>${t("sidebar.create")}</button></div>`}
+          `}
+          ${!folded && rows.map(({ kind, key, row, entry }) => {
+            const sec = s.id;
+            if (kind === "bot") return botRow(row, key, sec);
+            if (kind === "group") return groupRow(row, key, sec);
+            return entryRow(entry, key, sec);
+          })}
+          ${s.default && !folded && html`
+          ${view === "new" && html`<div class="thread sel draft anim-fade-in" aria-current="page"><${BotAvatar} char=${draft?.avatar} neutral size=${38} />
+            <span class="body"><span class="line"><span class="title">${draft?.name || t("sidebar.newBot")}</span></span><span class="line"><span class="snip">${t("sidebar.creating")}</span></span></span></div>`}
+          `}
+          ${!folded && !rows.length && drag?.type === "item" && html`<div class="side-sec-drop">${t("sidebar.section.dropHere")}</div>`}
         </div>`;
       })}
-      ${view === "new" && html`<div class="thread sel draft anim-fade-in" aria-current="page"><${BotAvatar} char=${draft?.avatar} neutral size=${38} />
-        <span class="body"><span class="line"><span class="title">${draft?.name || t("sidebar.newBot")}</span></span><span class="line"><span class="snip">${t("sidebar.creating")}</span></span></span></div>`}
-      ${bots && shownGroups.map(({ item: g, state: rowState }) => {
-        const sel = view === "group" && g.id === groupId && rowState !== "leave";
-        const who = g.last?.botId ? (bots.find((b) => b.id === g.last.botId)?.name ?? "") : "";
-        const line = g.running && g.current ? t("group.working", { name: bots.find((b) => b.id === g.current)?.name ?? "" }) : g.last ? `${who ? `${who}: ` : ""}${previewText(g.last.text)}` : t("group.noMessages");
-        const menuOpen = !!(groupCtx && groupCtx.el && groupCtx.group.id === g.id);
-        const rowFx = rowState === "enter" ? " anim-fade-in" : rowState === "leave" ? " anim-fade-out" : "";
-        return html`<div class=${`thread-item${rowFx}`} key=${"g" + g.id} inert=${rowState === "leave" || undefined}>
-          <button type="button" class=${`thread${sel ? " sel" : ""}`} aria-current=${sel ? "page" : undefined}
-            onClick=${() => onSelectGroup(g.id)} onContextMenu=${(e) => { e.preventDefault(); setGroupCtx({ group: g, x: e.clientX, y: e.clientY }); }}>
-            <span class="avatar-wrap"><${GroupAvatars} bots=${groupBots(g)} size=${38} pile />${g.running && html`<span class="working-dot" title=${t("sidebar.working")}></span>`}</span>
-            <span class="body">
-              <span class="line"><span class="title">${g.name}</span>${g.last?.at && html`<span class="when num">${fmtAgo(g.last.at)}</span>`}</span>
-              <span class="line"><span class="snip">${line}</span></span>
-            </span>
-          </button>
-          <${IconButton} icon="more" class="thread-more" label=${t("sidebar.moreFor", { name: g.name })} aria-haspopup="menu" aria-expanded=${menuOpen}
-            onClick=${(e) => { const el = e.currentTarget; setGroupCtx((c) => (c && c.el && c.group.id === g.id ? null : { group: g, el })); }} />
-        </div>`;
-      })}
-      ${latest.length > 0 && html`<button type="button" class="side-group text" aria-expanded=${!fold} onClick=${() => setCatalogFold(!fold)}>
-        <span class="text t-label">${t("botapp.sidebar.latest")}</span><${Icon} name=${fold ? "chevRight" : "chevDown"} size="sm" />
-      </button>
-      ${!fold && latest.map((e) => html`<button type="button" key=${"c" + e.id} class=${`thread bot-hover${view === "preview" && catalogId === e.id ? " sel" : ""}`} aria-current=${view === "preview" && catalogId === e.id ? "page" : undefined} onClick=${() => onOpenCatalog(e)}>
-        <span class="avatar-wrap"><${BotAvatar} char=${e.avatar} size=${38} /></span>
-        <span class="body">
-          <span class="line"><span class="title">${tr(e.name, lang)}</span>${!seen.includes(e.id) && html`<span class="thread-new-dot" title=${t("botapp.sidebar.new")}></span>`}</span>
-          <span class="line"><span class="snip">${tr(e.summary, lang)}</span></span>
-        </span>
-      </button>`)}`}
     </nav>
     <${UpdateNotice} update=${update} onChanged=${onUpdateChanged} />
     ${bots && bots.length > 0 && html`<${GuidePill} onGo=${onGuide} />`}
@@ -361,6 +590,7 @@ export function Sidebar({ bots, botsError, reloadBots, selectedId, view, preview
       items=${[
         ...(onBotSettings ? [{ label: t("sidebar.menu.settings"), onSelect: () => onBotSettings(ctx.bot.id) }, { sep: true }] : []),
         { label: t("common.rename"), onSelect: () => { setRenameText(ctx.bot.name); setRenaming(ctx.bot.id); } },
+        { label: t("sidebar.section.moveItem"), onSelect: () => setMoveCtx({ ...ctx, key: keyOfBot(ctx.bot) }) },
         { label: t("sidebar.menu.copyId"), onSelect: () => navigator.clipboard?.writeText(ctx.bot.id).then(() => toast(t("common.copied"))).catch(failed) },
         { sep: true },
         { label: t("sidebar.menu.delete"), danger: true, onSelect: () => del(ctx.bot) },
@@ -369,13 +599,30 @@ export function Sidebar({ bots, botsError, reloadBots, selectedId, view, preview
       width=${200} label=${t("sidebar.groupActionsFor", { name: groupCtx.group.name })} onClose=${() => setGroupCtx(null)}
       items=${[
         { label: t("sidebar.groupEdit"), onSelect: () => onEditGroup(groupCtx.group) },
+        { label: t("sidebar.section.moveItem"), onSelect: () => setMoveCtx({ ...groupCtx, key: keyOfGroup(groupCtx.group) }) },
         { sep: true },
         { label: t("sidebar.menu.delete"), danger: true, onSelect: () => delGroup(groupCtx.group) },
       ]} />`}
-    ${newMenu && html`<${Menu} anchor=${newMenu} align="right" width=${180} label=${t("sidebar.newMenu")} onClose=${() => setNewMenu(null)}
+    ${secCtx && (() => {
+      const s = secCtx.sec;
+      const i = sections.findIndex((x) => x.id === s.id);
+      return html`<${Menu} anchor=${at(secCtx)} align=${secCtx.el ? "right" : undefined} width=${200} label=${t("sidebar.section.actionsFor", { name: secName(s) })} onClose=${() => setSecCtx(null)}
+        items=${[
+          { label: t("common.rename"), onSelect: () => startRenameSec(s.id, secName(s)) },
+          { label: t("sidebar.section.new"), onSelect: () => newSection({ afterId: s.id }) },
+          { sep: true },
+          { label: t("sidebar.section.up"), disabled: i <= 0, onSelect: () => save(moveSection(layout, s.id, sections[i - 1].id)) },
+          { label: t("sidebar.section.down"), disabled: i < 0 || i >= sections.length - 1, onSelect: () => save(moveSection(layout, s.id, sections[i + 2]?.id ?? null)) },
+          { sep: true },
+          { label: t("sidebar.section.delete"), danger: true, disabled: layout.sections.length <= 1, onSelect: () => delSection(s) },
+        ]} />`;
+    })()}
+    ${moveCtx && html`<${Menu} anchor=${at(moveCtx)} align=${moveCtx.el ? "right" : undefined} width=${220} label=${t("sidebar.section.moveTo")} onClose=${() => setMoveCtx(null)}
       items=${[
-        { label: t("sidebar.newBotItem"), onSelect: onNew },
-        { label: t("sidebar.newGroupItem"), onSelect: onNewGroup },
+        { group: t("sidebar.section.moveTo") },
+        ...sections.map((s) => ({ label: secName(s), cur: sectionOf(layout, moveCtx.key)?.id === s.id, onSelect: () => sectionOf(layout, moveCtx.key)?.id !== s.id && moveTo(moveCtx.key, s.id) })),
+        { sep: true },
+        { label: t("sidebar.section.new"), icon: "plus", onSelect: () => newSection({ items: [moveCtx.key] }) },
       ]} />`}
   </aside>`;
 }

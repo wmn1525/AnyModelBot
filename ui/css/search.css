@@ -8,22 +8,23 @@
     height: min(620px, calc(100vh - max(var(--float-inset), 10vh) - var(--float-inset)));
     display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden;
   }
-  .search-head { flex: none; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5); border-bottom: 1px solid var(--line); color: var(--muted); }
+  /* 内边距：这是面板一级的面——头部、筛选的字在 --pane-px（20）上；结果列表离边 --pane-gap，行再缩 --pane-item-px，字也落在 20 上 */
+  .search-head { flex: none; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-3) var(--space-3) var(--pane-px); border-bottom: 1px solid var(--line); color: var(--muted); }
   .search-input { flex: 1; min-width: 0; font-size: var(--fs-lg); background: transparent; color: var(--fg); border: 0; outline: none; }
   .search-input::-webkit-search-cancel-button { display: none; }
   /* 筛选收在按钮里，点开才出现；用了几个筛选，按钮上写着个数 */
-  .search-filters { flex: none; display: none; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-5); border-bottom: 1px solid var(--line); }
+  .search-filters { flex: none; display: none; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--pane-px); border-bottom: 1px solid var(--line); }
   .search-filters.open { display: flex; }
   .search-filter { min-width: 0; max-width: 100%; }
   .search-filter-toggle.on { color: var(--fg); background: var(--pill-hover); }
   .search-filter .field { max-width: 100%; min-width: 0; font-size: var(--fs-sm); }
-  .search-results { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-2) var(--space-3) var(--space-4); scroll-padding-block: var(--space-2); }
-  .search-result { display: grid; width: 100%; gap: var(--space-2); padding: var(--space-3) var(--space-3); text-align: start; color: var(--fg); border-radius: var(--r-md); }
+  .search-results { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-2) var(--pane-gap) var(--space-4); scroll-padding-block: var(--space-2); }
+  .search-result { display: grid; width: 100%; gap: var(--space-2); padding: var(--space-3) var(--pane-item-px); text-align: start; color: var(--fg); border-radius: var(--r-row); }
   .search-result:hover, .search-result:focus-visible, .search-result.selected { background: var(--well); }
   /* 没输入时：最近对话，按今天 / 昨天 / 前 7 天 / 更早分组；一行是头像、名字和最后一句话、时间 */
   .search-recent { display: grid; }
-  .search-recent-day { padding: var(--space-3) var(--space-3) var(--space-1); color: var(--muted); }
-  .search-recent-row { display: flex; align-items: center; gap: var(--space-3); width: 100%; min-width: 0; padding: var(--space-2) var(--space-3); text-align: start; color: var(--fg); border-radius: var(--r-md); }
+  .search-recent-day { padding: var(--space-3) var(--pane-item-px) var(--space-1); color: var(--muted); }
+  .search-recent-row { display: flex; align-items: center; gap: var(--space-3); width: 100%; min-width: 0; padding: var(--space-2) var(--pane-item-px); text-align: start; color: var(--fg); border-radius: var(--r-row); }
   .search-recent-row:hover, .search-recent-row.selected, .search-recent-row:focus-visible { background: var(--well); }
   .search-recent-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .search-recent-avatar { flex: none; display: grid; place-items: center; width: 32px; height: 32px; color: var(--muted); }
@@ -40,11 +41,11 @@
   .search-result-title:empty { display: none; }
   .search-result-body { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; line-height: var(--lh-relaxed); }
   .search-author { color: var(--fg-2); }
-  .search-result mark, .search-names mark { color: var(--on-mark); background: var(--mark); border-radius: var(--r-xs); }
-  .search-empty { display: grid; justify-items: start; gap: var(--space-3); padding: var(--space-8) var(--space-3); color: var(--fg-2); }
+  .search-result mark, .search-names mark { color: var(--on-mark); background: var(--mark); border-radius: var(--r-mark); }
+  .search-empty { display: grid; justify-items: start; gap: var(--space-3); padding: var(--space-8) var(--pane-item-px); color: var(--fg-2); }
   .search-empty h2 { color: var(--fg); font-size: var(--fs-lg); }
-  .search-names { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); padding: var(--space-2) var(--space-3) 0; }
-  .search-count { display: flex; align-items: center; gap: var(--space-2); margin-block: var(--space-3); padding-inline: var(--space-3); }
+  .search-names { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); padding: var(--space-2) var(--pane-item-px) 0; }
+  .search-count { display: flex; align-items: center; gap: var(--space-2); margin-block: var(--space-3); padding-inline: var(--pane-item-px); }
   .search-more, .history-page { align-self: center; margin: var(--space-4) auto; }
   .chat-tools { flex: none; margin-top: var(--head-h); padding: 0 var(--head-px); background: var(--surface); }
   .has-chat-tools .chat-col { padding-top: var(--space-4); }
@@ -55,7 +56,7 @@
   .history-bar { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) 0; color: var(--fg-2); font-size: var(--fs-sm); flex-wrap: wrap; }
   .history-channel-note { margin: 0; padding: 0 var(--space-2) var(--space-3); color: var(--fg-2); font-size: var(--fs-sm); }
   .history-screen .chat-col { padding-bottom: var(--space-8); }
-  .message-located { background: var(--mark); border-radius: var(--r-md); }
+  .message-located { background: var(--mark); border-radius: var(--r-card); }
   ::highlight(amb-chat-search) { background: var(--mark); color: var(--on-mark); }
   @media (max-width: 600px) {
     .app.search-reading { grid-template-columns: minmax(0, 1fr); }
@@ -64,9 +65,9 @@
     /* 手机宽度：弹窗铺满 */
     .search-scrim { padding: 0; }
     .search-dialog { width: 100%; height: 100%; max-height: none; border-radius: 0; }
-    .search-head { padding-inline: var(--space-3); }
+    .search-head { padding-inline: var(--space-3); }   /* 铺满时三样一起收：字都在 12 上（4 + 8） */
     .search-filters { padding-inline: var(--space-3); }
-    .search-results { padding-inline: var(--space-1); }
+    .search-results { padding-inline: var(--space-1); --pane-item-px: var(--space-2); }
     .find-count { max-width: 6em; white-space: normal; }
     .search-result-head time { width: 100%; margin-inline-start: 0; }
   }

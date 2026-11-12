@@ -29,6 +29,7 @@ const mfPage = (_lang: Lang, path: string) => mf(`https://api.okinto.com${path |
 export const MF = {
   home: (lang: Lang) => mfPage(lang, ""),
   pricing: (lang: Lang) => mfPage(lang, "/pricing"),
+  signIn: (lang: Lang) => mfPage(lang, "/"),
   docs: "https://docs.newapi.pro",
   partnerApply: (_lang: Lang) => mf("https://api.okinto.com/register"),
 };

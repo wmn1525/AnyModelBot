@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { chromium, type Page } from 'playwright-core';
 import manifest from '../../ui/locales/manifest.json';
+import { LOCALES } from '../src/i18n/locales';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const out = path.join(root, 'test-results/locales');
@@ -83,7 +84,8 @@ try {
       const response = await page.goto(url, { waitUntil: 'networkidle' });
       assert.equal(response?.status(), 200, url);
       await settle(page);
-      assert.equal(await page.locator('html').getAttribute('lang'), locale.code);
+      // The site's HTML tag can be more specific than the app code (pt → pt-BR).
+      assert.equal(await page.locator('html').getAttribute('lang'), LOCALES[locale.siteCode as keyof typeof LOCALES].tag);
       assert(await page.locator('h1').innerText(), `${url}: empty heading`);
       assert.equal(await page.locator('link[rel="alternate"][hreflang]').count(), manifest.locales.filter((l) => l.ready).length + 1);
       await noOverflow(page, `${locale.code}/${view} @ ${width}`);

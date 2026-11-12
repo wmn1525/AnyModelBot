@@ -16,7 +16,6 @@ import { pwshPatchLines, pwshProbe } from "../tools/pwsh/index.js";
 import { hasEnvProxy, networkEnv, systemProxyEnv } from "./proxy-env.js";
 import { DEFAULT_SETTINGS, permissionMode, type BotSettings } from "./settings.js";
 import type { BotPermission } from "../domain/app-ref.js";
-import type { AccountService } from "../tools/accounts/index.js";
 import { acceptsImages } from "../llm/client.js";
 import { CUA_SKILL, MEDIA_SKILL, TASK_RULES, agentPersona, botPrompt } from "./prompts/index.js";
 import { UserSkills } from "../skills/service.js";
@@ -212,9 +211,13 @@ export interface AgentHostOptions {
   onNotice?: (text: string) => void;
   /** 能生图 / 生视频（已连接 OKINTO）：写入 media 技能说明 */
   media?: boolean;
-  /** 哪些服务有已授权账号（全局，设置 › 连接）；加上第一个或删掉最后一个时，空闲的代理进程重启才有变化 */
-  connections?: () => Partial<Record<AccountService, boolean>>;
-  /** 模型的上下文长度（OKINTO 模型资料）；不知道时 undefined，用内置兜底表 */
+  /**
+   * 连接应用（tools/apps/service.ts）。config：amb-connections 插件要注册什么——apps = 三个固定的应用工具，
+   * tools = 现有账号的那几个工具（notion_search…）里这个机器人能用的；它变了，空闲的代理进程重启后才生效。
+   * prompt：提示词里说连了哪些应用的那一段，每个回合开始前现读，对话中途连上的应用下一次请求就知道。
+   */
+  apps?: () => { config: { apps: boolean; tools: string[] }; prompt: string };
+  /** 模型的上下文长度（Modelflare 模型资料）；不知道时 undefined，用内置兜底表 */
   contextWindow?: (model: string) => Promise<number | undefined>;
   /** 模型支持的接口与是否推理（OKINTO 模型资料），用来选对话接口；不知道时 undefined，走 Chat Completions */
   apiInfo?: (model: string) => Promise<ModelApiInfo | undefined>;
@@ -794,7 +797,7 @@ export class AgentHost {
       `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-media.mjs"))}`,
       // 联网搜索：默认免费（Exa MCP、必应、DuckDuckGo），设置里可换成带 Key 的接口（tools/search.ts）
       ...(this.allows("network") ? ["    - id: amb-web-search", `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-web-search.mjs"))}`] : []),
-      // 已授权账号（Notion、飞书）：有账号才注册工具（AMB_CONNECTIONS），令牌只在宿主这边（tools/accounts/index.ts）
+      // 连接应用（内置应用连接器、自定义 MCP、现有的 Notion / 飞书账号）：注册什么看 AMB_CONNECTIONS，凭证只在宿主这边（tools/apps/service.ts）
       ...(this.allows("accounts") ? ["    - id: amb-connections", `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-connections.mjs"))}`] : []),
       // 目录 Bot：没声明的权限一律拒绝，声明了的第一次用时问用户（amb-bot-gate.mjs）
       ...(this.o.store.getBot(this.o.botId)?.app ? ["    - id: amb-bot-gate", `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-bot-gate.mjs"))}`] : []),
@@ -1039,13 +1042,9 @@ exec "$REAL" "$@"
   private settings(): BotSettings {
     return this.o.settings?.() ?? DEFAULT_SETTINGS;
   }
-  /** 插件注册哪些工具：有账号的服务；只读机器人不给 Notion 的写工具。飞书只读 */
+  /** 插件注册哪些工具：三个固定的应用工具，加上现有账号的工具里这个机器人能用的（只读机器人没有写工具，关掉的、没分给它的没有） */
   private connectionsEnv(): string {
-    const on = this.o.connections?.() ?? {};
-    return JSON.stringify({
-      ...(on.notion ? { notion: this.settings().permission === "readonly" ? "read" : "write" } : {}),
-      ...(on.feishu ? { feishu: "read" } : {}),
-    });
+    return JSON.stringify(this.o.apps?.().config ?? { apps: false, tools: [] });
   }
   /**
    * 影响子进程启动参数的设置签名。带上 PowerShell 路径：装好 PowerShell 7、内置的装好或坏了退回时，空闲的代理进程换用新的。
@@ -1109,7 +1108,9 @@ exec "$REAL" "$@"
     const bot = this.o.store.getBot(this.o.botId);
     // 目录 Bot 不进同伴名单：增删它们不打破其他机器人的提示缓存（/bot 列表另外读，用过的仍能切过去）
     const others = this.o.store.listBots().filter((b) => b.id !== this.o.botId && b.origin !== "catalog").map((b) => ({ name: b.name, persona: b.systemPrompt }));
-    const text = botPrompt({ name: bot?.name ?? "", persona: bot?.systemPrompt ?? "", memory: this.settings().memory.enabled, others });
+    // 连了哪些应用（tools/apps）：接在机器人段后面；没有连接、也没有可连的应用时不加
+    const apps = this.allows("accounts") ? (this.o.apps?.().prompt ?? "") : "";
+    const text = botPrompt({ name: bot?.name ?? "", persona: bot?.systemPrompt ?? "", memory: this.settings().memory.enabled, others }) + (apps ? `\n\n${apps}` : "");
     if (!force && text === this.promptText) return;
     try {
       fs.mkdirSync(path.dirname(this.promptFile), { recursive: true, mode: 0o700 });

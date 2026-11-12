@@ -14,8 +14,8 @@ import { catalogs } from "../src/i18n/messages/index.js";
 
 afterEach(() => { setLangPref("system"); ui.setLangPref("system"); vi.unstubAllGlobals(); });
 
-describe("five-language foundation (no database)", () => {
-  it.each([["ja-JP", "ja"], ["ko_KR.UTF-8", "ko"], ["ru_RU.UTF-8", "ru"], ["RU-ru", "ru"], ["english", undefined], ["javascript", undefined]])("normalizes exact language subtags: %s", (input, expected) => {
+describe("multi-language foundation (no database)", () => {
+  it.each([["ja-JP", "ja"], ["ko_KR.UTF-8", "ko"], ["ru_RU.UTF-8", "ru"], ["RU-ru", "ru"], ["es-MX", "es"], ["es_ES.UTF-8", "es"], ["pt-BR", "pt"], ["pt_PT.UTF-8", "pt"], ["english", undefined], ["javascript", undefined]])("normalizes exact language subtags: %s", (input, expected) => {
     expect(normalizeLang(input)).toBe(expected);
     expect(ui.normalizeLang(input)).toBe(expected ?? null);
   });
@@ -63,7 +63,7 @@ describe("five-language foundation (no database)", () => {
   it("round-trips every new language through the existing config file without a database", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "amb-locale-config-"));
     try {
-      for (const language of ["ja", "ko", "ru"] as const) {
+      for (const language of ["ja", "ko", "ru", "es", "pt"] as const) {
         saveConfigFile(dir, (file) => { file.ui = { ...(file.ui || {}), lang: language }; });
         expect(loadConfig({ dataDir: dir, env: {} }).ui.lang).toBe(language);
       }
@@ -74,7 +74,7 @@ describe("five-language foundation (no database)", () => {
   it("validates every authored message even while catalogs are incomplete", async () => {
     const dicts = await loadDicts(TARGET_LANGS);
     const base = Object.fromEntries(Object.entries(catalogs).map(([ns, c]) => [ns, c.en]));
-    for (const lang of ["ja", "ko", "ru"] as const) {
+    for (const lang of ["ja", "ko", "ru", "es", "pt"] as const) {
       expect(inspectLocale(dicts.en, dicts[lang], lang).errors.filter((e: { reason: string }) => e.reason !== "missing")).toEqual([]);
       expect(inspectLocale(base, translations[lang], lang).errors.filter((e: { reason: string }) => e.reason !== "missing")).toEqual([]);
     }

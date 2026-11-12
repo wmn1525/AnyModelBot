@@ -4,11 +4,11 @@
 > 0.1.31 · Windows 설치판과 Linux AppImage는 기본으로 업데이트를 백그라운드 다운로드합니다. 사용자가 재시작을 선택해야 설치되며 작업 중에는 기다립니다. 현재 서명되지 않은 macOS 빌드는 수동 업데이트를 유지합니다. 0.1.28 이하는 이번 버전을 먼저 수동 설치해야 합니다.
 > 새 업데이트 안내와 정보 페이지의 변경 기록을 추가했습니다. 버전 확인, 다운로드 및 업데이트 설명은 이 저장소를 사용합니다.
 
-[简体中文](./development.md) | [English](./development_en.md) | [日本語](./development_ja.md) | 한국어 | [Русский](./development_ru.md)
+[简体中文](./development.md) | [English](./development_en.md) | [日本語](./development_ja.md) | 한국어 | [Русский](./development_ru.md) | [Español](./development_es.md) | [Português (Brasil)](./development_pt.md)
 
-소스에서 AnyModelBot을 실행하거나 패키징하고 기여하려는 분을 위한 안내입니다. 앱을 사용하기만 하려면 [릴리스](https://github.com/modelflare-ai/AnyModelBot/releases)에서 설치 파일을 받으세요. [README](../README_ko.md#-다운로드)를 참고하세요.
+소스에서 AnyModelBot을 실행하거나 패키징하고 기여하려는 분을 위한 안내입니다. 앱을 사용하기만 하려면 [릴리스](https://github.com/modelflare-ai/AnyModelBot/releases)에서 설치 파일을 받으세요. [README](../README_ko.md#-다운로드-및-실행)를 참고하세요.
 
-- 봇은 역할, 기본 모델, 기억으로 구성됩니다. 계정은 전역 설정(설정 › 연결)으로 관리하며 모든 봇이 공유합니다. 서비스별 계정 수는 자유롭게 추가할 수 있습니다. 한 사람이 개인적으로 사용하는 환경을 대상으로 합니다.
+- 봇은 역할, 기본 모델, 기억으로 구성됩니다. 계정은 전역 설정(설정 › 채팅 채널)으로 관리하며 모든 봇이 공유합니다. 서비스별 계정 수는 자유롭게 추가할 수 있습니다. 한 사람이 개인적으로 사용하는 환경을 대상으로 합니다.
 - 모델은 Modelflare 계정 또는 내 공식 API 키로 사용합니다. [Modelflare](https://modelflare.dev/?utm_source=anymodelbot&utm_campaign=amb_readme)에서 제공합니다. 처음 실행할 때 로그인하거나 가입하면 모델 목록이 자동으로 나타납니다. 요청은 내장 [magpie](https://github.com/yetone/magpie) 게이트웨이를 거칩니다.
 - 하나의 코드로 세 가지 방식으로 실행합니다: **데스크톱 앱(Electron)**, **명령줄 `npm start`**, **Docker**.
 
@@ -20,7 +20,7 @@ src/
   delivery/      먼저 보내는 메시지 전달: 방해 금지 시간, 하루 상한, 요약 묶음, WeChat 24시간 창과 연장 알림
   agent/         에이전트 모드: DSH 호스트·브리지, 승인, 권한 프리셋, 기억·컨텍스트 관리자, DSH 세션 폴더
     prompts/     에이전트 모델이 읽는 모든 프롬프트: 역할, 대화 규칙, 기억 안내, 구간 첫 메시지, 스킬
-  tools/         에이전트가 쓰는 기능: 웹 검색(search.ts), 이미지·동영상 생성(media/), 컴퓨터 사용(computer-use/), Windows PowerShell(pwsh/), 연결된 Notion·Feishu 계정(accounts/)
+  tools/         에이전트가 쓰는 기능: 웹 검색(search.ts), 이미지·동영상 생성(media/), 컴퓨터 사용(computer-use/), Windows PowerShell(pwsh/), 앱 연결 — 기본 제공 앱 커넥터와 커스텀 MCP(apps/), 기존 Notion·Feishu 계정(accounts/)
   llm/           OpenAI 호환 클라이언트(모델 접근 인터페이스)
   magpie/        magpie 관리: 격리 폴더, 빈 포트, 비밀 값 생성, 상태 검사, 충돌 후 재시작, 정상 종료
   channels/      feishu/(지속 연결+CardKit) weixin/(iLink; MIT 고지는 LICENSE.openclaw-weixin) messenger/(Telegram·Slack·Discord 공통 송수신 경로)
@@ -83,9 +83,9 @@ npm run test:dsh-bundle  # 패키징된 build/dsh의 실제 DSH 통합 테스트
 - 콘솔은 127.0.0.1에서만 수신 대기하고 시작마다 임의 접근 토큰을 생성하여 다른 로컬 프로그램의 관리 API 직접 호출을 막습니다.
 - 종료 시 채널을 먼저 중지하고 magpie를 종료합니다. 이전 실행이 강제 종료되어 magpie가 남았다면 다음 실행에서 정리합니다(Linux/macOS).
 
-릴리스: `CHANGELOG.md`, `CHANGELOG_en.md`, `CHANGELOG_ja.md`, `CHANGELOG_ko.md`, `CHANGELOG_ru.md`에 해당 버전의 변경 사항을 작성합니다(웹사이트나 내부 구현보다 사용자가 느끼는 변경 중심, 영문 사이트는 WeChat·Feishu가 언급된 줄 제외). `package.json`의 `version`을 올리고 커밋한 뒤 `v<version>` 태그를 푸시합니다. 변경 내역이 없으면 릴리스 워크플로가 처음에 실패합니다. 있으면 GitHub Release 노트와 사이트 변경 내역에 반영됩니다. 앱의 ‘업데이트 내용’ 대화상자도 같은 변경 내역을 읽습니다. `CHANGELOG*.md`는 설치 파일과 Docker 이미지에 포함되며(`src/changelog.ts`), 아직 설치하지 않은 새 버전의 내용은 사용자가 열 때 해당 버전 태그에서 읽어 옵니다. `.github/workflows/release.yml`이 6개 OS/아키텍처 러너에서 빌드하고 설치 파일과 `SHA256SUMS`를 GitHub Release에 게시합니다. 서명·공증에 필요한 저장소 비밀 값은 해당 파일 상단 주석을 확인하세요. 같은 태그가 `.github/workflows/docker.yml`도 실행하여 x64+arm64 이미지를 `ghcr.io/modelflare-ai/anymodel-bot`에 `<version>`, `latest` 태그로 게시합니다. 태그로 배포할 때 macOS 설치 파일은 Developer ID 서명과 공증이 필수이며, 패키징 후 .app과 DMG 안의 .app을 `spctl` 등으로 검사해 통과하지 못하면 실패합니다. 정식 빌드는 개발자 도구를 끕니다. 디버그 빌드가 필요하면 `npm run dist:debug`를 쓰거나 Release를 수동 실행할 때 `debug_build`를 선택합니다(파일 이름에 `-debug-`가 붙고, 태그에서는 거부되며, `scripts/check-build-flavor.mjs`가 패키지 결과를 확인합니다).
+릴리스: `CHANGELOG.md`, `CHANGELOG_en.md`, `CHANGELOG_ja.md`, `CHANGELOG_ko.md`, `CHANGELOG_ru.md`, `CHANGELOG_es.md`, `CHANGELOG_pt.md`에 해당 버전의 변경 사항을 작성합니다(웹사이트나 내부 구현보다 사용자가 느끼는 변경 중심, 영문 사이트는 WeChat·Feishu가 언급된 줄 제외). `package.json`의 `version`을 올리고 커밋한 뒤 `v<version>` 태그를 푸시합니다. 변경 내역이 없으면 릴리스 워크플로가 처음에 실패합니다. 있으면 GitHub Release 노트와 사이트 변경 내역에 반영됩니다. 앱의 ‘업데이트 내용’ 대화상자도 같은 변경 내역을 읽습니다. `CHANGELOG*.md`는 설치 파일과 Docker 이미지에 포함되며(`src/changelog.ts`), 아직 설치하지 않은 새 버전의 내용은 사용자가 열 때 해당 버전 태그에서 읽어 옵니다. `.github/workflows/release.yml`이 6개 OS/아키텍처 러너에서 빌드하고 설치 파일과 `SHA256SUMS`를 GitHub Release에 게시합니다. 서명·공증에 필요한 저장소 비밀 값은 해당 파일 상단 주석을 확인하세요. 같은 태그가 `.github/workflows/docker.yml`도 실행하여 x64+arm64 이미지를 `ghcr.io/modelflare-ai/anymodel-bot`에 `<version>`, `latest` 태그로 게시합니다. 태그로 배포할 때 macOS 설치 파일은 Developer ID 서명과 공증이 필수이며, 패키징 후 .app과 DMG 안의 .app을 `spctl` 등으로 검사해 통과하지 못하면 실패합니다. 정식 빌드는 개발자 도구를 끕니다. 디버그 빌드가 필요하면 `npm run dist:debug`를 쓰거나 Release를 수동 실행할 때 `debug_build`를 선택합니다(파일 이름에 `-debug-`가 붙고, 태그에서는 거부되며, `scripts/check-build-flavor.mjs`가 패키지 결과를 확인합니다).
 
-버전을 배포할 때마다 공식 사이트, 관련 문서와 5개 언어의 README를 함께 업데이트합니다. `npm --prefix site run sync`로 사이트 내용을 동기화하고 GitHub Release와 Docker 이미지 게시 후 [사이트 배포 안내](../site/README.md)에 따라 운영 사이트를 갱신합니다. `/download`, `/changelog`, `/bots`의 버전, 다운로드 링크와 설명이 일치하는지 확인하며 운영 사이트까지 반영되어야 배포가 완료됩니다.
+버전을 배포할 때마다 공식 사이트, 관련 문서와 모든 언어의 README를 함께 업데이트합니다. `npm --prefix site run sync`로 사이트 내용을 동기화하고 GitHub Release와 Docker 이미지 게시 후 [사이트 배포 안내](../site/README.md)에 따라 운영 사이트를 갱신합니다. `/download`, `/changelog`, `/bots`의 버전, 다운로드 링크와 설명이 일치하는지 확인하며 운영 사이트까지 반영되어야 배포가 완료됩니다.
 
 앱 내 업데이트는 0.1.29부터 패키징된 macOS, Windows, Linux AppImage에서 `electron-updater`로 제공합니다. `ui.autoDownloadUpdates`의 기본값은 `true`이며 설정 → 일반에서 변경합니다. 다운로드 후 알림만 표시하고 일반 종료 시에는 설치하지 않습니다. 재시작 전에 실행 중인 대화와 백그라운드 작업을 확인합니다. 0.1.28 이전 사용자는 업데이트 기능이 포함된 버전을 한 번 직접 설치해야 합니다. GitHub 빌드는 macOS DMG와 업데이트용 ZIP, 아키텍처별 `latest-${arch}` 메타데이터와 blockmap을 만들고 모든 파일 업로드 후 Release를 공개합니다. CLI, Docker와 패키징하지 않은 개발 실행은 수동 업데이트를 유지합니다.
 
@@ -100,13 +100,13 @@ docker run -d --name amb -p 3600:3600 -v amb-data:/data anymodel-bot
 docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열기
 ```
 
-컨테이너 내부 콘솔은 0.0.0.0에서 수신 대기하므로 토큰 접근이 필수입니다. 3600 포트를 인터넷에 직접 노출하지 마세요. WeChat QR 로그인은 설정 › 연결에 있습니다.
+컨테이너 내부 콘솔은 0.0.0.0에서 수신 대기하므로 토큰 접근이 필수입니다. 3600 포트를 인터넷에 직접 노출하지 마세요. WeChat QR 로그인은 설정 › 채팅 채널에 있습니다.
 
 ## 모델(Modelflare)
 
 - 첫 화면의 ‘Modelflare 로그인 / 회원가입’을 누르면 시스템 브라우저에서 로그인·가입하고 계속 버튼으로 접근을 허용합니다. 앱으로 돌아오면 이 컴퓨터 전용 API 키를 발급·연결하고 기본 모델을 선택한 뒤 대화를 시작합니다. Docker·원격 배포는 브라우저 콜백을 받을 수 없으므로, 로그인 후 이동하는 열리지 않는 `127.0.0.1` 주소의 링크를 첫 화면에 붙여 넣습니다(`POST /amb/api/account/login/complete`, state와 PKCE 검증은 동일). 이전 버전에서 API 키를 입력하고 로그인하지 않은 경우 업그레이드할 때 키를 기기에서 제거하므로 로그인해야 합니다. 브라우저 콜백 페이지는 먼저 ‘로그인을 완료하는 중’을 보여 주고, 토큰 교환·계정 조회·기기 전용 키 발급·게이트웨이 연결이 모두 성공한 뒤에야 ‘로그인 성공’을 표시합니다(실패하면 이유 표시). 데스크톱 앱은 `anymodelbot://` 링크를 등록하고, 페이지는 열릴 때 한 번 앱을 열어 보며 ‘AnyModelBot 열기’로 다시 시도할 수 있습니다. 앱이 실제로 그 링크를 받았을 때만 ‘돌아갔습니다’를 표시합니다. 직접 API 키를 쓰는 화면에서도 Modelflare 계정으로 바로 로그인할 수 있습니다. 처음 연결할 때 전역 기본 모델이 비어 있으면 `src/account/first-model.ts`의 규칙(도구 호출 지원, 1회 선점 금액과 대표 작업 비용이 체험 한도 안, DeepSeek 우선)으로 첫 사용 모델을 한 번 고릅니다. 맞는 모델이 없으면 미리 고르지 않고 사용자가 고릅니다.
 - 로그인 방식은 RFC 8252의 네이티브 앱에 맞춘 OIDC 인증 코드+PKCE(RFC 7636)입니다. 공개 클라이언트(`client_id`: `anymodel-bot`)로서 클라이언트 비밀 값이 없고 필요하지도 않습니다. 결과는 `127.0.0.1`의 임시 포트로 전달됩니다. Modelflare 프로필의 인증된 앱에서 권한을 취소하면 앱이 이를 감지해 로그인 화면으로 돌아옵니다.
-- 갱신 토큰은 데이터 폴더의 `modelflare-account.json`(권한 600)에 저장합니다. 데스크톱은 시스템 키체인(Electron safeStorage)으로 암호화하며 화면에는 계정 이름만 전달합니다. 로그아웃하면 컴퓨터의 권한을 취소하고 Modelflare가 로그인 시 컴퓨터·봇에 발급한 키를 삭제합니다.
+- 갱신 토큰은 데이터 폴더의 `modelflare-account.json`(권한 600)에 저장하며, 내장 게이트웨이의 API 키처럼 파일 권한으로만 보호하고 시스템 키체인은 쓰지 않습니다(0.1.30 이하 데스크톱 앱이 암호화한 파일은 처음 읽을 때 평문으로 다시 씁니다). 화면에는 계정 이름만 전달합니다. 로그아웃하면 컴퓨터의 권한을 취소하고 Modelflare가 로그인 시 컴퓨터·봇에 발급한 키를 삭제합니다.
 - 잔액은 상시 표시하지 않습니다. 사이드바 왼쪽 아래 아바타 또는 설정 → 모델에서 지갑 잔액을 확인합니다. 충전은 Modelflare 웹사이트를 열고 앱으로 돌아오면 잔액을 갱신합니다. 알림 기준(기본 US$1, 변경·해제 가능) 아래가 되면 한 번 알리며 WeChat/Feishu로도 보낼 수 있습니다.
 - 로그인하면 설정 → 모델에 일별·모델별 사용량, Modelflare 알림, 초대 링크도 표시합니다.
 - 봇 예산(로그인 필요): 봇 설정 → 예산. 켜면 설정 금액이 한도인 전용 키(게이트웨이의 별도 provider)를 쓰고 끄면 공유 키로 돌아갑니다.
@@ -114,10 +114,13 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 - 이미지·동영상 생성: 에이전트에 `media_models`(모델·기본값·매개변수 범위·참고 가격), `media_docs`(docs.modelflare.dev에서 요청 형식 실시간 조회), `generate_image`, `generate_video`와 내장 미디어 스킬을 제공합니다. 모델마다 형식이 달라 문서를 보고 요청 본문을 작성합니다. 작업 공간의 참고 이미지는 `workspace:path`로 지정합니다. 키는 앱을 벗어나지 않습니다. 앱이 봇 키로 Modelflare를 호출하고 작업 공간 `media/`에 결과를 저장해 대화로 전달합니다.
 - 생성 전 확인: 기본적으로 즉시 생성합니다. 기본 모델이 아니거나 요청이 모호하다는 이유만으로 묻지 않고 합리적으로 해석한 뒤 결과에서 사용한 내용을 한 줄로 설명합니다. 예상 비용이 $0.5를 넘을 때만 프롬프트·매개변수·참고 가격·확인 이유와 함께 모델을 묻습니다(이미지 수, 동영상 길이·해상도 등으로 계산하며 비용을 추정할 수 없는 동영상도 포함). 승인·모델 변경·취소가 가능하며 WeChat에서는 번호나 모델 이름으로, Feishu/웹에서는 클릭으로 답합니다. 10분 내 답이 없으면 생성하지 않습니다. 항상 확인하려면 봇 설정 → 이미지와 동영상 → 생성 전에 확인 → 항상 확인을 선택하세요.
 - 웹 검색: `web_search`는 DeepSeek 키가 필요한 자체 검색을 쓰지 않고 `amb-web-search` 플러그인을 통해 앱에 위임합니다. 기본 검색은 무료이며 Exa 공개 MCP, Bing, DuckDuckGo를 순서대로 시도하되 최근 성공한 것을 우선합니다. 실패한 제공업체(요청 제한, 봇 검사, 무관한 Bing 결과)는 10분간 건너뜁니다. 설정 → 네트워크 및 접근 → 웹 검색에서 Tavily, Exa, Bocha, Zhipu(키 필요), 자체 SearXNG를 지정하면 우선 사용하고 실패 시 무료 검색으로 대체합니다. 키는 채널 토큰처럼 로컬 DB에 저장하며 에이전트에 전달하지 않습니다. 데스크톱은 시스템 프록시, 명령줄은 Node fetch(`NODE_USE_ENV_PROXY=1`이면 `HTTPS_PROXY` 적용)를 사용합니다.
-- 채팅 채널 계정(`src/core/routes.ts`): WeChat, Feishu, Telegram, Slack, Discord도 전역 계정입니다. 설정 › 연결에서 추가하고 별칭을 지정합니다. 메시지 수신 봇은 사용자가 `/bot`으로 선택한 봇 → 계정 기본 봇 → 첫 번째 봇 순서입니다. `/bot`은 목록, `/bot name`은 전환 후 선택 저장입니다. 각 봇의 시스템 프롬프트에 다른 봇과 전환법을 넣어 관련 질문에 답하게 합니다. 소유자·허용 목록은 계정에 속하므로 허용된 사용자는 모든 봇과 대화할 수 있습니다. 계정 키는 네임스페이스이며 기존 채널은 이전 봇 ID를 유지해 로그인·한도·허용 목록·대기열과 기본 봇이 그대로 남습니다. 봇 삭제는 계정에 영향을 주지 않습니다.
-- 연결된 계정(`src/tools/accounts/index.ts`): 설정 › 연결의 전역 목록을 모든 봇이 공유하며 서비스별 여러 계정을 추가할 수 있습니다. 어떤 봇에게든 ‘첫 번째 Feishu와 두 번째 Feishu 확인해 줘’라고 요청할 수 있습니다. `amb-connections`가 브리지로 도구 호출을 앱에 전달하므로 토큰은 에이전트에 가지 않습니다. `account` 매개변수로 번호나 이름을 선택하고 `connected_accounts`로 목록을 조회합니다. 계정이 있는 서비스만 도구를 제공합니다. 읽기 전용 봇과 관찰 중인 규칙은 쓸 수 없고 호스트도 재검사합니다. 채팅 채널 계정도 별도로 관리합니다.
-  - **Notion**(`tools/accounts/notion.ts`): 한 번의 접근 허용 또는 토큰 중 선택합니다. 토큰은 REST API, 접근 허용은 PKCE·동적 등록을 사용하는 OAuth와 로컬 `/oauth/notion/callback`을 거쳐 Notion 원격 MCP(`mcp.notion.com`)를 호출합니다. 모델이 보는 도구는 둘 다 `notion_search`, `notion_read_page`, `notion_query_database`이며 읽기 전용이 아니면 `notion_create_page`, `notion_update_page`도 제공합니다. 삭제 도구는 없습니다.
-  - **Feishu**(`tools/accounts/feishu.ts`): 공식 lark-cli와 같은 흐름으로 스캔해 개인 앱을 만들거나 기존 앱을 입력한 뒤 기기 인증으로 사용자 토큰을 받습니다. `feishu_list_chats`, `feishu_read_chat`, `feishu_search_messages`의 읽기 전용 도구를 제공합니다.
+- 채팅 채널 계정(`src/core/routes.ts`): WeChat, Feishu, Telegram, Slack, Discord도 전역 계정입니다. 설정 › 채팅 채널에서 추가하고 별칭을 지정합니다. 메시지 수신 봇은 사용자가 `/bot`으로 선택한 봇 → 계정 기본 봇 → 첫 번째 봇 순서입니다. `/bot`은 목록, `/bot name`은 전환 후 선택 저장입니다. 각 봇의 시스템 프롬프트에 다른 봇과 전환법을 넣어 관련 질문에 답하게 합니다. 소유자·허용 목록은 계정에 속하므로 허용된 사용자는 모든 봇과 대화할 수 있습니다. 계정 키는 네임스페이스이며 기존 채널은 이전 봇 ID를 유지해 로그인·한도·허용 목록·대기열과 기본 봇이 그대로 남습니다. 봇 삭제는 계정에 영향을 주지 않습니다.
+- 앱 연결(`src/tools/apps/service.ts`): 전역 목록 하나(아바타 메뉴 › 앱 연결)입니다. 기본적으로 모든 봇이 연결된 앱을 사용할 수 있고, 봇별·도구별로 좁힐 수 있습니다(봇 설정 › 앱). 앱은 앱 페이지에서 카드 하나로 표시되며 여러 계정을 가질 수 있습니다. 어떤 봇에게든 ‘첫 번째 Feishu와 두 번째 Feishu 확인해 줘’라고 할 수 있고, 계정은 도구의 `account` 인수(번호 또는 이름)로 고릅니다.
+  - **기본 제공 앱**(`catalog.ts`): Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian, Canva. 인증 방식은 커스텀 커넥터와 같습니다: 로그인 인증(OAuth, 동적 등록, `oauth.ts`), 요청 헤더, 쿼리 매개변수, 전용 URL. Yuque는 앱에 포함된 로컬 프로그램(`vendor/yuque-mcp`, `scripts/vendor-yuque-mcp.mjs`로 생성)이며 사용자는 토큰만 붙여넣습니다.
+  - **커스텀 커넥터**: 원격 Streamable HTTP(연결되지 않으면 구형 SSE) 또는 로컬 명령, 최대 20개. 붙여넣기 인식과 양식 ⇄ JSON 변환은 `ui/lib/connector-config.js`에 있습니다. 로컬 명령은 로그인 셸의 PATH(`shell-path.ts`)로 실행하며, 처음에 패키지를 내려받는 실행기(npx, uvx)는 더 오래 기다립니다.
+  - **연결은 메인 프로세스가 합니다**(`mcp-client.ts`, 공식 `@modelcontextprotocol/client`): 자격 증명은 메인 프로세스에만 있고 `app-secrets.json`(권한 600, 데이터베이스 밖, `secrets.ts`)에 저장됩니다. `amb-connections` 플러그인이 각 도구 호출을 bridge를 통해 앱에 넘깁니다. MCP 연결의 도구는 하나씩 등록하지 않고, 모델에는 고정된 도구 세 개를 줍니다: `app_tools`(도구 찾기), `app_tool_schema`(매개변수 보기), `app_call`(실행). 그리고 `app_connect`로 사용자에게 연결을 요청할 수 있습니다(대화에 카드가 나타나고, 연결되면 작업을 이어갑니다).
+  - **승인**(`service.ts`의 `gate`, 사용자에게 묻는 부분은 `agent/manager.ts`): 읽기는 바로 실행합니다. 쓰기는 봇의 권한 수준을 따릅니다(읽기 전용 봇에는 주지 않고, 기본 수준에서는 먼저 묻되 ‘앞으로 이 도구는 항상 허용’을 고를 수 있으며, 전체 권한에서는 바로 실행). 삭제와 외부 전송은 매번 묻고, ‘관찰만’ 하는 규칙은 쓸 수 없습니다. 도구의 종류는 `classify.ts`에서 정합니다: 기본 제공 앱은 내장 목록과 공식 주석을 쓰고, 커스텀 커넥터의 주석은 초깃값일 뿐 사용자가 바꿀 수 있습니다.
+  - **기존 Notion·Feishu 계정**(`src/tools/accounts/`): 업그레이드 전에 연결한 계정은 다시 인증하지 않아도 그대로 쓸 수 있고, 토큰은 첫 실행 때 데이터베이스에서 `app-secrets.json`으로 옮겨집니다. Notion(`notion.ts`)은 한 번의 접근 허용 또는 토큰을 사용합니다: 토큰은 REST API, 접근 허용은 OAuth + PKCE + 동적 등록으로 로컬 `/oauth/notion/callback`에 돌아온 뒤 공식 원격 MCP(`mcp.notion.com`)를 호출합니다. 모델에는 여전히 `notion_search`, `notion_read_page`, `notion_query_database`, `notion_create_page`, `notion_update_page`가 보이며 삭제는 없습니다. Feishu(`feishu.ts`)의 기존 계정은 사용자 신원으로 메시지를 읽기만 합니다(`feishu_list_chats`, `feishu_read_chat`, `feishu_search_messages`). 새로 연결하는 Feishu 계정은 공식 원격 MCP(클라우드 문서 읽기/쓰기 + 메시지 읽기)를 쓰고, 기존 계정도 다시 인증하면 이쪽으로 바뀝니다.
 - 기본 이미지·동영상 모델은 첫 설정 때 텍스트 모델과 함께 선택하고 설정 → 모델에서 변경합니다. 자동은 추천 순서 중 참고 자료가 필요 없는 첫 모델을 사용합니다.
 - 모델 선택기는 컨텍스트 길이, 이미지 이해·도구·추론 기능, 공개 가격표의 100만 입력/출력 토큰당 최저 참고 가격을 표시합니다. 최종 금액은 청구서 기준입니다.
 - 가성비(로그인 필요): 컴퓨터 키와 봇 예산 키에 Modelflare Smart Key의 `routing_strategy`를 넣습니다. 저렴한 가격 `low_cost`는 최저 배수부터, 균형 `balanced`는 중간 가격부터(기본값), 품질 `stable`은 최고 배수부터 시도합니다. 설정 → 모델 → 가성비 또는 모델 선택기 첫 슬라이더에서 바꾸면 기존 키도 `PATCH /api/connected-app/api-keys/<id>`로 갱신하고 로컬 DB `account.routing`에 저장합니다. 선택 이력이 없는 로그인 사용자는 첫 키 검사 때 기존 키에 균형을 한 번 적용합니다(로그: `applied the default key routing strategy`). Modelflare가 `routing_strategy`를 응답에 돌려줘야 지원으로 판정합니다. 필드를 거부하면(400/422) 제외하고 다시 발급하므로 발급·검사·예산 기능이 실패하지 않습니다. 무시하여 응답에 없을 때도 미지원으로 보고 설정을 숨긴 뒤 하루 후 재시도합니다.
@@ -151,10 +154,10 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 ## 화면
 
 - 그룹 대화(`src/core/groups.ts`, `ui/screens/group.js`): 봇 두 개 이상이면 ＋ 메뉴에서 그룹을 만듭니다. 구성원마다 `<bot>:web:group:<group>` 대화를 가지므로 모델·권한·기억·승인·비용은 개인 대화와 같은 경로를 따릅니다. 사용자 메시지는 `group:<group>`에 저장하고 타임라인은 ID로 합칩니다. @로 지목한 봇이 답하며 `@everyone`은 전체입니다. 지목이 없으면 마지막 응답 봇이 계속합니다. 답변에서 다른 봇을 @하면 인계하며 사용자 메시지당 최대 6회입니다. 그룹에서는 한 번에 한 봇만 답합니다.
-- 사이드바: 아바타·이름·최근 메시지를 포함한 봇 목록, ＋ 새로 만들기, 우클릭 이름 변경·삭제. 왼쪽 아래 아바타로 잔액을 보고 톱니바퀴로 설정을 엽니다(`⌘/Ctrl+,`).
+- 사이드바: 아바타·이름·최근 메시지를 포함한 봇 목록, ＋ 새로 만들기, 우클릭 이름 변경·삭제. 목록은 만들기·이름 변경·삭제·드래그 정렬이 가능한 섹션으로 나뉩니다(기본은 “내 봇”과 “새로 나옴”, 서버에 저장되어 모든 창이 공유). 봇, 그룹 채팅, 카탈로그 봇은 드래그하거나 “섹션으로 이동”으로 다른 섹션에 옮길 수 있고, 새로 공개된 카탈로그 봇은 “새로 나옴”에 들어갑니다. 왼쪽 아래 아바타로 잔액을 보고 톱니바퀴로 설정을 엽니다(`⌘/Ctrl+,`).
 - 대화 화면: 상단 봇 이름을 누르면 정보 패널(`⌘/Ctrl+⇧+I`)이 열립니다. 기본 응답 채널 계정, 승인 대기, 작업·규칙, 기억, 최근 세션을 보여 주며 ⚙로 봇 설정을 엽니다. 응답은 Markdown과 코드 한 번에 복사를 지원하며 실시간 표시하고 `Esc`로 중지합니다. 승인·질문은 카드로 표시합니다. 위로 스크롤해도 강제로 맨 아래로 이동하지 않습니다.
 - 명령 팔레트는 `⌘/Ctrl+K`입니다. 테마(시스템/라이트/다크)는 설정 → 일반에 있습니다.
-- 언어: 설정 → 일반 → 언어에서 중국어 간체·영어·일본어·한국어·러시아어를 선택합니다. 첫 화면 오른쪽 위와 명령 팔레트에서도 바꿀 수 있습니다. 기본은 시스템 언어이며 미지원 언어는 영어입니다. 선택은 config.json의 `ui.lang`에 저장하고 트레이 메뉴, 서버 오류·상태, WeChat/Feishu의 `/help`·승인 안내 등 시스템 메시지에 적용됩니다. 명령줄·Docker의 시스템 언어는 `AMB_LANG`, `LC_ALL`/`LC_MESSAGES`/`LANG` 순이며 없으면 중국어 간체입니다. 로그, 모델 프롬프트, 사용자가 정한 봇 이름은 번역하지 않습니다.
+- 언어: 설정 → 일반 → 언어에서 중국어 간체·영어·일본어·한국어·러시아어·스페인어·포르투갈어(브라질)를 선택합니다. 첫 화면 오른쪽 위와 명령 팔레트에서도 바꿀 수 있습니다. 기본은 시스템 언어이며 미지원 언어는 영어입니다. 선택은 config.json의 `ui.lang`에 저장하고 트레이 메뉴, 서버 오류·상태, WeChat/Feishu의 `/help`·승인 안내 등 시스템 메시지에 적용됩니다. 명령줄·Docker의 시스템 언어는 `AMB_LANG`, `LC_ALL`/`LC_MESSAGES`/`LANG` 순이며 없으면 중국어 간체입니다. 로그, 모델 프롬프트, 사용자가 정한 봇 이름은 번역하지 않습니다.
   - 화면 문구는 `ui/locales/<lang>/<namespace>.js`에 있고 `t("namespace.key", { params })`로 사용합니다(`ui/lib/i18n.js`). 서버 문구는 `src/i18n/messages/<namespace>.ts`이며 키를 타입 검사합니다. 모든 화면 요청은 `x-amb-lang`을 보내며 서버도 해당 언어로 응답합니다.
   - 새 문구는 두 기준 언어에 모두 추가합니다. `node scripts/i18n-check.mjs [files…]`는 화면 코드의 중국어 잔여 문구, 없는 키, zh/en 불일치를 검사합니다(`npm test`의 `test/i18n.unit.test.ts`도 동일 검사). 글꼴 이름·중국어 입력 정규식처럼 필요한 중국어는 해당 줄에 `// i18n-ignore`를 붙입니다.
 - 시작 체크리스트: 빈 대화에는 인사, 모델 변경, WeChat 연결, 작업 맡기기, 기억하기, 이미지 생성의 여섯 단계가 나옵니다. 마지막 단계는 계정의 미디어 모델 여부와 무관하게 내장 데모만 재생합니다. 실제 기본 흐름처럼 즉시 생성해 대화에 보이지만 봇에 전송하지 않고 모델 호출·과금도 없습니다. 이미지는 `ui/assets/guide-demo.svg`입니다. 비용 없이 흐름을 배우도록 한 것이며 실제 이미지 요청·수신으로도 완료됩니다. 보내기를 누르면 직접 시도하고 이동하기 또는 왼쪽 아래 항목을 누르면 해당 제어 요소를 테두리로 강조하는 안내 카드가 나옵니다. 응답, 모델 변경, 파일·이미지 수신, 채널 연결, 기억 저장에 따라 자동 완료되며 config.json의 `ui.guide`(API `/amb/api/guide`)에 저장합니다. 기존 사용자가 이미 한 단계도 인정합니다. 왼쪽 아래로 접거나 완전히 숨길 수 있고 설정 → 일반 → 시작 체크리스트에서 다시 시작합니다. 인사는 실제 응답이 있어야 하고(오류 안내는 제외), 채널은 실제로 연결되어야 합니다(설정만으로는 완료되지 않음). ‘자주 쓰는 채팅 앱 연결’에서는 WeChat, Feishu, Telegram, Slack, Discord를 고를 수 있고 UI 언어는 추천 항목만 정합니다. ‘기억해…’라고 분명히 말하면 턴 후 기억 정리를 90초 기다리지 않고 바로 합니다. 진행 상황은 사용자별로 저장되며(Modelflare 로그인 시 계정별로 KV `guide.owner.*`, 로그인하지 않았으면 기존대로 config.json의 `ui.guide`), 모두 마치면 이후 자동으로 숨겨집니다. 스스로 나타나는 안내 카드는 입력창에 초안이 있거나 작업이 실행 중이면 기다립니다.
@@ -168,7 +171,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 - 웹사이트 문구: `site/src/i18n/locales/<language>/`. 예를 들어 `home/hero.ts`는 `home.hero.*`에 대응하며 페이지는 사전에서 읽습니다.
 - `ui/locales/manifest.json`은 대상 언어와 `ready` 상태를 나열합니다. 웹사이트의 `site/src/i18n/manifest.json`과 같아야 하며 검사기로 확인합니다. 미완료 언어는 `ready: false`로 유지하고 공개 메뉴와 검색 엔진 언어 표시에 포함하지 않습니다.
 - `npm run i18n:status`는 언어·영역별 진행률을 보고합니다. `npm run i18n:check`는 모든 대상 언어와 보조 문서를 검사합니다. 누락·빈 값·추가 키, 훼손된 매개변수, 복수형 누락은 릴리스를 차단합니다. 개발 중 영어 대체는 번역 완료로 인정하지 않습니다.
-- 러시아어 복수형은 `one / few / many / other`, 일본어·한국어는 `other`를 사용합니다. 통화, 시간대, 금액을 바꾸지 않고 표시만 현지화합니다.
+- 러시아어 복수형은 `one / few / many / other`, 스페인어·포르투갈어는 `one / many / other`(`many`는 백만 단위 수에만 쓰며 `other`와 같게 작성), 일본어·한국어는 `other`를 사용합니다. 통화, 시간대, 금액을 바꾸지 않고 표시만 현지화합니다.
 - 웹사이트의 `npm run build`는 모든 언어, 동기화 문서, 공유 이미지를 검사합니다. `build:draft`는 로컬 미리 보기용이며 릴리스 검사를 대신하지 않습니다.
 
 ## 역할과 프롬프트
@@ -195,8 +198,8 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 에이전트는 내 컴퓨터에서, 때로는 전체 접근으로 실행되므로 기본적으로 **소유자와 허용한 사람만** 대화할 수 있습니다. 채널 계정별로 관리하며 해당 계정에서 허용되면 모든 봇과 대화할 수 있습니다(`src/core/access.ts`).
 
 - **소유자:** WeChat은 QR 코드를 스캔한 계정입니다. Feishu는 QR로 앱을 만들든 App ID·Secret을 넣든 자체 사용자 로그인이 없으므로 **연결 후 처음으로 개인 메시지를 보내는 사람**이 소유자가 됩니다(첫 사용 신뢰). 연결 후 본인 계정으로 한 줄 보내면 평소처럼 답합니다. 스캐너 ID를 제공하지 않은 WeChat 로그인도 동일합니다. 봇 설정 → 사용 가능한 사람에서 Feishu 소유자를 확인하고 변경을 누른 뒤 확인하면 초기화되어 다음 발신자가 소유자가 됩니다. 다른 Feishu 앱으로 바꾸거나 연결을 해제해도 초기화합니다. 거부된 사용자는 소유자가 될 수 없으며 로컬 웹 대화는 제한하지 않습니다.
-- **그 외 사용자:** ‘아직 이 봇의 사용 허가를 받지 않았습니다. 소유자에게 알렸습니다’라는 한 줄만 사람당 최대 시간당 한 번 보냅니다. 대기열·모델 호출·비용은 없습니다. 설정 › 연결의 해당 계정 관리에 허용·거부 요청이 표시되고 4자리 페어링 코드로 소유자에게 전달합니다(계정당 시간당 최대 3건, 소유자가 최근 24시간 내 해당 채널에서 발언한 경우만). 소유자는 `同意 1234`/`拒绝 1234` 또는 `yes 1234`/`no 1234`로 답합니다. 페어링 코드는 도구 승인 코드와 충돌하지 않습니다. 거부된 사용자에게는 답하지 않습니다.
-- 허용 목록은 설정 › 연결의 해당 계정 관리에 있으며 항목을 삭제할 수 있습니다. 삭제된 사용자는 메시지를 보내 다시 요청할 수 있습니다. `/status`에도 표시합니다.
+- **그 외 사용자:** ‘아직 이 봇의 사용 허가를 받지 않았습니다. 소유자에게 알렸습니다’라는 한 줄만 사람당 최대 시간당 한 번 보냅니다. 대기열·모델 호출·비용은 없습니다. 설정 › 채팅 채널의 해당 계정 관리에 허용·거부 요청이 표시되고 4자리 페어링 코드로 소유자에게 전달합니다(계정당 시간당 최대 3건, 소유자가 최근 24시간 내 해당 채널에서 발언한 경우만). 소유자는 `同意 1234`/`拒绝 1234` 또는 `yes 1234`/`no 1234`로 답합니다. 페어링 코드는 도구 승인 코드와 충돌하지 않습니다. 거부된 사용자에게는 답하지 않습니다.
+- 허용 목록은 설정 › 채팅 채널의 해당 계정 관리에 있으며 항목을 삭제할 수 있습니다. 삭제된 사용자는 메시지를 보내 다시 요청할 수 있습니다. `/status`에도 표시합니다.
 - 업그레이드 시 기존 개인 대화 상대는 ‘업그레이드 전 사용’ 표시로 허용 목록에 넣어 접근이 끊기지 않게 합니다. 다른 WeChat 계정으로 다시 스캔해도 이전 소유자는 허용 목록에 남습니다.
 - 그룹 대화: 현재 어떤 채널도 그룹을 전달하지 않습니다(Feishu는 개인 메시지만, WeChat iLink는 그룹 미지원). 기존 그룹 메시지 처리를 유지하며 채널이 그룹을 지원할 때 `access.ts`에 규칙을 추가합니다.
 
@@ -237,7 +240,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 
 ## Feishu 앱 설정
 
-가장 간단한 방법은 설정 › 연결 → Feishu → 계정 추가에서 QR 코드를 스캔해 봇 앱을 만들고 Feishu에서 메시지를 보내는 것입니다.
+가장 간단한 방법은 설정 › 채팅 채널 → Feishu → 계정 추가에서 QR 코드를 스캔해 봇 앱을 만들고 Feishu에서 메시지를 보내는 것입니다.
 
 기존 기업용 사용자 지정 앱을 쓰려면 ‘내 앱 사용’을 선택하고 다음처럼 설정하세요.
 
@@ -247,7 +250,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
    - `im:message:send_as_bot`: 앱으로 메시지 전송.
    - `cardkit:card:write`: 실시간 응답 카드 생성·갱신.
    - `im:message.history:readonly`: 대화 기록 읽기. 지속 연결은 오프라인 중 메시지를 다시 밀어 주지 않아 시작·재연결 시 최근 7일 활성 대화에서 최근 24시간 메시지를 대화당 최대 20개 가져옵니다. 없어도 다른 기능은 되지만 누락 메시지를 보충하지 못하며 이를 한 번 알립니다.
-3. 앱의 설정 › 연결 → Feishu → 계정 추가 → 내 앱 사용에 App ID / App Secret을 넣고 저장합니다. 다음 단계를 저장하려면 지속 연결이 먼저 온라인이어야 합니다.
+3. 앱의 설정 › 채팅 채널 → Feishu → 계정 추가 → 내 앱 사용에 App ID / App Secret을 넣고 저장합니다. 다음 단계를 저장하려면 지속 연결이 먼저 온라인이어야 합니다.
 4. Events & callbacks의 구독 모드에서 **Receive events through persistent connection**을 선택하고 `im.message.receive_v1` 이벤트를 추가합니다.
 5. 버전을 게시하고 본인을 이용 가능 범위에 넣은 뒤 본인 Feishu에서 한 줄 보냅니다. 연결 후 첫 발신자가 Feishu 소유자가 됩니다([봇을 사용할 수 있는 사람](#봇을-사용할-수-있는-사람) 참조).
 
@@ -255,7 +258,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 
 ## WeChat(iLink)
 
-- 설정 › 연결 → WeChat → 계정 추가 → QR 코드로 로그인을 선택한 뒤 WeChat으로 스캔하고 확인합니다. 또는 `npm run weixin:login`을 실행하면 터미널에 QR 코드를 표시하고 데이터 폴더에 PNG로 저장합니다.
+- 설정 › 채팅 채널 → WeChat → 계정 추가 → QR 코드로 로그인을 선택한 뒤 WeChat으로 스캔하고 확인합니다. 또는 `npm run weixin:login`을 실행하면 터미널에 QR 코드를 표시하고 데이터 폴더에 PNG로 저장합니다.
 - 로그인 상태, 동기화 커서, context_token은 데이터 폴더에 저장하며 재시작 후 복원합니다.
 - 플랫폼 제한: 수신 메시지마다 24시간 내 최대 10회 응답합니다. 생성이 끝나면 한 번에 보내되 4,000자를 넘으면 나눕니다. 생성 중에는 입력 중 표시가 나옵니다.
 - 이미지·파일·동영상: 사용자가 보내거나 인용한 자료를 WeChat CDN에서 다운로드하고 복호화합니다(파일당 최대 50MB). 에이전트 모드에서는 작업 공간 `inbox/`에 저장하고 메시지에 경로를 적어 읽기·처리·생성 참고 이미지로 사용합니다. Claude, GPT-5/6, Gemini, Grok 4, Kimi K3, Muse Spark 등 비전 모델에는 이미지 자체도 전달하고 그 외에는 경로만 전달합니다. Linux는 Electron에서 sharp가 충돌해 아직 이미지를 직접 전달하지 않고 경로만 보냅니다. 봇이 전달하는 파일(present)은 이미지나 파일 형태로 WeChat에 보냅니다.

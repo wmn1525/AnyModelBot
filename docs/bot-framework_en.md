@@ -64,7 +64,7 @@ bots/<id>/
 A Discover card opens with a cover image: `cover/light.png` and `cover/dark.png`, switched with the UI theme. Packing uses it first, falls back to the UI screenshot in `.check/`, and shows the avatar when neither exists.
 
 - Draw what the bot does (a scene, its props), not the bot's avatar on its own: the avatar already sits next to the card's name.
-- Official covers are one series: a matte clay and frosted glass still life on a warm grey backdrop, a little ink, and a single tiny signal yellow-green `#d7ff00` highlight; no text, logos or people. The dark version is the same picture re-lit on a charcoal backdrop. Draw at 1536×1024 with gpt-image (Codex image generation), then crop to 16:10 and reduce to a 256-color PNG:
+- Official covers are one series: a small felt and fabric still life made from the bot's own avatar, in its materials and colors, built from the accessory on its head and the props of its work (PPT Master: three slide cards in a lavender felt stand; Company Research: a mustard herringbone dossier and a brass magnifying glass; Film Studio: a black felt clapperboard and a brass film reel; US Stock Research: lime plush bars under a neon trend arrow). Use a light neutral grey seamless backdrop, center the objects with generous space around them (big cards crop again to 16:9), and let the objects carry all the color; no text, logos, people or robots. Make the dark version with an image edit (images/edits) of the light one: the same composition re-lit on a charcoal backdrop. Draw at 1536×1024 with gpt-image-2.5, then crop to 16:10 and reduce to a 256-color PNG:
 
   ```bash
   ffmpeg -i in.png -vf "crop=1536:960,scale=1200:750:flags=lanczos,split[a][b];[a]palettegen=max_colors=256:stats_mode=full[p];[b][p]paletteuse=dither=sierra2_4a" -compression_level 9 cover/light.png
@@ -81,11 +81,11 @@ A Discover card opens with a cover image: `cover/light.png` and `cover/dark.png`
 | `name`, `summary` | Name (≤ 24 characters), one line (≤ 80 characters) |
 | `about` | 1–3 lines shown in the info panel |
 | `starters` | 2–3 clickable sentences; each must visibly change the view. Until first use they show as one row of single-line chips above the composer, truncated when they don't fit (hover shows the full text), so keep them short (under about 60 characters in English) |
-| `avatar` | A base character (`blue`, `yellow`, `green`, `red`, `purple`, `orange`) or a field expert (`law`, `health`, `finance`, `code`, `design`, `writing`, `education`, `science`, `data`, `marketing`, `cooking`, `translate`). It only sets the look. Older apps don't know the experts, so set `minAppVersion` to the release that added them |
+| `avatar` | A base character (`blue`, `yellow`, `green`, `red`, `purple`, `orange`) or a field expert (`law`, `health`, `finance`, `code`, `design`, `writing`, `education`, `science`, `data`, `marketing`, `cooking`, `translate`). It only sets the look. Older apps don't know the experts, so set `minAppVersion` to the release that added them. It can't match another catalog bot's avatar (packing rejects it). `slides`, `film`, `dossier` and `ticker` are the signature looks of PPT Master, Film Studio, Company Research and US Stock Research, and no other bot can use them |
 | `permissions` | See below |
 | `skills` | Imported skills: `name`, `source`, `sha256` (from `amb-bot hash`), `author`, `license`, `url`. Your own skills aren't listed |
 
-Text fields are `{ "zh-CN": …, "en": … }`, both required. The framework requires these two; `ja`, `ko` and `ru` fall back to `en`. Bots listed in this repository need all five languages, including text, UI and sample data, and `test/bot-catalog-site.unit.test.ts` checks this.
+Text fields are `{ "zh-CN": …, "en": … }`, both required. The framework requires these two; `ja`, `ko`, `ru`, `es` and `pt` fall back to `en`. Bots listed in this repository need all seven languages, including text, UI and sample data, and `test/bot-catalog-site.unit.test.ts` checks this.
 
 ### Permissions
 
@@ -252,7 +252,7 @@ Eval tasks go in `evals/tasks.json`: `{ id, prompt, changed?, contains?, notCont
 
 ## Publishing and takedowns
 
-Official bots ship with the app. `npm run build` runs `build:catalog`, checks every bot under `bots/`, and writes UI, samples in five languages, personas, skills and available thumbnails to `dist/catalog/`. Electron's `dist/**` packaging rule and the Docker image include these resources. No catalog signing key is needed. First preview and installation read local bundles, verify their SHA-256 hashes, and extract them into the data directory. An old remote index cache cannot override the bundled catalog.
+Official bots ship with the app. `npm run build` runs `build:catalog`, checks every bot under `bots/`, and writes UI, samples in every language, personas, skills and available thumbnails to `dist/catalog/`. Electron's `dist/**` packaging rule and the Docker image include these resources. No catalog signing key is needed. First preview and installation read local bundles, verify their SHA-256 hashes, and extract them into the data directory. An old remote index cache cannot override the bundled catalog.
 
 `npm start`, `npm run dev` and `npm run init` generate the bundled catalog first. Before invoking `tsx src/main.ts` directly, run `npm run build:catalog`. Official additions, updates and takedowns ship with app releases. The GitHub Release workflow uses the packaged executable to verify that every bundled bot loads and installs with network requests disabled.
 

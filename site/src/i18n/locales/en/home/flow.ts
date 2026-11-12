@@ -15,11 +15,11 @@ export default {
     },
     "memory": {
       "label": "Long-term memory (Markdown)",
-      "body": "Markdown files in your data directory with a journal.jsonl change log; passwords, keys and ID numbers are refused."
+      "body": "Markdown files in your data directory with a journal.jsonl change log; passwords, keys, and ID numbers aren't saved."
     },
     "workspace": {
       "label": "Workspace files",
-      "body": "The bot's own workspace; writes stay here by default and anything beyond needs your approval."
+      "body": "The bot's own workspace; writes stay here by default; going outside needs your OK."
     },
     "key": {
       "label": "Model key (isolated, last 4 shown)",
@@ -90,7 +90,7 @@ export default {
         "Mostly no"
       ]
     ],
-    "note": "“Typical cloud-hosted assistants” describes the common approach of vendor-hosted, monthly-subscription products, not any specific product."
+    "note": "“Typical cloud-hosted assistants” describes the common approach of vendor-hosted, subscription-fee products, not any specific product."
   },
   "security": "Read the full security notes →"
 };

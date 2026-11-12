@@ -1,6 +1,6 @@
 # 贡献指南
 
-简体中文 | [English](./CONTRIBUTING_en.md) | [日本語](./CONTRIBUTING_ja.md) | [한국어](./CONTRIBUTING_ko.md) | [Русский](./CONTRIBUTING_ru.md)
+简体中文 | [English](./CONTRIBUTING_en.md) | [日本語](./CONTRIBUTING_ja.md) | [한국어](./CONTRIBUTING_ko.md) | [Русский](./CONTRIBUTING_ru.md) | [Español](./CONTRIBUTING_es.md) | [Português (Brasil)](./CONTRIBUTING_pt.md)
 
 谢谢你愿意帮 AnyModelBot 变得更好。bug 报告、修复、文档和想法都欢迎。
 

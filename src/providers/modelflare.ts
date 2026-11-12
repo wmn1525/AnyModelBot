@@ -121,6 +121,18 @@ export type VerifyResult =
     }
   | { ok: false; code: VerifyFailure; status?: number; message: string };
 
+/**
+ * 请求没发出去时给用户看的原因。Node 的 fetch 只说 "fetch failed"，真正的原因在 cause 里
+ * （ECONNRESET、ETIMEDOUT、ENOTFOUND…）；超时说"超时"。Electron 的 net.fetch 本身就是 net::ERR_… 。
+ */
+export function fetchFailureReason(e: unknown): string {
+  const err = e as { name?: string; message?: string; cause?: { code?: string; message?: string } };
+  if (err?.name === "TimeoutError") return t("modelflare.timeout");
+  const message = err?.message || String(e);
+  const cause = err?.cause?.code || err?.cause?.message;
+  return (cause && !message.includes(cause) ? `${message} (${cause})` : message).slice(0, 200);
+}
+
 /** 校验密钥：只发一次 GET /models，不重试、不换线路。 */
 export async function verifyModelflareKey(
   baseUrl: string,
@@ -139,8 +151,7 @@ export async function verifyModelflareKey(
     return {
       ok: false,
       code: "network",
-      message: t("modelflare.unreachable", { host, reason: (e as Error).name === "TimeoutError" ? t("modelflare.timeout") : (e as Error).message }),
-
+      message: t("modelflare.unreachable", { host, reason: fetchFailureReason(e) }),
     };
   }
   if (res.status === 401) return { ok: false, code: "invalid_key", status: 401, message: t("modelflare.invalid_key") };

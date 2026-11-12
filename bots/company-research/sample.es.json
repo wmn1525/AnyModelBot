@@ -1,0 +1,161 @@
+{
+  "title": "Análisis de empresas",
+  "runtime": {
+    "mode": "auto",
+    "track": "b"
+  },
+  "jobs": [
+    {
+      "id": "job-sample-sprucefield",
+      "company": "Sprucefield Robotics",
+      "companyUrl": "https://example.com/sprucefield/about",
+      "industry": "Robótica para almacenes",
+      "hqLocation": "Suzhou",
+      "status": "completed",
+      "track": "b",
+      "currentStep": "editor",
+      "progress": 100,
+      "docCounts": {
+        "financial": 9,
+        "news": 7,
+        "industry": 8,
+        "company": 11
+      },
+      "nodes": {
+        "grounding": "done",
+        "financial_analyst": "done",
+        "news_scanner": "done",
+        "industry_analyst": "done",
+        "company_analyst": "done",
+        "collector": "done",
+        "curator": "done",
+        "enricher": "done",
+        "briefing": "done",
+        "editor": "done"
+      },
+      "curation": {
+        "total": 35,
+        "kept": 22,
+        "threshold": 0.4
+      },
+      "sample": true,
+      "updatedAt": "2026-11-03T02:10:00Z"
+    }
+  ],
+  "timeline": [
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:00:00Z",
+      "node": "grounding",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:01:00Z",
+      "node": "financial_analyst",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:02:00Z",
+      "node": "news_scanner",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:03:00Z",
+      "node": "industry_analyst",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:04:00Z",
+      "node": "company_analyst",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:05:00Z",
+      "node": "collector",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:06:00Z",
+      "node": "curator",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:07:00Z",
+      "node": "enricher",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:08:00Z",
+      "node": "briefing",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:09:00Z",
+      "node": "editor",
+      "status": "done"
+    }
+  ],
+  "selectedJobId": "job-sample-sprucefield",
+  "view": "report",
+  "reportPreview": "# Informe de análisis de Sprucefield Robotics\n\n> Este es un ejemplo para mostrar la vista. La empresa, las cifras y las fuentes son ficticias.\n\n## Resumen\n\n- Sprucefield Robotics fabrica robots de clasificación para almacenes, sobre todo para empresas regionales de comercio electrónico y operadores logísticos externos ([perfil de la empresa](https://example.com/sprucefield/about)).\n- En marzo de 2026 cerró una ronda Serie B de 60 millones de dólares, liderada por Pinestone Capital ([anuncio de financiamiento](https://example.org/news/sprucefield-series-b)).\n- Las fuentes públicas no incluyen ingresos auditados. La empresa afirma que sus pedidos de 2025 se duplicaron frente al año anterior, un dato **sin verificar**.\n\n## Empresa y negocio\n\nLa empresa se fundó en 2019 y tiene su sede en Suzhou. Vende robots de clasificación modulares y software de planificación ([perfil de la empresa](https://example.com/sprucefield/about)). Los robots se venden por unidad y el software, como suscripción anual ([página de producto](https://example.com/sprucefield/pricing)).\n\n## Sector y competencia\n\nUn informe sectorial estima el mercado mundial de robótica para almacenes en unos 9000 millones de dólares en 2025, con un crecimiento de alrededor del 15% anual ([informe sectorial](https://example.net/reports/warehouse-robotics-2026)). Sus principales competidores son dos empresas más grandes que cotizan en bolsa. Sprucefield compite con tiempos de implementación más cortos ([informe sectorial](https://example.net/reports/warehouse-robotics-2026)).\n\n## Finanzas\n\n| Concepto | Cifra | Fuente |\n| --- | --- | --- |\n| Serie B | 60 millones de dólares (marzo de 2026) | [anuncio de financiamiento](https://example.org/news/sprucefield-series-b) |\n| Financiamiento total | Unos 95 millones de dólares | [base de datos de financiamiento](https://example.org/data/sprucefield) |\n| Ingresos de 2025 | No divulgados | Ninguna |\n\n## Noticias recientes\n\n- Junio de 2026: firmó una alianza de tres años con una empresa de logística regional ([noticia de la alianza](https://example.org/news/sprucefield-partnership)).\n- Agosto de 2026: nombró a un nuevo director financiero ([noticia de directivos](https://example.org/news/sprucefield-cfo)).\n\n## Vacíos y datos sin verificar\n\n- No se encontraron datos financieros auditados.\n- La duplicación de pedidos proviene de la propia empresa, sin una fuente independiente.\n\n## Fuentes\n\n1. [Perfil de la empresa](https://example.com/sprucefield/about)\n2. [Página de producto](https://example.com/sprucefield/pricing)\n3. [Anuncio de financiamiento](https://example.org/news/sprucefield-series-b)\n4. [Base de datos de financiamiento](https://example.org/data/sprucefield)\n5. [Informe sectorial](https://example.net/reports/warehouse-robotics-2026)\n6. [Noticia de la alianza](https://example.org/news/sprucefield-partnership)\n7. [Noticia de directivos](https://example.org/news/sprucefield-cfo)\n\n---\n\n**Aviso legal**: Este informe fue elaborado por IA a partir de fuentes públicas, solo con fines informativos y de aprendizaje. No es asesoramiento de inversión, fiscal ni legal. Las fuentes pueden estar desactualizadas o contener errores, así que verifícalas antes de confiar en ellas. Los autores y AnyModelBot no se hacen responsables de las decisiones que se tomen con base en este informe.\n",
+  "sourcesPreview": [
+    {
+      "url": "https://example.com/sprucefield/about",
+      "title": "Perfil de la empresa",
+      "score": 0.95,
+      "domain": "company",
+      "used": true
+    },
+    {
+      "url": "https://example.org/news/sprucefield-series-b",
+      "title": "Anuncio de financiamiento",
+      "score": 0.92,
+      "domain": "financial",
+      "used": true
+    },
+    {
+      "url": "https://example.net/reports/warehouse-robotics-2026",
+      "title": "Informe sectorial",
+      "score": 0.88,
+      "domain": "industry",
+      "used": true
+    },
+    {
+      "url": "https://example.org/data/sprucefield",
+      "title": "Base de datos de financiamiento",
+      "score": 0.81,
+      "domain": "financial",
+      "used": true
+    },
+    {
+      "url": "https://example.org/news/sprucefield-partnership",
+      "title": "Noticia de la alianza",
+      "score": 0.77,
+      "domain": "news",
+      "used": true
+    },
+    {
+      "url": "https://example.com/sprucefield/pricing",
+      "title": "Página de producto",
+      "score": 0.74,
+      "domain": "company",
+      "used": true
+    },
+    {
+      "url": "https://example.org/news/sprucefield-cfo",
+      "title": "Noticia de directivos",
+      "score": 0.62,
+      "domain": "news",
+      "used": true
+    }
+  ]
+}

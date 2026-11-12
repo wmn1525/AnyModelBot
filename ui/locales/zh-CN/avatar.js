@@ -21,6 +21,10 @@ export default {
     marketing: { name: "响响", field: "营销", about: "头顶一只小喇叭，有好消息就喊出来。" },
     cooking: { name: "香香", field: "烹饪", about: "戴着厨师帽，脸上两团奶油色的腮红。" },
     translate: { name: "通通", field: "翻译", about: "头顶一只小地球仪，转到哪儿都聊得通。" },
+    slides: { name: "演演", field: "演示文稿", about: "头顶一叠扇形展开的幻灯片卡，耳边缝着一圈奶白线。" },
+    film: { name: "咔咔", field: "影视创作", about: "头顶一块场记板，耳朵是两只黄铜胶片盘，面罩外缝着一圈白线。" },
+    dossier: { name: "察察", field: "公司尽调", about: "芥末黄粗花呢配皮革耳贴，头顶一把黄铜放大镜，什么都要细细看。" },
+    ticker: { name: "盘盘", field: "美股研究", about: "额前一条行情灯带，头顶一支发光的趋势箭头。" },
   },
-  groups: { expert: "领域专家" },
+  groups: { expert: "领域专家", own: "专属形象", base: "基础角色" },
 };

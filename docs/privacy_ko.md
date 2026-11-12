@@ -1,6 +1,6 @@
 # 데이터와 개인정보
 
-[简体中文](./privacy.md) | [English](./privacy_en.md) | [日本語](./privacy_ja.md) | 한국어 | [Русский](./privacy_ru.md)
+[简体中文](./privacy.md) | [English](./privacy_en.md) | [日本語](./privacy_ja.md) | 한국어 | [Русский](./privacy_ru.md) | [Español](./privacy_es.md) | [Português (Brasil)](./privacy_pt.md)
 
 **핵심:** 대화, 기억, 파일, 키는 내 기기에 저장됩니다. 모델에 보내는 내용은 선택한 모델 제공업체로 전달됩니다. 공식 API 키는 직접, 그 외에는 Modelflare를 거칩니다. 데이터에 위험이 전혀 없다고 주장하지 않습니다. 모델에 전송한 정보는 기기를 벗어납니다.
 
@@ -25,7 +25,7 @@
 | 대화 검색 색인 | `anymodel.db`의 `message_search` 및 전문 검색 색인 | 아니요 | 인스턴스 안에 저장된 메시지를 검색하며 모델을 호출하지 않습니다 |
 | 기억 | `memory/`(Markdown: `bots/`, `groups/`, `team/`) | 사용 시 | 모델 요청의 컨텍스트에 포함. 비밀 정보로 보이는 내용은 기록 전에 제외 |
 | 봇 작업 공간 파일 | `workspaces/<bot>/`(받은 파일 `inbox/`, 생성한 이미지·동영상 `media/` 포함) | 봇이 읽어 모델에 보낼 때 | 위와 동일 |
-| Modelflare 로그인 정보 | `modelflare-account.json`(권한 600, 데스크톱 앱은 시스템 키체인으로 암호화) | 토큰 갱신 시 modelflare.dev로만 | Modelflare |
+| Modelflare 로그인 정보 | `modelflare-account.json`(권한 600) | 토큰 갱신 시 modelflare.dev로만 | Modelflare |
 | API 키 | `magpie/config/`의 격리된 게이트웨이 설정 | 모든 모델 요청에서 Modelflare 인증용으로 | Modelflare |
 | 공식 API 키(입력한 경우) | `magpie/config/`의 격리된 게이트웨이 설정 | 모든 모델 요청에서 해당 제공업체 인증용으로 | 해당 모델 제공업체 |
 | WeChat 로그인 상태와 동기화 커서 | 데이터 폴더 내부(`weixin/` 등) | WeChat iLink API와 통신할 때 | Tencent WeChat |
@@ -36,8 +36,9 @@
 | 백그라운드 작업과 규칙 | `anymodel.db`(작업·규칙·실행 기록, 30일 보관). `workspaces/<bot>/tasks/`의 작업 폴더는 30일 미사용 시 삭제(‘내 확인 필요’에서 먼저 안내). `dsh/<bot>/sessions/`의 세션 파일은 작업과 함께 삭제 | 실행 중 | 대화와 동일: 모델 요청의 컨텍스트로 Modelflare를 거쳐 선택한 제공업체에 전달 |
 | 설정 | `config.json` | 아니요 | — |
 | 로그 | `logs/app.log`(크기에 따라 순환) | 아니요. ‘진단 정보 복사’는 사용자가 직접 복사하며 키는 `***`로 대체 | — |
-| 연결한 계정의 토큰(Notion, Feishu, 추가한 경우에만) | `anymodel.db`, 모든 봇이 공유 | 봇이 읽거나 쓸 때 해당 서비스에 인증 정보로 전송 | Notion, Feishu |
-| 봇이 읽은 Notion 내용과 Feishu 메시지 | 별도로 저장하지 않으며 대화에 포함되면 대화와 함께 저장 | 예 | 모델 요청 컨텍스트로 Modelflare를 거쳐 선택한 제공업체에 전달 |
+| 연결한 앱의 자격 증명(연결한 경우에만): 로그인 인증 토큰, 붙여넣은 토큰과 Key, 전용 URL, 커스텀 MCP의 헤더/쿼리 매개변수/환경 변수 | `app-secrets.json`(권한 600, 데이터베이스 밖). 로그, 진단 패키지, 화면에서는 가려집니다 | 봇이 읽거나 쓸 때 해당 서비스에 인증 정보로 전송. 로컬 명령의 환경 변수는 사용자가 추가한 로컬 프로그램에만 전달됩니다 | 연결한 앱(Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian, Canva) 또는 추가한 커스텀 MCP 서비스 |
+| 연결의 이름, 주소, 상태, 도구 목록 | `anymodel.db`(전용 URL과 Key가 포함된 주소는 가려진 형태만 저장) | 아니요 | — |
+| 봇이 연결된 앱에서 읽은 내용(문서, 메시지, 이슈 등) | 별도로 저장하지 않으며 대화에 포함되면 대화와 함께 저장 | 예 | 모델 요청 컨텍스트로 Modelflare를 거쳐 선택한 제공업체에 전달 |
 | 스크린샷(컴퓨터 사용) | 장기 보관하지 않음 | 예 | 모델 요청의 일부로 Modelflare를 거쳐 비전 지원 모델에 전달. 파일로 요청한 경우가 아니면 WeChat이나 Feishu 대화에 전달하지 않음 |
 
 ## 로컬 콘솔 접근 제어
@@ -105,4 +106,4 @@
 1. AnyModelBot을 종료하세요(트레이 메뉴 → 종료).
 2. 위 표의 데이터 폴더를 삭제하세요. Docker: `docker rm -f amb && docker volume rm amb-data`.
 3. Modelflare 프로필의 인증된 앱에서 AnyModelBot의 권한을 취소하세요.
-4. 필요하면 Feishu Open Platform에서 만든 앱(QR 코드로 만든 앱 포함)을 비활성화하고, WeChat 봇 연결을 해제하며, Telegram(@BotFather)·Slack·Discord에서 만든 봇을 삭제하세요. Notion에서도 AnyModelBot 연결을 끊고 생성한 토큰을 삭제하세요.
+4. 필요하면 Feishu Open Platform에서 만든 앱(QR 코드로 만든 앱 포함)을 비활성화하고, WeChat 봇 연결을 해제하며, Telegram(@BotFather)·Slack·Discord에서 만든 봇을 삭제하세요. 각 앱의 설정(Notion, Feishu, GitHub 등)에서도 AnyModelBot의 인증을 해제하고 생성한 토큰과 Key를 삭제하세요.

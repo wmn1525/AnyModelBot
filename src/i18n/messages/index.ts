@@ -22,5 +22,6 @@ import * as cli from "./cli.js";
 import * as rules from "./rules.js";
 
 import * as connections from "./connections.js";
+import * as apps from "./apps.js";
 
-export const catalogs = { connections, web, desktop, app, diag, modelflare, official, account, magpie, channel, runtime, agent, approvals, media, cu, pwsh, activity, tasks, access, delivery, cli, rules };
+export const catalogs = { connections, apps, web, desktop, app, diag, modelflare, official, account, magpie, channel, runtime, agent, approvals, media, cu, pwsh, activity, tasks, access, delivery, cli, rules };

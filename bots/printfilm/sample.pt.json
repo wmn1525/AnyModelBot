@@ -1,0 +1,185 @@
+{
+  "title": "PRINTFILM",
+  "sample": true,
+  "projects": [
+    {
+      "id": "sample-film",
+      "title": "Correio do Luar",
+      "kind": "drama",
+      "path": "",
+      "revision": 1,
+      "updatedAt": "",
+      "episodes": 1,
+      "assets": 1,
+      "exports": 0,
+      "archived": false
+    }
+  ],
+  "selectedProjectId": "sample-film",
+  "sampleProject": {
+    "id": "sample-film",
+    "kind": "drama",
+    "title": "Correio do Luar",
+    "source": "Uma raposinha entrega a última carta sob o luar.",
+    "summary": {
+      "synopsis": "Uma raposinha entrega a última carta sob o luar."
+    },
+    "settings": {
+      "mode": "video",
+      "ratio": "9:16",
+      "resolution": "720p",
+      "style": "cgi-3d-animation",
+      "audioMode": "native",
+      "voice": "zh-CN-XiaoxiaoNeural",
+      "subtitles": true,
+      "imageModel": "",
+      "videoModel": "",
+      "bgm": "",
+      "bgmVolume": 0.15,
+      "targetDuration": 60,
+      "episodeCount": 3,
+      "language": "pt"
+    },
+    "episodes": [
+      {
+        "id": "sample-ep",
+        "number": 1,
+        "title": "Correio do Luar",
+        "summary": "Correio do Luar",
+        "revision": 1,
+        "path": ""
+      }
+    ],
+    "assets": [
+      {
+        "id": "sample-fox",
+        "type": "character",
+        "name": "Carteiro raposa",
+        "prompt": "Correio do Luar",
+        "voice": "",
+        "media": {},
+        "assetIds": [],
+        "selectedMedia": {}
+      }
+    ],
+    "canvas": {
+      "nodes": [
+        {
+          "id": "sample-a",
+          "label": "Personagem",
+          "x": 40,
+          "y": 50,
+          "assetId": "sample-fox"
+        },
+        {
+          "id": "sample-b",
+          "label": "Plano",
+          "x": 360,
+          "y": 50,
+          "episodeId": "sample-ep",
+          "shotId": "sample-shot-0"
+        }
+      ],
+      "edges": [
+        {
+          "from": "sample-a",
+          "to": "sample-b"
+        }
+      ]
+    },
+    "exports": [],
+    "jobs": [],
+    "history": [],
+    "archived": false,
+    "revision": 1
+  },
+  "sampleEpisode": {
+    "id": "sample-ep",
+    "number": 1,
+    "title": "Correio do Luar",
+    "summary": "Correio do Luar",
+    "content": "Uma raposinha entrega a última carta sob o luar.",
+    "shots": [
+      {
+        "id": "sample-shot-0",
+        "title": "Cena",
+        "narration": "",
+        "visualPrompt": "Correio do Luar",
+        "videoPrompt": "Correio do Luar",
+        "segmentScript": "",
+        "duration": 8,
+        "assetIds": [
+          "sample-fox"
+        ],
+        "dialogue": [],
+        "locked": false,
+        "media": {
+          "image": [
+            {
+              "id": "sample-img-0",
+              "path": "./samples/shot-0.svg",
+              "model": "sample",
+              "at": "",
+              "kind": "image"
+            }
+          ]
+        },
+        "selectedMedia": {}
+      },
+      {
+        "id": "sample-shot-1",
+        "title": "Personagem",
+        "narration": "Uma raposinha entrega a última carta sob o luar.",
+        "visualPrompt": "Correio do Luar",
+        "videoPrompt": "Correio do Luar",
+        "segmentScript": "",
+        "duration": 8,
+        "assetIds": [
+          "sample-fox"
+        ],
+        "dialogue": [],
+        "locked": false,
+        "media": {
+          "image": [
+            {
+              "id": "sample-img-1",
+              "path": "./samples/shot-1.svg",
+              "model": "sample",
+              "at": "",
+              "kind": "image"
+            }
+          ]
+        },
+        "selectedMedia": {}
+      },
+      {
+        "id": "sample-shot-2",
+        "title": "Objeto de cena",
+        "narration": "",
+        "visualPrompt": "Correio do Luar",
+        "videoPrompt": "Correio do Luar",
+        "segmentScript": "",
+        "duration": 8,
+        "assetIds": [
+          "sample-fox"
+        ],
+        "dialogue": [],
+        "locked": false,
+        "media": {
+          "image": [
+            {
+              "id": "sample-img-2",
+              "path": "./samples/shot-2.svg",
+              "model": "sample",
+              "at": "",
+              "kind": "image"
+            }
+          ]
+        },
+        "selectedMedia": {}
+      }
+    ],
+    "exports": [],
+    "revision": 1
+  }
+}

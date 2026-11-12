@@ -8,11 +8,15 @@
 // 右边是手机里的对话，中间一条电脑 ↔ 手机的连线（微信 / 飞书）。卡片下面三条手机端的好处。
 // 交互在 scripts/sections.ts：换角色时工牌翻面、挂绳晃一晃，鼠标拨一下工牌也会晃；手机里的回复逐字打出；
 // 舞台卡底光和挂绳随角色换色；窄屏上纵向排列，左右滑动舞台也能换角色。
+// 手机里能聊（i18n 的 home.chat）：输入框上面一排当前角色的两条建议问题，也能自己打字；回复是写好的示例（不调用模型、访客打的字不发出去），
+// 第一次自己打字回 free、之后回 more；回完一轮，对话末尾出现下载卡（按系统识别的下载按钮，placement=crew-chat），卡上写明回复是示例。
+// 回复时工牌证件照冒思考泡泡、手机顶栏写"正在输入…"。无 JS 时没有建议问题，输入框提交直接去 /download。
 // 月薪 = 计算器"日常"预设 × 默认线路价；点开去 /pricing 的计算器，并带上这个模型（计算器读 ?m=）。
 // 名字：每个角色的中英文名都取自它最显眼的那件配饰（天天 Ping ← 天线、闪闪 Twinkle ← 星星、芽芽 Sprout ← 嫩芽、
 // 哒哒 Beat ← 耳机、晶晶 Crystal ← 水晶、飞飞 Pilot ← 飞行护目镜）。中文页工牌上名字旁边写着英文名（alias）；英文页不写中文名（alias 留空，页面上不出现中文），
 // 座右铭讲名字的由来。证件照上不加任何标注（以前有一个指向配饰的小标签，用户 2026-10-31 要求去掉：没有意义）。
 import BotFace from "../components/BotFace.astro";
+import DownloadButton from "../components/DownloadButton.astro";
 import EyesMark from "../components/EyesMark.astro";
 import Icon from "../components/Icon.astro";
 import SectionHead from "../components/SectionHead.astro";
@@ -27,6 +31,8 @@ const t = dict(lang);
 const b = t.home.bots;
 const L = b.looks;
 const talk = (k: CharKey) => b.personas[CHAR_PERSONA[k]];
+const c = t.home.chat;
+const chat = (k: CharKey) => c.personas[CHAR_PERSONA[k]];
 const modelOf = (k: CharKey) => personaModels[CHAR_PERSONA[k]];
 const pricingPage = href(lang, "/pricing");
 const cost = (k: CharKey) => {
@@ -107,9 +113,9 @@ const perkIcons = ["doc", "layers", "plus"] as const;
         </div>
 
         <div class="crew__phone">
-          <div class="phone phone--full" aria-hidden="true">
+          <div class="phone phone--full">
             <div class="phone__screen">
-              <div class="phone__status">
+              <div class="phone__status" aria-hidden="true">
                 <span>9:41</span><i class="phone__island"></i>
                 <svg class="phone__sys" viewBox="0 0 63 12" fill="currentColor">
                   <rect x="0" y="8" width="3" height="4" rx=".8" /><rect x="5" y="5.5" width="3" height="6.5" rx=".8" /><rect x="10" y="3" width="3" height="9" rx=".8" /><rect x="15" y="0" width="3" height="12" rx=".8" />
@@ -118,21 +124,38 @@ const perkIcons = ["doc", "layers", "plus"] as const;
                 </svg>
               </div>
               {CHAR_KEYS.map((k, i) => (
-                <div class="phone__view" data-phone={k} hidden={i !== 0}>
-                  <div class="phone__head">
+                <div class="phone__view" data-phone={k} hidden={i !== 0} data-free={chat(k).free} data-input-label={fmt(c.inputLabel, { name: L[k].name })}>
+                  <div class="phone__head" aria-hidden="true">
                     <Icon name="chevron" class="phone__back" size={18} />
                     <BotFace char={k} size={36} />
-                    <span class="phone__who"><b>{L[k].name}</b><small>{b.phoneStatus}</small></span>
+                    <span class="phone__who"><b>{L[k].name}</b><small data-phone-status>{b.phoneStatus}</small></span>
                   </div>
                   <div class="phone__log">
-                    <span class="phone__day">{b.phoneDay}</span>
-                    <p class="msg msg--user">{talk(k).user}</p>
-                    <div class="phone__reply"><BotFace char={k} size={26} /><p class="msg msg--bot">{talk(k).bot}</p></div>
+                    <div class="phone__thread">
+                      <span class="phone__day" aria-hidden="true">{b.phoneDay}</span>
+                      <p class="msg msg--user">{talk(k).user}</p>
+                      <div class="phone__reply"><BotFace char={k} size={26} /><p class="msg msg--bot">{talk(k).bot}</p></div>
+                      <div class="phone__cta" hidden data-chat-cta>
+                        <p class="phone__cta-title">{fmt(c.cta.title, { name: L[k].name })}</p>
+                        <p class="phone__cta-body">{c.cta.body}</p>
+                        <DownloadButton lang={lang} placement="crew-chat" size="sm" plain />
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
-              <div class="phone__input"><i class="phone__plus"></i><span>{b.phoneInput}</span><i class="phone__send"></i></div>
-              <i class="phone__home"></i>
+              <div class="phone__chips" role="group" aria-label={c.suggest} data-chat-chips>
+                {CHAR_KEYS.map((k, i) => chat(k).asks.map((a) => (
+                  <button type="button" class="phone__chip" data-chip-bot={k} data-a={a.a} hidden={i !== 0}>{a.q}</button>
+                )))}
+              </div>
+              <form class="phone__input" action={href(lang, "/download")} data-chat data-more={c.more} data-typing={c.typing}>
+                <i class="phone__plus" aria-hidden="true"></i>
+                <input class="phone__field" type="text" placeholder={b.phoneInput} aria-label={fmt(c.inputLabel, { name: L[CHAR_KEYS[0]].name })} maxlength="200" autocomplete="off" enterkeyhint="send" />
+                <button type="submit" class="phone__send" aria-label={c.send}></button>
+              </form>
+              <p class="sr-only" aria-live="polite" data-chat-live></p>
+              <i class="phone__home" aria-hidden="true"></i>
             </div>
           </div>
           <p class="crew__where"><Icon name="chat" size={16} />{b.where.phone}</p>

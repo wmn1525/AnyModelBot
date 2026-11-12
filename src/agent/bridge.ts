@@ -24,8 +24,8 @@ export interface BridgeHandlers {
   media?(body: any): Promise<unknown>;
   /** amb-web-search 插件：web_search 的一次搜索（signal = 连接断了：工具超时或回合被中止） */
   search?(body: any, signal: AbortSignal): Promise<unknown>;
-  /** amb-connections 插件：已授权账号的一次工具调用（signal = 连接断了：工具超时或回合被中止） */
-  connections?(body: any, signal: AbortSignal): Promise<unknown>;
+  /** amb-connections 插件：连接应用的一次工具调用（signal = 连接断了：工具超时或回合被中止）。可能要等用户审批或去连接，很久才回 */
+  apps?(body: any, signal: AbortSignal): Promise<unknown>;
   /** amb-control 插件：长轮询取宿主的指令（signal = 连接断了）、回报结果 */
   control?: { poll(body: any, signal: AbortSignal): Promise<unknown>; result(body: any): void };
   /** amb-computer-use-gate 插件：电脑操作工具调用前查系统权限（macOS 桌面版） */
@@ -59,7 +59,7 @@ export const BOT_HEADER = "x-amb-bot";
  * - /dsh/ask|wait|cancel：amb-bridge 插件的审批/提问长轮询
  * - /dsh/control/poll|result：amb-control 插件取宿主的指令（中止、插话、换模型）并回报
  * - /dsh/search：amb-web-search 插件（web_search 由宿主联网搜索）
- * - /dsh/connections：amb-connections 插件（已授权账号的令牌只在宿主这边）
+ * - /dsh/connections、/dsh/apps：amb-connections 插件（连接应用：现有账号的工具和三个固定的应用工具，凭证只在宿主这边）
  * - /dsh/task-report|task-settled|task-tool|task-config：amb-tasks 插件（后台任务的报告、收尾结束、聊天代理的任务工具、规则会话的配置）
  */
 export class AgentBridge {
@@ -284,10 +284,13 @@ export class AgentBridge {
       res.on("close", () => ac.abort());
       out = await this.h.search(body, ac.signal);
     }
-    else if (url === "/dsh/connections" && this.h.connections) {
+    else if ((url === "/dsh/connections" || url === "/dsh/apps") && this.h.apps) {
+      // 可能要等用户审批、去连接应用：和生视频一样先回响应头、定时写空格，子进程里的 fetch 才不会等超时
       const ac = new AbortController();
-      res.on("close", () => ac.abort());
-      out = await this.h.connections(body, ac.signal);
+      res.on("close", () => {
+        if (!res.writableEnded) ac.abort();
+      });
+      return this.longCall(res, this.h.apps(body, ac.signal));
     }
     else if (url === "/dsh/control/poll" && this.h.control) {
       const ac = new AbortController();

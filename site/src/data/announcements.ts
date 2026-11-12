@@ -38,6 +38,8 @@ export interface Announcement {
   ja: BannerCopy;
   ko: BannerCopy;
   ru: BannerCopy;
+  es: BannerCopy;
+  pt: BannerCopy;
 }
 
 /** 发版提示：版本号和下载地址取自 releases.json；按钮按访客的系统直接下载对应安装包（识别不出时去 /download）。 */
@@ -47,12 +49,23 @@ export const RELEASE = {
   days: 30,
   /** 各版本的一句话亮点（可选），没有就显示"okbot {version} 已发布" */
   highlights: {
+    "0.1.32": {
+      zh: "新增西班牙语和葡萄牙语（巴西）界面",
+      en: "Now in Spanish and Portuguese (Brazil)",
+      ja: "スペイン語とポルトガル語（ブラジル）に対応",
+      ko: "스페인어와 포르투갈어(브라질) 지원",
+      ru: "Теперь на испанском и португальском (Бразилия)",
+      es: "Ahora en español y portugués (Brasil)",
+      pt: "Agora em espanhol e português (Brasil)",
+    },
     "0.1.31": {
-      zh: "自动更新、更新说明和 Bot 工作台",
-      en: "App updates, What’s new and bot workspaces",
-      ja: "アプリ更新、更新内容と Bot ワークスペース",
-      ko: "앱 업데이트, 변경 기록 및 봇 작업 공간",
-      ru: "Обновления, «Что нового» и рабочие пространства",
+      zh: "连接应用：内置 10 个应用连接器，支持自定义 MCP",
+      en: "Connect apps: built-in connectors and custom MCP",
+      ja: "アプリを接続：内蔵コネクタとカスタム MCP",
+      ko: "앱 연결: 기본 제공 커넥터와 커스텀 MCP",
+      ru: "Подключение приложений: встроенные коннекторы и собственные MCP",
+      es: "Conectar apps: conectores integrados y MCP personalizados",
+      pt: "Conectar apps: conectores integrados e MCP personalizados",
     },
     "0.1.30": {
       zh: "Bot 额度、更新说明和官方 Bot 工作台",
@@ -60,6 +73,8 @@ export const RELEASE = {
       ja: "Bot クレジット、更新内容、公式ボットのワークスペース",
       ko: "Bot 크레딧, 업데이트 내용, 공식 봇 작업 공간",
       ru: "Кредиты Bot, «Что нового» и рабочие пространства ботов",
+      es: "Créditos de Bot, Novedades y espacios de trabajo de los bots oficiales",
+      pt: "Créditos de Bot, Novidades e espaços de trabalho dos bots oficiais",
     },
     "0.1.24": {
       zh: "ZIP 技能导入和聊天记录搜索",
@@ -67,6 +82,8 @@ export const RELEASE = {
       ja: "ZIP スキルのインポートとチャット履歴検索",
       ko: "ZIP 스킬 가져오기와 대화 기록 검색",
       ru: "Импорт навыков из ZIP и поиск по переписке",
+      es: "Importa habilidades en ZIP y busca en el historial de chats",
+      pt: "Importe habilidades em ZIP e pesquise no histórico de conversas",
     },
     "0.1.10": {
       zh: "机器人能收微信里的图片和文件了",
@@ -74,6 +91,8 @@ export const RELEASE = {
       ja: "送信した画像やファイルをボットが読み取れるようになりました",
       ko: "이제 보낸 이미지와 파일을 봇이 읽을 수 있습니다",
       ru: "Теперь боты могут просматривать отправленные изображения и файлы",
+      es: "Los bots ya pueden ver las imágenes y los archivos que envías",
+      pt: "Agora os bots conseguem ver as imagens e os arquivos que você envia",
     },
   } satisfies Record<string, Record<Lang, string>>,
 };
@@ -91,6 +110,8 @@ export const ANNOUNCEMENTS: Announcement[] = [
     ja: { tag: "無料・オープンソース", text: "1つのキーで{modelCount}のモデルを利用", cta: { label: "料金", href: "/pricing" } },
     ko: { tag: "무료 오픈 소스", text: "키 하나로 모델 {modelCount}개 이용", cta: { label: "요금", href: "/pricing" } },
     ru: { tag: "Бесплатное приложение", text: "Моделей с одним ключом: {modelCount}", cta: { label: "Цены", href: "/pricing" } },
+    es: { tag: "App gratis", text: "Una sola clave para {modelCount} modelos", cta: { label: "Precios", href: "/pricing" } },
+    pt: { tag: "App grátis", text: "Uma só chave para {modelCount} modelos", cta: { label: "Preços", href: "/pricing" } },
   },
   // 公告示例（维护通知）：到点自动出现、过期自动消失，复制后改 id、时间和文案即可
   // {

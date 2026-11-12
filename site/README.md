@@ -12,7 +12,7 @@ npm run build:html
 npm run package:html
 ```
 
-HTML 构建会读取 GitHub wmn1525/AnyModelBot 的最新 okbot Release（含安装包大小与 SHA-256）及 https://api.okinto.com/api/pricing 的公开快照。GitHub API 限流时自动从公开发布页读取。价格解析支持 New API 的固定倍率和可识别的线性分档表达式；无法识别的表达式会使构建失败，避免显示推测价格。价格单位为账户计费美元，不是充值现金价格，充值折算及缓存不计入估算。
+HTML 构建会读取 GitHub wmn1525/AnyModelBot 的最新 okbot Release（含安装包大小与 SHA-256）及 https://api.okinto.com/api/pricing 的公开快照。GitHub API 限流时自动从公开发布页读取。价格解析支持 New API 的固定倍率、线性上下文分档及 UTC 星期/小时价格表达式（按快照抓取时刻取价，价格页明确提示时段价格会变化）；无法识别的表达式会使构建失败，避免显示推测价格。价格单位为账户计费美元，不是充值现金价格，充值折算及缓存不计入估算。
 
 构建结果在 site/dist/；打包目录与 ZIP 在仓库 release/okbot-site-html-<版本>/ 和同名 .zip。静态包自带 Node.js 本地预览程序，解压后运行 preview.cmd 或 node preview.mjs，打开 http://127.0.0.1:4321。部署时把目录内的静态文件上传到域名根目录，无需 Astro 或 Node.js 服务端。
 
@@ -230,7 +230,8 @@ npm run fetch:pricing  # 只更新价格快照（失败即退出码 1）
 npm run fetch:github   # 只更新 GitHub 星数（取不到就沿用上一个值）
 npm run releases       # 从 GITHUB_URL 的最新 Release 生成 src/data/releases.json（下载直达 GitHub）
 npm run releases:dir   # 改为从 DOWNLOADS_DIR 里的安装包生成（自己提供下载时用）
-npm run og             # 重新生成 favicon / App 图标 / 五语言 OG 图（Python + Pillow；Noto Sans SC/JP/KR）
+npm run og             # 重新生成各语言 OG 图（Python + Pillow；Noto Sans SC/JP/KR）
+python3 ../scripts/build-app-icons.py site   # 重新生成 favicon / 主屏 / 清单图标（和桌面 App 同一个图标，原图在 anymodelbot_design/icon/）
 # 可单独生成：AMB_OG_FONT_JA=/path/NotoSansJP.ttf AMB_OG_FONT_KO=/path/NotoSansKR.ttf npm run og -- ja ko ru
 npm run bots:avif      # 从原图重新编码机器人精灵图的 AVIF 版（精灵图更新后跑；Python + numpy + Pillow）
 npx tsx scripts/vendor-logos.ts <icons 目录>   # 从 @lobehub/icons-static-svg 重新生成厂商标志（新厂商时跑，用法见脚本开头）
@@ -279,5 +280,5 @@ docker compose -f site/deploy/compose.yml --env-file site/deploy/.env up -d --no
 - **机器人**：`scripts/sync-from-app.ts` 从 `../ui/design/bots/*.webp` 复制精灵图、从 `../THIRD_PARTY_NOTICES.md` 同步许可（Docker 构建上下文里没有应用目录，用已提交的副本）；几何（`src/lib/bots.ts`）与 `../ui/components/avatar.js` 的 `BOT_CHARS` 不一致时会警告。头像样式 `src/styles/bots.css` 移植自 `../ui/design/components/avatar.css`。
   - 精灵图另有同分辨率的 AVIF 版（`public/bots/*.avif`，约为 WebP 的一半），支持的浏览器经 `image-set()` 优先用它，其他照旧用 WebP。AVIF 必须从原图编码（`npm run bots:avif`：重跑 `../scripts/build-bot-avatars.py --png` 拿无损精灵图，q58 的画质按 PSNR 不低于 WebP q86），不能拿 WebP 再转。生成时把对应 WebP 的哈希记在 `src/data/bots-avif.json`；WebP 更新了而 AVIF 没重做，`check-images` 会失败。
   - 精灵图分档：`<角色>.webp` 每格 448，另有 `<角色>@224 / @112 / @56` 的 WebP 和 AVIF。`BotFace.astro` 按 2 倍屏挑最小的够用的一档（`src/lib/bots.ts` 的 `SPRITE_TIERS`，和 App 一致），小头像不再由浏览器从 448 实时缩小。
-- **演示**：Hero 的"看演示"弹窗播放真实录屏（`src/components/DemoVideo.astro`，五种语言各一个 MP4，构建时从 `docs/assets/demo/` 同步到 `public/demo/`）。点开就播、关掉就停，没点的人不下载；减少动态效果时不自动播放。"它能动手"仍是动画（`src/scripts/tour.ts`）。旧的动画导览 `src/components/DemoTour.astro` 已不再渲染。
+- **演示**：Hero 的"看演示"弹窗播放真实录屏（`src/components/DemoVideo.astro`，每种语言各一个 MP4，构建时从 `docs/assets/demo/` 同步到 `public/demo/`）。点开就播、关掉就停，没点的人不下载；减少动态效果时不自动播放。"它能动手"仍是动画（`src/scripts/tour.ts`）。旧的动画导览 `src/components/DemoTour.astro` 已不再渲染。
 - **文案**：`src/i18n/locales/<语言>/`，页面里不写死文案。首页使用 `home.hero.*`、`home.features.*` 等多级键；各语言入口文件只组装模块。新增译文由维护者逐条撰写和本土化，不使用翻译接口。`manifest.json` 的 `ready` 标识控制正式语言入口，生产构建检查全部目标语言的原始词典，不能用回退文案冒充翻译完成。例外是两种语言内容本来就不同的：聊天渠道（`src/data/channels.ts`）和公告（`src/data/announcements.ts`），各写各的，禁词扫描同样覆盖 `src/data`。

@@ -1,0 +1,27 @@
+import type { TranslatedCatalog } from "../../index.js";
+export default {
+  pricePerSecond: "{price}/s ({res})",
+  pricePerImage: "{price}/imagem",
+  pricePerCall: "{price}/chamada",
+  priceToken: "cobrado por token",
+  seconds: "{n} s",
+  references: {
+    one: "{count} referência",
+    many: "{count} referências",
+    other: "{count} referências",
+  },
+  summaryPrompt: "Prompt: {prompt}",
+  summaryParams: "Parâmetros: {params}",
+  summaryPrice: "Preço estimado: {price}",
+  confirmHeaderImage: "Gerar imagem",
+  confirmHeaderVideo: "Gerar vídeo",
+  confirmQuestionImage: "Gerar esta imagem com {model}?",
+  confirmQuestionVideo: "Gerar este vídeo com {model}?",
+  confirmDetail: "{summary}{reason}\nVocê também pode responder com o nome de outro modelo.",
+  reasonCost: "Custo estimado de cerca de ${amount}, acima de ${limit}",
+  reasonCostUnknown: "Não é possível estimar o custo desta execução",
+  tagDefault: "padrão",
+  tagBotPick: "escolhido pelo bot",
+  cancel: "Cancelar",
+  cancelDesc: "Não gerar desta vez",
+} satisfies TranslatedCatalog["media"];

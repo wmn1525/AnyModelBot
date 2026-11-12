@@ -23,6 +23,8 @@ import { settingsRoutes } from "./routes/settings.js";
 import { computerRoutes } from "./routes/computer.js";
 import { channelsRoutes } from "./routes/channels.js";
 import { connectionsRoutes } from "./routes/connections.js";
+import { APPS_CALLBACK, appsRoutes } from "./routes/apps.js";
+import { AppUserError } from "../tools/apps/service.js";
 import { tasksRoutes } from "./routes/tasks.js";
 import { chatRoutes } from "./routes/chat.js";
 import { botsRoutes } from "./routes/bots.js";
@@ -227,7 +229,7 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
     publicGroup,
     groupMembers,
   };
-  const routes: Route[] = [systemRoutes(ctx), modelsRoutes(ctx), accountRoutes(ctx), settingsRoutes(ctx), computerRoutes(ctx), channelsRoutes(ctx), connectionsRoutes(ctx), tasksRoutes(ctx), chatRoutes(ctx), botsRoutes(ctx)];
+  const routes: Route[] = [systemRoutes(ctx), modelsRoutes(ctx), accountRoutes(ctx), settingsRoutes(ctx), computerRoutes(ctx), channelsRoutes(ctx), connectionsRoutes(ctx), appsRoutes(ctx), tasksRoutes(ctx), chatRoutes(ctx), botsRoutes(ctx)];
 
   async function api(req: http.IncomingMessage, res: http.ServerResponse, url: URL): Promise<void> {
     const p = url.pathname.slice("/amb/api".length);
@@ -264,6 +266,25 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
       detail = connectionUserMessage(e);
       if (!(e instanceof ConnectionError)) log.warn("notion authorization failed", { message: (e as Error).message });
     }
+    callbackPage(res, title, detail);
+  }
+
+  /** 连接应用的授权登录跳回来（tools/apps/service.ts）：一次性的 state 就是凭据，和 Notion 的回调一样不带控制台的令牌 */
+  async function appsCallback(res: http.ServerResponse, url: URL): Promise<void> {
+    let title = t("web.oauthDone");
+    let detail = t("web.oauthClose");
+    try {
+      const done = await app.apps.oauthCallback({ state: url.searchParams.get("state"), code: url.searchParams.get("code"), error: url.searchParams.get("error") });
+      detail = `${done.label} · ${detail}`;
+    } catch (e) {
+      title = t("web.oauthFailed");
+      detail = e instanceof AppUserError ? e.message : t("apps.oauthFailed");
+      if (!(e instanceof AppUserError)) log.warn("app authorization failed", { message: (e as Error).message });
+    }
+    callbackPage(res, title, detail);
+  }
+
+  function callbackPage(res: http.ServerResponse, title: string, detail: string): void {
     const escape = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer" }).end(
       `<!doctype html><html lang="${escape(lang())}"><head><meta charset="utf-8"><title>${escape(title)}</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font:16px system-ui,sans-serif;display:grid;place-content:center;min-height:90vh;text-align:center"><h1 style="font-size:20px;font-weight:600">${escape(title)}</h1><p>${escape(detail)}</p></body></html>`,
@@ -280,6 +301,10 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
     // Notion 授权页跳回来：地址是固定的回环地址，浏览器不一定带着控制台的令牌；一次性的 state 就是凭据（tools/accounts/notion.ts）
     if (url.pathname === NOTION_CALLBACK && req.method === "GET") {
       void notionCallback(res, url);
+      return;
+    }
+    if (url.pathname === APPS_CALLBACK && req.method === "GET") {
+      void appsCallback(res, url);
       return;
     }
     if (!authorized(req, url, res)) return;

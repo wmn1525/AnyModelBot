@@ -1,20 +1,24 @@
 {
   "id": "company-research",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "minAppVersion": "0.1.20",
   "name": {
     "zh-CN": "尽调助手",
     "en": "Company Research",
     "ja": "企業リサーチ",
     "ko": "기업 리서치",
-    "ru": "Исследование компаний"
+    "ru": "Исследование компаний",
+    "es": "Análisis de empresas",
+    "pt": "Pesquisa de empresas"
   },
   "summary": {
-    "zh-CN": "本机公司尽调：四路研究、策展、简报与可溯源报告/PDF",
-    "en": "Local company diligence with parallel research, curation, and sourced reports",
-    "ja": "手元のデバイスで企業を調査：4 方面のリサーチ、選別、要約、出典付きレポートと PDF",
-    "ko": "내 기기에서 기업 실사: 네 방향 조사, 선별, 브리핑, 출처 있는 보고서와 PDF",
-    "ru": "Изучает компании на вашем устройстве и пишет отчёт со ссылками на источники"
+    "zh-CN": "在你的电脑上做公司尽调，生成可追溯的简报和 PDF。",
+    "en": "Company research on your computer, with sourced briefings and PDF reports.",
+    "ja": "手元のパソコンで企業を調査し、出典付きの要約と PDF レポートを作成します。",
+    "ko": "내 컴퓨터에서 기업을 실사하고 출처가 있는 브리핑과 PDF를 만듭니다.",
+    "ru": "Изучает компании на вашем компьютере: сводки и PDF со ссылками на источники.",
+    "es": "Investiga empresas en tu computadora: resúmenes con fuentes e informes en PDF.",
+    "pt": "Pesquisa empresas no seu computador, com resumos e PDFs que citam as fontes."
   },
   "about": {
     "zh-CN": [
@@ -41,9 +45,19 @@
       "Порядок исследования и экспорт в PDF повторяют открытый проект Company Research Agent",
       "Отчёты и источники остаются на вашем устройстве. Если начать в чат-канале, результат придёт туда же",
       "Только для информации и обучения, не является инвестиционной рекомендацией"
+    ],
+    "es": [
+      "Sigue el flujo de investigación y la exportación a PDF del proyecto de código abierto Company Research Agent",
+      "Los informes y las fuentes se quedan en tu dispositivo; inícialo desde un canal de chat y el resultado llega ahí mismo",
+      "Solo con fines informativos y de aprendizaje; no es asesoramiento de inversión"
+    ],
+    "pt": [
+      "Segue o fluxo de pesquisa e a exportação em PDF do projeto de código aberto Company Research Agent",
+      "Os relatórios e as fontes ficam no seu dispositivo; comece em um canal de chat e o resultado volta para lá",
+      "Apenas para fins informativos e de aprendizado, não é recomendação de investimento"
     ]
   },
-  "avatar": "data",
+  "avatar": "dossier",
   "permissions": [
     "workspace-write",
     "network"
@@ -73,6 +87,16 @@
       "Проведи полное исследование Stripe и подготовь отчёт",
       "Открой источники и результаты отбора из последнего отчёта",
       "Экспортируй текущий отчёт в PDF"
+    ],
+    "es": [
+      "Haz un análisis completo de Stripe y genera un informe",
+      "Abre las fuentes y la selección del informe más reciente",
+      "Exporta el informe actual a PDF"
+    ],
+    "pt": [
+      "Faça uma due diligence completa da Stripe e gere um relatório",
+      "Abra as fontes e a curadoria do relatório mais recente",
+      "Exporte o relatório atual para PDF"
     ]
   },
   "skills": []

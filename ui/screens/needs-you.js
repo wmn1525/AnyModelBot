@@ -12,6 +12,7 @@ import { api } from "../lib/api.js";
 import { failed, toast } from "../lib/store.js";
 import { fmtAgo } from "../lib/format.js";
 import { t } from "../lib/i18n.js";
+import { openRepair } from "../lib/apps.js";
 
 /** 侧栏顶部导航里「发现」下面的「需要你」：只有件数大于 0 时才有。和设置导航同一种行：图标 + 文字 + 右边一个蓝点（侧栏不写件数，件数在 title 和读屏文字里） */
 export function NeedsRow({ count, on, onClick }) {
@@ -76,8 +77,10 @@ export function NeedItem({ item, multiBot, onAct, onOpenChat, onRelogin, onOpenB
     <div class="need-actions">
       ${opts && opts.map((o, i) => html`<${Button} loading=${busy === `o${i}`} disabled=${!!busy} onClick=${() => act("answer", { text: String(i + 1) }, `o${i}`)}>${o.label}<//>`)}
       ${item.kind === "question" && !writing && html`<button type="button" class="text" disabled=${!!busy} onClick=${() => setWriting(true)}>${t("needs.reply")}</button>`}
-      ${item.kind === "approval" && html`<${Button} variant="primary" loading=${busy === "approve"} disabled=${!!busy} onClick=${() => act("approve")}>${t("needs.approveOnce")}<//>
+      ${item.kind === "approval" && !item.appConnect && html`<${Button} variant="primary" loading=${busy === "approve"} disabled=${!!busy} onClick=${() => act("approve")}>${t("needs.approveOnce")}<//>
         <${Button} loading=${busy === "deny"} disabled=${!!busy} onClick=${() => act("deny")}>${t("needs.deny")}<//>`}
+      ${item.appConnect && html`<${Button} variant="primary" disabled=${!!busy} onClick=${() => openRepair(item.appConnect)}>${t(`apps.card.fix.${item.appConnect.kind}`)}<//>
+        <button type="button" class="text" disabled=${!!busy} onClick=${() => act("deny")}>${t("apps.card.notNow")}</button>`}
       ${item.kind === "failed" && (can("continue")
         ? html`<${Button} variant="primary" loading=${busy === "continue"} disabled=${!!busy} onClick=${() => act("continue")}>${t("needs.continue")}<//>`
         : html`<${Button} loading=${busy === "retry"} disabled=${!!busy} onClick=${() => act("retry")}>${t("common.retry")}<//>`)}

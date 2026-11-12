@@ -5,8 +5,8 @@
    只读是 --well 底、聚焦不发光；禁用变淡且不响应悬停。系统高对比度模式下没有填充，补回一道系统色的边。 */
 .field {
   --field-h: var(--ctl-lg);
-  --field-px: var(--space-2-5);
-  --field-r: var(--r-md);
+  --field-px: var(--space-3);   /* = --r-field：字不落进圆角里；高矮不同的输入框都是这一个值 */
+  --field-r: var(--r-field);
   --field-bg: var(--fill-field);
   --field-bg-hover: var(--fill-field-hover);
   --field-ring: 0 0 0 3px var(--fill-field);   /* 描边：聚焦的淡光晕（和填充同色，读起来不是一道线），键盘用户要看得出焦点 */
@@ -26,7 +26,7 @@
 @media (forced-colors: active) { .field { border: 1px solid CanvasText; } }   /* 描边：系统高对比度模式下没有填充，要一道系统色的边才认得出输入框 */
 textarea.field { height: auto; padding: var(--space-2) var(--field-px); resize: none; line-height: var(--lh-normal); }
 
-/* 尾部按钮：32 高的框里放 24 的按钮，离框的上、下、右边都是 4；文字停在按钮左边 8 */
+/* 尾部按钮：36 高的框里放 28 的按钮，离框的上、下、右边都是 4；文字停在按钮左边 8 */
 .field-wrap { --tail-w: calc(2 * var(--ctl-sm) + var(--space-0-5)); position: relative; display: flex; align-items: center; }
 .field-wrap .field { padding-right: calc(var(--space-1) + var(--tail-w) + var(--space-2)); }
 .field-wrap .tail { position: absolute; right: var(--space-1); display: flex; gap: var(--space-0-5); }

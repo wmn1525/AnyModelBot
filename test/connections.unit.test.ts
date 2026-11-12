@@ -8,7 +8,10 @@ import { FeishuAccounts, messageText } from "../src/tools/accounts/feishu.js";
 import { locateDshRuntime } from "../src/agent/host.js";
 import { AgentManager } from "../src/agent/manager.js";
 import { NOTION_VERSION, NotionService, mcpProperties, notionId, propertyText, restProperties } from "../src/tools/accounts/notion.js";
-import { DEFAULT_SETTINGS } from "../src/agent/settings.js";
+import { DEFAULT_SETTINGS, normalizeSettings } from "../src/agent/settings.js";
+import { AppService } from "../src/tools/apps/service.js";
+import { MemorySecrets } from "../src/tools/apps/secrets.js";
+import { appConnectOf, appToolOf, promptButtons, promptText } from "../src/agent/approvals.js";
 import { findAppRoot } from "../src/magpie/supervisor.js";
 import { RULE_DENY } from "../src/tasks/rules.js";
 import { Store } from "../src/store/db.js";
@@ -136,7 +139,7 @@ describe("已授权账号：全局列表", () => {
 
   it("只有一个账号可以不说；没有账号时提示去设置里加", () => {
     const accounts = new AccountStore(memoryKv());
-    expect(() => accounts.resolve("notion", undefined)).toThrow(/Settings > Connections/);
+    expect(() => accounts.resolve("notion", undefined)).toThrow(/Connect apps/);
     add(accounts, "notion", "Acme");
     expect(accounts.resolve("notion", undefined).label).toBe("Acme");
   });
@@ -320,7 +323,7 @@ describe("Notion：令牌账号走 REST", () => {
   it("令牌被拒：账号标记要重新授权，给模型的话里没有令牌；之后成功就清掉", async () => {
     const { notion, account, accounts } = notionWith([{ status: 401, json: { message: `bad ${TOKEN}` } }, { json: { results: [] } }]);
     const err: Error = await notion.run(account, "search", {}).catch((e) => e);
-    expect(err.message).toMatch(/Settings > Connections/);
+    expect(err.message).toMatch(/Connect apps/);
     expect(err.message).not.toContain(TOKEN);
     expect(accounts.get(account.id)!.needsReauth).toBe(true);
     await notion.run(account, "search", {});
@@ -693,76 +696,295 @@ describe("飞书账号：添加流程", () => {
   });
 });
 
-/** 宿主这一侧：bridge 的 /dsh/connections 经 AgentManager 交给 ConnectionService */
+/**
+ * 宿主这一侧：bridge 的 /dsh/connections（现有账号的那几个工具）和 /dsh/apps（三个固定的应用工具）经 AgentManager 交给 AppService。
+ * 机器人 b1 不在数据库里：用默认设置（工作区可写、使用全部应用）；需要改设置、记「以后都允许」的用例自己建机器人。
+ */
 async function hostWith(replies: Reply[]) {
   const { send, calls } = fakeFetch(replies);
-  const connections = new ConnectionService({ kv: memoryKv(), fetch: () => send });
+  const kv = memoryKv();
+  const secrets = new MemorySecrets();
+  const connections = new ConnectionService({ kv, fetch: () => send, secrets });
   connections.accounts.upsert({ service: "notion", label: "Acme", identity: "t", auth: { kind: "notion-token", token: TOKEN } });
-  const mgr = new AgentManager({ store: new Store(":memory:"), dataDir: fs.mkdtempSync(path.join(os.tmpdir(), "amb-conn-")), runtimeDir: undefined, upstream: () => ({ baseUrl: "", apiKey: "" }), enabled: false, connections });
-  (mgr as any).hosts.set("b1", { taskRootOf: () => undefined });
+  const apps = new AppService({ kv, secrets, connections });
+  const store = new Store(":memory:");
+  const mgr = new AgentManager({ store, dataDir: fs.mkdtempSync(path.join(os.tmpdir(), "amb-conn-")), runtimeDir: undefined, upstream: () => ({ baseUrl: "", apiKey: "" }), enabled: false, apps });
+  const fakeHost = { taskRootOf: () => undefined, syncPrompt: () => {}, restartIfStale: async () => false };
+  (mgr as any).hosts.set("b1", fakeHost);
   await mgr.bridge.start();
-  const post = (body: unknown) =>
-    fetch(`${mgr.bridge.url}/dsh/connections`, { method: "POST", headers: { authorization: `Bearer ${mgr.bridge.token}`, "content-type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
-  return { mgr, calls, post, connections };
+  const call = (route: string, body: unknown) =>
+    fetch(`${mgr.bridge.url}${route}`, { method: "POST", headers: { authorization: `Bearer ${mgr.bridge.token}`, "content-type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
+  const post = (body: unknown) => call("/dsh/connections", body);
+  const app = (body: unknown) => call("/dsh/apps", body);
+  /** 等到有一条待处理的审批（调用正卡在那里等用户） */
+  const pending = async () => {
+    for (let i = 0; i < 200; i++) {
+      const rows = mgr.approvals.pendingAll();
+      if (rows.length) return rows;
+      await new Promise((r) => setTimeout(r, 10));
+    }
+    return [];
+  };
+  const addBot = (settings: Record<string, unknown> = {}) => {
+    const bot = store.createBot({ name: "写作机器人", settings: normalizeSettings(settings) });
+    (mgr as any).hosts.set(bot.id, fakeHost);
+    return bot.id;
+  };
+  return { mgr, calls, post, app, pending, connections, apps, store, addBot };
 }
 
 describe("bridge /dsh/connections → 宿主", () => {
-  const write = { botId: "b1", sessionId: "s", service: "notion", op: "create", args: { parent: PAGE, title: "x" } };
+  const write = { botId: "b1", sessionId: "s", service: "notion", op: "create", args: { parent: PAGE, title: "周报 11.11" } };
 
   it("所有机器人共用：任何已知机器人都能用；不认识的回不可用，错误文字给模型", async () => {
     const { mgr, post, calls } = await hostWith([{ json: { results: [] } }, { json: { results: [] } }, { status: 404 }]);
     try {
-      (mgr as any).hosts.set("b2", { taskRootOf: () => undefined });
+      (mgr as any).hosts.set("b2", { taskRootOf: () => undefined, syncPrompt: () => {}, restartIfStale: async () => false });
       expect((await post({ botId: "b1", service: "notion", op: "search", args: {} })).text).toMatch(/Nothing found/);
       expect((await post({ botId: "b2", service: "notion", op: "search", args: {} })).text).toMatch(/Nothing found/);
       expect((await post({ botId: "nobody", service: "notion", op: "search", args: {} })).error).toMatch(/not available/);
       expect((await post({ botId: "b1", service: "notion", op: "read", args: { page: PAGE } })).error).toMatch(/Not found in Notion/);
       expect((await post({ botId: "b1", service: "accounts", op: "list", args: {} })).text).toContain("1. Acme");
       expect(calls).toHaveLength(3);
+      // 只读不用问
+      expect(mgr.approvals.pendingAll()).toEqual([]);
     } finally {
       await mgr.bridge.stop();
     }
   });
 
-  it("只读机器人：写操作在宿主这边就拒绝，读照常", async () => {
+  it("只读机器人：写操作在宿主这边就拒绝（不出审批卡片），读照常", async () => {
     const { mgr, post, calls } = await hostWith([{ json: { results: [] } }]);
     try {
       vi.spyOn(mgr, "settings").mockReturnValue({ ...DEFAULT_SETTINGS, permission: "readonly" });
       expect((await post(write)).error).toMatch(/read-only/);
       expect(calls).toHaveLength(0);
+      expect(mgr.approvals.pendingAll()).toEqual([]);
       expect((await post({ botId: "b1", service: "notion", op: "search", args: {} })).text).toBeTruthy();
     } finally {
       await mgr.bridge.stop();
     }
   });
 
-  it("观察规则不能写；执行规则可以", async () => {
-    const { mgr, post, calls } = await hostWith([{ json: pageJson("x") }]);
+  it("工作区可写（默认）：写入先出审批卡片——哪个应用、哪个工具、关键参数；批了才执行，拒绝就不执行并告诉模型", async () => {
+    const { mgr, post, pending, calls } = await hostWith([{ json: pageJson("周报 11.11") }]);
     try {
-      let mode = "observe";
-      (mgr as any).tasks = { ruleOfSession: () => ({ ruleId: "r", runId: "u", conversationId: "c", mode }) };
-      expect((await post(write)).error).toMatch(/only observes/);
+      const first = post(write);
+      const [row] = await pending();
+      expect(row).toMatchObject({ kind: "approval", botId: "b1", tool: "Notion · notion_create_page" });
+      expect(row.detail).toContain("title: 周报 11.11");
+      expect(appToolOf(row)).toMatchObject({ app: "notion", tool: "notion_create_page", category: "write", always: true, params: expect.arrayContaining([["title", "周报 11.11"]]) });
       expect(calls).toHaveLength(0);
-      mode = "act";
-      expect((await post(write)).text).toMatch(/Created/);
+      // 渠道里的文字提示沿用现有的写法；卡片按钮是允许 / 拒绝
+      expect(promptText(row)).toContain("Notion · notion_create_page");
+      expect(promptButtons(row)).toHaveLength(2);
+      expect(mgr.approvals.decide(row.id, true, "web")).toBe(true);
+      expect((await first).text).toMatch(/Created/);
+      expect(calls).toHaveLength(1);
+      // 「允许（仅本次）」只管这一次：再写还问。这次拒绝
+      const second = post(write);
+      const [again] = await pending();
+      expect(again.id).not.toBe(row.id);
+      mgr.approvals.decide(again.id, false, "web");
+      expect((await second).error).toMatch(/denied/);
+      expect(calls).toHaveLength(1);
     } finally {
       await mgr.bridge.stop();
     }
   });
 
-  it("规则的工具清单：观察去掉写工具，执行留着，读工具都留着", () => {
+  it("「以后这个工具都允许」：同一个机器人对同一个工具不再出卡片；在机器人设置里撤销后恢复；别的机器人不受影响", async () => {
+    const { mgr, post, pending, calls, store, addBot } = await hostWith([{ json: pageJson("a") }, { json: pageJson("b") }]);
+    try {
+      const bot = addBot();
+      const other = addBot();
+      const mine = { ...write, botId: bot };
+      const first = post(mine);
+      const [row] = await pending();
+      expect(mgr.approvals.decide(row.id, true, "web", { always: true })).toBe(true);
+      expect((await first).text).toMatch(/Created/);
+      expect(store.getApproval(row.id)).toMatchObject({ status: "allowed", result: "always" });
+      const granted = store.getBot(bot)!.settings.apps.alwaysAllow;
+      expect(Object.keys(granted.notion)).toEqual(["notion_create_page"]);
+      // 第二次直接执行，没有新的审批
+      expect((await post(mine)).text).toMatch(/Created/);
+      expect(mgr.approvals.pendingAll()).toEqual([]);
+      expect(calls).toHaveLength(2);
+      // 另一个机器人还是要问
+      const theirs = post({ ...write, botId: other });
+      const [otherRow] = await pending();
+      expect(otherRow.botId).toBe(other);
+      mgr.approvals.decide(otherRow.id, false, "web");
+      await theirs;
+      // 撤销：下一次写入又出卡片
+      const cur = store.getBot(bot)!;
+      store.updateBot(bot, { settings: { ...cur.settings, apps: { ...cur.settings.apps, alwaysAllow: {} } } });
+      const third = post(mine);
+      const [back] = await pending();
+      expect(appToolOf(back)!.always).toBe(true);
+      mgr.approvals.decide(back.id, false, "web");
+      await third;
+    } finally {
+      await mgr.bridge.stop();
+    }
+  });
+
+  it("完全权限：写入直接执行，不问", async () => {
+    const { mgr, post, calls, addBot } = await hostWith([{ json: pageJson("x") }]);
+    try {
+      const bot = addBot({ permission: "full" });
+      expect((await post({ ...write, botId: bot })).text).toMatch(/Created/);
+      expect(mgr.approvals.pendingAll()).toEqual([]);
+      expect(calls).toHaveLength(1);
+    } finally {
+      await mgr.bridge.stop();
+    }
+  });
+
+  it("应用没分给这个机器人、或工具被它关掉：看不到也调不了", async () => {
+    const { mgr, post, calls, apps, addBot } = await hostWith([]);
+    try {
+      const bot = addBot({ apps: { toolsOff: { notion: ["notion_search"] } } });
+      expect((await post({ botId: bot, service: "notion", op: "search", args: {} })).error).toMatch(/turned off/);
+      apps.setAccess("notion", ["someone-else"]);
+      expect((await post({ botId: bot, service: "notion", op: "read", args: { page: PAGE } })).error).toMatch(/not available to this bot/);
+      expect(calls).toHaveLength(0);
+    } finally {
+      await mgr.bridge.stop();
+    }
+  });
+
+  it("观察规则不能写（直接拒绝并说明）；执行规则的写入进审批，批了才执行", async () => {
+    const { mgr, post, pending, calls } = await hostWith([{ json: pageJson("x") }]);
+    try {
+      let mode = "observe";
+      (mgr as any).tasks = { ruleOfSession: () => ({ ruleId: "r", runId: "u", conversationId: "c", mode }), taskOfSession: () => undefined };
+      expect((await post(write)).error).toBe("This task is observe-only and can't use write, delete, or outbound tools.");
+      expect(calls).toHaveLength(0);
+      expect(mgr.approvals.pendingAll()).toEqual([]);
+      mode = "act";
+      const run = post(write);
+      const [row] = await pending();
+      expect(row).toMatchObject({ ruleId: "r", runId: "u", conversationId: "c" });
+      mgr.approvals.decide(row.id, true, "web");
+      expect((await run).text).toMatch(/Created/);
+    } finally {
+      await mgr.bridge.stop();
+    }
+  });
+
+  it("规则的工具清单：观察去掉写工具，执行留着，读工具都留着；规则里不能请用户去连接应用", () => {
     for (const tool of ["notion_create_page", "notion_update_page"]) {
       expect(RULE_DENY.observe).toContain(tool);
       expect(RULE_DENY.act).not.toContain(tool);
     }
-    for (const tool of ["notion_read_page", "feishu_read_chat", "connected_accounts"]) expect(RULE_DENY.observe).not.toContain(tool);
+    for (const tool of ["notion_read_page", "feishu_read_chat", "connected_accounts", "app_tools", "app_call"]) expect(RULE_DENY.observe).not.toContain(tool);
+    for (const mode of ["observe", "act"] as const) expect(RULE_DENY[mode]).toContain("app_connect");
+  });
+});
+
+describe("bridge /dsh/apps → 宿主（三个固定的应用工具和连接卡片）", () => {
+  /** 聊天回合里来的调用：会话 s1 属于这个机器人的一个对话 */
+  async function chat() {
+    const h = await hostWith([]);
+    const bot = h.addBot();
+    const conv = h.store.ensureConversation(bot, "web", "console");
+    h.store.setAgentSession(conv.id, bot, "s1");
+    return { ...h, bot, conv };
+  }
+
+  it("没有连接时：清单里列出可以去连的应用；找工具、看参数回的是给模型的说明", async () => {
+    const { mgr, app, bot } = await chat();
+    try {
+      const list = (await app({ botId: bot, sessionId: "s1", op: "list", args: {} })).text;
+      expect(list).toContain('Notion (app "notion")');
+      expect(list).toMatch(/Not connected yet.*feishu/);
+      expect((await app({ botId: bot, sessionId: "s1", op: "tools", args: { app: "notion" } })).text).toMatch(/use their own tools directly/);
+      expect((await app({ botId: bot, sessionId: "s1", op: "call", args: { app: "linear", tool: "x" } })).error).toMatch(/app_connect/);
+      expect((await app({ botId: bot, sessionId: "s1", op: "nope", args: {} })).error).toBe("unknown op");
+    } finally {
+      await mgr.bridge.stop();
+    }
+  });
+
+  it("app_connect：对话里出「去连接」卡片并等着；连上后卡片记成已处理，调用返回、原来的任务接着做", async () => {
+    const { mgr, app, pending, apps, bot, conv } = await chat();
+    try {
+      const waiting = app({ botId: bot, sessionId: "s1", op: "connect", args: { app: "linear", reason: "要把纪要记成 Linear 的 issue，需要先连接 Linear。" } });
+      const [row] = await pending();
+      expect(row).toMatchObject({ kind: "approval", tool: "app_connect", conversationId: conv.id, botId: bot });
+      expect(appConnectOf(row)).toMatchObject({ app: "linear", appName: "Linear", kind: "connect", custom: false, reason: expect.stringContaining("Linear") });
+      // 渠道里只提示回到电脑上处理，没有按钮；回 y 不算数，界面也只能关掉不能「批准」
+      expect(promptText(row)).toBe(t("apps.channelConnect", { app: "Linear" }));
+      expect(promptButtons(row)).toBeUndefined();
+      expect(mgr.approvals.handleReply(conv.id, `y ${row.code}`, "wx").handled).toBe(true);
+      expect(mgr.approvals.decide(row.id, true, "web")).toBe(false);
+      expect(mgr.approvals.pendingAll()).toHaveLength(1);
+      // 同一个应用再要一次：还是这一张卡片，不堆第二张
+      const again = app({ botId: bot, sessionId: "s1", op: "connect", args: { app: "linear", reason: "again" } });
+      await new Promise((r) => setTimeout(r, 50));
+      expect(mgr.approvals.pendingAll()).toHaveLength(1);
+      // 用户连上了（这里直接放一条已连接的记录进去）
+      apps.store.put({ id: "lin1", app: "linear", label: "Linear", identity: "lin1", transport: "http", url: "https://mcp.linear.app/mcp", auth: "oauth", enabled: true, state: "connected", checkedAt: Date.now(), tools: [{ name: "list_issues", description: "List issues", inputSchema: { type: "object" }, category: "read", hash: "h" }], createdAt: Date.now() }, {});
+      const done = await waiting;
+      expect(done.text).toMatch(/Linear is connected/);
+      expect(done.text).toContain("linear / list_issues [read]");
+      expect((await again).text).toMatch(/Linear is connected/);
+      expect(mgr.approvals.pendingAll()).toEqual([]);
+    } finally {
+      await mgr.bridge.stop();
+    }
+  });
+
+  it("用户关掉卡片（先不连接）：告诉模型没连上；已经连着的应用不出卡片", async () => {
+    const { mgr, app, pending, bot } = await chat();
+    try {
+      const waiting = app({ botId: bot, sessionId: "s1", op: "connect", args: { app: "github", reason: "x" } });
+      const [row] = await pending();
+      expect(mgr.approvals.decide(row.id, false, "web")).toBe(true);
+      expect((await waiting).error).toMatch(/did not connect GitHub/);
+      expect((await app({ botId: bot, sessionId: "s1", op: "connect", args: { app: "notion", reason: "x" } })).text).toMatch(/Notion is connected/);
+      expect((await app({ botId: bot, sessionId: "s1", op: "connect", args: { app: "no-such-app", reason: "x" } })).error).toMatch(/There is no app/);
+    } finally {
+      await mgr.bridge.stop();
+    }
+  });
+
+  it("后台任务、规则里没人在旁边：不出卡片、不等，直接告诉模型去提醒用户", async () => {
+    const { mgr, app } = await hostWith([]);
+    try {
+      expect((await app({ botId: "b1", sessionId: "task-1", op: "connect", args: { app: "linear", reason: "x" } })).error).toMatch(/nobody is here/);
+      expect(mgr.approvals.pendingAll()).toEqual([]);
+    } finally {
+      await mgr.bridge.stop();
+    }
+  });
+
+  it("现有账号授权失效：出「重新授权」卡片；用户处理完后自动重试刚才那一步", async () => {
+    // 第一次 Notion 拒绝了令牌（账号被标成要重新授权），用户处理完后的重试成功
+    const h = await hostWith([{ status: 401, json: { code: "unauthorized" } }, { json: { results: [] } }]);
+    const bot = h.addBot();
+    const conv = h.store.ensureConversation(bot, "web", "console");
+    h.store.setAgentSession(conv.id, bot, "s1");
+    try {
+      const acc = h.connections.accounts.list("notion")[0];
+      const run = h.post({ botId: bot, sessionId: "s1", service: "notion", op: "search", args: {} });
+      const [row] = await h.pending();
+      expect(h.connections.accounts.get(acc.id)!.needsReauth).toBe(true);
+      expect(appConnectOf(row)).toMatchObject({ app: "notion", kind: "reauthorize", accountId: acc.id });
+      expect(promptText(row)).toBe(t("apps.channelRepair", { app: "Notion" }));
+      h.connections.accounts.update(acc.id, { needsReauth: false });
+      expect((await run).text).toMatch(/Nothing found/);
+    } finally {
+      await h.mgr.bridge.stop();
+    }
   });
 });
 
 describe("amb-connections 插件", () => {
   const runtime = locateDshRuntime(findAppRoot());
 
-  it.skipIf(!runtime)("有账号才注册工具：只读没有写工具，飞书只读；调用经 bridge 由宿主执行，带上选的账号", async () => {
+  it.skipIf(!runtime)("宿主让注册什么就注册什么：现有账号的工具和固定的应用工具；调用经 bridge 由宿主执行，带上选的账号", async () => {
     const { mgr, calls } = await hostWith([{ json: { results: [pageJson("Plan")] } }, { status: 404 }]);
     const env = { ...process.env };
     try {
@@ -776,14 +998,20 @@ describe("amb-connections 插件", () => {
         return tools;
       };
       const NOTION_READ = ["notion_search", "notion_read_page", "notion_query_database"];
+      const NOTION_WRITE = ["notion_create_page", "notion_update_page"];
       const FEISHU = ["feishu_list_chats", "feishu_read_chat", "feishu_search_messages"];
+      const APPS = ["app_tools", "app_tool_schema", "app_call", "app_connect"];
+      // 宿主说注册什么就注册什么：apps = 三个固定的应用工具（加 app_connect），tools = 现有账号的工具里这个机器人能用的
       expect(load({})).toEqual([]);
-      expect(load({ feishu: "read" }).map((t) => t.name)).toEqual(["connected_accounts", ...FEISHU]);
-      expect(load({ notion: "read" }).map((t) => t.name)).toEqual(["connected_accounts", ...NOTION_READ]);
-      const tools = load({ notion: "write", feishu: "read" });
-      expect(tools.map((t) => t.name)).toEqual(["connected_accounts", ...FEISHU, ...NOTION_READ, "notion_create_page", "notion_update_page"]);
+      expect(load({ apps: false, tools: [] })).toEqual([]);
+      expect(load({ apps: true, tools: [] }).map((t) => t.name)).toEqual(["connected_accounts", ...APPS]);
+      expect(load({ apps: false, tools: FEISHU }).map((t) => t.name)).toEqual(["connected_accounts", ...FEISHU]);
+      expect(load({ apps: true, tools: NOTION_READ }).map((t) => t.name)).toEqual(["connected_accounts", ...NOTION_READ, ...APPS]);
+      const tools = load({ apps: true, tools: [...FEISHU, ...NOTION_READ, ...NOTION_WRITE] });
+      expect(tools.map((t) => t.name)).toEqual(["connected_accounts", ...FEISHU, ...NOTION_READ, ...NOTION_WRITE, ...APPS]);
       expect(tools.some((t) => /delete|trash|archive|send/.test(t.name))).toBe(false);
-      for (const t of tools.filter((t) => t.name !== "connected_accounts")) expect(t.parameters.properties.account).toBeTruthy();
+      for (const t of tools.filter((t) => !["connected_accounts", "app_tools", "app_tool_schema", "app_connect"].includes(t.name))) expect(t.parameters.properties.account).toBeTruthy();
+      expect(tools.find((t) => t.name === "app_call").parameters.properties.arguments).toBeTruthy();
 
       const exec = { agent: { session: { id: "s1" } }, signal: AbortSignal.timeout(5000) };
       const search = tools.find((t) => t.name === "notion_search");

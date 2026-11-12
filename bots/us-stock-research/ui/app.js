@@ -190,9 +190,9 @@ function Report({ bot, run, report }) {
   const text = report ?? run.preview;
   if (!text) return html`<${Empty}>${bot.t("noReport")}<//>`;
   const blocks = parseBlocks(text);
-  const charts = chartsFrom(blocks);
+  const charts = chartsFrom(blocks, bot.lang);
   return html`<article class="us-report">
-    ${charts && html`<${Kpis} data=${charts} t=${bot.t} /><${Charts} data=${charts} />`}
+    ${charts && html`<${Kpis} data=${charts} t=${bot.t} lang=${bot.lang} /><${Charts} data=${charts} />`}
     <${Markdown} blocks=${blocks} />
     ${report && html`<p class="kit-foot md-url">${bot.t("reportFile", { path: `app/reports/${run.id}/report.md` })}</p>`}
   </article>`;

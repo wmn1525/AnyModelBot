@@ -1,6 +1,6 @@
 # 貢献ガイド
 
-[简体中文](./CONTRIBUTING.md) | [English](./CONTRIBUTING_en.md) | 日本語 | [한국어](./CONTRIBUTING_ko.md) | [Русский](./CONTRIBUTING_ru.md)
+[简体中文](./CONTRIBUTING.md) | [English](./CONTRIBUTING_en.md) | 日本語 | [한국어](./CONTRIBUTING_ko.md) | [Русский](./CONTRIBUTING_ru.md) | [Español](./CONTRIBUTING_es.md) | [Português (Brasil)](./CONTRIBUTING_pt.md)
 
 AnyModelBot の改善にご協力いただきありがとうございます。不具合報告、修正、文書、アイデアのいずれも歓迎します。
 

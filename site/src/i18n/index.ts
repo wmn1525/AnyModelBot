@@ -4,12 +4,14 @@ import { en } from "./en";
 import { ja } from "./ja";
 import { ko } from "./ko";
 import { ru } from "./ru";
+import { es } from "./es";
+import { pt } from "./pt";
 import { LOCALES, type Lang } from "./locales";
 export { LANGS, READY_LANGS, LOCALES, href, switchHref, normalizeLang, type Lang } from "./locales";
 import { pricing, releases } from "../lib/site";
 
 export { RAW_DICTS } from "./catalogs";
-export const DICTS = { zh, en, ja, ko, ru } satisfies Record<Lang, Dict>;
+export const DICTS = { zh, en, ja, ko, ru, es, pt } satisfies Record<Lang, Dict>;
 export const dict = (lang: Lang): Dict => DICTS[lang];
 
 /** "{a} / {b}" + { a, b } → 文本；未提供的变量原样保留（生产构建的占位符检查会拦下） */

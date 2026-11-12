@@ -1,0 +1,75 @@
+{
+  "title": "Ações dos EUA",
+  "runs": [
+    {
+      "id": "sample-aapl",
+      "question": "Pesquise a evolução da receita e da margem bruta da Apple em cinco anos e faça um relatório",
+      "status": "done",
+      "updatedAt": "2026-11-03T10:30:00Z",
+      "plan": [
+        {
+          "text": "Encontrar o CIK da Apple",
+          "done": true
+        },
+        {
+          "text": "Obter a receita e o lucro bruto de FY2021–FY2025",
+          "done": true
+        },
+        {
+          "text": "Ler a análise da margem bruta no 10-K do FY2025",
+          "done": true
+        },
+        {
+          "text": "Calcular a margem bruta e conferir com os dados originais",
+          "done": true
+        },
+        {
+          "text": "Escrever o relatório",
+          "done": true
+        }
+      ],
+      "limitations": [
+        "O FY2023 teve 53 semanas, e os outros anos, 52",
+        "As margens por segmento só cobrem do FY2023 ao FY2025"
+      ],
+      "preview": "# Receita e margem bruta da Apple, FY2021–FY2025\n\n## Conclusão\n\nEm cinco anos fiscais, a receita cresceu 13,8%, de US$ 365,817 bilhões para US$ 416,161 bilhões. A margem bruta subiu 5,13 pontos percentuais, de 41,78% para 46,91%. Os dados por segmento do 10-K mostram que a maior parte do ganho desde o FY2023 veio de Serviços: a margem bruta desse segmento subiu de 70,8% para 75,4%, enquanto a de Produtos só passou de 36,5% para 36,8%.\n\n## Dados\n\nEm milhões de dólares americanos. A margem bruta foi calculada a partir dos valores da tabela.\n\n| Ano fiscal | Encerrado em | Receita | Lucro bruto | Margem bruta |\n| --- | --- | ---: | ---: | ---: |\n| FY2021 | 2021-09-25 | 365.817 | 152.836 | 41,78% |\n| FY2022 | 2022-09-24 | 394.328 | 170.782 | 43,31% |\n| FY2023 | 2023-09-30 | 383.285 | 169.148 | 44,13% |\n| FY2024 | 2024-09-28 | 391.035 | 180.683 | 46,21% |\n| FY2025 | 2025-09-27 | 416.161 | 195.201 | 46,91% |\n\nMargem bruta por segmento, do Item 7 do 10-K do FY2025:\n\n| | FY2023 | FY2024 | FY2025 |\n| --- | ---: | ---: | ---: |\n| Produtos | 36,5% | 37,2% | 36,8% |\n| Serviços | 70,8% | 73,9% | 75,4% |\n\n## Análise\n\n- A receita caiu 2,8% no FY2023 e depois cresceu por dois anos seguidos.\n- O 10-K do FY2025 atribui a margem menor de Produtos principalmente ao mix de produtos e aos custos com tarifas.\n- O mesmo documento diz que a Apple espera que as margens brutas em geral enfrentem volatilidade e pressão de queda.\n\n## Limitações\n\n- O FY2023 teve 53 semanas, e os outros anos, 52, o que afeta um pouco as comparações ano a ano.\n- As margens por segmento só cobrem do FY2023 ao FY2025. Os anos anteriores não foram lidos.\n- Este exemplo foi obtido em 3 de novembro de 2026, quando o relatório anual mais recente no EDGAR era o do FY2025.\n\n## Fontes\n\n- Dados XBRL (accession numbers): 0000320193-23-000106, 0000320193-24-000123, 0000320193-25-000079\n- 10-K do FY2025: https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm\n\n> Este relatório foi gerado por IA a partir de dados públicos, apenas para fins de aprendizado e informação. Não é recomendação de investimento nem aconselhamento tributário ou jurídico. Os dados podem estar incompletos, errados ou desatualizados, e o desempenho passado não indica resultados futuros. Consulte um profissional habilitado antes de investir. Você é responsável por quaisquer perdas.\n",
+      "calls": [
+        {
+          "ts": "2026-11-03T10:25:58Z",
+          "tool": "lookup",
+          "target": "AAPL",
+          "url": "https://www.sec.gov/files/company_tickers.json",
+          "status": 200
+        },
+        {
+          "ts": "2026-11-03T10:25:59Z",
+          "tool": "concept",
+          "target": "0000320193 us-gaap/RevenueFromContractWithCustomerExcludingAssessedTax annual",
+          "url": "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/RevenueFromContractWithCustomerExcludingAssessedTax.json",
+          "status": 200
+        },
+        {
+          "ts": "2026-11-03T10:26:00Z",
+          "tool": "concept",
+          "target": "0000320193 us-gaap/GrossProfit annual",
+          "url": "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/GrossProfit.json",
+          "status": 200
+        },
+        {
+          "ts": "2026-11-03T10:26:01Z",
+          "tool": "filings",
+          "target": "0000320193 10-K 1",
+          "url": "https://data.sec.gov/submissions/CIK0000320193.json",
+          "status": 200
+        },
+        {
+          "ts": "2026-11-03T10:26:02Z",
+          "tool": "read",
+          "target": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+          "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+          "status": 200
+        }
+      ]
+    }
+  ]
+}

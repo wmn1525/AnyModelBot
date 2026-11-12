@@ -1,6 +1,6 @@
 export default {
   "aria": "{name} との会話",
-  "infoPanel": "情報パネル（⌘⇧I）",
+  "infoPanel": "右パネル（⌘⇧I）",
   "newConvCmd": "新しい会話（/new）",
   "toBottom": "一番下にスクロール",
   "copyMessage": "メッセージをコピー",
@@ -76,7 +76,7 @@ export default {
     "guideTitle": "こんにちは、{name} です",
     "guideBody": "5 分ほどで、チェックリストを通じてできることを体験できます。",
     "title": "{name} と話してみましょう",
-    "body": "ここでボットを試せます。情報パネルから WeChat、Feishu、Telegram、Slack、Discord に接続できます。",
+    "body": "ここでボットを試せます。右パネルから WeChat、Feishu、Telegram、Slack、Discord に接続できます。",
     "sample": "どんなことを手伝ってくれますか？",
     "helpChip": "/help でコマンドを表示"
   },

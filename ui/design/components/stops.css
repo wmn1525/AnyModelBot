@@ -16,7 +16,7 @@
   --stops-dot-bg: color-mix(in srgb, var(--fg) 28%, transparent);
   --stops-dot-on: color-mix(in srgb, var(--on-primary) 55%, transparent);
   --stops-run: calc(100cqw - var(--stops-h));        /* 圆钮能走的距离 */
-  position: relative; container-type: inline-size; height: var(--stops-h); border-radius: var(--r-full); overflow: hidden;
+  position: relative; container-type: inline-size; height: var(--stops-h); border-radius: var(--r-ctl); overflow: hidden;
   background: var(--stops-track); cursor: pointer; touch-action: none; user-select: none;
   transition: background var(--t-base);
 }

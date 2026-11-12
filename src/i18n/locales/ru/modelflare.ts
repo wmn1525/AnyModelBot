@@ -1,6 +1,6 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
-  unreachable: "Не удалось подключиться к {host} ({reason})",
+  unreachable: "Не удалось подключиться к {host} ({reason}). Проверьте сеть. Если вы используете прокси или VPN, включите системный прокси или режим TUN и повторите попытку",
   timeout: "время истекло",
   invalid_key: "Ключ недействителен или отозван",
   forbidden: "Этому ключу запрещён доступ к модели или группе",

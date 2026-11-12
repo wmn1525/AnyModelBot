@@ -1,15 +1,15 @@
 /* 对话页。布局与顶栏参考 Grok Bot，对话流与输入框参考 Codex：
-   顶栏 52（头像 + 名称 | 新对话 · 信息面板），760 阅读列；用户消息是浅灰气泡，机器人回复是整列正文；
+   顶栏 56（头像 + 名称 | 新对话 · 信息面板），760 阅读列；用户消息是浅灰气泡，机器人回复是整列正文；
    底部是两行输入框（文字区 + 工具栏：更多 | 模型 · 发送）。
    顶栏和输入框盖在对话流上：几乎不透，消息从底下滚过去只隐约看得到。 */
 @layer app {
 /* 对话列和输入框同宽、同一个居中列（两侧至少 --page-gutter）。输入框浮在主区底部，
    对话列的下边距和"回到底部"的位置都从它的高度算出来，改输入框的内边距时这里跟着变。 */
 .chat, .composer {
-  --composer-line: calc(22px * var(--fs-scale));   /* 输入框的行高：跟着设置 › 外观 › 字体大小变 */
-  --composer-pad: var(--space-2); /* 工具栏离输入框的左、右、下边：加号和发送钮都贴着这条线 */
-  /* 一行字时输入框的高度：文字区（上 14 + 行高 + 下 4）+ 工具栏（上 6 + 发送钮 + 下 --composer-pad） */
-  --composer-h: calc(var(--space-3-5) + var(--composer-line) + var(--space-1) + var(--space-1-5) + var(--ctl-lg) + var(--composer-pad));
+  --composer-line: calc(24px * var(--fs-scale));   /* 输入框的行高：跟着设置 › 外观 › 字体大小变 */
+  --composer-pad: var(--space-2-5); /* 工具栏离输入框的左、右、下边：加号和发送钮都贴着这条线 */
+  /* 一行字时输入框的高度：文字区（上 16 + 行高 + 下 4）+ 工具栏（上 6 + 发送钮 + 下 --composer-pad） */
+  --composer-h: calc(var(--space-4) + var(--composer-line) + var(--space-1) + var(--space-1-5) + var(--ctl-lg) + var(--composer-pad));
 }
 .chat {
   --col: min(var(--col-w), calc(100% - 2 * var(--page-gutter)));
@@ -28,10 +28,10 @@
 }
 .chat-head > * { -webkit-app-region: no-drag; }
 .chat-head .grow { -webkit-app-region: drag; align-self: stretch; }
-.chat-head .icon-btn { --ib-size: var(--ctl-md); }   /* 16 的图标四周各 6：最右的图标外沿落在 --head-px + 6 = 16，和左边的头像对称 */
+.chat-head .icon-btn { --ib-size: var(--ctl-md); }   /* 16 的图标四周各 --ib-inset：最右的图标外沿落在 --head-px + --ib-inset = --pane-px，和左边的头像对称 */
 .head-bot {
-  display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; height: var(--ctl-lg); padding: 0 var(--space-2-5) 0 var(--space-1-5);
-  border-radius: var(--r-md); font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--fg);
+  display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; height: var(--ctl-lg); padding: 0 var(--ctl-px-lg) 0 var(--ib-inset);
+  border-radius: var(--r-ctl); font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--fg);
   transition: background var(--t-fast);
 }
 button.head-bot:hover { background: var(--pill); }
@@ -58,13 +58,13 @@ button.head-bot:active { background: var(--pill-press); }
 /* 历史读到之后整列淡入一次（不是一行行弹出来）；之后的新消息各自有入场 */
 .chat-col.ready { animation: fade-in var(--dur-base) var(--ease-out); }
 
-.msg-row { position: relative; display: flex; flex-direction: column; margin-top: var(--space-4); }
+.msg-row { position: relative; display: flex; flex-direction: column; margin-top: var(--space-5); }
 .msg-row.cont { margin-top: var(--space-1); }
 .msg-row.user { align-items: flex-end; }
 .msg-row.assistant { align-items: stretch; }
 .msg { font-size: var(--fs-xl); word-break: break-word; overflow-wrap: anywhere; cursor: text; }
 .msg-row.user .msg {
-  max-width: min(var(--bubble-w), 80%); padding: var(--space-2-5) var(--space-4); border-radius: var(--r-bubble);
+  max-width: min(var(--bubble-w), 80%); padding: var(--space-3) var(--space-5); border-radius: var(--r-bubble);
   background: var(--bubble-user); color: var(--fg); line-height: var(--lh-relaxed); white-space: pre-wrap;
 }
 .msg-row.assistant .msg { color: var(--fg); line-height: var(--lh-prose); }
@@ -106,14 +106,14 @@ button.head-bot:active { background: var(--pill-press); }
 .activity { display: grid; grid-template-columns: minmax(0, 1fr); }
 .activity.open > .work-line { margin-bottom: var(--space-2); }
 .msg-row.assistant .activity + .notice { margin-top: var(--space-1); }
-/* 一块 --well 里不画行间分隔线：步骤是内缩的行，悬停才浮出底色（与菜单项同一写法：列表离边 --space-1，项再缩 --space-2）；
+/* 一块 --well 里不画行间分隔线：步骤是内缩的行，悬停才浮出底色（与菜单项同一写法：列表离边 --list-pad，项再缩 --item-px，字在 16 的内容线上）；
    展开只是折叠打开：参数和输出直接排在这一行下面，不再套底色或内边距 */
-.act-list { --act-r: calc(var(--r-well) - var(--space-1)); list-style: none; margin: 0 0 var(--space-3); padding: var(--space-1); background: var(--well); border-radius: var(--r-well); font-size: var(--fs-sm); display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; }
-.act-list.empty { padding: var(--space-2-5) var(--space-3); }
+.act-list { --act-r: var(--r-item-sm); list-style: none; margin: 0 0 var(--space-3); padding: var(--list-pad); background: var(--well); border-radius: var(--r-card); font-size: var(--fs-sm); display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; }
+.act-list.empty { padding: var(--space-2-5) var(--group-pad); }
 .act-step { min-width: 0; border-radius: var(--act-r); }
 .act-head {
   display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: var(--ctl-md);
-  padding: var(--space-1) var(--space-2); color: var(--fg-2); text-align: left; border-radius: var(--act-r);
+  padding: var(--space-1) var(--item-px); color: var(--fg-2); text-align: left; border-radius: var(--act-r);
 }
 button.act-head { --focus-offset: -2px; transition: background var(--t-fast); }
 button.act-head:hover { background: var(--pill); }
@@ -122,7 +122,7 @@ button.act-head:active { background: var(--pill-hover); }
 .act-head .t { flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg); font-weight: var(--fw-medium); }
 .act-head .s { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--code); font-size: var(--fs-xs); color: var(--muted); }
 .act-head .d { flex: none; font-size: var(--fs-xs); color: var(--muted); }
-.act-body { display: grid; gap: var(--space-1); padding: 0 var(--space-2) var(--space-1-5); }
+.act-body { display: grid; gap: var(--space-1); padding: 0 var(--item-px) var(--space-1-5); }
 .act-body .t-label { margin-top: var(--space-1); }
 .act-body pre {
   margin: 0; max-height: 240px; overflow: auto; font: var(--fs-xs)/var(--lh-relaxed) var(--code);
@@ -173,7 +173,7 @@ button.act-head:active { background: var(--pill-hover); }
 .md li + li { margin-top: var(--space-1); }
 .md blockquote { padding-left: var(--space-3); border-left: 3px solid var(--line); color: var(--fg-2); }   /* 描边：引文的排版记号（灰色、不圈住内容），不是提示框的色条 */
 .md hr { border: 0; border-top: 1px solid var(--line); }
-.md code { font-size: .86em; padding: .12em .36em; border-radius: var(--r-xs); background: var(--code-bg); }   /* 跟着所在文字缩放：正文、标题、表格里一样合身 */
+.md code { font-size: .86em; padding: .12em .36em; border-radius: var(--r-mark); background: var(--code-bg); }   /* 跟着所在文字缩放：正文、标题、表格里一样合身 */
 .md a { text-decoration: underline; text-underline-offset: 2px; }
 .md .table-wrap { overflow-x: auto; margin: 0 0 var(--space-3); }
 .md table { border-collapse: collapse; font-size: var(--fs-md); line-height: var(--lh-normal); margin: 0; }
@@ -182,37 +182,37 @@ button.act-head:active { background: var(--pill-hover); }
 .md :is(th, td):last-child { padding-right: 0; }
 .md th { font-weight: var(--fw-semibold); border-bottom: 1px solid var(--line-2); }
 /* 代码块：一块 --well，不描边 */
-.codeblock { margin: 0 0 var(--space-3); border-radius: var(--r-well); background: var(--well); overflow: hidden; }
-/* 语言名和代码左对齐；复制钮离右边和上边一样远（30 高的条里放 22 的按钮） */
+.codeblock { margin: 0 0 var(--space-3); border-radius: var(--r-card); background: var(--well); overflow: hidden; }
+/* 语言名和代码左对齐，都在组的内容线（--group-pad）上；复制钮离右边和上边一样远（36 高的条里放 28 的按钮，四周 4） */
 .codeblock .bar {
-  display: flex; align-items: center; height: 30px; padding: 0 var(--space-1) 0 var(--space-3);
+  display: flex; align-items: center; height: var(--ctl-lg); padding: 0 var(--space-1) 0 var(--group-pad);
   font-family: var(--code); font-size: var(--fs-2xs); color: var(--muted);
 }
 .codeblock .bar .lang { flex: 1; }
-.codeblock .bar .icon-btn { --ib-size: var(--ctl-xs); }
-.codeblock pre { margin: 0; padding: 0 var(--space-3) var(--space-3); overflow-x: auto; font: var(--fs-sm)/var(--lh-relaxed) var(--code); color: var(--fg); white-space: var(--code-wrap); overflow-wrap: anywhere; }
+.codeblock .bar .icon-btn { --ib-size: var(--ctl-sm); }
+.codeblock pre { margin: 0; padding: 0 var(--group-pad) var(--group-pad); overflow-x: auto; font: var(--fs-sm)/var(--lh-relaxed) var(--code); color: var(--fg); white-space: var(--code-wrap); overflow-wrap: anywhere; }
 .codeblock pre code { font-size: inherit; padding: 0; background: none; }
 
 /* 流里的一组：提问 / 审批 / 文件。一块 --well，不描边、不加投影；里面不再套框——
    命令是一行等宽字，选项是可悬停的行，只有输入框留着自己的边 */
 .card {
-  width: min(var(--bubble-w), 100%); background: var(--well); border-radius: var(--r-well);
-  padding: var(--card-pad); display: grid; gap: var(--space-2-5);
+  width: min(var(--bubble-w), 100%); background: var(--well); border-radius: var(--r-card-lg);
+  padding: var(--card-pad); display: grid; gap: var(--stack-gap);
 }
 .card .q { font-size: var(--fs-xl); font-weight: var(--fw-semibold); color: var(--fg); line-height: var(--lh-snug); }
 .card .q-detail { font-size: var(--fs-md); color: var(--fg-2); line-height: var(--lh-normal); white-space: pre-wrap; }
 .card .q-block { display: grid; gap: var(--space-2); }
-.card .opts { display: grid; gap: var(--space-0-5); margin: 0 calc(-1 * var(--space-2)); }
+.card .opts { display: grid; gap: var(--space-0-5); margin: 0 calc(-1 * var(--item-px)); }   /* 选项的悬停底往外伸出 --item-px，字仍在卡片的内容线上 */
 .card .opt {
   --focus-offset: 0px;
-  display: flex; align-items: center; gap: var(--space-2-5); min-height: 40px; padding: var(--space-1) var(--space-2); border-radius: var(--r-lg);
+  display: flex; align-items: center; gap: var(--space-2-5); min-height: var(--ctl-xl); padding: var(--space-1) var(--item-px); border-radius: var(--r-item);
   text-align: left; font-size: var(--fs-lg); line-height: var(--lh-snug); color: var(--fg); transition: background var(--t-fast);
 }
 .card .opt:hover:not(:disabled) { background: var(--pill); }
 .card .opt:active:not(:disabled) { background: var(--pill-hover); }
 /* 选项字母平时只是一列字；选中后才填成一块（这是状态，不是容器） */
 .card .opt .letter {
-  width: var(--ctl-xs); height: var(--ctl-xs); border-radius: var(--r-sm); flex: none; display: grid; place-items: center;
+  width: var(--ctl-xs); height: var(--ctl-xs); border-radius: var(--r-tile-sm); flex: none; display: grid; place-items: center;
   color: var(--muted); font-size: var(--fs-xs); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums;
   transition: background var(--t-fast), color var(--t-fast);
 }
@@ -236,32 +236,33 @@ button.act-head:active { background: var(--pill-hover); }
 /* 回合中交付的：淡入（已经在的不重播） */
 .msg-row.live .msg-files > * { animation: fade-in var(--dur-moderate) var(--ease-out); }
 .file-card {
-  display: flex; align-items: center; gap: var(--space-3); width: min(360px, 100%); padding: var(--space-2-5) var(--space-3-5) var(--space-2-5) var(--space-2-5);
-  background: var(--well); border-radius: var(--r-well); color: var(--fg); text-align: left; transition: background var(--t-fast);
+  display: flex; align-items: center; gap: var(--space-3); width: min(360px, 100%); padding: var(--space-2-5) var(--group-pad) var(--space-2-5) var(--space-2);
+  background: var(--well); border-radius: var(--r-card); color: var(--fg); text-align: left; transition: background var(--t-fast);
 }
 a.file-card:hover { text-decoration: none; }
 a.file-card:hover, .file-card:has(> .file-open:hover) { background: var(--well-hover); }
 a.file-card:active, .file-card:has(> .file-open:active) { background: var(--well-press); }
 .file-card:has(> .file-open) { padding-right: var(--space-2); }
-.file-open { display: flex; align-items: center; gap: var(--space-3); flex: 1; min-width: 0; text-align: left; border-radius: var(--r-sm); }
-.file-card .fic { flex: none; --ic-size: var(--ic-xl); margin: var(--space-2); color: var(--fg-2); }   /* 24px 图标 + 四周 8 = 40 见方，和两行文字等高 */
+.file-open { display: flex; align-items: center; gap: var(--space-3); flex: 1; min-width: 0; text-align: left; border-radius: var(--r-item-sm); }
+.file-card .fic { flex: none; --ic-size: var(--ic-xl); margin: var(--space-2); color: var(--fg-2); }   /* 24px 图标 + 四周 8 = 40 见方，和两行文字等高；卡片左边 8 + 8，图标落在组的内容线（16）上 */
 .file-card .grow { display: grid; min-width: 0; }
 .file-card .fname { font-size: var(--fs-lg); font-weight: var(--fw-medium); color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .file-card .fsub { margin-top: var(--space-0-5); font-size: var(--fs-xs); color: var(--muted); }
 .file-card.off .fname { color: var(--muted); }
 /* 图片直接显示：缩略图保持比例，限宽限高（读出来之前先占一小块 --well）；点开看大图 */
-.msg-img { display: block; max-width: 100%; overflow: hidden; border-radius: var(--r-well); background: var(--well); cursor: zoom-in; }
+.msg-img { display: block; max-width: 100%; overflow: hidden; border-radius: var(--r-card); background: var(--well); cursor: zoom-in; }
 .msg-img img { display: block; width: auto; height: auto; min-width: 48px; min-height: 48px; max-width: min(320px, 100%); max-height: 240px; }
 .msg-row .notice { max-width: min(var(--bubble-w), 100%); }
 
-.chat-empty { margin: auto; padding-top: 16vh; display: grid; justify-items: center; gap: var(--space-2-5); text-align: center; color: var(--muted); }
+.chat-empty { margin: auto; padding-top: 16vh; display: grid; justify-items: center; gap: var(--space-3); text-align: center; color: var(--muted); }
 /* 头像和标题之间多留一点：大头像会呼吸、会动，贴太近显得挤 */
-.chat-empty h2 { margin-top: var(--space-2); font-size: var(--fs-2xl); font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); line-height: var(--lh-tight); color: var(--fg); }
-.chat-empty > p { max-width: 440px; margin: 0; font-size: var(--fs-lg); line-height: var(--lh-normal); }
-.chips { display: flex; gap: var(--space-2); flex-wrap: wrap; justify-content: center; margin-top: var(--space-2-5); }
+.chat-empty h2 { margin-top: var(--space-3); font-size: var(--fs-3xl); font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); line-height: var(--lh-tight); color: var(--fg); }
+.chat-empty { --empty-w: 480px; }   /* 标题下那句说明的栏宽；群聊的引导区（规则、示例）也用这一栏 */
+.chat-empty > p { max-width: var(--empty-w); margin: 0; font-size: var(--fs-lg); line-height: var(--lh-normal); }
+.chips { display: flex; gap: var(--space-2); flex-wrap: wrap; justify-content: center; margin-top: var(--space-4); }
 /* 建议：和次级按钮一样是一层静默填充，不描边、不浮起 */
 .chip {
-  height: var(--ctl-md); padding: 0 var(--space-3-5); border-radius: var(--r-full); background: var(--pill);
+  height: var(--ctl-lg); padding: 0 var(--ctl-px-lg); border-radius: var(--r-ctl); background: var(--pill);
   font-size: var(--fs-sm); color: var(--fg-2); transition: background var(--t-fast), color var(--t-fast);
 }
 .chip:hover { background: var(--pill-hover); color: var(--fg); }
@@ -295,7 +296,7 @@ a.file-card:active, .file-card:has(> .file-open:active) { background: var(--well
   width: var(--col, auto); margin: 0 auto;
   display: flex; flex-direction: column;
   background: linear-gradient(var(--composer-tint), var(--composer-tint)), var(--composer-bg);
-  border-radius: var(--r-3xl);
+  border-radius: var(--r-composer);
   box-shadow: var(--composer-shadow);
   transition: box-shadow var(--t-fast), background var(--t-fast);
 }
@@ -303,14 +304,14 @@ a.file-card:active, .file-card:has(> .file-open:active) { background: var(--well
 @media (forced-colors: active) { .composer { border: 1px solid CanvasText; } }   /* 描边：系统高对比度模式下没有填充，要一道系统色的边 */
 .composer textarea {
   display: block; width: 100%; min-width: 0; border: 0; outline: none; background: transparent; resize: none;
-  font-size: var(--fs-xl); line-height: var(--composer-line); padding: var(--space-3-5) var(--space-4) var(--space-1);
-  max-height: calc(var(--composer-line) * 8 + var(--space-3-5) + var(--space-1)); overflow-y: auto; color: var(--fg);
+  font-size: var(--fs-xl); line-height: var(--composer-line); padding: var(--space-4) var(--space-5) var(--space-1);
+  max-height: calc(var(--composer-line) * 8 + var(--space-4) + var(--space-1)); overflow-y: auto; color: var(--fg);
 }
 .composer textarea::placeholder { color: var(--placeholder); }
 .composer textarea:focus-visible { outline: none; }
 .composer-bar { display: flex; align-items: center; gap: var(--bar-gap); padding: var(--space-1-5) var(--composer-pad) var(--composer-pad); }
 .composer-bar .grow { flex: 1; }
-/* 加号钮和发送钮一样是 32 的圆：加号落在 --composer-pad + 8 = 16，和上面文字的起点对齐；模型胶囊矮一档（28），不和两端的圆钮抢 */
+/* 加号钮和发送钮一样是 36 的圆：加号的图标落在 --composer-pad + 10 = 20，和上面文字的起点对齐；模型胶囊矮一档（32），不和两端的圆钮抢 */
 .composer :is(.plus, .model-chip) {
   flex: none; height: var(--ctl-md); display: inline-flex; align-items: center; justify-content: center; color: var(--ctl-fg);
   transition: background var(--t-fast), color var(--t-fast);
@@ -321,7 +322,7 @@ a.file-card:active, .file-card:has(> .file-open:active) { background: var(--well
 .composer .plus { width: var(--ctl-lg); height: var(--ctl-lg); border-radius: 50%; }
 .composer .plus .ic { transition: transform var(--t-fast); }
 .composer .plus[aria-expanded="true"] .ic { transform: rotate(45deg); }
-.composer .model-chip { max-width: 240px; padding: 0 var(--space-2) 0 var(--space-2-5); border-radius: var(--r-full); gap: var(--space-1); font-size: var(--fs-sm); }
+.composer .model-chip { max-width: 240px; padding: 0 calc(var(--ctl-px-md) - var(--ctl-trail)) 0 var(--ctl-px-md); border-radius: var(--r-ctl); gap: var(--space-1); font-size: var(--fs-sm); }
 .composer .model-chip .v { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .composer .model-chip .ic { --ic-size: var(--ic-xs); transition: transform var(--t-fast); }
 .composer .model-chip[aria-expanded="true"] .ic:last-child { transform: rotate(180deg); }
@@ -353,8 +354,8 @@ a.file-card:active, .file-card:has(> .file-open:active) { background: var(--well
    点开是最新进展、文件夹、每次运行折叠的处理过程（和回复上方的"用时"同一种写法）和停止 —— */
 .task-chip { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; margin-top: var(--space-2); }
 .task-pill {
-  display: inline-flex; align-items: center; gap: var(--space-1-5); max-width: 100%; height: var(--ctl-md); padding: 0 var(--space-2-5) 0 var(--space-3);
-  border-radius: var(--r-full); background: var(--pill); font-size: var(--fs-sm); color: var(--fg-2);
+  display: inline-flex; align-items: center; gap: var(--space-1-5); max-width: 100%; height: var(--ctl-md); padding: 0 calc(var(--ctl-px-md) - var(--ctl-trail)) 0 var(--ctl-px-md);
+  border-radius: var(--r-ctl); background: var(--pill); font-size: var(--fs-sm); color: var(--fg-2);
   transition: background var(--t-fast), color var(--t-fast);
 }
 .task-pill:hover { background: var(--pill-hover); color: var(--fg); }
@@ -371,7 +372,7 @@ a.file-card:active, .file-card:has(> .file-open:active) { background: var(--well
 .task-line .n { flex: none; font-size: var(--fs-xs); color: var(--muted); }
 .task-line .task-note { display: block; color: var(--muted); }   /* 问题下面那一句：不回复就按中文做 */
 .task-line .text { flex: none; margin: calc(-1 * var(--space-1)) 0; }   /* 文字按钮的悬停底不把行撑高 */
-button.task-origin { text-align: left; font-size: inherit; color: inherit; border-radius: var(--r-sm); transition: color var(--t-fast); }
+button.task-origin { text-align: left; font-size: inherit; color: inherit; border-radius: var(--r-mark); transition: color var(--t-fast); }
 button.task-origin:hover { color: var(--fg); }
 .task-budget-edit { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; }
 .task-budget-edit .field { width: 88px; --field-h: var(--ctl-sm); }
@@ -390,10 +391,10 @@ button.task-origin:hover { color: var(--fg); }
 .group-avatars.pile { position: relative; width: var(--ga-size); height: var(--ga-size); }
 .group-avatars.pile .ga { position: absolute; left: 0; top: 0; }
 .group-avatars.pile .ga + .ga { margin-left: 0; left: auto; top: auto; right: 0; bottom: 0; }
-.group-picks { display: grid; gap: var(--space-1); max-height: 280px; overflow-y: auto; }
+.group-picks { display: grid; gap: var(--space-1); max-height: 280px; overflow-y: auto; margin: 0 calc(-1 * var(--item-px)); }   /* 悬停底往外伸，名字和对话框里的文字对齐 */
 .group-pick {
-  display: flex; align-items: center; gap: var(--space-2-5); min-height: var(--ctl-xl); padding: var(--space-1) var(--space-2-5);
-  border-radius: var(--r-lg); font-size: var(--fs-md); color: var(--fg); text-align: left; transition: background var(--t-fast);
+  display: flex; align-items: center; gap: var(--space-2-5); min-height: var(--ctl-xl); padding: var(--space-1) var(--item-px);
+  border-radius: var(--r-item); font-size: var(--fs-md); color: var(--fg); text-align: left; transition: background var(--t-fast);
 }
 .group-pick:hover { background: var(--pill); }
 .group-pick:active { background: var(--pill-press); }
@@ -402,8 +403,24 @@ button.task-origin:hover { color: var(--fg); }
 .group-pick .ic { color: var(--accent); }
 
 @layer app {
-.chat-empty > .group-rules { font-size: var(--fs-sm); color: var(--muted); max-width: var(--col-w); }
-.group-example { white-space: normal; height: auto; padding-block: var(--space-2); text-align: left; overflow-wrap: anywhere; max-width: 100%; }
+/* 新建群聊的空状态：群名、一句导语居中；三条规则和可点的示例在同一栏里左对齐、拉满栏宽（长句从左边整齐折行，不出孤字）。
+   间距按分组留白：名称和导语一组（紧），导语到规则、规则到示例各隔一段，要点之间、卡片之间更紧 */
+.group-empty { gap: 0; }
+.group-empty > * { width: min(100%, var(--empty-w)); }
+.group-empty > .group-avatars { width: auto; }
+.group-empty h2 { margin: var(--space-6) 0 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.group-empty > p { margin-top: var(--space-2); }
+.group-rules { list-style: none; margin: var(--space-5) 0 0; padding: 0; display: grid; gap: var(--space-2); text-align: start; font-size: var(--fs-md); line-height: var(--lh-normal); color: var(--fg-2); }
+.group-rules li { position: relative; padding-inline-start: var(--space-4); overflow-wrap: anywhere; }
+.group-rules li::before { content: ""; position: absolute; inset-inline-start: var(--space-1); top: 0.62em; width: var(--space-1); height: var(--space-1); border-radius: 50%; background: var(--faint); }
+.group-examples { display: grid; gap: var(--space-2); margin-top: var(--space-5); }
+/* 示例：和目录 Bot 开场里的示例卡片同一种——浅底、通栏、左对齐，悬停加深，一看就是可点的 */
+.group-example {
+  display: block; width: 100%; padding: var(--space-2-5) var(--group-pad); border-radius: var(--r-card); background: var(--pill); color: var(--fg-2);
+  font-size: var(--fs-md); line-height: var(--lh-snug); text-align: start; overflow-wrap: anywhere; transition: background var(--t-fast), color var(--t-fast);
+}
+.group-example:hover { background: var(--pill-hover); color: var(--fg); }
+.group-example:active { background: var(--pill-press); }
 
 /* 任务出错（第 9 项）：一句主提示，恢复入口在右边；原始报错折叠在"错误详情"里，长 JSON 不撑破双栏和窄窗口 */
 .notice .err-main { display: block; }

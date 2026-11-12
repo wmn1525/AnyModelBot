@@ -1,13 +1,13 @@
 // info · zh-CN（screens/info-panel.js：信息面板）
 export default {
-  aria: "信息面板",
+  aria: "右侧面板",
   botSettings: "机器人设置",
   closeTitle: "关闭（⌘⇧I）",
-  closeAria: "关闭信息面板",
+  closeAria: "关闭右侧面板",
   channels: "渠道",
   channelsDefault: "默认由这个机器人回复",
   channelsManage: "管理聊天渠道",
-  channelsSub: "微信、飞书等账号所有机器人共用，在 设置 › 连接 里添加",
+  channelsSub: "微信、飞书等账号所有机器人共用，在 设置 › 聊天渠道 里添加",
   approvals: "待审批",
   /** 审批卡片的截止时刻（HH:MM） */
   due: "截止 {time}",
@@ -103,4 +103,7 @@ export default {
     activity: "处理过程",
   },
   tasks: "任务",
+  tabsLabel: "面板标签页",
+  tab: { app: "工作台", overview: "概览", tasks: "任务", memory: "记忆" },
+  noTasks: "还没有任务和规则",
 };

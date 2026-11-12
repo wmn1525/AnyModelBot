@@ -52,11 +52,11 @@ describe("更新日志解析", () => {
     expect(changelogFile("fr")).toBe("CHANGELOG_en.md");
   });
 
-  it("仓库里五种语言的更新日志都读得出来，版本一致，当前版本在里面", () => {
+  it("仓库里每种语言的更新日志都读得出来，版本一致，当前版本在里面", () => {
     const versions = (lang: string) => readLocalChangelog(lang, root).map((e) => e.version);
     const zh = versions("zh-CN");
     expect(zh).toContain(appVersion());
-    for (const lang of ["en", "ja", "ko", "ru"]) expect(versions(lang)).toEqual(zh);
+    for (const lang of ["en", "ja", "ko", "ru", "es", "pt"]) expect(versions(lang)).toEqual(zh);
   });
 
   it("读不到文件时回空列表", () => {

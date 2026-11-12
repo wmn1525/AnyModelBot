@@ -546,14 +546,45 @@ describe("AccountManager", () => {
   });
 });
 
-describe("账户文件加密", () => {
-  it("有钥匙串时整份加密，换到没有钥匙串的运行方式读不出来", () => {
+describe("账户文件", () => {
+  const rec = { issuer: "https://modelflare.dev", refreshToken: "rt-secret", scope: "openid", deviceKeyId: 3, signedInAt: 1 };
+  const xor = (d: Buffer) => Buffer.from([...d].map((b) => b ^ 0x5a));
+  /** 旧桌面版写的钥匙串加密文件 */
+  const writeLegacy = (dir: string) =>
+    fs.writeFileSync(AccountVault.at(dir).file, JSON.stringify({ v: 1, enc: "safe-storage", data: xor(Buffer.from(JSON.stringify(rec))).toString("base64") }), { mode: 0o600 });
+
+  it("只靠文件权限保护，不碰钥匙串；命令行版和桌面版读写同一份", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "amb-vault-"));
-    const box = { encrypt: (p: string) => Buffer.from([...Buffer.from(p)].map((b) => b ^ 0x5a)), decrypt: (d: Buffer) => Buffer.from([...d].map((b) => b ^ 0x5a)).toString() };
-    const rec = { issuer: "https://modelflare.dev", refreshToken: "rt-secret", scope: "openid", deviceKeyId: 3, signedInAt: 1 };
-    AccountVault.at(dir, box).save(rec);
-    expect(fs.readFileSync(AccountVault.at(dir).file, "utf8")).not.toContain("rt-secret");
-    expect(AccountVault.at(dir, box).load()).toEqual(rec);
+    let asked = 0;
+    const legacy = { decrypt: () => (asked++, "") };
+    expect(AccountVault.at(dir, legacy).load()).toBeUndefined();
+    AccountVault.at(dir, legacy).save(rec);
+    const file = AccountVault.at(dir).file;
+    expect(JSON.parse(fs.readFileSync(file, "utf8")).enc).toBe("none");
+    if (process.platform !== "win32") expect(fs.statSync(file).mode & 0o777).toBe(0o600);
+    expect(AccountVault.at(dir, legacy).load()).toEqual(rec);
+    expect(AccountVault.at(dir).load()).toEqual(rec);
+    expect(asked).toBe(0);
+  });
+
+  it("旧桌面版加密的文件：解密一次改写成明文，之后不再解密", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "amb-vault-"));
+    writeLegacy(dir);
+    let asked = 0;
+    const legacy = { decrypt: (d: Buffer) => (asked++, xor(d).toString()) };
+    expect(AccountVault.at(dir, legacy).load()).toEqual(rec);
+    expect(asked).toBe(1);
+    expect(JSON.parse(fs.readFileSync(AccountVault.at(dir).file, "utf8")).enc).toBe("none");
+    expect(AccountVault.at(dir, legacy).load()).toEqual(rec);
+    expect(asked).toBe(1);
+  });
+
+  it("旧加密文件解不开时按未登录处理且保留文件；命令行版读不了", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "amb-vault-"));
+    writeLegacy(dir);
+    const denied = { decrypt: (): string => { throw new Error("User interaction is not allowed."); } };
+    expect(AccountVault.at(dir, denied).load()).toBeUndefined();
+    expect(JSON.parse(fs.readFileSync(AccountVault.at(dir).file, "utf8")).enc).toBe("safe-storage");
     expect(() => AccountVault.at(dir).load()).toThrow(/桌面版加密/);
   });
 });

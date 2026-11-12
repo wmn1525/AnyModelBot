@@ -32,7 +32,7 @@ const REFRESH_MARGIN_MS = 8 * 60_000;
 const AUTH_TTL_MS = 10 * 60_000;
 export const NOTION_CLIENTS_KV = "notion-oauth-clients";
 
-const RECONNECT = "Ask the user to re-authorize this account in Settings > Connections.";
+const RECONNECT = "Ask the user to re-authorize this account under Connect apps.";
 
 export const NOTION_WRITE_OPS: readonly string[] = ["create", "update"];
 

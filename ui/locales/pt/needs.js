@@ -1,0 +1,22 @@
+export default {
+  "title": "Precisa de você",
+  "head": "{bot}: {what}",
+  "headSpaced": "{bot}: {what}",
+  "collapse": "Recolher",
+  "viewTask": "Ver tarefa",
+  "viewRule": "Ver regra",
+  "openChat": "Abrir conversa",
+  "reply": "Responder…",
+  "approveOnce": "Aprovar uma vez",
+  "deny": "Negar",
+  "stop": "Parar",
+  "relogin": "Escanear de novo",
+  "answerPlaceholder": "Sua resposta",
+  "send": "Enviar",
+  "none": "Nada precisa de você agora",
+  "dismiss": "Não mostrar de novo",
+  "continue": "Continuar",
+  "raiseBudget": "Alterar orçamento",
+  "toAct": "Passar a agir",
+  "keepObserving": "Continuar observando"
+};

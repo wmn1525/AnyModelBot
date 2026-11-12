@@ -1,0 +1,152 @@
+export default {
+  "skills": {
+    "head": "Habilidades",
+    "note": "Adicione fluxos de trabalho a este bot. As alterações entram em vigor depois que o trabalho atual dele terminar.",
+    "import": "Importar ZIP",
+    "importSub": "Uma habilidade por ZIP, até 20 MB",
+    "empty": "Nenhuma habilidade importada ainda",
+    "enable": "Ativar {name}",
+    "files": "{count} arquivos · {size} KB",
+    "instructions": "Ver instruções da habilidade",
+    "add": "Adicionar habilidade",
+    "addBody": "Depois de adicionada, o bot pode usar esta habilidade em tarefas relacionadas.",
+    "replace": "Substituir habilidade",
+    "replaceBody": "Já existe uma habilidade instalada com este nome. Substituir atualiza os arquivos dela e mantém o estado ativado ou desativado.",
+    "removeTitle": "Excluir a habilidade “{name}”?",
+    "removeBody": "Só a habilidade deste bot será excluída. Os arquivos no espaço de trabalho dele serão mantidos.",
+    "errors": {
+      "invalid_zip": "Não foi possível ler o ZIP. Escolha um arquivo ZIP completo e sem criptografia.",
+      "too_large": "Pacote de habilidade grande demais: até 20 MB compactado, 64 MB descompactado, 2.000 entradas e 256 KB para o SKILL.md.",
+      "unsafe_path": "O ZIP contém caminhos não suportados, nomes duplicados ou links simbólicos.",
+      "missing_skill": "Nenhum SKILL.md encontrado. Escolha um ZIP que contenha as instruções da habilidade.",
+      "multiple_skills": "O ZIP contém vários arquivos SKILL.md. Importe cada habilidade em um ZIP separado.",
+      "invalid_skill": "SKILL.md inválido: é preciso ter um nome válido, uma descrição e o corpo das instruções.",
+      "reserved_name": "Este nome é reservado para uma habilidade integrada ou fornecida pelo bot.",
+      "conflict": "A habilidade instalada mudou. Selecione o ZIP de novo para confirmar a substituição.",
+      "not_found": "Habilidade não encontrada. Atualize a lista.",
+      "too_many": "Um bot pode ter até 100 habilidades importadas. Exclua primeiro as que você não usa."
+    }
+  },
+  "back": "Voltar ao chat",
+  "backTitle": "Voltar ao chat (Esc)",
+  "title": "Configurações do bot",
+  "identity": "Identidade",
+  "avatar": "Avatar",
+  "avatarHint": "Cada personagem tem seus próprios gestos",
+  "name": "Nome",
+  "prompt": "Persona / prompt do sistema",
+  "promptHint": "Salvo quando você sai do campo",
+  "promptPlaceholder": "ex.: Você é um assistente prestativo. Responda de forma concisa e precisa.",
+  "model": {
+    "head": "Modelo",
+    "default": "Modelo padrão",
+    "defaultSub": "Você ainda pode trocar temporariamente em uma conversa",
+    "followGlobal": "Usar o padrão global",
+    "followGlobalWith": "Usar o padrão global ({model})",
+    "utility": "Modelo para tarefas em segundo plano",
+    "utilitySub": "Organização da memória, gestor de contexto e notas de transição",
+    "sameAsChat": "Igual ao modelo do chat"
+  },
+  "budget": {
+    "name": "Orçamento",
+    "signedOut": "Entre no OKINTO para definir um limite de gastos separado para este bot",
+    "signIn": "Entrar",
+    "off": "Divide o saldo da sua conta com os outros bots, sem limite separado",
+    "on": "Acompanha os gastos deste bot separadamente e para ao atingir o limite",
+    "usage": "{used} usados, {remain} restantes",
+    "exhausted": "{used} usados, nada restante, por isso o bot pausou as chamadas ao modelo",
+    "limit": "Limite (USD)",
+    "limitSub": "Inclui o que já foi gasto. Aumentar o limite retoma o bot automaticamente.",
+    "limitLabel": "Limite do orçamento (USD)",
+    "playground": "O login no Playground usa o saldo da conta. Use o modo de chave de API para cotas separadas por bot."
+  },
+  "perm": {
+    "head": "Permissões",
+    "name": "Acesso a arquivos",
+    "workspaceSub": "Só pode modificar o espaço de trabalho deste bot; qualquer coisa além disso precisa da sua aprovação",
+    "readonlySub": "Não pode modificar arquivos; os comandos rodam em um sandbox somente leitura",
+    "title": "Gravação no espaço de trabalho (padrão): só pode modificar o espaço de trabalho deste bot; qualquer coisa além disso precisa de aprovação. Somente leitura: não pode modificar arquivos; os comandos rodam em um sandbox somente leitura. Acesso total: os comandos rodam sem sandbox; só exclusões recursivas ainda precisam de confirmação.",
+    "workspace": "Gravação no espaço de trabalho",
+    "readonly": "Somente leitura",
+    "full": "Acesso total"
+  },
+  "memory": {
+    "head": "Memória",
+    "name": "Memória de longo prazo",
+    "review": "Organizar automaticamente após cada turno",
+    "reviewLabel": "Organizar a memória automaticamente",
+    "team": "Permitir gravar na memória da equipe",
+    "teamSub": "Compartilhada por todos os bots",
+    "teamLabel": "Memória da equipe"
+  },
+  "context": {
+    "head": "Contexto",
+    "name": "Compactar automaticamente ou começar um novo segmento",
+    "sub": "Organiza conforme o contexto cresce e deixa uma nota de transição",
+    "label": "Gestor de contexto"
+  },
+  "computer": {
+    "head": "Uso do computador",
+    "backend": "Backend",
+    "backendLabel": "Backend do uso do computador",
+    "cuaNote": "Incluído, para macOS, Windows e Linux",
+    "codex": "Ponte do Codex",
+    "macOnly": "Só no macOS",
+    "macOnlyUnavailable": "Só no macOS; indisponível neste dispositivo",
+    "approval": "Aprovação",
+    "approvalLabel": "Aprovação do uso do computador",
+    "autoSub": "Todas as ações rodam automaticamente",
+    "askSub": "Pergunta antes de cliques, digitação e outras ações que alteram a interface; a leitura da tela continua automática",
+    "auto": "Executar automaticamente",
+    "ask": "Perguntar antes de alterar a interface"
+  },
+  "danger": {
+    "head": "Zona de perigo",
+    "delete": "Excluir bot",
+    "deleteSub": "Excluir permanentemente este bot e todas as conversas dele"
+  },
+  "access": {
+    "head": "Quem pode usar",
+    "policy": "Só o proprietário e as pessoas que você permitir",
+    "owner": "Proprietário no {channel}",
+    "reset": "Alterar",
+    "resetOwnerTitle": "Alterar o proprietário no {channel}?",
+    "resetOwnerBody": "A próxima pessoa que mandar mensagem para o bot se torna o proprietário no {channel}, e “{who}” vai precisar ser permitido de novo.",
+    "allowed": "Permitidos",
+    "denied": "Negados",
+    "deniedSub": "Negado ({when}); não recebe resposta se mandar mensagem de novo",
+    "allow": "Permitir",
+    "remove": "Remover",
+    "removeDeniedTitle": "Remover “{who}”?",
+    "removeDeniedBody": "Se mandar mensagem de novo depois disso, vai aparecer outra vez em “Pedidos de uso” no painel direito.",
+    "revokeTitle": "Deixar de permitir “{who}”?",
+    "revokeBody": "Se mandar mensagem de novo, só vai receber um aviso curto e vai precisar ser permitido de novo."
+  },
+  "media": {
+    "head": "Imagens e vídeos",
+    "confirm": "Confirmar antes de gerar",
+    "alwaysSub": "Perguntar qual modelo usar antes de cada geração",
+    "autoSub": "Perguntar só quando custar mais de $0.5",
+    "auto": "Perguntar quando necessário",
+    "always": "Sempre perguntar"
+  },
+  "proactive": {
+    "head": "Mensagens proativas",
+    "pause": "Pausar o trabalho em segundo plano",
+    "pauseSub": "Tarefas, regras e mensagens proativas aguardam; o chat funciona normalmente",
+    "quiet": "Não perturbe",
+    "quietSub": "Os resultados em segundo plano aguardam até o fim desse período",
+    "quietFrom": "Não perturbe a partir de",
+    "quietTo": "Não perturbe até",
+    "nudge": "Lembrete de renovação do WeChat",
+    "nudgeSub": "Quando ainda houver mensagens aguardando envio, pedir uma resposta sua antes que a janela de 24 horas feche",
+    "rules": "Regras",
+    "rulesSub": "Verificações e lembretes agendados",
+    "rulesCount": {
+      "one": "{count} regra, no painel direito em Tarefas",
+      "many": "{count} regras, no painel direito em Tarefas",
+      "other": "{count} regras, no painel direito em Tarefas"
+    },
+    "newRule": "Nova"
+  }
+};

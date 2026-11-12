@@ -53,8 +53,13 @@ function prepareCatalog(o: { root: string; now?: number; lock?: Record<string, C
   const failures: PackResult["failures"] = [];
   const bots: CatalogEntry[] = [];
   const blobs: Array<[string, Buffer]> = [];
+  const avatarOwner = new Map<string, string>();
   for (const dir of botDirs(o.root)) {
     const { manifest, issues } = checkStatic(dir);
+    // 头像不能和目录里别的 Bot 撞：发现页、侧栏里两个 Bot 长得一样就分不清了
+    const taken = manifest && avatarOwner.get(manifest.avatar);
+    if (manifest && taken) issues.push({ rule: "format.avatar", message: `avatar ${manifest.avatar} 已经是 ${taken} 的头像，换一个`, file: "bot.json" });
+    else if (manifest) avatarOwner.set(manifest.avatar, manifest.id);
     if (!manifest || issues.length) {
       failures.push({ dir, issues });
       continue;

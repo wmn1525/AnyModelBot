@@ -30,5 +30,6 @@ import access from "./access.js";
 import perms from "./perms.js";
 import group from "./group.js";
 import botapp from "./botapp.js";
+import apps from "./apps.js";
 
-export default { firstUse, updates, search, official, botapp, group, common, app, time, settings, account, pwsh, chat, info, markdown, notify, troubleshoot, onboarding, newBot, botSettings, sidebar, avatar, models, ui, guide, activity, perms, access, tasks, needs, rules };
+export default { apps, firstUse, updates, search, official, botapp, group, common, app, time, settings, account, pwsh, chat, info, markdown, notify, troubleshoot, onboarding, newBot, botSettings, sidebar, avatar, models, ui, guide, activity, perms, access, tasks, needs, rules };

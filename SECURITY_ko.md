@@ -1,6 +1,6 @@
 # 보안 정책
 
-[简体中文](./SECURITY.md#简体中文) | [English](./SECURITY.md#english) | [日本語](./SECURITY_ja.md) | 한국어 | [Русский](./SECURITY_ru.md)
+[简体中文](./SECURITY.md#简体中文) | [English](./SECURITY.md#english) | [日本語](./SECURITY_ja.md) | 한국어 | [Русский](./SECURITY_ru.md) | [Español](./SECURITY_es.md) | [Português (Brasil)](./SECURITY_pt.md)
 
 ## 취약점 신고
 

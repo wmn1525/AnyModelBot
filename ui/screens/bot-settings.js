@@ -1,7 +1,7 @@
 // 机器人设置（信息面板的 ⚙，参考 Codex 的编辑页）：返回 + 头像 + 大标题；身份是头像角色 + 带标签的输入框，其余是白色圆角 list + 行，改动即保存。
 import { useEffect, useRef, useState } from "preact/hooks";
 import { html, Icon, Seg, Switch, MenuButton, Notice, Skeleton, Toasts, autoGrow } from "../components/ui.js";
-import { BotAvatar, AvatarPicker, charOf } from "../components/avatar.js";
+import { BotAvatar, AvatarPicker, charOf, ownCharOf } from "../components/avatar.js";
 import { ModelPicker, shortModel } from "../components/model-picker.js";
 import { api } from "../lib/api.js";
 import { deleteBot } from "../lib/bots.js";
@@ -11,6 +11,7 @@ import { perms, fullWarning, confirmPermission } from "../lib/perms.js";
 import { t } from "../lib/i18n.js";
 import { RuleEditor } from "../components/rules.js";
 import { Skills } from "../components/skills.js";
+import { BotApps } from "../components/bot-apps.js";
 
 /** 免打扰的起止：整点 */
 const HOURS = Array.from({ length: 24 }, (_, h) => {
@@ -26,7 +27,7 @@ function Row({ id, name, sub, title, children, off }) {
 }
 
 /** tiers：{ account, onAccount, effective } 给了就先打开两个滑块（机器人的默认模型）；effective = 跟随全局时实际用的模型 */
-function ModelButton({ value, models, modelsError, reloadModels, resetLabel, onChange, tiers }) {
+export function ModelButton({ value, models, modelsError, reloadModels, resetLabel, onChange, tiers }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   return html`<button type="button" class="pick" ref=${ref} aria-haspopup="listbox" aria-expanded=${open} onClick=${() => setOpen((v) => !v)}>
@@ -96,7 +97,7 @@ function BudgetRows({ bot, budget, account, onSaved, onOpenSettings }) {
  * 谁能使用：只有主人和允许名单里的人。主人 = 扫码登录的微信 / 连上之后第一个发消息的人，后者可以更换（下一个发消息的人成为主人）。
  * 允许名单和拒绝过的人可以移除（移除后他再发消息会重新申请）。没有的项不显示。
  */
-export function BotSettingsScreen({ bot, section, models, modelsError, reloadModels, defaultModel, account, onAccount, onOpenSettings, onBack, onBotUpdated, onDeleted }) {
+export function BotSettingsScreen({ bot, section, models, modelsError, reloadModels, defaultModel, account, onAccount, onOpenSettings, onOpenApps, onBack, onBotUpdated, onDeleted }) {
   const [d, setD] = useState(null);
   const [name, setName] = useState(bot.name);
   const [prompt, setPrompt] = useState(bot.systemPrompt || "");
@@ -168,7 +169,7 @@ export function BotSettingsScreen({ bot, section, models, modelsError, reloadMod
       <div class="list-head">${t("botSettings.identity")}</div>
       <div class="set-field" id="bot-avatar">
         <span class="k">${t("botSettings.avatar")}<span class="hint">${t("botSettings.avatarHint")}</span></span>
-        ${s ? html`<${AvatarPicker} value=${s.avatar} fallback=${charOf(bot)} onChange=${pickAvatar} />` : html`<${Skeleton} w="60%" />`}
+        ${s ? html`<${AvatarPicker} value=${s.avatar} fallback=${charOf(bot)} own=${ownCharOf(bot)} onChange=${pickAvatar} />` : html`<${Skeleton} w="60%" />`}
       </div>
       <label class="set-field" id="bot-name">
         <span class="k">${t("botSettings.name")}</span>
@@ -198,6 +199,7 @@ export function BotSettingsScreen({ bot, section, models, modelsError, reloadMod
       ${!s && html`<div class="list"><div class="row"><${Skeleton} w="45%" /></div><div class="row"><${Skeleton} w="35%" /></div></div>`}
       ${s && html`
         <${Skills} botId=${bot.id} />
+        <${BotApps} bot=${bot} apps=${s.apps} onPut=${put} onOpenApps=${onOpenApps} onOpenSettings=${onOpenSettings} />
         <div class="list-head">${t("botSettings.perm.head")}</div>
         <div class="list">
           <${Row} id="permission" name=${t("botSettings.perm.name")} sub=${perms()[s.permission]?.note ?? ""}

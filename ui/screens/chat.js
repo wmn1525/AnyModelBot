@@ -16,6 +16,7 @@ import { GuideChecklist, MediaDemo } from "../components/guide.js";
 import { CuPermissionCard } from "../components/cu-permission.js";
 import { api, attachChat, streamChat } from "../lib/api.js";
 import { confirmSheet, failed, useStore } from "../lib/store.js";
+import { appDisplayName, openRepair } from "../lib/apps.js";
 import { completed, composerBusy, currentStep as guideStep, demo, fill, guide, isActive, isMediaFile, markDone, refreshGuide, refreshGuideSoon } from "../lib/guide.js";
 import { fmtSep, fmtClock, fmtDur } from "../lib/format.js";
 import { t, useLang } from "../lib/i18n.js";
@@ -83,10 +84,10 @@ export function PromptCard({ requestId, fallback }) {
   if (gone || (!row && !requestId)) return html`<${Notice}><span class="pre-wrap">${fallback}</span><//>`;
   if (!row) return html`<div class="card"><${Skeleton} w="60%" /><${Skeleton} w="40%" /></div>`;
   const pending = row.status === "pending";
-  const decide = async (ok) => {
+  const decide = async (ok, always = false) => {
     setBusy(true);
     try {
-      const r = await api(`/approvals/${row.id}/${ok ? "approve" : "deny"}`, { method: "POST", body: {} });
+      const r = await api(`/approvals/${row.id}/${ok ? "approve" : "deny"}`, { method: "POST", body: always ? { always: true } : {} });
       setRow(r.approval);
     } catch (e) {
       failed(e);
@@ -94,6 +95,38 @@ export function PromptCard({ requestId, fallback }) {
     }
     setBusy(false);
   };
+  // 连接应用的两种卡片：去连接 / 修复（连上后机器人接着做），和应用工具的审批（写入类多一个「以后这个工具都允许」）
+  if (row.appConnect) {
+    const c = row.appConnect;
+    const name = c.custom ? c.appName : appDisplayName(c.app, c.appName);
+    const connected = row.status === "allowed";
+    return html`<div class=${`card app-card${pending ? "" : " done"}`}>
+      <div class="q">${connected ? t("apps.card.connectedTitle", { app: name }) : t(`apps.card.title.${c.kind}`, { app: name })}</div>
+      ${connected ? html`<div class="q-detail">${t("apps.card.connected")}</div>` : c.reason && html`<div class="q-detail">${c.reason}</div>`}
+      ${pending && html`<div class="actions">
+        <button type="button" class="btn primary" disabled=${busy} onClick=${() => openRepair(c)}>${t(`apps.card.fix.${c.kind}`)}</button>
+        <button type="button" class="text" disabled=${busy} onClick=${() => decide(false)}>${t("apps.card.notNow")}</button>
+      </div>`}
+      ${!pending && !connected && html`<div class="meta"><${Badge} s=${row.status} /></div>`}
+    </div>`;
+  }
+  if (row.appTool) {
+    const a = row.appTool;
+    const name = a.custom ? a.appName : appDisplayName(a.app, a.appName);
+    const bot = a.botName || "";
+    return html`<div class=${`card app-card${pending ? "" : " done"}`}>
+      <div class="meta"><span>${t(row.taskTitle ? "chat.approval.neededTask" : "chat.approval.needed", { title: row.taskTitle, code: html`<span class="num">${row.code}</span>` })}</span>
+        ${!pending && html`<span class="app-card-done"><${Badge} s=${row.status} />${row.always && html`<span class="hint">${t("apps.bot.always")}</span>`}</span>`}</div>
+      <div class="q">${t("apps.card.toolTitle", { bot })}</div>
+      <div class="cmd">${[bot, name, a.toolTitle || a.tool].filter(Boolean).join("  ·  ")}</div>
+      ${a.params.length > 0 && html`<dl class="app-card-params">${a.params.map(([k, v]) => html`<div key=${k}><dt>${k}</dt><dd>${v}</dd></div>`)}</dl>`}
+      ${pending && html`<div class="actions">
+        <button type="button" class="btn primary" disabled=${busy} onClick=${() => decide(true)}>${t("chat.approval.allowOnce")}</button>
+        ${a.always && html`<button type="button" class="btn" disabled=${busy} onClick=${() => decide(true, true)}>${t("apps.card.always")}</button>`}
+        <button type="button" class="btn" disabled=${busy} onClick=${() => decide(false)}>${t("chat.approval.deny")}</button>
+      </div>`}
+    </div>`;
+  }
   if (row.kind === "approval") {
     return html`<div class=${`card${pending ? "" : " done"}`}>
       <div class="meta"><span>${t(row.taskTitle ? "chat.approval.neededTask" : "chat.approval.needed", { title: row.taskTitle, code: html`<span class="num">${row.code}</span>` })}</span>${!pending && html`<${Badge} s=${row.status} />`}</div>
@@ -242,7 +275,12 @@ export function ErrorNotice({ text, onRetry, onFixKey, onSwitchModel, source = "
   <//>`;
 }
 
-export function ChatScreen({ bot, models, modelsError, reloadModels, defaultModel, infoOpen, onToggleInfo, onWorking, onOpenSettings, onOpenBotSettings, onBotUpdated, pending = 0, serverBusy = false, account, onAccount, initialFocus, onBackToSearch, visible = true, cuBlocked = false }) {
+/**
+ * 对话页。infoOpen / onToggleInfo：右侧面板（screens/work-panel.js）开没开、顶栏的开关。
+ * 专业 Bot 的页面（screens/bot-app.js）另外给：ctl —— 这里填上 { send(text) }，面板里界面上的操作经它发出，和打字一样进对话流
+ * （正在回复时不发，返回 false）；starters —— 空对话时代替通用示例的那几句。
+ */
+export function ChatScreen({ bot, models, modelsError, reloadModels, defaultModel, infoOpen, onToggleInfo, onWorking, onOpenSettings, onOpenBotSettings, onBotUpdated, pending = 0, serverBusy = false, account, onAccount, initialFocus, onBackToSearch, visible = true, cuBlocked = false, ctl, starters }) {
   const viewId = `${bot.id}:web:console`;
   const savedView = useRef(chatView(viewId));
   const restoreView = useRef(true);
@@ -299,6 +337,8 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
   useEffect(() => () => composerBusy.set(false), []);
   useEffect(() => {
     if (!fillReq || fillReq.at < born.current) return;
+    // send：直接发出去（连接应用成功后的示例句「发给当前机器人」）；输入框里已经有草稿时不抢着发，只接在后面
+    if (fillReq.send && !text.trim()) return void send(fillReq.text);
     setText((v) => v.trim() ? `${v}\n${fillReq.text}` : fillReq.text);
     composer.current?.closeSlash();
     requestAnimationFrame(() => {
@@ -660,6 +700,18 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
     return out;
   }, [items, history.context, generating, stopping, chipsAfter, lang, canOpen]);
 
+  // 经 ctl 交来的话（专业 Bot 界面上的操作、还没有实例时发的第一句）：历史还没读到时先记着，读到后再发——
+  // 否则先发出去的这一轮会被随后到的历史整个换掉（回复很快出错时连提示都没了）
+  const queued = useRef("");
+  if (ctl) ctl.current = { send: (msg) => (generating || following.current || queued.current ? false : items === null ? ((queued.current = msg), true) : (void send(msg), true)) };
+  useEffect(() => () => { if (ctl) ctl.current = null; }, []);
+  useEffect(() => {
+    if (items === null || !queued.current) return;
+    const msg = queued.current;
+    queued.current = "";
+    void send(msg);
+  }, [items !== null]);
+
   const empty = !history.context && items && items.length === 0;
   const showGuide = isActive(g) && !g.seen.includes("intro") && !g.trim && !!guideStep(g);
   // 头像跟着对话走：等你批准 > 还没出字（思考）/ 出字了（回复）> 你在输入（在听）
@@ -695,9 +747,11 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
               <${GuideChecklist} bot=${bot} onSend=${(x) => send(x)} />`
             : html`<h2>${t("chat.empty.title", { name: bot.name })}</h2>
               <p>${t("chat.empty.body")}</p>
-              <div class="chips">
-                <button type="button" class="chip" onClick=${() => send(t("chat.empty.sample"))}>${t("chat.empty.sample")}</button>
-                <button type="button" class="chip" onClick=${() => send("/help")}>${t("chat.empty.helpChip")}</button>
+              <div class=${`chips${starters?.length ? " starters" : ""}`}>
+                ${starters?.length
+                  ? starters.map((x) => html`<button type="button" class="chip" key=${x} onClick=${() => send(x)}>${x}</button>`)
+                  : html`<button type="button" class="chip" onClick=${() => send(t("chat.empty.sample"))}>${t("chat.empty.sample")}</button>
+                    <button type="button" class="chip" onClick=${() => send("/help")}>${t("chat.empty.helpChip")}</button>`}
               </div>`}
           <${PwshHint} />
         </div>`}

@@ -1,6 +1,6 @@
 # 스킬 가져오기와 관리
 
-[简体中文](./skills.md) | [English](./skills_en.md) | [日本語](./skills_ja.md) | 한국어 | [Русский](./skills_ru.md)
+[简体中文](./skills.md) | [English](./skills_en.md) | [日本語](./skills_ja.md) | 한국어 | [Русский](./skills_ru.md) | [Español](./skills_es.md) | [Português (Brasil)](./skills_pt.md)
 
 AnyModelBot 0.1.24부터 주간 보고서, 문서 처리, 자료 정리 등의 작업 방법을 ZIP 스킬 패키지로 봇에 추가할 수 있습니다.
 

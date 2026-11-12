@@ -1,20 +1,24 @@
 {
   "id": "printfilm",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "minAppVersion": "0.1.23",
   "name": {
     "zh-CN": "影视创作室",
     "en": "Film Studio",
     "ja": "映像スタジオ",
     "ko": "영상 스튜디오",
-    "ru": "Киностудия"
+    "ru": "Киностудия",
+    "es": "Estudio de cine",
+    "pt": "Estúdio de cinema"
   },
   "summary": {
-    "zh-CN": "短视频与分集短剧：剧本、资产、分镜、配音、剪辑与成片",
-    "en": "Short videos and dramas: scripts, assets, storyboards, voices and finished films",
-    "ja": "短編動画・連続ドラマの脚本、素材、絵コンテ、音声、完成映像",
-    "ko": "숏폼과 드라마의 대본, 자산, 스토리보드, 음성, 완성 영상",
-    "ru": "Видео и сериалы: сценарии, материалы, раскадровка, озвучка и готовые фильмы"
+    "zh-CN": "做短视频和分集短剧，从剧本、分镜到配音、剪辑和成片。",
+    "en": "Short videos and serials: script, storyboard, voice, editing, and final cut.",
+    "ja": "短編動画と連続ドラマを、脚本・絵コンテから音声・編集・完成まで制作します。",
+    "ko": "숏폼과 시리즈 드라마를 대본, 스토리보드부터 음성, 편집, 완성까지 만듭니다.",
+    "ru": "Короткие видео и сериалы: от сценария и раскадровки до озвучки и монтажа.",
+    "es": "Videos cortos y series: guion, guion gráfico, voz, edición y montaje final.",
+    "pt": "Vídeos curtos e séries: roteiro, storyboard, voz, edição e corte final."
   },
   "about": {
     "zh-CN": [
@@ -41,9 +45,19 @@
       "Перенос сценариев, раскадровки, дизайна материалов и сборки FFmpeg из PRINTFILM",
       "Модели через Modelflare; проекты и медиа хранятся на вашем устройстве",
       "Редактирование кадров, версии, общая библиотека и продолжение работы"
+    ],
+    "es": [
+      "Adapta de PRINTFILM la escritura de guiones, los guiones gráficos, el diseño de recursos y la composición con FFmpeg",
+      "Los modelos funcionan a través de Modelflare; los proyectos y los archivos multimedia se quedan en tu dispositivo",
+      "Edita planos individuales, conserva tomas, reutiliza recursos y retoma trabajos interrumpidos"
+    ],
+    "pt": [
+      "Traz do PRINTFILM a escrita de roteiros, os storyboards, o design de elementos e a composição com FFmpeg",
+      "Os modelos rodam pelo Modelflare; os projetos e a mídia ficam no seu dispositivo",
+      "Edite planos individuais, guarde tomadas, reutilize elementos e retome trabalhos interrompidos"
     ]
   },
-  "avatar": "design",
+  "avatar": "film",
   "permissions": [
     "workspace-write",
     "network"
@@ -73,6 +87,16 @@
       "Сделай из моей идеи короткий фильм; сначала покажи сценарий и раскадровку",
       "Создай драму из трёх эпизодов; начни с истории, персонажей и плана",
       "Открой свободный холст и создай персонажа и сцену"
+    ],
+    "es": [
+      "Convierte mi idea en un video corto completo; muéstrame primero el guion y el guion gráfico",
+      "Crea una serie de tres episodios; planifica primero la historia, el reparto y los episodios",
+      "Abre un lienzo libre y crea un recurso de personaje y otro de escenario"
+    ],
+    "pt": [
+      "Transforme minha ideia em um vídeo curto completo; mostre o roteiro e o storyboard antes",
+      "Crie uma série de três episódios; planeje a história, o elenco e os episódios antes",
+      "Abra um canvas livre e crie um personagem e um cenário"
     ]
   },
   "skills": [

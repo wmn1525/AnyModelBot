@@ -1,0 +1,72 @@
+export default {
+  "run": "Ejecución {n}",
+  "runQueued": "La ejecución {n} está en cola",
+  "runGoing": "La ejecución {n} lleva {d}",
+  "runTook": "La ejecución {n} tardó {d}",
+  "stopped": "Se detuvo “{title}”",
+  "latest": "Último avance",
+  "folder": "Carpeta",
+  "stop": "Detener",
+  "stopping": "Deteniendo…",
+  "collapse": "Contraer",
+  "view": "Ver tarea en segundo plano",
+  "chipLine": {
+    "working": "La tarea en segundo plano “{title}” está en curso",
+    "asking": "La tarea en segundo plano “{title}” está en curso y tiene una pregunta para ti",
+    "queued": "La tarea en segundo plano “{title}” está en cola",
+    "answer": "La tarea en segundo plano “{title}” espera tu respuesta",
+    "approval": "La tarea en segundo plano “{title}” espera tu aprobación",
+    "budget": "La tarea en segundo plano “{title}” agotó su presupuesto",
+    "delivery": "La tarea en segundo plano “{title}” no pudo entregar su resultado",
+    "failed": "La tarea en segundo plano “{title}” falló",
+    "ready": "La tarea en segundo plano “{title}” terminó",
+    "stopped": "La tarea en segundo plano “{title}” se detuvo"
+  },
+  "chipAny": "Tarea en segundo plano “{title}”: {stage}",
+  "sub": {
+    "working": "En ejecución desde hace {d}",
+    "workingCost": "En ejecución desde hace {d}, unos {spent} hasta ahora",
+    "asking": "En ejecución desde hace {d}, con una pregunta para ti",
+    "answer": "Te hizo una pregunta {when}",
+    "approval": "Pidió tu aprobación {when}",
+    "budget": "Agotó su presupuesto {when}",
+    "delivery": "No pudo entregar su resultado {when}",
+    "failed": "Falló {when}",
+    "ready": "Terminó {when}",
+    "stopped": "Se detuvo {when}",
+    "withCost": "{line}, unos {spent}"
+  },
+  "when": {
+    "now": "justo ahora",
+    "clock": "a las {time}",
+    "day": "el {date}"
+  },
+  "minutes": {
+    "one": "{count} min",
+    "many": "{count} min",
+    "other": "{count} min"
+  },
+  "paused": "El trabajo en segundo plano está en pausa",
+  "resume": "Reanudar",
+  "costOf": "Unos {spent} de {budget}",
+  "costShort": "Unos {spent}",
+  "origin": "Origen",
+  "question": "Pregunta",
+  "originLine": "{where} · {when} “{text}”",
+  "openConv": "Abrir la conversación",
+  "budget": "Presupuesto",
+  "change": "Cambiar",
+  "cleanup": "Limpieza",
+  "cleanupOn": "La carpeta se elimina el {date}",
+  "keep": "Conservar",
+  "export": "Exportar",
+  "deleteTitle": "¿Eliminar “{title}”?",
+  "deleteBody": "También se eliminan su carpeta y su registro de ejecuciones: {size} en total.",
+  "deleteBodyEmpty": "También se elimina su registro de ejecuciones.",
+  "deleted": "Eliminada",
+  "ended": {
+    "one": "{count} terminada",
+    "many": "{count} terminadas",
+    "other": "{count} terminadas"
+  }
+};

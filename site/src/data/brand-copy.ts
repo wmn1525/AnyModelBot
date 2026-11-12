@@ -33,5 +33,19 @@ export const brandCopy = {
     "partnerLead": "Подключите okbot к AI-сервису okinto через аккаунт и API-ключ.",
     "register": "Открыть okinto",
     "issues": "GitHub Issues"
-  }
+  },
+  "es": {
+  "contact": "Para comentarios y colaboraci?n, contacta al proyecto mediante GitHub Issues.",
+  "partnerTitle": "Contactar con okbot",
+  "partnerLead": "Conecta okbot al servicio de IA de okinto usando tu cuenta y clave API.",
+  "register": "Abrir okinto",
+  "issues": "Comentarios del proyecto"
+},
+  "pt": {
+  "contact": "Para sugest?es e colabora??o, entre em contato pelo GitHub Issues do projeto.",
+  "partnerTitle": "Fale com o okbot",
+  "partnerLead": "Conecte o okbot ao servi?o de IA da okinto usando sua conta e chave de API.",
+  "register": "Abrir okinto",
+  "issues": "Feedback do projeto"
+}
 } as const;

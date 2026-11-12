@@ -4,6 +4,41 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.32 - 2026-11-12
+
+### New
+
+- **Spanish and Portuguese (Brazil):** Two new interface languages. Pick one in Settings → General → Language; if your system language is Spanish or Portuguese, the app uses it automatically. The interface, the tray menu, system messages from bots and What's new are all translated.
+- **Official bots in Spanish and Portuguese:** PPT Master, Film Studio, Company Research and US Stock Research have Spanish and Portuguese names, descriptions, starters, workspace interfaces and samples.
+
+### Improvements and fixes
+
+- US Stock Research charts read numbers that use a comma as the decimal mark (such as 12,5%), and changes in the key figures follow the number format of the interface language.
+
+
+### New
+
+- **Connect apps:** The avatar menu in the bottom-left corner has a new Connect apps item. Connect the apps you use and your bots can read and write their content. Connect once and every bot can use it by default; you can narrow it per bot and per tool under Apps in a bot's settings.
+- **Built-in apps:** GitHub, Notion, Linear, Atlassian (Jira and Confluence) and Canva connect in a step or two.
+- **Custom connectors (MCP):** Add them under My MCP on the Apps page. Paste a URL, mcpServers JSON, a `claude mcp add` command or a local start command and it is recognized; you can also fill in the form or edit JSON. Remote servers and local commands both work, with sign-in, headers, query parameters or a dedicated URL for authentication, up to 20 connectors.
+- **Asks before changing your data:** Read-only tools run right away. Writes ask you in the chat first by default, and you can choose Always allow this tool, which you can revoke later in the bot's settings. Deletes and anything sent to other people always ask. Read-only bots can't write.
+- **Fix a connection from the chat:** When a task needs an app that isn't connected, or a sign-in has expired or a key stopped working, a card appears in the chat. Click it to connect or fix it, and the bot carries on with the task.
+- **Right panel:** The info panel is now a row of tabs: Overview, Tasks and Memory. Official bots add a Workspace tab for their own interface, and the main area is always the chat.
+- **Sidebar sections:** Put bots, group chats and official bots into sections you create. Sections can be added, renamed, deleted and dragged to reorder.
+- **Official bots have their own look:** PPT Master, Film Studio, Company Research and US Stock Research each get their own avatar and a new cover. Bots whose avatar you haven't changed switch automatically.
+
+### Improvements and fixes
+
+- Settings › Connections is now Chat channels and only holds chat app accounts. Your existing Notion accounts moved to Connect apps and don't need to be authorized again.
+- Creating and updating Notion pages now asks first, following the rule above.
+- App tokens, keys and dedicated URLs are stored in a separate file, not in the database, and are masked in the interface and logs.
+- macOS no longer shows a keychain prompt: the Modelflare sign-in is protected by file permissions, like the other credentials.
+- When signing in or connecting to Modelflare fails, the message names the actual network reason.
+- You can drag the window from empty space on the Discover page.
+- The guide in a new group chat is now three short tips and two or three starters; click a starter to put it in the input box.
+- Model settings on the New bot page look like the Model group in bot settings, and the Create button is as wide as the form.
+- The note under Feedback in the avatar menu is gone.
+
 ## 0.1.31 - 2026-11-10
 
 ### New features and improvements
@@ -141,7 +176,6 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 ### Improved and fixed
 
 - Translation files are organized by module. Release checks validate missing content, placeholders, plurals and documentation links. Russian plurals, localized amounts and dates, Japanese and Korean input methods, and mobile line breaks are improved.
-- Feishu and Notion authorization errors follow the current language. Refused connections to a local proxy now include actionable guidance while retaining the original error.
 - Refined the website's sky effects, download page and mobile layouts, with localized sharing images, search-engine language annotations and 404 pages.
 
 ## 0.1.16 - 2026-11-02
@@ -162,8 +196,6 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 - **Switch bots from a chat:** Send `/bot` in a chat app to see your bots, and `/bot name` once to switch. That chat stays with the new bot, so you don't repeat it on every message. Each bot also knows about the others, so it can answer when you ask.
 - **Telegram, Slack and Discord:** Paste a token to connect. No public address needed, and images and files work both ways.
 - **Notion:** Connect with one-click authorization or a token. Bots can search, read, create and edit pages, and query databases. They can't delete pages.
-- **Read Feishu messages:** Authorize with a QR code, then ask any bot to "check my second Feishu". It reads chats and searches messages as you, read-only.
-- **Add Feishu by scanning:** When adding a Feishu chat account, scan a QR code to create the app instead of entering an App ID and Secret.
 
 ### Improved
 

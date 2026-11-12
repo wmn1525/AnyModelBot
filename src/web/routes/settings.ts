@@ -1,7 +1,8 @@
-/** 应用设置（设置页的常规、模型、搜索等）。 */
+/** 应用设置（设置页的常规、模型、搜索等）和侧栏分组。 */
 import { REASONING_EFFORTS, ZOOMS, saveConfigFile } from "../../config.js";
 import { SEARCH_PROVIDERS, normalizeSearxUrl, type SearchProvider } from "../../tools/search.js";
 import { normalizeLang, setLangPref, t, type LangPref } from "../../i18n/index.js";
+import { SIDEBAR_LAYOUT_KEY, sanitizeSidebarLayout } from "../../domain/sidebar-layout.js";
 import { HttpError, readJson, send, type Route, type WebContext } from "../http.js";
 
 export function settingsRoutes(ctx: WebContext): Route {
@@ -79,6 +80,23 @@ export function settingsRoutes(ctx: WebContext): Route {
         dataDir: cfg.dataDir,
         webSearch: app.webSearchView(),
       });
+    }
+    // 侧栏分组（domain/sidebar-layout.ts）：还没存过时 layout 为 null，界面用默认的两个分组
+    if (p === "/sidebar-layout") {
+      if (m === "PUT") {
+        const layout = sanitizeSidebarLayout((await readJson(req)).layout);
+        if (!layout) throw new HttpError(400, "bad sidebar layout");
+        app.store.setKV(SIDEBAR_LAYOUT_KEY, JSON.stringify(layout));
+        return send(res, 200, { layout });
+      }
+      if (m !== "GET") throw new HttpError(405, "method not allowed");
+      let layout = null;
+      try {
+        layout = sanitizeSidebarLayout(JSON.parse(app.store.getKV(SIDEBAR_LAYOUT_KEY) ?? "null"));
+      } catch {
+        /* 存坏了：当作没存过 */
+      }
+      return send(res, 200, { layout });
     }
     return false;
   };

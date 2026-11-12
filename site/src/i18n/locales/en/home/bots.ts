@@ -1,7 +1,7 @@
 export default {
   "h2": "Give every bot a job.",
-  "h2dim": "Pick one — or keep the whole crew.",
-  "lead": "Six plush characters, and you write their jobs. Go on, poke one — it talks back.",
+  "h2dim": "As many as you need.",
+  "lead": "The six plush characters are just looks. You choose the name, persona, and model. Poke one, and they'll respond.",
   "tabsLabel": "Choose a character",
   "cost": "≈ {amount} / mo",
   "badge": {
@@ -10,65 +10,65 @@ export default {
     "no": "ID",
     "persona": "Persona",
     "model": "Model",
-    "salary": "Salary",
+    "salary": "Monthly cost",
     "salaryNote": "everyday use, estimated",
     "onDuty": "On duty"
   },
   "modelNote": "Example model — change it any time",
-  "phoneNote": "Jobs and personas are examples; you write your own. The phone is illustrative",
+  "phoneNote": "Jobs and personas are just examples — you can change them. The phone is only a preview.",
   "phoneInput": "Message…",
-  "phoneStatus": "Online · running on your computer",
+  "phoneStatus": "Online · runs on your computer",
   "phoneDay": "Today 21:08",
   "swipeHint": "swipe to switch",
   "where": {
-    "pc": "Lives on your computer",
-    "phone": "Reach it from your phone"
+    "pc": "Runs on your computer",
+    "phone": "Chat from your phone"
   },
   "link": "Slack, Telegram & more",
   "perks": [
     {
       "title": "The job lives in the persona",
-      "body": "A few lines are enough. Templates are only a start."
+      "body": "A few lines are enough to say what it should do."
     },
     {
       "title": "Its own model and memory",
-      "body": "Each bot gets its own model, folder and budget."
+      "body": "Each bot gets its own model, memory, and workspace."
     },
     {
-      "title": "Keep as many as you like",
-      "body": "One writes code, one coaches your German. No overlap."
+      "title": "As many as you need",
+      "body": "One writes code, one coaches your German. They stay out of each other's way."
     }
   ],
   "looks": {
     "blue": {
       "name": "Ping",
       "alias": "",
-      "motto": "Its antenna pings the moment a message lands."
+      "motto": "Its antenna is always on — it catches every message."
     },
     "yellow": {
       "name": "Twinkle",
       "alias": "",
-      "motto": "A little star on top that twinkles when it smiles. It blushes, too."
+      "motto": "A little star on top. It lights up when it smiles, and it blushes too."
     },
     "green": {
       "name": "Sprout",
       "alias": "",
-      "motto": "A sprout on top that grows a little every day."
+      "motto": "A little sprout on top that seems to grow a bit every day."
     },
     "red": {
       "name": "Beat",
       "alias": "",
-      "motto": "Headset on, it moves to the beat."
+      "motto": "Headset on, it can't help keeping the beat."
     },
     "purple": {
       "name": "Crystal",
       "alias": "",
-      "motto": "A crystal on top that catches the light."
+      "motto": "A crystal on top that lights up when it turns."
     },
     "orange": {
       "name": "Pilot",
       "alias": "",
-      "motto": "Goggles down, ready for takeoff."
+      "motto": "Goggles on, ready to go."
     }
   },
   "personas": {

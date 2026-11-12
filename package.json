@@ -1,7 +1,7 @@
 {
   "name": "anymodel-bot",
   "productName": "okbot",
-  "version": "0.1.31",
+  "version": "0.1.32",
   "private": true,
   "description": "okbot：任意模型的个人 AI 助手（飞书 + 微信 iLink），内置 magpie 模型网关",
   "license": "MIT",
@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@larksuiteoapi/node-sdk": "1.76.0",
+    "@modelcontextprotocol/client": "2.2.0",
     "electron-updater": "6.8.12",
     "htm": "^3.1.1",
     "preact": "^11.0.2",
@@ -148,6 +149,16 @@
           ]
         },
         {
+          "from": "vendor/yuque-mcp",
+          "to": "yuque-mcp",
+          "filter": [
+            "yuque-mcp.mjs",
+            "LICENSE",
+            "THIRD_PARTY_LICENSES.txt",
+            "README.md"
+          ]
+        },
+        {
           "from": "build/cua-driver/darwin-${arch}",
           "to": "cua-driver",
           "filter": [
@@ -197,6 +208,16 @@
             "cua-driver.exe",
             "LICENSE",
             "THIRD_PARTY_NOTICES.md"
+          ]
+        },
+        {
+          "from": "vendor/yuque-mcp",
+          "to": "yuque-mcp",
+          "filter": [
+            "yuque-mcp.mjs",
+            "LICENSE",
+            "THIRD_PARTY_LICENSES.txt",
+            "README.md"
           ]
         }
       ]
@@ -249,6 +270,16 @@
             "cua-driver.exe",
             "LICENSE",
             "THIRD_PARTY_NOTICES.md"
+          ]
+        },
+        {
+          "from": "vendor/yuque-mcp",
+          "to": "yuque-mcp",
+          "filter": [
+            "yuque-mcp.mjs",
+            "LICENSE",
+            "THIRD_PARTY_LICENSES.txt",
+            "README.md"
           ]
         }
       ],

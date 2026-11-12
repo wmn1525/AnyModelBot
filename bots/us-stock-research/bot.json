@@ -1,20 +1,24 @@
 {
   "id": "us-stock-research",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "minAppVersion": "0.1.20",
   "name": {
     "zh-CN": "美股研报",
     "en": "US Stock Research",
     "ja": "米国株リサーチ",
     "ko": "미국 주식 리서치",
-    "ru": "Анализ акций США"
+    "ru": "Анализ акций США",
+    "es": "Acciones de EE. UU.",
+    "pt": "Ações dos EUA"
   },
   "summary": {
-    "zh-CN": "查美股财报和申报文件，写出每个数字都能追溯的研究报告",
-    "en": "Research US-listed companies from SEC filings, with every number traceable",
-    "ja": "米国上場企業の決算と SEC 提出書類を調べ、すべての数字をたどれるレポートを作成",
-    "ko": "미국 상장사의 재무제표와 SEC 공시를 조사해 모든 숫자를 추적할 수 있는 보고서를 작성",
-    "ru": "Изучает компании США по документам SEC, каждое число в отчёте можно проверить"
+    "zh-CN": "查阅美股财报和申报文件，写出数据可追溯的研究报告。",
+    "en": "Research US-listed companies from SEC filings, with every number traceable.",
+    "ja": "米国上場企業の決算と SEC 提出書類を調べ、数字の出典をたどれるレポートを作成します。",
+    "ko": "미국 상장사의 재무제표와 SEC 공시를 조사해 수치를 추적할 수 있는 보고서를 작성합니다.",
+    "ru": "Изучает компании США по документам SEC, каждое число в отчёте можно проверить.",
+    "es": "Analiza empresas de EE. UU. con documentos de la SEC; cada cifra es rastreable.",
+    "pt": "Pesquisa empresas dos EUA nos documentos da SEC, com cada número rastreável."
   },
   "about": {
     "zh-CN": [
@@ -41,9 +45,19 @@
       "Изучает компании США по отчётности в SEC EDGAR: составляет план, собирает данные, проверяет и пишет отчёт",
       "Журнал запросов и исходные данные остаются в рабочей папке. Котировок, P/E и скринера акций нет",
       "Процесс вдохновлён открытым проектом Dexter, но его кода здесь нет и связи с ним нет. Это не инвестиционная рекомендация"
+    ],
+    "es": [
+      "Investiga empresas que cotizan en EE. UU. con los documentos de SEC EDGAR: planifica, obtiene los datos, los verifica y luego escribe un informe",
+      "Los registros de consultas y los datos originales se quedan en tu espacio de trabajo. No tiene cotizaciones, ratios P/E ni filtro de acciones",
+      "Inspirado en el proyecto de código abierto Dexter, sin usar su código ni tener relación con él. No es asesoramiento de inversión"
+    ],
+    "pt": [
+      "Pesquisa empresas listadas nos EUA a partir dos documentos no SEC EDGAR: planeja, coleta, confere e depois escreve um relatório",
+      "Os registros de coleta e os dados originais ficam no seu espaço de trabalho. Não tem cotações, índices P/L nem filtro de ações",
+      "Inspirado no projeto de código aberto Dexter, sem nenhum código dele e sem vínculo com ele. Não é recomendação de investimento"
     ]
   },
-  "avatar": "finance",
+  "avatar": "ticker",
   "permissions": [
     "workspace-write",
     "network"
@@ -73,6 +87,16 @@
       "Изучи динамику выручки и валовой маржи NVIDIA за пять лет и подготовь отчёт",
       "Сравни выручку и операционную маржу Microsoft и Alphabet за три года",
       "Прочитай факторы риска в последнем 10-K Tesla и выдели пять главных"
+    ],
+    "es": [
+      "Analiza la evolución de los ingresos y el margen bruto de NVIDIA en cinco años y haz un informe",
+      "Compara los ingresos y el margen operativo de Microsoft y Alphabet en los últimos tres años",
+      "Lee los factores de riesgo del 10-K más reciente de Tesla y resume los cinco principales"
+    ],
+    "pt": [
+      "Pesquise a evolução da receita e da margem bruta da NVIDIA em cinco anos e faça um relatório",
+      "Compare a receita e a margem operacional da Microsoft e da Alphabet em três anos",
+      "Leia os fatores de risco do 10-K mais recente da Tesla e resuma os cinco principais"
     ]
   },
   "skills": []

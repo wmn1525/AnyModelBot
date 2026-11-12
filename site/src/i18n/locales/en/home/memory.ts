@@ -1,19 +1,19 @@
 export default {
   "tag": "Long-term memory",
   "h2": "It remembers you — and knows what not to keep.",
-  "layersLine": "Three layers — bot, group and team — kept separate.",
+  "layersLine": "Each bot, group, and team has its own memory, kept separate.",
   "points": [
     {
       "title": "Plain Markdown files",
-      "body": "On your disk, open in any editor."
+      "body": "They're on your disk, and you can open them in any editor."
     },
     {
-      "title": "Secrets are refused",
-      "body": "Passwords, keys and ID numbers are detected and skipped."
+      "title": "Sensitive information isn't saved",
+      "body": "Passwords, keys, and ID numbers are skipped."
     },
     {
-      "title": "Long chats tidied up",
-      "body": "A context steward does it with the cheaper model you pick."
+      "title": "Long chats are tidied up automatically",
+      "body": "The “context steward” does this with the smaller model you choose."
     }
   ],
   "sample": "Example",

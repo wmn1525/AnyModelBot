@@ -1,0 +1,43 @@
+export default {
+  "palette": {
+    "title": "Paleta de comandos",
+    "placeholder": "Escribe un comando o el nombre de un bot",
+    "inputLabel": "Comando",
+    "empty": "No hay comandos que coincidan"
+  },
+  "cmd": {
+    "needs": "Te necesita ({count})",
+    "needsKeys": "te necesita pendiente pendientes atención aprobar needs attention to-do",
+    "tasks": "Tareas y reglas",
+    "tasksKeys": "tareas reglas segundo plano programadas tasks rules background jobs",
+    "settings": "Abrir Ajustes",
+    "settingsKeys": "ajustes configuración preferencias opciones settings preferences options",
+    "newBot": "Nuevo bot",
+    "newBotKeys": "nuevo bot crear agregar añadir new bot create add",
+    "openInfo": "Abrir panel derecho",
+    "closeInfo": "Cerrar panel derecho",
+    "infoKeys": "información panel detalles panel derecho lateral espacio de trabajo info panel details right panel side workspace",
+    "botSettings": "Ajustes de “{name}”",
+    "botSettingsKeys": "ajustes del bot configurar configuración bot settings configure",
+    "modelflare": "Ajustes de modelos",
+    "modelflareKeys": "modelos clave oficial api models modelflare official key api",
+    "appearance": "Ajustes de apariencia",
+    "appearanceKeys": "apariencia fuente texto tamaño movimiento animación vidrio desenfoque ancho appearance font text size motion animation glass blur width",
+    "themeSystem": "Tema: sistema",
+    "themeKeys": "tema apariencia sistema theme appearance system",
+    "themeLight": "Tema: claro",
+    "themeLightKeys": "tema claro apariencia theme light appearance",
+    "themeDark": "Tema: oscuro",
+    "themeDarkKeys": "tema oscuro noche apariencia theme dark night appearance",
+    "lang": "Idioma: {name}",
+    "langKeys": "idioma lengua inglés chino japonés coreano ruso español portugués language english chinese japanese korean russian spanish portuguese 中文 English 日本語 한국어 Русский Español Português",
+    "switchBot": "Cambiar a “{name}”"
+  },
+  "lowBalance": "Tu saldo de OKINTO bajó a ${amount}",
+  "serviceDown": "No se puede conectar con el servicio local: {error}",
+  "resizeSide": "Cambiar el tamaño de la barra lateral",
+  "resizePanel": "Cambiar el tamaño del panel derecho",
+  "botMissing": "No se encontró el bot",
+  "groupMissing": "Este chat grupal ya no existe",
+  "backToChat": "Volver al chat"
+};

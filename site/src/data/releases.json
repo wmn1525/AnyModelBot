@@ -23,8 +23,8 @@
       "sizeMB": 200.1
     },
     "docker": {
-      "image": "ghcr.io/wmn1525/okbot",
-      "command": "docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/wmn1525/okbot"
+      "image": "okbot",
+      "command": "git clone https://github.com/wmn1525/AnyModelBot.git && cd AnyModelBot && git submodule update --init --depth 1 vendor/magpie && docker build -t okbot . && docker run -d --name amb -p 3600:3600 -v amb-data:/data okbot"
     }
   }
 }

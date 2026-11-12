@@ -7,8 +7,8 @@
 .toast {
   --toast-bg: var(--glass-pop);
   --toast-fg: var(--fg);
-  pointer-events: auto; font-size: var(--fs-sm); line-height: 16px; font-weight: var(--fw-medium);
-  padding: var(--space-1) var(--space-3); border-radius: var(--r-full);
+  pointer-events: auto; font-size: var(--fs-sm); line-height: 20px; font-weight: var(--fw-medium);
+  padding: var(--space-1-5) var(--ctl-px-md); border-radius: var(--r-ctl);   /* 20 的行高 + 上下 6 = 32 高的胶囊 */
   max-width: min(480px, calc(100vw - 2 * var(--float-inset)));
   background: var(--toast-bg); color: var(--toast-fg); backdrop-filter: var(--glass-filter-sm);
   box-shadow: var(--shadow-float);

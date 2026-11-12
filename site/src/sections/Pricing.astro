@@ -39,6 +39,7 @@ const v = buildVars(lang);
       <PriceTable lang={lang} client:visible rows={pricing.rows} featured={pricing.config.featuredModels} t={p.table}
         mediaText={fmt(p.table.media, v)} mediaHref={MF.pricing(lang)} initialAll />
       <p class="small muted">{fmt(p.table.note, v)}</p>
+      <p class="small muted">{p.timeBasedNote}</p>
     </div>
 
     <div class="pricing__block calc-wrap" id="calc">

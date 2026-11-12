@@ -3,7 +3,8 @@
 // 平时显示最后一期，鼠标移到哪一期就显示哪一期（整列都是感应区，不用对准细小的点）。表格本身仍在报告里。
 import { html, useEffect, useRef, useState } from "/amb/botapp/kit/kit.js";
 
-const NUM = /^[-+(]?\s*[$€¥£]?\s*\d[\d,]*(\.\d+)?\s*(%|pp|个百分点)?\s*\)?$/i;
+// 千分位和小数点两种写法都认：1,234.5 / 1.234,5 / 1 234,5 / 41,78%
+const NUM = /^[-+(]?\s*[$€¥£]?\s*\d(?:[\d.,\u00a0\u202f ]*\d)?\s*(%|pp|个百分点)?\s*\)?$/i;
 const MAX_ROWS = 12;
 const MAX_SERIES = 2;
 
@@ -11,19 +12,41 @@ function parseCell(raw) {
   const s = String(raw ?? "").replace(/\*\*/g, "").trim();
   if (!NUM.test(s)) return null;
   const neg = /^\(.*\)$/.test(s) || s.startsWith("-");
-  const n = Number(s.replace(/[^\d.]/g, ""));
-  if (!Number.isFinite(n)) return null;
-  return { value: neg ? -n : n, pct: /%$/.test(s), text: s.replace(/^\(|\)$/g, "") };
+  return { neg, digits: s.replace(/[^\d.,]/g, ""), pct: /%$/.test(s), text: s.replace(/^\(|\)$/g, "") };
+}
+
+/** 这一格能不能单独看出小数点："41,78" → ","；"1,234.5" → "."；"1.234.567" → ","；"365,817" 这种只有一个分隔符、后面正好三位的看不出 → null */
+function decimalHint(d) {
+  if (d.includes(",") && d.includes(".")) return d.lastIndexOf(",") > d.lastIndexOf(".") ? "," : ".";
+  for (const sep of [",", "."]) {
+    const parts = d.split(sep);
+    if (parts.length === 1) continue;
+    if (parts.length > 2) return sep === "," ? "." : ",";
+    return parts[1].length === 3 ? null : sep;
+  }
+  return null;
+}
+
+/** 整列用同一种小数点：先看列里有没有能单独判断的格，都没有时按报告语言的习惯（ru、es、pt 用逗号） */
+function columnValues(cells, lang) {
+  const dec = cells.map((c) => c && decimalHint(c.digits)).find(Boolean)
+    ?? (new Intl.NumberFormat(lang || "en").format(1.5).includes(",") ? "," : ".");
+  const group = dec === "," ? "." : ",";
+  return cells.map((c) => {
+    if (!c) return null;
+    const n = Number(c.digits.split(group).join("").replace(dec, "."));
+    return Number.isFinite(n) ? { value: c.neg ? -n : n, pct: c.pct, text: c.text } : null;
+  });
 }
 
 /** 第一张能画的表：至少两行，第一列是期间或名称，至少一列大部分是数字 */
-export function chartsFrom(blocks) {
+export function chartsFrom(blocks, lang) {
   for (const b of blocks) {
     if (b.type !== "table" || b.rows.length < 2 || b.rows.length > MAX_ROWS || b.head.length < 2) continue;
     const cats = b.rows.map((r) => String(r[0] ?? "").replace(/\*\*/g, ""));
     const cols = [];
     for (let c = 1; c < b.head.length; c++) {
-      const cells = b.rows.map((r) => parseCell(r[c]));
+      const cells = columnValues(b.rows.map((r) => parseCell(r[c])), lang);
       const ok = cells.filter(Boolean);
       if (ok.length < Math.max(2, Math.ceil(cells.length * 0.7))) continue;
       cols.push({ name: String(b.head[c]).replace(/\*\*/g, ""), cells, pct: ok.filter((x) => x.pct).length > ok.length / 2 });
@@ -163,7 +186,7 @@ export function Charts({ data }) {
  * 关键数字：每组数据一张卡——最后一期的值，和第一期比变了多少（金额算百分比，比率算百分点）。
  * 给只想看结论的人一眼读懂，懂行的人也能直接拿去核对表格。
  */
-export function Kpis({ data, t }) {
+export function Kpis({ data, t, lang }) {
   if (!data) return null;
   const tiles = [...data.bars, ...data.lines].map((s) => {
     const idx = s.cells.map((c, i) => (c ? i : -1)).filter((i) => i >= 0);
@@ -172,7 +195,8 @@ export function Kpis({ data, t }) {
     const diff = s.pct ? b.value - a.value : a.value ? ((b.value - a.value) / Math.abs(a.value)) * 100 : null;
     if (diff == null || !Number.isFinite(diff)) return null;
     const sign = diff > 0 ? "+" : diff < 0 ? "−" : "±";
-    const n = Math.abs(diff).toFixed(s.pct ? 2 : 1);
+    const digits = s.pct ? 2 : 1;
+    const n = new Intl.NumberFormat(lang || "en", { minimumFractionDigits: digits, maximumFractionDigits: digits, useGrouping: false }).format(Math.abs(diff));
     return { name: s.name, value: b.text, delta: s.pct ? t("kpi.pp", { v: `${sign}${n}` }) : `${sign}${n}%`, up: diff > 0, down: diff < 0, from: data.cats[idx[0]], to: data.cats[idx[idx.length - 1]] };
   }).filter(Boolean);
   if (!tiles.length) return null;

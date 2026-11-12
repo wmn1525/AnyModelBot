@@ -4,7 +4,7 @@
 //   1. README.md / README_en.md 引用的 docs/assets/... 文件都存在，且不超过体积上限（docs/assets/README.md 的总表）；GIF 合计 ≤ 30 MB
 //   2. 中英两份 README 的一级、二级标题数量相同，<img> 数量相同，文末引用式链接定义完全相同
 //   3. README、贡献指南、SECURITY.md、docs/*.md 里的相对链接指向存在的文件；#锚点能在目标文档的标题里找到（按 GitHub 的规则生成）
-//   4. 两份 README 不出现禁用词；「定时任务 / Scheduled tasks」只允许出现在路线图一节
+//   4. 各语言 README 不出现禁用词；「定时任务 / Scheduled tasks」（及西语、葡语的说法）只允许出现在路线图一节
 //   5. 所有图片（<img> 与 Markdown 图片）都有非空 alt
 //
 // --allow-missing：素材还没录完时，把「素材文件不存在」降为警告（其余检查照常失败）。全部素材提交后去掉这个参数。
@@ -16,14 +16,14 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ALLOW_MISSING = process.argv.includes("--allow-missing");
 
-const TARGET_READMES = { zh: "README.md", en: "README_en.md", ja: "README_ja.md", ko: "README_ko.md", ru: "README_ru.md" };
+const TARGET_READMES = { zh: "README.md", en: "README_en.md", ja: "README_ja.md", ko: "README_ko.md", ru: "README_ru.md", es: "README_es.md", pt: "README_pt.md" };
 const checkAll = process.argv.includes("--all-languages");
 const locales = JSON.parse(fs.readFileSync(path.join(ROOT, "ui/locales/manifest.json"), "utf8")).locales;
 const codes = locales.filter((l) => checkAll || l.ready).map((l) => l.siteCode);
 const READMES = Object.fromEntries(Object.entries(TARGET_READMES).filter(([code]) => codes.includes(code)));
 const LINKED_DOCS = [
   ...Object.values(READMES),
-  ...["ja", "ko", "ru"].filter((l) => codes.includes(l)).flatMap((l) => [`CONTRIBUTING_${l}.md`, `SECURITY_${l}.md`, `CHANGELOG_${l}.md`, `THIRD_PARTY_NOTICES_${l}.md`, `docs/development_${l}.md`, `docs/privacy_${l}.md`]),
+  ...["ja", "ko", "ru", "es", "pt"].filter((l) => codes.includes(l)).flatMap((l) => [`CONTRIBUTING_${l}.md`, `SECURITY_${l}.md`, `CHANGELOG_${l}.md`, `THIRD_PARTY_NOTICES_${l}.md`, `docs/development_${l}.md`, `docs/privacy_${l}.md`, `docs/skills_${l}.md`]),
   "CONTRIBUTING.md",
   "CONTRIBUTING_en.md",
   "SECURITY.md",
@@ -54,8 +54,8 @@ const LIMITS = [
 const GIF_TOTAL = 30 * MB;
 
 const BANNED =
-  /绝对安全|100% ?安全|absolutely secure|零遥测|no telemetry at all|离线可用|works offline|全平台|all platforms|最便宜|cheapest|省 ?\d+%|save \d+%|Modelflare ?(没有|无)订阅|Modelflare has no subscription|\$ ?\d|多机器人协同|群聊支持|color=blue/gi;
-const ROADMAP_ONLY = /定时任务|Scheduled tasks/gi;
+  /绝对安全|100% ?安全|absolutely secure|零遥测|no telemetry at all|离线可用|works offline|全平台|all platforms|最便宜|cheapest|省 ?\d+%|save \d+%|Modelflare ?(没有|无)订阅|Modelflare has no subscription|\$ ?\d|多机器人协同|群聊支持|color=blue|absolutamente segur[oa]|100 ?% ?segur[oa]|cero telemetría|zero telemetria|sin ninguna telemetría|sem nenhuma telemetria|funciona sin conexión|funciona sem (internet|conexão)|funciona offline|todas las plataformas|todas as plataformas|(el|la) más barat[oa]|(o|a) mais barat[oa]|ahorra \d+ ?%|economize \d+ ?%|Modelflare (no tiene|sin) suscripción|Modelflare (não tem|sem) assinatura/gi;
+const ROADMAP_ONLY = /定时任务|Scheduled tasks|Tareas programadas|Tarefas agendadas/gi;
 
 const errors = [];
 const warnings = [];
@@ -212,7 +212,7 @@ for (const readme of Object.values(READMES)) {
   let inRoadmap = false;
   lines.forEach((line, i) => {
     const h1 = /^#\s+(.*)$/.exec(line);
-    if (h1) inRoadmap = /Roadmap|路线图/.test(h1[1]);
+    if (h1) inRoadmap = /Roadmap|路线图|Hoja de ruta/.test(h1[1]);
     for (const m of line.matchAll(BANNED)) err(readme, `第 ${i + 1} 行出现禁用词「${m[0]}」`);
     if (!inRoadmap) for (const m of line.matchAll(ROADMAP_ONLY)) err(readme, `第 ${i + 1} 行：「${m[0]}」只能出现在路线图一节`);
   });

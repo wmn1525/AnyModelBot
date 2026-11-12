@@ -1,6 +1,6 @@
 # 기여하기
 
-[简体中文](./CONTRIBUTING.md) | [English](./CONTRIBUTING_en.md) | [日本語](./CONTRIBUTING_ja.md) | 한국어 | [Русский](./CONTRIBUTING_ru.md)
+[简体中文](./CONTRIBUTING.md) | [English](./CONTRIBUTING_en.md) | [日本語](./CONTRIBUTING_ja.md) | 한국어 | [Русский](./CONTRIBUTING_ru.md) | [Español](./CONTRIBUTING_es.md) | [Português (Brasil)](./CONTRIBUTING_pt.md)
 
 AnyModelBot을 더 나은 앱으로 만드는 데 함께해 주셔서 감사합니다. 버그 제보, 수정, 문서, 아이디어 모두 환영합니다.
 

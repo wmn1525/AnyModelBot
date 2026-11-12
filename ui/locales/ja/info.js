@@ -1,12 +1,12 @@
 export default {
-  "aria": "情報パネル",
+  "aria": "右パネル",
   "botSettings": "ボット設定",
   "closeTitle": "閉じる（⌘⇧I）",
-  "closeAria": "情報パネルを閉じる",
+  "closeAria": "右パネルを閉じる",
   "channels": "接続先",
   "channelsDefault": "既定ではこのボットが返信します",
   "channelsManage": "チャットの接続先を管理",
-  "channelsSub": "アカウントはすべてのボットで共有します。「設定 > 接続」から追加できます",
+  "channelsSub": "アカウントはすべてのボットで共有します。「設定 > チャットチャネル」から追加できます",
   "approvals": "承認待ち",
   "due": "有効期限：{time}",
   "noApprovals": "承認待ちはありません",
@@ -100,5 +100,8 @@ export default {
     "stop": "停止",
     "activity": "処理の記録"
   },
-  "tasks": "タスク"
+  "tasks": "タスク",
+  "tabsLabel": "パネルのタブ",
+  "tab": { "app": "ワークスペース", "overview": "概要", "tasks": "タスク", "memory": "メモリ" },
+  "noTasks": "タスクやルールはまだありません"
 };

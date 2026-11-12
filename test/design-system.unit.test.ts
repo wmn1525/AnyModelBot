@@ -3,6 +3,8 @@
  * 原始值只允许出现在 ui/design/tokens/ 里；组件文件里需要的"魔法数"先起名（--组件-xxx: 值）再用。
  * 间距例外只有三种：0、≤1px 的细线，以及同一行带 /* 微调：… *\/ 注释的光学微调。
  * 容器（README「容器与层次」）：内容里的一组靠 --well 底色成组，不描边、不加侧边色条；要保留的边在同一行写 /* 描边：… *\/。
+ * 形状（README「形状」）：圆角只用圆角角色（--r-ctl、--r-card …）或由它们组成的组件变量，圆形用 50%；
+ * 不直接用 primitives 的 --r-xs … --r-full，也不用兼容名 --r-well；确实是插画、图标轮廓的，在同一行写 /* 形状：… *\/。
  * 另外检查所有 var(--x) 都有定义，改名或删 token 时不会留下悬空引用。
  */
 import { describe, it, expect } from "vitest";
@@ -145,6 +147,42 @@ function lintLabelsCss(file: string): Hit[] {
   return hits;
 }
 
+// —— 形状（README「形状」）——
+// 圆角按层级取角色：面（--r-pane / --r-card-lg / --r-card）、面里的东西（--r-row / --r-item / --r-item-sm，同心算出来）、
+// 控件（--r-ctl 胶囊、--r-field）、图标底（--r-tile*）、内容（--r-bubble / --r-composer / --r-mark）；圆形用 50%。
+/** primitives 的圆角和兼容名：只给 token 文件、样例页和目录 Bot 的界面 */
+const RADIUS_RAW = /var\(\s*--r-(xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|full|well)\s*\)/;
+/** 同一行带"形状"注释的声明：插画、应用图标这种按自己轮廓画的圆角 */
+const SHAPE_OK = /\/\*\s*形状[：:]/;
+/** 圆角声明：border-*-radius，以及组件对外的圆角变量（--btn-r、--pop-r、--act-r …） */
+const isRadiusProp = (prop: string) => /^border(-[a-z]+)*-radius$/.test(prop) || /^--[\w-]+-r$/.test(prop);
+
+function lintRadiusCss(file: string): Hit[] {
+  const text = fs.readFileSync(file, "utf8");
+  const marked = new Set(text.split("\n").flatMap((l, i) => (SHAPE_OK.test(l) ? [i + 1] : [])));
+  const src = stripComments(text);
+  const hits: Hit[] = [];
+  const decl = /([\w-]+)\s*:\s*([^;{}]+)/g;
+  for (let m; (m = decl.exec(src)); ) {
+    const [, prop, value] = m;
+    if (!isRadiusProp(prop)) continue;
+    const line = lineOf(src, m.index);
+    if (marked.has(line)) continue;
+    const at = `${rel(file)}:${line}`;
+    if (RADIUS_RAW.test(value)) hits.push(`${at} 原始圆角 token：${prop}: ${value.trim()} —— 按层级用圆角角色（--r-ctl、--r-card、--r-item …），见 README「形状」`);
+    else if ((withoutVars(value).match(/[\d.]+%/g) || []).some((p) => p !== "50%")) hits.push(`${at} 百分比圆角：${prop}: ${value.trim()} —— 圆形用 50%；插画、图标轮廓在同一行写 /* 形状：理由 */`);
+  }
+  return hits;
+}
+
+function lintRadiusJs(file: string): Hit[] {
+  const src = fs.readFileSync(file, "utf8");
+  const hits: Hit[] = [];
+  const bad = /border-radius\s*:\s*[^;"'`}]*var\(\s*--r-(xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|full|well)\s*\)/g;
+  for (let m; (m = bad.exec(src)); ) hits.push(`${rel(file)}:${lineOf(src, m.index)} 内联样式里的原始圆角 token：${m[0]}`);
+  return hits;
+}
+
 function lintEdgesJs(file: string): Hit[] {
   const src = fs.readFileSync(file, "utf8");
   const hits: Hit[] = [];
@@ -206,6 +244,30 @@ describe("设计规范", () => {
         ".e { top: 3px; }   /* 微调：居中 */",
       ].join("\n"));
       expect(lintSpacingCss(tmp).map((h) => h.split(" ")[0].split(":").pop())).toEqual(["1", "2", "3"]);
+    } finally {
+      fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
+    }
+  });
+
+  it("圆角只用圆角角色（样例页和 token 文件除外）", () => {
+    const own = (f: string) => !f.endsWith(`${path.sep}gallery.css`) && !f.endsWith(`${path.sep}gallery.js`);
+    expect([...css.filter(own).flatMap(lintRadiusCss), ...js.filter(own).flatMap(lintRadiusJs)]).toEqual([]);
+  });
+
+  it("形状守卫能拦下原始圆角 token 和随手写的百分比", () => {
+    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "amb-radius-")), "x.css");
+    try {
+      fs.writeFileSync(tmp, [
+        ".a { border-radius: var(--r-lg); }",
+        ".b { border-radius: var(--r-card); }",
+        ".c { --pop-r: var(--r-xl); }",
+        ".d { border-radius: 50%; }",
+        ".e { border-radius: 30%; }",
+        ".f { border-radius: 30%; }   /* 形状：应用图标 */",
+        ".g { border-radius: calc(var(--r-card) - var(--space-1)); }",
+        ".h { border-top-left-radius: var(--r-well); }",
+      ].join("\n"));
+      expect(lintRadiusCss(tmp).map((h) => h.split(" ")[0].split(":").pop())).toEqual(["1", "3", "5", "8"]);
     } finally {
       fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
     }

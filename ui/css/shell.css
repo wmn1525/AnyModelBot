@@ -1,9 +1,9 @@
-/* Shell：sidebar 280 | main 1fr | info panel 320（按需）。没有顶栏。
+/* Shell：sidebar 280 | main 1fr | 右侧面板（信息面板 320，按需；专业 Bot 带工作台时更宽、默认开着，见 screens/work-panel.js）。没有顶栏。
    窗口最底层是一层纯色 --bg，不放光晕、不随机器人变色（用户 2026-11-03 要求）；
    侧栏就是窗口底色，和窗口是同一个平面；主区和信息面板是圆角面板，只有一道细线（--pane-gap 间隙）。
    侧栏、信息面板和主区之间的空隙是分隔条（README「分隔条」）：拖动调宽，双击恢复。 */
 /* 列宽注册成 <length>，才能平滑过渡：信息面板开合、双击恢复默认宽度、键盘调宽时列宽滑过去，主区跟着让位。
-   不继承：过渡的每一帧只重算 .app 和两条分隔条（它们显式 inherit），不牵动整棵对话的样式 */
+   不继承：过渡的每一帧只重算 .app、侧栏和两条分隔条（它们显式 inherit），不牵动整棵对话的样式 */
 @property --side-col { syntax: "<length>"; inherits: false; initial-value: 280px; }
 @property --panel-track { syntax: "<length>"; inherits: false; initial-value: 0px; }
 @layer app {
@@ -18,7 +18,8 @@
 /* 三列总在：侧栏 | 主区 | 信息面板。信息面板关着时那一列是 0，打开时滑到 --panel-col（面板本身定宽，
    列变窄时它往右滑出窗口，所以开合是"滑进来 / 滑出去"，面板里的内容不会被挤扁重排） */
 .app {
-  --side-col: clamp(var(--side-w-min), var(--side-w-user, var(--side-w)), min(var(--side-w-max), var(--side-w-cap)));
+  --side-open: clamp(var(--side-w-min), var(--side-w-user, var(--side-w)), min(var(--side-w-max), var(--side-w-cap)));   /* 侧栏展开时的宽度 */
+  --side-col: var(--side-open);
   --panel-col: clamp(var(--panel-w-min), var(--panel-w-user, var(--panel-w)), min(var(--panel-w-max), var(--panel-w-cap)));
   --panel-track: 0px;
   position: relative; overflow: hidden;
@@ -28,9 +29,16 @@
   transition: --side-col var(--dur-slow) var(--ease-spring), --panel-track var(--dur-slow) var(--ease-spring);
 }
 .app > .side { grid-area: 1 / 1; }
+/* 侧栏收起（.side-off，顶部最左边的按钮）：那一列滑到 0。侧栏本身不跟着变窄（内容不挤扁），而是整块往左滑出窗口；
+   列比展开宽度宽时（双击分隔条恢复默认宽度的过渡里）侧栏照旧跟着列宽变 */
+.app.side-off { --side-col: 0px; }
+.app > .side { --side-col: inherit; width: max(var(--side-col), var(--side-open)); margin-inline-start: min(0px, calc(var(--side-col) - var(--side-open))); }
 .app > .main { grid-area: 1 / 2; }
 .app > .panel { grid-area: 1 / 3; }
 .app.with-panel { --panel-track: var(--panel-col); }
+/* 放着工作台的右侧面板（专业 Bot，screens/work-panel.js）更宽，和对话大约对半：默认 --work-w，拖过的宽度是 --work-w-user，和普通面板分开记。
+   上限再让出侧栏和主区的最小宽度：主区不被挤到 --main-w-min 以下（侧栏收起时这一项跟着变宽） */
+.app.panel-wide { --panel-col: clamp(var(--work-w-min), var(--work-w-user, var(--work-w)), min(var(--work-w-max), var(--work-w-cap), 100vw - var(--side-col) - var(--main-w-min))); }
 /* 拖分隔条时列宽跟手，不过渡 */
 :root[data-resizing] .app { transition: none; }
 /* 分隔条在空隙的正中，比空隙宽一点（两边各探进 2px，更好抓）；细线只画在面板直边那一段（上下让出面板的圆角） */
@@ -45,10 +53,15 @@
   position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column;
   margin: var(--pane-gap) var(--pane-gap) var(--pane-gap) 0;
   border-radius: var(--r-pane); background: var(--surface); box-shadow: var(--shadow-pane); overflow: hidden;   /* 描边：--shadow-pane 就是一道细线，面板靠它和底色分开 */
+  transition: margin-left var(--dur-slow) var(--ease-spring);
 }
+/* 侧栏收起后：主区左边也离窗口 --pane-gap；左上角浮着顶部三个按钮（.side-rail），
+   对话类页面的顶栏从按钮右边开始，设置类页面的大标题落到顶栏那一条下面，都不被盖住 */
+.app.side-off > .main { margin-left: var(--pane-gap); --page-top: var(--head-h); }
+.app.side-off > .main .chat-head { padding-left: calc(var(--rail-l) + var(--rail-w) - var(--pane-gap) + var(--space-2)); }
 .view { animation: fade-in var(--dur-base) var(--ease-out); }
 
-/* —— Sidebar（参考 Grok Bot）：新建按钮 | 常驻搜索 | 机器人行 | 账户。
+/* —— Sidebar（参考 Grok Bot）：顶部三个按钮（收起 | 搜索 · 新建）| 机器人行 | 账户。
    行的状态：悬停一层淡灰，选中深一级（--side-active），都是平的，没有投影、不浮起（参考 Codex、Grok） —— */
 .side {
   --ib-bg-hover: var(--side-hover);
@@ -57,35 +70,52 @@
   min-height: 0; display: flex; flex-direction: column;
   background: var(--glass-side);
 }
-/* 顶部按钮和主区顶栏在同一条中线上：主区离窗口上沿 --pane-gap，这里也先让出 --pane-gap。
-   右边让到新建按钮的图标（28 的按钮里 16 的图标，四周各 6）落在行文字的右边线上（--side-inset + --side-row-px），
-   和机器人行的时间右对齐 */
+/* 顶部三个按钮：收起侧栏 | 搜索 · 新建（sidebar.js 的 SideActions），和主区顶栏在同一条中线上：主区离窗口上沿 --pane-gap，这里也先让出 --pane-gap。
+   收起钮靠左，图标左沿落在侧栏竖线上（--side-inset + --side-row-px）；macOS 紧挨红绿灯。
+   右边让到新建按钮的图标（32 的按钮里 16 的图标，四周各 --ib-inset）落在行文字的右边线上，和机器人行的时间右对齐 */
 .side-top {
   display: flex; align-items: center; justify-content: flex-end; gap: var(--bar-gap);
-  height: calc(var(--pane-gap) + var(--head-h)); padding: var(--pane-gap) calc(var(--side-inset) + var(--side-row-px) - var(--space-1-5)) 0 var(--side-inset); flex: none;
+  height: calc(var(--pane-gap) + var(--head-h)); padding: var(--pane-gap) calc(var(--side-inset) + var(--side-row-px) - var(--ib-inset)) 0 var(--side-inset); flex: none;
   -webkit-app-region: drag;
 }
 .side-top > * { -webkit-app-region: no-drag; }
+.side-top > .grow { -webkit-app-region: drag; align-self: stretch; }
 .side-top.start { justify-content: flex-start; }
 /* 返回：箭头和间隙与设置导航一样（16 + 10），"返回应用"和下面的导航文字落在同一条竖线上 */
 .side-back {
   display: inline-flex; align-items: center; gap: var(--space-2-5); height: var(--ctl-lg); padding: 0 var(--side-row-px);
-  border-radius: var(--r-lg); font-size: var(--fs-md); color: var(--ctl-fg); transition: background var(--t-fast), color var(--t-fast);
+  border-radius: var(--r-row); font-size: var(--fs-md); color: var(--ctl-fg); transition: background var(--t-fast), color var(--t-fast);
 }
 .side-back:hover { background: var(--side-hover); color: var(--fg); }
 .side-back:active { background: var(--side-press); }
-.side-top .icon-btn { --ib-size: var(--ctl-md); --ib-fg: var(--ctl-fg); }
-/* 搜索框和行同宽、和返回按钮同高；搜索图标 14 + 间隙 12 = 导航图标 16 + 间隙 10，搜索文字和导航文字对齐 */
+/* 三个按钮的分量：收起是窗口开关，图标最浅（--muted）；搜索是普通的静默按钮（--ctl-fg）；
+   新建是唯一的主操作，常驻一层底、图标用正文色，菜单打开或在新建页时底色深一级 */
+:is(.side-top, .side-rail) .icon-btn { --ib-size: var(--ctl-md); --ib-fg: var(--ctl-fg); }
+.side-toggle { --ib-fg: var(--muted); margin-inline-start: calc(var(--side-row-px) - var(--ib-inset)); }
+.side-new { --ib-fg: var(--fg); background: var(--pill); }
+.side-new:hover:not(:disabled) { background: var(--pill-hover); }
+.side-new:is(:active, .on, [aria-expanded="true"]):not(:disabled) { background: var(--pill-press); }
+/* 侧栏收起后，同样三个按钮浮在窗口左上角（主区顶栏那一条上），收起钮停在原来的位置：点同一个地方就能展开 */
+.app { --rail-l: var(--side-inset); --rail-w: calc(var(--side-row-px) - var(--ib-inset) + 3 * var(--ctl-md) + 2 * var(--bar-gap)); }
+:root.mac-app .app { --rail-l: var(--titlebar-inset); }
+.side-rail {
+  position: absolute; z-index: calc(var(--z-float) + 1); top: var(--pane-gap); left: var(--rail-l);
+  height: var(--head-h); display: flex; align-items: center; gap: var(--bar-gap);
+  -webkit-app-region: no-drag;
+}
+/* 搜索框（设置页的查找设置、发现页）：和行同宽、和返回按钮同高；搜索图标 14 + 间隙 12 = 导航图标 16 + 间隙 10，搜索文字和导航文字对齐 */
 .side-search {
   flex: none; display: flex; align-items: center; gap: var(--space-3); height: var(--ctl-lg); margin: 0 var(--side-inset) var(--side-inset); padding: 0 var(--side-row-px);
-  border-radius: var(--r-lg); background: var(--pill); color: var(--muted);
+  border-radius: var(--r-ctl); background: var(--pill); color: var(--muted);
   transition: background var(--t-fast), color var(--t-fast);
 }
 .side-search:hover { background: var(--pill-hover); }
-/* 搜索在弹窗里，这里是个按钮：样子仍是搜索框，文字是占位提示的颜色，右边是快捷键 */
 .side-search { width: calc(100% - 2 * var(--side-inset)); text-align: start; font-size: var(--fs-md); }
-.side-search-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.side-search kbd { flex: none; font-family: inherit; font-size: var(--fs-xs); color: var(--muted); }
+/* 设置页的搜索框里是个真输入框：去掉浏览器自带的边框、底色和全局焦点环（不然文字四周会多一圈框），
+   框的样子只由外面这颗胶囊给；聚焦时胶囊换成悬停的底色，键盘用户也看得出焦点在这里 */
+.side-search input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--fg); outline: none; appearance: none; -webkit-appearance: none; }
+.side-search input::placeholder { color: var(--muted); }
+.side-search:focus-within { background: var(--pill-hover); }
 
 /* 上边留一行的间隙。
    右边用外边距而不是内边距：滚动条落在行的右边上，不落进侧栏和主区之间的空隙（那里是分隔条） */
@@ -99,7 +129,7 @@
 .nav-item {
   --focus-offset: -2px;
   display: flex; align-items: center; gap: var(--space-2-5); height: var(--ctl-lg); padding: 0 var(--side-row-px);
-  border-radius: var(--r-lg); font-size: var(--fs-md); color: var(--fg-2); text-align: left;
+  border-radius: var(--r-row); font-size: var(--fs-md); color: var(--fg-2); text-align: left;
   transition: background var(--t-fast), color var(--t-fast);
 }
 .nav-item .ic { color: var(--muted); transition: color var(--t-fast); }
@@ -110,8 +140,8 @@
 .thread {
   --focus-offset: -2px;
   min-width: 0;
-  display: flex; align-items: center; gap: var(--space-3); width: 100%; height: 60px; padding: 0 var(--side-row-px);
-  border-radius: var(--r-xl); text-align: left; position: relative;
+  display: flex; align-items: center; gap: var(--space-3); width: 100%; height: 64px; padding: 0 var(--side-row-px);
+  border-radius: var(--r-row); text-align: left; position: relative;
   transition: background var(--t-fast);
 }
 /* 行外面包一层 .thread-item，"更多"按钮叠在行上：指针在按钮上时整行仍是悬停的样子 */
@@ -125,7 +155,7 @@ button.thread:active { background: var(--side-press); }
 .thread .snip { flex: 1; min-width: 0; font-size: var(--fs-md); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--lh-snug); }
 .thread.sel .snip { color: var(--fg-2); }
 /* 有事等你：只是一个蓝点（--signal），不写件数；件数在点的 title / 读屏文字里。和「发现」「上新」的小点同一种 */
-.needs-dot { flex: none; align-self: center; width: var(--space-2); height: var(--space-2); border-radius: var(--r-full); background: var(--signal); }
+.needs-dot { flex: none; align-self: center; width: var(--space-2); height: var(--space-2); border-radius: 50%; background: var(--signal); }
 .thread .bot-face .fx-bang { display: none; }   /* 侧栏里等你时头像照样跳，但不冒头顶的感叹号：提示只用右边的蓝点 */
 .thread .avatar-wrap { position: relative; flex: none; }
 .thread .working-dot {
@@ -151,7 +181,7 @@ button.thread:active { background: var(--side-press); }
    只给这块固定导航用，别和 .side-list 叠在同一个元素上：flex: none 会盖掉列表的撑满，账户区就不贴底了 */
 .side-nav { flex: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--side-row-gap); margin: 0 var(--side-inset) var(--space-1); }
 .side-nav .label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.thread .field { --field-h: 30px; }
+.thread .field { --field-h: var(--ctl-md); }
 /* 侧栏空状态：一句话 + 一个按钮，靠留白成组，不套卡片 */
 .side-empty {
   margin: var(--space-3) 0; padding: var(--card-pad);
@@ -165,7 +195,7 @@ button.thread:active { background: var(--side-press); }
 .account {
   --focus-offset: -2px;
   display: flex; align-items: center; gap: var(--space-2-5); min-width: 0; flex: 1; height: var(--ctl-2xl); padding: 0 var(--side-row-px);
-  border-radius: var(--r-xl); text-align: left;
+  border-radius: var(--r-row); text-align: left;
 }
 .account .me {
   width: var(--ctl-md); height: var(--ctl-md); border-radius: 50%; flex: none; display: grid; place-items: center;
@@ -189,13 +219,13 @@ button.thread:active { background: var(--side-press); }
    小点落在头像那条竖线上；整行可点，悬停深一级；右边是一句动作（充值）或关闭钮 */
 .side-note {
   flex: none; display: flex; align-items: center; gap: var(--space-1); min-height: var(--ctl-lg);
-  margin: 0 var(--side-inset) var(--space-1); border-radius: var(--r-lg); background: var(--side-hover);
+  margin: 0 var(--side-inset) var(--space-1); border-radius: var(--r-row); background: var(--side-hover);
   font-size: var(--fs-md); line-height: var(--lh-snug); color: var(--fg); transition: background var(--t-fast);
 }
 .side-note:hover { background: var(--side-press); }
 .side-note:hover, .side-note:hover a { text-decoration: none; color: var(--fg); }
 .side-note > .icon-btn { margin-right: var(--space-1); }
-.side-note-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-2); min-height: var(--ctl-lg); padding: 0 var(--space-2-5); color: var(--fg); text-align: left; }
+.side-note-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-2); min-height: var(--ctl-lg); padding: 0 var(--side-row-px); color: var(--fg); text-align: left; }
 .side-note .v { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .side-note .go { flex: none; font-size: var(--fs-xs); color: var(--muted); }
 .dot.new { --dot-bg: var(--signal); }
@@ -235,19 +265,19 @@ button.thread:active { background: var(--side-press); }
 /* 面板自己的关闭钮会和窗口的关闭钮挨在一起（两个 ×）：Windows 上不放，主区顶栏的面板开关、⌘⇧I、Esc、点遮罩都能关 */
 :root.win-app .panel-close { display: none; }
 
-/* 应用图标 + 名称：图标的左沿和机器人行的头像、搜索图标同一条竖线（--side-inset + --side-row-px）。
+/* 应用图标 + 名称：紧跟在收起钮后面。
    它属于标题栏，是拖动区的一部分（按住能拖、双击最大化），不是按钮 */
 .side-brand { display: none; }
 :root.win-app .side-top > .side-brand {
-  display: flex; align-items: center; gap: var(--space-2); min-width: 0; margin: 0 auto 0 var(--side-row-px);
+  display: flex; align-items: center; gap: var(--space-2); min-width: 0; margin-inline-start: var(--space-1);
   font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--fg-2); line-height: var(--lh-tight);
   -webkit-app-region: drag; user-select: none;
 }
 .side-brand img { flex: none; width: var(--brand-mark); height: var(--brand-mark); -webkit-user-drag: none; }
 .side-brand span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* —— Info panel（参考 Grok Bot 的详情栏）：一块更通透的玻璃面板，分组直接是列表行，不再套卡片；
-   需要成组的东西（展开的编辑区、待审批）是面板上唯一的一层 --well —— */
+/* —— 右侧面板（参考 vibe coding 平台、Codex、Grok Bot 的右栏，screens/work-panel.js）：顶栏是一排标签（工作台 | 概览 | 任务 | 记忆），
+   下面是当前标签。分组直接是列表行，不再套卡片；需要成组的东西（展开的编辑区、待审批）是面板上唯一的一层 --well —— */
 /* 面板定宽：开合时是它那一列在变（见 .app），面板跟着列的左边滑进 / 滑出窗口，同时淡入 / 淡出；
    关上时 main.js 让它多留一会儿（usePresence）播完 .leaving */
 .panel {
@@ -263,22 +293,42 @@ button.thread:active { background: var(--side-press); }
 }
 .panel-head > * { -webkit-app-region: no-drag; }
 .panel-head .title { flex: 1; min-width: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.panel-head .icon-btn { --ib-size: var(--ctl-md); }   /* 16 的图标四周各 6：图标外沿落在 --head-px + 6 = --pane-px 上，和标题左边对称 */
-/* 行的悬停底离面板边缘 8，行里再缩进 8，文字落在 --pane-px，和面板标题对齐 */
-.panel-body { flex: 1; overflow-y: auto; padding: 0 var(--space-2) var(--space-6); }
-.panel-body .list-head { margin: var(--section-gap-sm) var(--space-2) var(--space-1); }
+/* 标签条（.tabs.bare）在顶栏左边：胶囊的左沿离面板边 --head-px，和右边图标按钮的外沿对称。
+   标签多、面板窄时整条横着滚，不换行、不挤掉右边的按钮 */
+/* 标签的内边距收一档（--ctl-px-sm）：默认宽的面板也放得下概览、任务、记忆。顶栏左边让出同样多，第一个标签的字仍落在 --pane-px 上，悬停底往外伸 */
+.panel-head:has(> .panel-tabs) { --panel-tab-px: var(--ctl-px-sm); padding-left: calc(var(--pane-px) - var(--panel-tab-px)); }
+.panel-tabs { --tabs-px: var(--panel-tab-px); flex: 0 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.panel-tabs::-webkit-scrollbar { display: none; }
+/* 标签条和右边的按钮放不进一行时（work-panel.js 的 useTabsWrap 量出来的：面板窄、标签多、译文长，Windows 上还让出了窗口按钮）：
+   按钮留在顶栏那一行（和窗口标题栏、主区顶栏在同一条中线上），标签条换到下面单独一行，从面板左边铺到右边——
+   Windows 上那一行不用再让出窗口按钮，用负的右外边距把让出的 --caption-w 拿回来 */
+.panel-head.tabs-wrap { flex-wrap: wrap; height: auto; }
+.panel-head.tabs-wrap > .grow { height: var(--head-h); }
+.panel-head.tabs-wrap > .panel-tabs { order: 1; flex: 0 0 100%; margin-bottom: var(--space-2); }   /* 占满一行：一定换到按钮下面 */
+:root.win-app .panel-head.tabs-wrap { height: auto; }
+:root.win-app .panel-head.tabs-wrap > .panel-tabs { flex-basis: calc(100% + var(--caption-w)); margin-right: calc(-1 * var(--caption-w)); }
+/* 工作台标签：Bot 的界面（screens/bot-app.js 用 Portal 渲染进来）填满顶栏以下；切到别的标签时只是藏起来，不卸载 */
+.work-host { flex: 1; min-height: 0; display: grid; }
+.work-host[hidden] { display: none; }
+.panel-head .icon-btn { --ib-size: var(--ctl-md); }   /* 16 的图标四周各 --ib-inset：图标外沿落在 --head-px + --ib-inset = --pane-px 上，和标题左边对称 */
+/* 行的悬停底离面板边缘 --pane-gap（8），行里再缩进 --pane-item-px（12），文字落在 --pane-px（20），和面板标题对齐 */
+.panel-body { flex: 1; overflow-y: auto; padding: 0 var(--pane-gap) var(--space-6); }
+.panel-body .list-head { margin: var(--section-gap-sm) var(--pane-item-px) var(--space-1); }
 .panel-body .list-head:first-child { margin-top: var(--space-2); }
 .panel-body .list { background: none; border-radius: 0; overflow: visible; }   /* 面板里的行直接排在面板上，不铺 --well */
 .panel-body .list + .list, .panel-body .list-head + .list { margin-top: 0; }
-.panel-body .row { --row-h: 48px; --row-py: var(--space-1-5); --row-pl: var(--space-2); --row-pr: var(--space-2); --row-gap: var(--space-2-5); border-radius: var(--r-lg); }
+.panel-body .row { --row-h: 52px; --row-py: var(--space-1-5); --row-pl: var(--pane-item-px); --row-pr: var(--pane-item-px); --row-gap: var(--space-3); border-radius: var(--r-row); }
 .panel-body .row.clickable { --focus-offset: 0px; }
 .panel-body .row-edit {
-  padding-left: var(--space-2); padding-right: var(--space-2);   /* 和上面那行的文字对齐 */
-  border-radius: var(--r-well); background: var(--well); margin: var(--space-0-5) 0 var(--space-1);
+  padding-left: var(--pane-item-px); padding-right: var(--pane-item-px);   /* 和上面那行的文字对齐 */
+  border-radius: var(--r-row); background: var(--well); margin: var(--space-0-5) 0 var(--space-1);   /* 和行在同一条缩进上，圆角也和行一样 */
 }
 /* 待审批：卡片和行一样贴着面板，上方的说明缩进到行文字那条线 */
-.panel-body .approval > .hint { padding: 0 var(--space-2); }
+.panel-body .approval > .hint { padding: 0 var(--pane-item-px); }
 .panel-body .row > .hint { flex: none; white-space: nowrap; }
+/* 标签页没有组名时（「任务」），第一组离顶栏留一点 */
+.panel-body > .list:first-child { margin-top: var(--space-2); }
+.panel-body a.row { color: inherit; text-decoration: none; }
 /* 会话记录预览（信息面板 → 最近会话） */
 .transcript { display: grid; gap: var(--space-2); max-height: 60vh; overflow: auto; }
 .transcript-msg { justify-self: start; max-width: 85%; }
@@ -308,7 +358,7 @@ button.thread:active { background: var(--side-press); }
 .rule-runs { display: grid; list-style: none; margin: 0; padding: 0; }
 .rule-run-head {
   display: flex; align-items: baseline; gap: var(--space-2); width: 100%; min-width: 0; padding: var(--space-1) 0;
-  text-align: left; font-size: var(--fs-xs); color: var(--fg-2); border-radius: var(--r-sm); transition: color var(--t-fast);
+  text-align: left; font-size: var(--fs-xs); color: var(--fg-2); border-radius: var(--r-mark); transition: color var(--t-fast);
 }
 .rule-run-head:hover { color: var(--fg); }
 .rule-run-head :is(.at, .m, .c) { flex: none; color: var(--muted); }
@@ -322,13 +372,13 @@ button.thread:active { background: var(--side-press); }
 /* 详情本身就是一块 --well（面板里的展开区、「需要你」的列表）：步骤列表不再铺一层底，只是折叠打开 */
 .rule-detail .act-list { background: none; padding: 0; margin-bottom: 0; }
 /* 新建 / 编辑规则的对话框：表单直接排在对话框里 */
-.rule-form { display: grid; gap: var(--space-3); }
+.rule-form { display: grid; gap: var(--stack-gap); }
 .rule-form label { display: grid; gap: var(--space-1-5); font-size: var(--fs-xs); color: var(--fg-2); font-weight: var(--fw-medium); }
 .rule-when { display: grid; gap: var(--space-1-5); justify-items: start; }
 .rule-when-row { display: flex; align-items: center; gap: var(--ctl-gap); flex-wrap: wrap; }
 .rule-when-row .field { width: auto; --field-h: var(--ctl-md); }
 .rule-days { display: flex; gap: var(--space-1); flex-wrap: wrap; }
-.rule-days .chip { height: var(--ctl-sm); padding: 0 var(--space-2-5); }
+.rule-days .chip { height: var(--ctl-sm); padding: 0 var(--ctl-px-sm); }
 .rule-days .chip.on { background: var(--pill-press); color: var(--fg); font-weight: var(--fw-medium); }
 .rule-form label.rule-budget { display: flex; align-items: center; gap: var(--space-1-5); font-weight: var(--fw-regular); }
 .rule-budget .num { color: var(--muted); }
@@ -358,6 +408,8 @@ a.text { display: inline-flex; align-items: center; text-decoration: none; }
   }
   .app > .panel.leaving { animation: slide-out var(--dur-base) var(--ease-in) forwards; }
   .app > .split-panel { display: none; }   /* 抽屉浮在对话上，宽度不用调 */
+  /* 带工作台的抽屉：盖在对话上，不用给主区留地方，按窗口的 --work-w-cap 给宽一些（Bot 界面放得下"列表 | 正文"），最多铺满窗口 */
+  .app.panel-wide { --panel-col: min(100vw - var(--pane-gap), max(var(--work-w-min), var(--work-w-cap))); }
   .panel-scrim {
     display: block; position: fixed; z-index: calc(var(--z-drawer) - 1); inset: 0;
     background: var(--scrim-soft); animation: fade-in var(--dur-base) var(--ease-out);
@@ -373,7 +425,7 @@ a.text { display: inline-flex; align-items: center; text-decoration: none; }
 
 /* 代理的 PowerShell（components/pwsh-hint.js）：一条 .notice（淡底 + 图标 + 字，不描边）——正在安装（转圈 + 进度）、装好了、
    没装上、起不来已换掉、建议安装；文字之下可以多一行等宽的安装命令（就是一行字，不再套底）和一排操作。对话空状态与设置 → 常规共用 */
-.notice.pwsh-hint { align-items: flex-start; padding: var(--space-3); text-align: left; }
+.notice.pwsh-hint { align-items: flex-start; padding: var(--space-3) var(--space-3) var(--space-3) var(--group-pad); text-align: left; }
 .notice.pwsh-hint > .ic, .notice.pwsh-hint > .spinner { margin-top: 3px; }   /* 微调：图标对齐第一行文字（14px 图标 / 约 20px 行高） */
 .notice.pwsh-hint > .spinner { color: var(--notice-ic); }
 .pwsh-body { flex: 1; min-width: 0; display: grid; gap: var(--space-2); }
@@ -389,36 +441,36 @@ a.text { display: inline-flex; align-items: center; text-decoration: none; }
 }
 
 @layer app {
-/* 左下账户区（第 10、12、19 项）：余额 + 充值常驻在头像上面一条；没登录 Modelflare 时这里是"登录 Modelflare" */
+/* 左下账户区（第 10、12、19 项）：头像 + 昵称，右边一个圆环按钮（Bot 额度 / 余额，点开额度卡片），侧栏里不摆余额条；
+   没登录 Modelflare 时账户行上面是"登录 Modelflare" */
 .account-stack { width: 100%; min-width: 0; display: grid; gap: var(--side-row-gap); }
 .account-row { display: flex; align-items: center; gap: var(--bar-gap); min-width: 0; }
 .account-row .account { flex: 1; min-width: 0; }
 .account .account-dot { flex: none; margin-inline-start: auto; }
-.account-balance { display: flex; align-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-1-5) var(--side-row-px); border-radius: var(--r-md); background: var(--side-hover); font-size: var(--fs-xs); }
-.account-balance-text { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; column-gap: var(--space-1-5); row-gap: 0; }
-.account-balance-text > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.account-balance-text .num { color: var(--fg); font-weight: var(--fw-medium); }
-.account-low { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--fg); }
-/* 充值一直留出位置：窄窗口里余额文字换行或省略，按钮不被挤掉 */
-.account-topup { flex: none; white-space: nowrap; font-size: var(--fs-xs); }
-/* Bot 额度：余额那一条换成圆环 + 剩余百分比（整块可点，点开额度卡片）；按下的范围往外扩一点，条的高度不变 */
-.account-quota { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-1-5); margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-1-5)); padding: var(--space-1) var(--space-1-5); border-radius: var(--r-sm); color: inherit; text-align: left; }
-.account-quota:hover, .account-quota[aria-expanded="true"] { background: var(--side-active); }
-.quota-ring { flex: none; display: block; }
+/* 圆环按钮：和侧栏其他图标按钮一样大；余额低于提醒线时右上角一个琥珀色小点 */
+.account-ring { --ib-size: var(--ctl-lg); position: relative; flex: none; }
+.account-ring-dot { position: absolute; top: var(--space-1-5); right: var(--space-1-5); width: 6px; height: 6px; }
+.quota-ring { display: block; }
 .quota-ring circle { fill: none; stroke-width: 2; }
 .quota-ring-track { stroke: var(--line-strong); }
-.quota-ring-arc { stroke: var(--fg); stroke-linecap: round; transition: stroke-dasharray var(--dur-slow) var(--ease-out); }
-/* 额度卡片：左边名称、右边数，下面是充值（沿用账户菜单的行和留白，不画分隔线） */
-.quota-card .quota-scope { margin: 0; padding: var(--space-2) var(--space-2) var(--space-1); color: var(--muted); font-size: var(--fs-xs); }
-.quota-card .quota-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding: var(--space-2); color: var(--fg); font-size: var(--fs-sm); }
-.quota-card .quota-row .num { font-weight: var(--fw-medium); white-space: nowrap; }
-.quota-card .quota-note { display: flex; align-items: center; gap: var(--space-1); padding: 0 var(--space-2) var(--space-1); color: var(--muted); font-size: var(--fs-xs); }
-.account-login { display: grid; gap: 0; min-width: 0; padding: var(--space-1-5) var(--side-row-px); text-align: left; border-radius: var(--r-md); background: var(--side-hover); color: var(--fg); }
+.quota-ring-arc { stroke: var(--fg-2); stroke-linecap: round; transition: stroke-dasharray var(--dur-slow) var(--ease-out); }
+.quota-ring-mark { fill: var(--faint); }
+/* 额度卡片（照参考截图）：顶上一行灰字说明，细线分组；左边名称、右边数；最下面是充值 */
+.quota-card { display: grid; padding: var(--pop-pad); }
+.quota-card hr { border: 0; height: 1px; margin: var(--space-1) var(--space-2-5); background: var(--line); }
+.quota-head { margin: 0; padding: var(--space-2) var(--item-px) var(--space-1); color: var(--muted); font-size: var(--fs-sm); }
+.quota-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--item-px); color: var(--fg); font-size: var(--fs-md); }
+.quota-row .num { white-space: nowrap; }
+.quota-note { display: flex; align-items: center; gap: var(--space-1); padding: 0 var(--item-px) var(--space-1); color: var(--muted); font-size: var(--fs-xs); }
+.quota-action { display: grid; gap: var(--space-0-5); padding: var(--space-2) var(--item-px); border-radius: calc(var(--pop-r) - var(--pop-pad)); color: var(--fg); font-size: var(--fs-md); text-decoration: none; }
+.quota-action:hover { background: var(--pill-hover); text-decoration: none; }
+.quota-action .hint { font-size: var(--fs-xs); color: var(--muted); }
+.account-login { display: grid; gap: 0; min-width: 0; padding: var(--space-2) var(--side-row-px); text-align: left; border-radius: var(--r-row); background: var(--side-hover); color: var(--fg); }
 .account-login:hover { background: var(--side-active); }
 .account-login-title { font-size: var(--fs-sm); font-weight: var(--fw-medium); }
 .account-login .hint { font-size: var(--fs-xs); color: var(--muted); }
 .account-menu { display: grid; padding: var(--pop-pad); }
-.account-menu > a, .account-menu > button { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); padding: var(--space-2); text-align: left; border-radius: var(--r-md); color: var(--fg); font-size: var(--fs-sm); text-decoration: none; }
+.account-menu > a, .account-menu > button { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); padding: var(--space-2) var(--item-px); text-align: left; border-radius: calc(var(--pop-r) - var(--pop-pad)); color: var(--fg); font-size: var(--fs-sm); text-decoration: none; }
 /* 头像弹出的账户菜单（.primary，和账户区同宽，见 sidebar.js）：单行项 36 高，和下面的余额条一样高，比一般菜单项松一点，
    和 44 的账户行放在一起不局促；文字缩进让到 --side-row-px，和下面余额条的文字、头像落在同一条竖线上 */
 .account-menu.primary > a, .account-menu.primary > button {

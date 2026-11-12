@@ -1,13 +1,16 @@
-// 专属界面容器：主区是 Bot 的界面（沙箱 iframe），底部是和对话页同一列宽的同一个输入框（components/composer.js，模型、＋ 菜单、命令都一样）；
-// 输入框上方依次是最新一条回复（和对话里的回复同样排版）、等你确认的卡片、还没用过时的示例。
-// 完整对话和 Bot 信息在右边一列。还没有实例时界面显示示例数据：不创建实例、不装技能、不起进程，第一次发消息才创建。
-import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
-import { html, Button, IconButton, Notice, Spinner, autoGrow } from "../components/ui.js";
+// 专业 Bot（目录 Bot）的页面：主区是常规的对话流，Bot 的专属界面（沙箱 iframe）在右侧面板的「工作台」标签里（screens/work-panel.js）。
+// - 有实例：主区就是对话页（ChatScreen）。界面上的操作（[ui-action]）也经它发出，和打字一样出现在对话里、跟着回复；
+//   回合的开始和结束转告界面（turn）。
+// - 还没有实例：主区是 Bot 的开场白和示例（BotIntro），底部是和对话页同一个输入框；界面显示示例数据。
+//   不创建实例、不装技能、不起进程。第一次发消息（打字或界面上的操作）才创建，主区换成对话页，这一句交给对话页发。
+// iframe 由这里渲染、桥接也在这里，只是通过 Portal 放进面板给的宿主（frameHost）：面板关上时宿主没了，界面跟着卸载，再打开时重新载入。
+import { useEffect, useRef, useState } from "preact/hooks";
+import { html, IconButton, Notice, Spinner, autoGrow } from "../components/ui.js";
 import { BotAvatar } from "../components/avatar.js";
-import { Markdown } from "../components/markdown.js";
 import { Composer, convModelOf, setConvModel } from "../components/composer.js";
-import { ChatScreen, PromptCard, errText, isError } from "./chat.js";
-import { api, streamChat, watchApp } from "../lib/api.js";
+import { ChatScreen } from "./chat.js";
+import { Portal } from "./work-panel.js";
+import { api, watchApp } from "../lib/api.js";
 import { attachBridge, currentEnv, pickFiles, safeExternalUrl, watchEnv } from "../lib/bot-bridge.js";
 import { markCatalogSeen, tr } from "../lib/catalog.js";
 import { guide, markSeen } from "../lib/guide.js";
@@ -19,18 +22,6 @@ const errorText = (e) => {
   const s = t(key);
   return s === key ? t("botapp.errors.catalog_failed") : s;
 };
-
-/** Bot 信息：三行说明、用到的技能（作者和许可证，链回原页面）、需要的权限 */
-function BotInfo({ entry, lang, onSettings }) {
-  if (!entry) return null;
-  return html`<div class="botapp-info">
-    <section><h3 class="t-label">${t("botapp.info.what")}</h3><ul>${(tr(entry.about, lang) || []).map((x) => html`<li>${x}</li>`)}</ul></section>
-    ${entry.skills.length > 0 && html`<section><h3 class="t-label">${t("botapp.info.skills")}</h3>
-      <ul class="botapp-skills">${entry.skills.map((s) => html`<li><a href=${s.url} target="_blank" rel="noopener noreferrer">${s.name}</a><span class="t-meta">${s.author} · ${s.license}</span></li>`)}</ul></section>`}
-    <section><h3 class="t-label">${t("botapp.info.perms")}</h3><ul>${entry.permissions.map((p) => html`<li>${t(`botapp.perm.${p}`)}</li>`)}</ul></section>
-    ${onSettings && html`<${Button} onClick=${onSettings}>${t("botapp.info.settings")}<//>`}
-  </div>`;
-}
 
 /**
  * 还没有实例时的对话页：Bot 用一段话介绍自己（一句话 + 能做什么），下面是完整的几句示例（不省略，点了就发），
@@ -60,39 +51,10 @@ function BotIntro({ entry, lang, busy, onSend }) {
 }
 
 /**
- * 最新一条回复：头像 + 和对话里一样排版的正文（Markdown）。平时只露三行，放不下时可以展开（展开后限高滚动）；
- * 有实例时可以直接打开完整对话。还没出字时是一行"思考中"；出错（⚠️ 开头）时和对话页一样是一条红色提示。
+ * frameHost：右侧面板「工作台」标签的宿主节点（面板关着时为空）；panelOpen / onTogglePanel：顶栏的面板开关；
+ * onEntry(entry)：读到目录条目后告诉外壳（面板的概览里列出 Bot 的说明）
  */
-function LatestReply({ bot, entry, text, busy, onOpenChat }) {
-  const body = useRef(null);
-  const [open, setOpen] = useState(false);
-  const [long, setLong] = useState(false);
-  useLayoutEffect(() => {
-    const el = body.current;
-    if (!open) setLong(!!el && el.scrollHeight > el.clientHeight + 1);
-  }, [text, open]);
-  // 新的一轮从收起开始
-  useEffect(() => {
-    if (busy) setOpen(false);
-  }, [busy]);
-  const face = busy ? (text ? "replying" : "thinking") : "idle";
-  return html`<div class=${`botapp-reply${long ? " long" : ""}${open ? " open" : ""}`}>
-    <${BotAvatar} bot=${bot} char=${bot ? undefined : entry?.avatar} size=${22} state=${face} />
-    ${text
-      ? html`<div class="botapp-reply-main">
-          ${isError(text)
-            ? html`<${Notice} tone="red">${errText(text)}<//>`
-            : html`<div class="botapp-reply-body msg" ref=${body}><${Markdown} text=${text} /></div>`}
-          ${(long || open || onOpenChat) && html`<div class="botapp-reply-bar">
-            ${(long || open) && html`<${Button} variant="ghost" size="sm" aria-expanded=${open} onClick=${() => setOpen((v) => !v)}>${t(open ? "botapp.app.less" : "botapp.app.more")}<//>`}
-            ${onOpenChat && html`<${Button} variant="ghost" size="sm" onClick=${onOpenChat}>${t("botapp.app.conversation")}<//>`}
-          </div>`}
-        </div>`
-      : html`<span class="botapp-reply-wait">${t("chat.work.thinking")}</span>`}
-  </div>`;
-}
-
-export function BotAppScreen({ catalogId, bot, onInstalled, onBotUpdated, onOpenBotSettings, onOpenSettings, chatProps }) {
+export function BotAppScreen({ catalogId, bot, frameHost, panelOpen, onTogglePanel, onEntry, onInstalled, onBotUpdated, onOpenBotSettings, onOpenSettings, chatProps }) {
   const lang = useLang();
   const [entry, setEntry] = useState(null);
   const [base, setBase] = useState("");
@@ -101,17 +63,15 @@ export function BotAppScreen({ catalogId, bot, onInstalled, onBotUpdated, onOpen
   const [messages, setMessages] = useState(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
-  const [reply, setReply] = useState("");
-  const [side, setSide] = useState(null); // "info" | null
-  // 顶栏的两种看法：工作台（Bot 的专属界面，给想看全貌、直接动手的人）和对话（完整对话流，给习惯聊天的人）。
-  // 界面切走时 iframe 不卸载，回来还是原来的分页和选中项
-  const [view, setView] = useState("app"); // "app" | "chat"
-  const [prompts, setPrompts] = useState([]); // 这一轮里 Bot 在等用户确认的事（权限、提问）
+  const [installErr, setInstallErr] = useState(""); // 第一次发消息时没能建好实例
   const [used, setUsed] = useState(!!bot);
   const [desktop, setDesktop] = useState(false);
-  const frame = useRef(null);
+  const [frame, setFrame] = useState(null); // 面板里的 iframe（Portal 渲染，ref 回调拿到）
   const ta = useRef(null);
   const bridge = useRef(null);
+  const chat = useRef(null); // 对话页给的 { send(text) }：界面上的操作经它发出
+  const busyRef = useRef(false); // 桥接的回调是接上时建的，读 busy 要用 ref
+  const first = useRef(""); // 还没有实例时发的第一句，等对话页挂上再发
   const urlConfirming = useRef(false);
   // 桥接的回调要读到最新的状态
   const live = useRef(/** @type {any} */ ({}));
@@ -166,6 +126,8 @@ export function BotAppScreen({ catalogId, bot, onInstalled, onBotUpdated, onOpen
     };
   }, [catalogId]);
 
+  useEffect(() => onEntry?.(entry), [entry]);
+
   // 界面文案（ui/locales/<语言>.json）：缺了退回 en
   useEffect(() => {
     if (!base) return;
@@ -199,39 +161,49 @@ export function BotAppScreen({ catalogId, bot, onInstalled, onBotUpdated, onOpen
     return d.bot;
   };
 
-  const send = async (text) => {
+  /**
+   * 发一句话：一律经对话页发出，出现在对话流里（流式回复、出错提示、重试、等你确认的卡片都在那里）。
+   * 还没有实例时先建好实例，这一句记在 first 里，主区换成对话页后交给它（见下面的 effect）。返回发出去没有
+   */
+  const send = (text) => {
     const msg = String(text || "").trim();
-    if (!msg || busy) return;
+    if (!msg) return false;
+    if (live.current.bot && chat.current) return chat.current.send(msg);
+    if (busyRef.current || first.current) return false;
+    void install(msg);
+    return true;
+  };
+
+  const install = async (msg) => {
+    busyRef.current = true;
     setBusy(true);
-    setReply("");
+    setInstallErr("");
     setUsed(true);
+    first.current = msg;
     bridge.current?.post("turn", { busy: true });
     try {
-      const b = await ensureInstance();
+      await ensureInstance();
       bridge.current?.post("env", envOf());
-      let last = "";
-      await streamChat(b.id, msg, {
-        text: (d) => {
-          if (d?.text) {
-            last = d.text;
-            setReply(last);
-          }
-        },
-        done: (d) => {
-          if (d?.text) setReply(d.text);
-        },
-        error: (d) => setReply(d?.message || t("botapp.errors.catalog_failed")),
-        // 第一次用某项权限、Bot 提问：用现有的审批卡片，就显示在输入框上方
-        prompt: (d) => d?.requestId && setPrompts((l) => (l.some((x) => x.requestId === d.requestId) ? l : [...l, d])),
-      });
-      if (/^\/model\s+\S/i.test(msg)) void readModel(b.id);
     } catch (e) {
-      setReply(errorText(e));
-    } finally {
-      setBusy(false);
-      setPrompts([]);
+      first.current = "";
+      setInstallErr(errorText(e));
       bridge.current?.post("turn", { busy: false });
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
     }
+  };
+  // 实例建好、主区换成了对话页（它在渲染时就填好了 chat）：把第一句交给它
+  useEffect(() => {
+    if (!bot || !first.current || !chat.current) return;
+    const msg = first.current;
+    first.current = "";
+    chat.current.send(msg);
+  }, [bot?.id]);
+  // 对话页的回合开始、结束：照样告诉外壳（侧栏的"工作中"），也转告界面
+  const onChatWorking = (id, on) => {
+    chatProps?.onWorking?.(id, on);
+    bridge.current?.post("turn", { busy: on });
   };
 
   const stop = () => {
@@ -239,9 +211,9 @@ export function BotAppScreen({ catalogId, bot, onInstalled, onBotUpdated, onOpen
     if (b) return api(`/conversations/${encodeURIComponent(`${b.id}:web:console`)}/stop`, { method: "POST", body: {} });
   };
 
-  // 接上桥接
+  // 接上桥接：面板里的 iframe 换了（面板关上又打开）就重新接
   useEffect(() => {
-    const el = frame.current;
+    const el = frame;
     if (!el || !base || uiFailed) return;
     const fileApi = (path) => {
       const b = live.current.bot;
@@ -310,8 +282,7 @@ export function BotAppScreen({ catalogId, bot, onInstalled, onBotUpdated, onOpen
       send: ({ text, action }) => {
         // 界面上的操作以用户的身份发给 Bot（约定在 botkit/app-skill.ts）
         const line = action ? `[ui-action] ${JSON.stringify(action)}${text ? `\n${text}` : ""}` : text;
-        void send(line);
-        return true;
+        return send(line);
       },
       stop,
       subscribe: () => true,
@@ -337,7 +308,7 @@ export function BotAppScreen({ catalogId, bot, onInstalled, onBotUpdated, onOpen
       mediaAbort.abort();
       mediaHandles.clear();
     };
-  }, [base, uiFailed]);
+  }, [frame, base, uiFailed]);
 
   // 文案读到之后、知道是不是桌面版之后再告诉界面一次
   useEffect(() => {
@@ -377,45 +348,37 @@ export function BotAppScreen({ catalogId, bot, onInstalled, onBotUpdated, onOpen
     void send(v);
     requestAnimationFrame(() => autoGrow(ta.current));
   };
-  // 界面出错时只剩对话；有实例时对话页就是完整的对话（自带输入框），底部的输入区让给它
-  const chatOnly = uiFailed && !!bot;
-  const showChat = chatOnly || view === "chat";
-  const views = [["app", t("botapp.view.app")], ["chat", t("botapp.view.chat")]];
-  return html`<div class=${`botapp${side ? " with-side" : ""}`} data-screen="bot-app">
-    <div class="botapp-main">
+  // 工作台标签里的东西：下架 / 界面出错的提示、界面本身、加载中
+  const stage = html`<div class="work-app">
+    ${removed && html`<${Notice} tone="amber">${t(removed.security ? "botapp.app.removedSecurity" : "botapp.app.removed")}<//>`}
+    ${uiFailed && !removed && html`<${Notice} tone="amber">${t("botapp.app.uiFailed")}<//>`}
+    ${loadErr && bot && html`<${Notice} tone="red">${loadErr}<//>`}
+    ${base && !uiFailed && html`<iframe ref=${setFrame} class="botapp-frame" title=${name} src=${`${base}index.html`} sandbox="allow-scripts allow-forms"></iframe>`}
+    ${!base && !loadErr && !uiFailed && html`<div class="botapp-loading"><${Spinner} /></div>`}
+  </div>`;
+  const portal = html`<${Portal} into=${frameHost}>${stage}<//>`;
+  if (bot) {
+    return html`<${ChatScreen} key=${bot.id} bot=${bot} ...${chatProps} onWorking=${onChatWorking} ctl=${chat} starters=${starters}
+        infoOpen=${panelOpen} onToggleInfo=${onTogglePanel} />
+      ${portal}`;
+  }
+  return html`<section class="botapp" data-screen="bot-app" aria-label=${name}>
       <header class="chat-head">
-        <span class="head-bot static">${entry && html`<${BotAvatar} bot=${bot} char=${bot ? undefined : entry.avatar} size=${22} />`}<span class="name">${name}</span></span>
-        ${!bot && entry && html`<span class="botapp-sample">${t("botapp.app.sample")}</span>`}
+        <span class="head-bot static">${entry && html`<${BotAvatar} char=${entry.avatar} size=${22} />`}<span class="name">${name}</span></span>
+        ${entry && html`<span class="botapp-sample">${t("botapp.app.sample")}</span>`}
         <span class="grow"></span>
-        ${!chatOnly && base && html`<div class="botapp-views" role="tablist" aria-label=${t("botapp.view.label")}>
-          ${views.map(([id, label]) => html`<button type="button" key=${id} role="tab" aria-selected=${view === id} onClick=${() => setView(id)}>${label}</button>`)}
-        </div>`}
-        <span class="grow"></span>
-        <${IconButton} icon="info" iconSize="md" label=${t("botapp.app.info")} on=${side === "info"} onClick=${() => setSide((s) => (s === "info" ? null : "info"))} />
+        <${IconButton} icon="panel" iconSize="md" label=${t("chat.infoPanel")} on=${panelOpen} aria-pressed=${panelOpen} onClick=${onTogglePanel} />
       </header>
-      ${removed && html`<${Notice} tone="amber">${t(removed.security ? "botapp.app.removedSecurity" : "botapp.app.removed")}<//>`}
-      ${uiFailed && !removed && html`<${Notice} tone="amber">${t("botapp.app.uiFailed")}<//>`}
       ${loadErr && html`<${Notice} tone="red">${loadErr}<//>`}
-      <div class=${`botapp-stage${showChat ? " chat-view" : ""}`}>
-        ${base && !uiFailed && html`<iframe ref=${frame} class="botapp-frame" title=${name} src=${`${base}index.html`} sandbox="allow-scripts allow-forms" hidden=${showChat}></iframe>`}
-        ${showChat && (bot
-          ? html`<${ChatScreen} key=${bot.id} bot=${bot} ...${chatProps} infoOpen=${side === "info"} onToggleInfo=${() => setSide((s) => (s === "info" ? null : "info"))} />`
-          : html`<${BotIntro} entry=${entry} lang=${lang} busy=${busy} onSend=${send} />`)}
-        ${!base && !loadErr && !uiFailed && html`<div class="botapp-loading"><${Spinner} /></div>`}
-      </div>
-      ${!(showChat && bot) && html`<div class="botapp-dock">
-        ${(reply || busy) && html`<${LatestReply} bot=${bot} entry=${entry} text=${reply} busy=${busy} onOpenChat=${bot ? () => setView("chat") : null} />`}
-        ${prompts.map((p) => html`<${PromptCard} key=${p.requestId} requestId=${p.requestId} fallback=${p.prompt} />`)}
-        ${!used && !showChat && starters.length > 0 && html`<div class="botapp-starters" role="list" aria-label=${t("botapp.app.starters")}>
-          ${starters.map((s) => html`<button type="button" role="listitem" class="botapp-starter" key=${s} title=${s} disabled=${busy} onClick=${() => send(s)}><span class="botapp-starter-text">${s}</span></button>`)}
-        </div>`}
-        <${Composer} bot=${bot} modelKey=${bot?.id || previewKey} text=${draft} setText=${setDraft} taRef=${ta} showPerm=${false}
+      ${entry ? html`<${BotIntro} entry=${entry} lang=${lang} busy=${busy} onSend=${send} />` : html`<div class="botapp-loading">${!loadErr && html`<${Spinner} />`}</div>`}
+      <div class="botapp-dock">
+        ${installErr && html`<${Notice} tone="red">${installErr}<//>`}
+        <${Composer} bot=${null} modelKey=${previewKey} text=${draft} setText=${setDraft} taRef=${ta} showPerm=${false}
           placeholder=${t("botapp.app.placeholder")} label=${t("botapp.app.placeholder")} generating=${busy} sent=${used}
           onSend=${(raw) => (raw === undefined ? submit() : send(raw))} onStop=${stop}
           models=${chatProps?.models} modelsError=${chatProps?.modelsError} reloadModels=${chatProps?.reloadModels} defaultModel=${chatProps?.defaultModel}
           account=${chatProps?.account} onAccount=${chatProps?.onAccount} onBotUpdated=${chatProps?.onBotUpdated} onOpenBotSettings=${onOpenBotSettings} />
-      </div>`}
-    </div>
-    ${side === "info" && html`<aside class="botapp-side"><${BotInfo} entry=${entry} lang=${lang} onSettings=${bot ? () => onOpenBotSettings(bot.id) : null} /></aside>`}
-  </div>`;
+      </div>
+    </section>
+    ${portal}`;
 }

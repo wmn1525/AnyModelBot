@@ -11,6 +11,7 @@ import chat from "./chat.js";
 import common from "./common.js";
 import group from "./group.js";
 import botapp from "./botapp.js";
+import apps from "./apps.js";
 import guide from "./guide.js";
 import info from "./info.js";
 import markdown from "./markdown.js";
@@ -29,7 +30,7 @@ import tasks from "./tasks.js";
 import time from "./time.js";
 import troubleshoot from "./troubleshoot.js";
 import ui from "./ui.js";
-export default { firstUse, updates, search,
+export default { apps, firstUse, updates, search,
   official,
   access,
   account,

@@ -1,0 +1,31 @@
+/* 标签页 .tabs [bare]：顶栏、面板里切换"看法"的一排胶囊（参考 Grok 顶部的切换）。
+   结构：<div class="tabs" role="tablist"> 里放 <button role="tab" aria-selected="true|false">。
+   和 Seg 的区别：Seg 是设置里的取值（thumb 跟着值滑动）；标签页切换的是一整块内容，选中的一格是静止的白色胶囊。
+   圆角同心：轨道和标签都是胶囊（--r-ctl），标签高 = 轨道高 − 2 × 内边距 = 28（和 Seg 里的项一样），左右 --ctl-px-sm。
+   .bare：没有轨道，选中的一格是一层 --pill 填充，用在已经有底色的地方（信息面板顶栏、卡片里）。
+   状态：未选中的悬停字变深并叠一层；按下深一级；键盘焦点描边往里收；禁用变淡。
+   定制：覆盖 --tabs-h / --tabs-pad / --tabs-px / --tabs-r / --tabs-fs。 */
+.tabs {
+  --tabs-h: var(--ctl-lg);
+  --tabs-pad: var(--space-1);
+  --tabs-px: var(--ctl-px-sm);
+  --tabs-r: var(--r-ctl);
+  --tabs-fs: var(--fs-sm);
+  --tabs-track: var(--seg-track);
+  --tabs-on: var(--seg-thumb-bg);
+  --tabs-on-edge: var(--seg-edge);
+  flex: none; display: inline-flex; align-items: center; gap: var(--space-0-5);
+  height: var(--tabs-h); padding: var(--tabs-pad); border-radius: var(--tabs-r); background: var(--tabs-track);
+}
+.tabs > [role="tab"] {
+  --focus-offset: -2px;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1-5);
+  height: calc(var(--tabs-h) - 2 * var(--tabs-pad)); padding: 0 var(--tabs-px); border-radius: var(--tabs-r);
+  font-size: var(--tabs-fs); color: var(--ctl-fg); white-space: nowrap;
+  transition: color var(--t-fast), background var(--t-fast), box-shadow var(--t-fast);
+}
+.tabs > [role="tab"]:hover:not([aria-selected="true"]):not(:disabled) { color: var(--fg); background: var(--pill); }
+.tabs > [role="tab"]:active:not([aria-selected="true"]):not(:disabled) { background: var(--pill-hover); }
+.tabs > [role="tab"][aria-selected="true"] { background: var(--tabs-on); box-shadow: var(--tabs-on-edge); color: var(--fg); font-weight: var(--fw-medium); }
+.tabs > [role="tab"]:disabled { opacity: var(--o-disabled); }
+.tabs.bare { --tabs-pad: 0px; --tabs-track: transparent; --tabs-on: var(--pill-hover); --tabs-on-edge: none; --tabs-h: var(--ctl-md); --tabs-px: var(--ctl-px-md); }

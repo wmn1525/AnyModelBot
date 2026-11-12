@@ -5,6 +5,7 @@
 import { OAuthError, refreshTokens, type OidcEndpoints } from "./oauth.js";
 import type { AccountRecord } from "./vault.js";
 import { lang, t } from "../i18n/index.js";
+import { fetchFailureReason } from "../providers/modelflare.js";
 
 /** 授权已失效（用户在网页上撤销、账户被停用等）：需要重新登录 */
 export class AccountRevokedError extends Error {}
@@ -139,7 +140,7 @@ export class AccountSession {
           signal: AbortSignal.timeout(20_000),
         });
       } catch (e) {
-        throw new ApiError(t("account.unreachable", { reason: (e as Error).message }), 0);
+        throw new ApiError(t("account.unreachable", { reason: fetchFailureReason(e) }), 0);
       }
       if (res.status === 401) {
         if (attempt === 0) continue;

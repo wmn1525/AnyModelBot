@@ -1,0 +1,72 @@
+export default {
+  "run": "Execução {n}",
+  "runQueued": "A execução {n} está na fila",
+  "runGoing": "A execução {n} está em andamento há {d}",
+  "runTook": "A execução {n} levou {d}",
+  "stopped": "“{title}” foi interrompida",
+  "latest": "Progresso mais recente",
+  "folder": "Pasta",
+  "stop": "Parar",
+  "stopping": "Parando…",
+  "collapse": "Recolher",
+  "view": "Ver tarefa em segundo plano",
+  "chipLine": {
+    "working": "A tarefa em segundo plano “{title}” está em andamento",
+    "asking": "A tarefa em segundo plano “{title}” está em andamento, com uma pergunta para você",
+    "queued": "A tarefa em segundo plano “{title}” está na fila",
+    "answer": "A tarefa em segundo plano “{title}” está aguardando sua resposta",
+    "approval": "A tarefa em segundo plano “{title}” está aguardando sua aprovação",
+    "budget": "A tarefa em segundo plano “{title}” esgotou o orçamento",
+    "delivery": "A tarefa em segundo plano “{title}” não conseguiu entregar o resultado",
+    "failed": "A tarefa em segundo plano “{title}” falhou",
+    "ready": "A tarefa em segundo plano “{title}” foi concluída",
+    "stopped": "A tarefa em segundo plano “{title}” foi interrompida"
+  },
+  "chipAny": "Tarefa em segundo plano “{title}”: {stage}",
+  "sub": {
+    "working": "Em execução há {d}",
+    "workingCost": "Em execução há {d}, cerca de {spent} até agora",
+    "asking": "Em execução há {d}, com uma pergunta para você",
+    "answer": "Fez uma pergunta para você {when}",
+    "approval": "Pediu sua aprovação {when}",
+    "budget": "Esgotou o orçamento {when}",
+    "delivery": "Não conseguiu entregar o resultado {when}",
+    "failed": "Falhou {when}",
+    "ready": "Concluída {when}",
+    "stopped": "Interrompida {when}",
+    "withCost": "{line}, cerca de {spent}"
+  },
+  "when": {
+    "now": "agora há pouco",
+    "clock": "às {time}",
+    "day": "em {date}"
+  },
+  "minutes": {
+    "one": "{count} min",
+    "many": "{count} min",
+    "other": "{count} min"
+  },
+  "paused": "O trabalho em segundo plano está pausado",
+  "resume": "Retomar",
+  "costOf": "Cerca de {spent} de {budget}",
+  "costShort": "Cerca de {spent}",
+  "origin": "Origem",
+  "question": "Pergunta",
+  "originLine": "{where} · {when} “{text}”",
+  "openConv": "Abrir a conversa",
+  "budget": "Orçamento",
+  "change": "Alterar",
+  "cleanup": "Limpeza",
+  "cleanupOn": "A pasta será excluída em {date}",
+  "keep": "Manter",
+  "export": "Exportar",
+  "deleteTitle": "Excluir “{title}”?",
+  "deleteBody": "A pasta e o registro de execuções também serão excluídos, {size} no total.",
+  "deleteBodyEmpty": "O registro de execuções também será excluído.",
+  "deleted": "Excluída",
+  "ended": {
+    "one": "{count} encerrada",
+    "many": "{count} encerradas",
+    "other": "{count} encerradas"
+  }
+};

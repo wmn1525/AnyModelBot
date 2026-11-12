@@ -1,6 +1,6 @@
 # Contributing
 
-[简体中文](./CONTRIBUTING.md) | English | [日本語](./CONTRIBUTING_ja.md) | [한국어](./CONTRIBUTING_ko.md) | [Русский](./CONTRIBUTING_ru.md)
+[简体中文](./CONTRIBUTING.md) | English | [日本語](./CONTRIBUTING_ja.md) | [한국어](./CONTRIBUTING_ko.md) | [Русский](./CONTRIBUTING_ru.md) | [Español](./CONTRIBUTING_es.md) | [Português (Brasil)](./CONTRIBUTING_pt.md)
 
 Thanks for helping make AnyModelBot better. Bug reports, fixes, docs and ideas are all welcome.
 

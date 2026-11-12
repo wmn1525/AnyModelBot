@@ -1,6 +1,6 @@
 # データとプライバシー
 
-[简体中文](./privacy.md) | [English](./privacy_en.md) | 日本語 | [한국어](./privacy_ko.md) | [Русский](./privacy_ru.md)
+[简体中文](./privacy.md) | [English](./privacy_en.md) | 日本語 | [한국어](./privacy_ko.md) | [Русский](./privacy_ru.md) | [Español](./privacy_es.md) | [Português (Brasil)](./privacy_pt.md)
 
 **要点：** 会話、記憶、ファイル、キーは端末に保存します。モデルへ送る内容は選択した提供元に届きます。公式 API キーの場合は直接、それ以外は Modelflare を経由します。データに一切のリスクがないとは主張しません。モデルに送るものは端末の外に出ます。
 
@@ -25,7 +25,7 @@
 | チャット検索索引 | `anymodel.db` の `message_search` と全文索引 | いいえ | インスタンス内の保存済みメッセージを検索し、モデルは呼び出しません |
 | 記憶 | `memory/`（Markdown：`bots/`、`groups/`、`team/`） | 使用するとき | モデルのコンテキストに含める。秘密情報らしい内容は書き込み前に除去 |
 | ボットの作業ファイル | `workspaces/<bot>/`（受信ファイルの `inbox/`、生成画像・動画の `media/` を含む） | ボットが読み、モデルに送るとき | 同上 |
-| Modelflare ログイン認証情報 | `modelflare-account.json`（モード 600、デスクトップは OS のキーチェーンで暗号化） | トークン更新時に modelflare.dev だけへ | Modelflare |
+| Modelflare ログイン認証情報 | `modelflare-account.json`（モード 600） | トークン更新時に modelflare.dev だけへ | Modelflare |
 | API キー | `magpie/config/` の隔離された設定 | モデルへの各リクエストの認証に使用 | Modelflare |
 | 公式 API キー（入力した場合） | `magpie/config/` の隔離された設定 | モデルへの各リクエストの認証として該当の提供元へ | 該当のモデル提供元 |
 | WeChat ログイン状態と同期カーソル | データディレクトリ内（`weixin/` など） | WeChat iLink API との通信時 | Tencent WeChat |
@@ -36,8 +36,9 @@
 | バックグラウンドタスクとルール | `anymodel.db` のタスク・ルール・実行履歴（30 日保持）。`workspaces/<bot>/tasks/` は 30 日未使用で削除（先に「あなたの対応待ち」で案内）。`dsh/<bot>/sessions/` のセッションファイルはタスクとともに削除 | 実行時 | 会話と同じくモデルのコンテキストとして Modelflare 経由で選んだ提供元へ |
 | 設定 | `config.json` | なし | — |
 | ログ | `logs/app.log`（サイズでローテーション） | なし。「診断情報をコピー」は手動でコピーするもので、キーは `***` に置換 | — |
-| 接続アカウントのトークン（追加した Notion・Feishu のみ） | `anymodel.db`、全ボットで共有 | ボットの読み書きごとに認証として送信 | Notion、Feishu |
-| 読み取った Notion の内容と Feishu メッセージ | 単独では保存せず、会話に含まれた場合は会話と一緒に保存 | あり | モデルのコンテキストとして Modelflare 経由で選んだ提供元へ |
+| 接続したアプリの認証情報（接続した場合のみ）：ログイン認可のトークン、貼り付けたトークンや Key、専用 URL、カスタム MCP のヘッダー／クエリパラメータ／環境変数 | `app-secrets.json`（権限 600、データベースの外）。ログ、診断パッケージ、画面では伏せ字 | ボットの読み書きごとに、そのサービスへ認証として送信。ローカルコマンドの環境変数は、追加したローカルプログラムにだけ渡します | 接続したアプリ（Feishu、Tencent Docs、DingTalk、Amap、Yuque、Notion、GitHub、Linear、Atlassian、Canva）、または追加したカスタム MCP サービス |
+| 接続の名前、アドレス、状態、ツール一覧 | `anymodel.db`（専用 URL や Key を含むアドレスは伏せ字の形だけを保存） | なし | — |
+| 接続したアプリから読み取った内容（ドキュメント、メッセージ、課題など） | 単独では保存せず、会話に含まれた場合は会話と一緒に保存 | あり | モデルのコンテキストとして Modelflare 経由で選んだ提供元へ |
 | スクリーンショット（コンピューター操作） | 長期保存しない | あり | Modelflare 経由で画像対応モデルへ。ユーザーがファイルとして求めない限り WeChat・Feishu の会話には送らない |
 
 ## ローカルコンソールのアクセス制御

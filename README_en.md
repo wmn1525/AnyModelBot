@@ -4,7 +4,7 @@
 > Added a What’s new dialog and changelog in About. Version checks, update downloads and release notes all use this repository.
 
 
-<p align="center"><b>Your own AI bot, on your own computer. Any model, pay per use.</b></p>
+<p align="center"><b>A team of AI bots on your own computer. Any model, pay per use.</b></p>
 
 <p align="center">
   <a href="https://api.okinto.com">Website</a> |
@@ -14,6 +14,8 @@
   <a href="./README_ja.md">日本語</a> |
   <a href="./README_ko.md">한국어</a> |
   <a href="./README_ru.md">Русский</a> |
+  <a href="./README_es.md">Espa?ol</a> |
+  <a href="./README_pt.md">Portugu?s (Brasil)</a> |
   <a href="https://api.okinto.com">okinto 中转</a> |
   <a href="https://api.okinto.com/pricing">Pricing</a> |
   <a href="./docs/development_en.md">Development</a> |
@@ -44,7 +46,7 @@ Like xAI's Grok Bot, OpenAI's dots and Anthropic's Claude Duet, it is an always-
 
 It is a Super Agent out of the box: background tasks, scheduled rules and Needs you need no extra setup. The design draws on DeepSeek's [super-agent prototype](https://github.com/deepseek-ai/dsh-superagent-prototype), and the agent runs on [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) ([the full story, in Chinese](./docs/blog/superagent.md)).
 
-📥 [Download](#-download) · 🎨 [Design](#-design) · 🌟 [Features](#-key-features) · 🆚 [Compare](#-okinto-中转-vs-grok-bot-openai-dots-and-claude-duet) · 🔐 [Privacy](#-how-it-works--privacy)
+📥 [Download](#-download-and-run) · 🎨 [Design](#-design) · 🌟 [Features](#-key-features) · 🆚 [Compare](#-okinto-中转-vs-grok-bot-openai-dots-and-claude-duet) · 🔐 [Privacy](#-how-it-works--privacy)
 
 ⭐ Like okinto 中转? Star the repo to follow new releases.
 
@@ -56,7 +58,7 @@ API address: `https://api.okinto.com`. See the [API documentation](https://docs.
 
 ---
 
-# 📥 Download
+# 📥 Download and run
 
 Pick your platform. Every release page lists all installers and a `SHA256SUMS` file.
 
@@ -114,12 +116,12 @@ See the [design library](./ui/design/README.md) for interface layout, colors and
 
 A bot is more than a chat window: it has a persona, a default model, its own workspace and its own memory.
 
-- **Make as many bots as you need**, each with its own persona, model, workspace and avatar.
-- **You decide who it is.** A persona is just text, and templates are only a starting point. The six avatars change how a bot looks, not what it can do.
+- **As many as you need**, each with its own persona, model, workspace and avatar.
+- **You define each bot.** A persona is just text, and templates are only a starting point. The six avatars change how a bot looks, not what it can do.
 - **Real file work.** Bots read and write files, run commands in a sandbox, and send the results back to the chat as files.
-- **Three permission presets per bot.** *Read-only*, *Workspace* (the default: write inside the bot's own folder, ask before anything outside) and *Full access* (no sandbox; recursive deletes still ask first).
+- **Three permission presets per bot.** *Read-only*, *Workspace* (the default: write inside the bot's own folder; it asks before writing outside its workspace) and *Full access* (no sandbox; even with full access, it asks before deleting a whole folder).
 - **Import skills.** In **Bot settings → Skills**, import a ZIP containing `SKILL.md` (one skill per ZIP, up to 20 MB), then preview and add it. View, enable, disable or delete skills; import the same name again to confirm replacement. Changes take effect after current work finishes. [Skill guide](./docs/skills_en.md).
-- **Approval cards, not surprises.** Out-of-bounds actions stop and wait for your answer.
+- **Approval cards, not surprises.** Actions that write outside the workspace stop and wait for your answer.
 - **Told after a restart.** A message still in progress when the app quit or crashed is flagged in its conversation at the next start, so you can send it again; nothing is redone on its own.
 - **Group chats.** Create a group and add a few bots. Whoever you @ answers; with no @, the bot that answered last carries on. Bots can also @ another member to hand off. Each bot keeps its own model, workspace and memory, and costs are tracked per bot.
 - **Search chat history.** Search all messages saved on your device from the sidebar, filter by bot, conversation, channel or date, and jump to the original message. `Ctrl/Cmd+Shift+F` opens global search; `Ctrl/Cmd+F` searches the current chat. Searches do not call a model. Before you type, the search dialog lists recent chats by date.
@@ -131,10 +133,10 @@ If you don't want to write a persona, use a ready-made bot from Discover. Each h
 
 Official bots include their UIs, samples, personas and skills in the installer. First preview and installation need no bot package downloads. Updates ship with app releases and preserve existing project data. Model calls and online research still need a network connection. Each bot is a desktop workspace: your work is listed on the left and the content is on the right, New starts a short guided form, the top bar switches to the full chat, and the input box has the model picker.
 
-- **Company Research:** Local company diligence with parallel research, curation, and sourced reports
-- **PPT Master:** Turn documents or topics into editable PPTX decks, or edit decks you have
-- **Film Studio:** Short videos and dramas: scripts, assets, storyboards, voices and finished films
-- **US Stock Research:** Research US-listed companies from SEC filings, with every number traceable
+- **Company Research:** Company research on your computer, with sourced briefings and PDF reports.
+- **PPT Master:** Turn documents or topics into editable slides, or edit decks you already have.
+- **Film Studio:** Short videos and serials: script, storyboard, voice, editing, and final cut.
+- **US Stock Research:** Research US-listed companies from SEC filings, with every number traceable.
 
 See the [bots page on our website](https://api.okinto.com) for details.
 
@@ -165,11 +167,12 @@ The full story, in Chinese: [okinto 中转 超级智能体](./docs/blog/superage
 
 ## 🧠 Memory, and reachable from anywhere
 
-- **Memory that carries over.** Bots keep Markdown memory at three levels (team, bot and group) and filter out anything that looks like a secret.
+- **Memory that carries over.** Each bot, group, and team has its own memory, kept as Markdown and kept separate. Content that looks like passwords or keys isn't saved.
 - **Long chats stay usable.** A context steward compacts or starts a fresh segment with a hand-off summary before the window fills up.
-- **Accounts shared by all bots.** Add WeChat, Feishu, Telegram, Slack, Discord and Notion accounts once in Settings. Every bot shares them, and each service can have several accounts with aliases. Send `/bot name` once in a chat app to talk to a different bot, or let a bot read your Notion and Feishu messages.
+- **Accounts shared by all bots.** Add WeChat, Feishu, Telegram, Slack and Discord chat accounts once under Settings › Chat channels. Every bot shares them, and each channel can have several accounts with aliases. Send `/bot name` once in a chat app to talk to a different bot.
+- **Connect apps.** Connect apps in the avatar menu comes with connectors for Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian and Canva, and you can add custom MCP connectors (remote servers or local commands). Connect once and every bot can use it by default; narrow it per bot and per tool. Read-only tools run right away, writes ask you first, and deletes or anything sent to other people always ask.
 - **WeChat and Feishu.** Scan a QR code to connect WeChat, or connect a Feishu bot with streaming reply cards. WeChat also carries images and files.
-- **Telegram, Slack and Discord.** Paste a token in Settings › Connections. No public address needed. Replies appear as they're written, and images and files work both ways. Direct messages only for now, and approvals and questions are answered by text.
+- **Telegram, Slack and Discord.** Paste a token in Settings › Chat channels. No public address needed. Replies appear as they're written, and images and files work both ways. Direct messages only for now, and approvals and questions are answered by text.
 - **Four ways to run it.** Desktop app, command line, Docker, or the local web console at `127.0.0.1:3600`.
 
 ## 🔒 Local-first, and easy on the eyes
@@ -224,7 +227,7 @@ When you use okinto 中转, model requests leave your device and pass through th
 | Agent runtime | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (MIT), run as a separate process |
 | Computer use | [Cua Driver](https://github.com/trycua/cua), bundled |
 | Channels | Feishu (long connection + streaming cards), WeChat (iLink), Telegram (long polling), Slack (Socket Mode), Discord (Gateway) |
-| Data accounts | Notion (REST API, official remote MCP), Feishu messages (user identity, read-only) |
+| Connect apps | Built-in connectors: Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian, Canva; custom MCP: Streamable HTTP (SSE compatible), local commands |
 | Tests and CI | Vitest, GitHub Actions |
 
 # 📝 Roadmap
@@ -234,7 +237,7 @@ Directions we are exploring. They are not promises, and the order is not a sched
 - [x] **Scheduled tasks**: let a bot run work on a timer (shipped as rules, above).
 - [x] **In-app group chats**: create a group in the app and chat with several bots at once.
 - [ ] **Group chats on chat channels**: chat channels handle one-to-one chats today.
-- [x] **Multilingual interface**: the app supports Simplified Chinese, English, Japanese, Korean and Russian; switch in Settings.
+- [x] **Multilingual interface**: the app supports Simplified Chinese, English, Japanese, Korean, Russian, Spanish and Portuguese (Brazil); switch in Settings.
 - [ ] **macOS computer use**: verify direct mode on more real machines and move it out of Beta.
 - [ ] **Email, calendar and event triggers**: connect email and calendar accounts, and let rules run the moment something happens (a message from a certain person, a meeting about to start), not only on a timer. Runs triggered by outside content get lower permissions, so text written by someone else can't give your bot orders.
 - [ ] **Always-on hosting, backup and migration**: rules don't run while your computer is off. Make it possible for anyone to deploy to their own server in one click, move their chats, memory and accounts over, and back up and restore.
@@ -320,3 +323,4 @@ okinto 中转 is released under the [MIT License](./LICENSE). Bundled third-part
 [ci-link]: https://github.com/wmn1525/AnyModelBot/actions/workflows/ci.yml
 [pricing-link]: https://api.okinto.com/pricing
 [okinto-link]: https://api.okinto.com
+> App connectors and custom MCP, sidebar groups, right-panel tabs, and Spanish and Portuguese (Brazil); preserves OKINTO sign-in, balances, model groups and image generation.

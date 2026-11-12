@@ -15,7 +15,7 @@
 }
 .splitter::after {
   content: ""; position: absolute; top: var(--split-inset); bottom: var(--split-inset); left: 50%; width: var(--split-line-w);
-  translate: -50% 0; border-radius: var(--r-full); background: var(--split-line);
+  translate: -50% 0; border-radius: var(--r-ctl); background: var(--split-line);
   opacity: 0;
   transition: opacity var(--t-base), background var(--t-fast);
 }

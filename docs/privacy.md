@@ -1,6 +1,6 @@
 # 数据与隐私
 
-简体中文 | [English](./privacy_en.md) | [日本語](./privacy_ja.md) | [한국어](./privacy_ko.md) | [Русский](./privacy_ru.md)
+简体中文 | [English](./privacy_en.md) | [日本語](./privacy_ja.md) | [한국어](./privacy_ko.md) | [Русский](./privacy_ru.md) | [Español](./privacy_es.md) | [Português (Brasil)](./privacy_pt.md)
 
 **一句话结论：** 对话、记忆、文件和密钥存在你的设备上；发给模型的内容会发到你选定的模型供应商：用官方 API Key 时直连，否则经过 Modelflare 转发。我们不声称能做到万无一失——凡是发给模型的内容，都会离开你的设备。
 
@@ -25,7 +25,7 @@
 | 聊天搜索索引 | `anymodel.db` 的 `message_search` 及其全文索引 | 不会 | 在实例内搜索已保存的消息，不调用模型 |
 | 记忆 | `memory/`（Markdown：`bots/`、`groups/`、`team/`） | 被用到时会 | 作为上下文进入模型请求；写入前会过滤看起来像密钥的内容 |
 | 机器人工作区文件 | `workspaces/<机器人>/`（含收到的文件 `inbox/`、生成的图片和视频 `media/`） | 机器人读取并发给模型时会 | 同上 |
-| Modelflare 登录凭据 | `modelflare-account.json`（权限 600；桌面版用系统钥匙串加密） | 只在刷新令牌时发给 modelflare.dev | Modelflare |
+| Modelflare 登录凭据 | `modelflare-account.json`（权限 600） | 只在刷新令牌时发给 modelflare.dev | Modelflare |
 | API Key | 内置网关的隔离配置 `magpie/config/` | 每次模型请求作为鉴权发给 Modelflare | Modelflare |
 | 官方 API Key（如果你填了） | 内置网关的隔离配置 `magpie/config/` | 每次模型请求作为鉴权发给对应的厂商 | 对应的模型厂商 |
 | 微信登录态与同步游标 | 数据目录内（`weixin/` 等） | 与微信 iLink 接口通信时会 | 腾讯微信 |
@@ -36,8 +36,9 @@
 | 后台任务和规则 | `anymodel.db`（任务、规则、运行记录，留 30 天）；任务文件夹在 `workspaces/<机器人>/tasks/`，30 天没动过会删除（先在「需要你」里告诉你）；它们的会话记录在 `dsh/<机器人>/sessions/`，随任务一起删除 | 运行时会 | 同对话：作为模型请求的上下文，经 Modelflare 发给你选定的供应商 |
 | 设置 | `config.json` | 不会 | — |
 | 日志 | `logs/app.log`（按大小轮转） | 不会；「复制诊断信息」由你手动复制，密钥已替换成 `***` | — |
-| 已授权账号的令牌（Notion、飞书，你添加了才有） | `anymodel.db`；所有机器人共用 | 每次读写时作为鉴权发给对应的服务 | Notion、飞书 |
-| 机器人读到的 Notion 内容和飞书消息 | 不单独保存，进入对话后和对话存在一起 | 会 | 作为模型请求的上下文，经 Modelflare 发给你选定的供应商 |
+| 连接应用的凭证（你连接了才有）：授权登录的令牌、粘贴的令牌和 Key、专属链接、自定义 MCP 的请求头 / 查询参数 / 环境变量 | `app-secrets.json`（权限 600，不在数据库里）；日志、诊断包和界面里都打码 | 每次读写时作为鉴权发给对应的服务；本地命令的环境变量只交给你添加的那个本地程序 | 你连接的应用（飞书、腾讯文档、钉钉、高德地图、语雀、Notion、GitHub、Linear、Atlassian、Canva），或你添加的自定义 MCP 服务 |
+| 连接的名称、地址、状态和工具清单 | `anymodel.db`（专属链接、带 Key 的地址只存打码后的样子） | 不会 | — |
+| 机器人从已连接的应用里读到的内容（文档、消息、工单…） | 不单独保存，进入对话后和对话存在一起 | 会 | 作为模型请求的上下文，经 Modelflare 发给你选定的供应商 |
 | 屏幕截图（电脑操作） | 不长期保存 | 会 | 作为模型请求的一部分，经 Modelflare 发给支持视觉的模型；不会转发到微信或飞书聊天，除非你要求作为文件发送 |
 
 ## 本地控制台的访问控制
@@ -105,4 +106,4 @@
 1. 退出 AnyModelBot（托盘菜单 → 退出）。
 2. 删除上面表格里的数据目录。Docker：`docker rm -f amb && docker volume rm amb-data`。
 3. 在 Modelflare 个人资料页的「已授权的应用」里撤销 AnyModelBot 的授权。
-4. 如有需要，在飞书开放平台停用你创建的应用（包括扫码时自动创建的），在微信里解除与机器人的绑定；在 Telegram（@BotFather）、Slack、Discord 上删除你创建的机器人；在 Notion 的设置里断开 AnyModelBot 的连接，删除你创建的令牌。
+4. 如有需要，在飞书开放平台停用你创建的应用（包括扫码时自动创建的），在微信里解除与机器人的绑定；在 Telegram（@BotFather）、Slack、Discord 上删除你创建的机器人；在各个应用自己的设置里（Notion、飞书、GitHub 等）断开 AnyModelBot 的授权，删除你创建的令牌和 Key。

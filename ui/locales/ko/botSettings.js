@@ -144,7 +144,7 @@ export default {
     "rules": "규칙",
     "rulesSub": "예약 확인 및 알림",
     "rulesCount": {
-      "other": "규칙 {count}개 · 정보 패널의 작업 탭에서 확인"
+      "other": "규칙 {count}개 · 오른쪽 패널의 작업 탭에서 확인"
     },
     "newRule": "새로 만들기"
   }

@@ -1,10 +1,10 @@
 import type { Dict } from "../../../zh";
 export default {
-  h1a: "あなたのデバイスで動く",
-  h1pre: "自分だけの",
-  h1mark: "AI アシスタント",
+  h1a: "あなたのパソコンで動く",
+  h1pre: "",
+  h1mark: "AI ボットのチーム",
   h1b: "。",
-  lead: "性格や役割は、短い設定文で自由に。ファイルを整理し、コマンドを実行し、あなたの仕事の進め方を覚えます。キー1つで主要モデルを利用できます。",
+  lead: "OKINTO にログインすれば、GPT や Claude などのモデルを使えます。仕事ごとに別のボットに任せることも、ボット同士で一緒に進めさせることもできます。",
   demo: "デモを見る",
   github: "GitHub で見る（スター {stars}）",
   trust: [
@@ -13,7 +13,7 @@ export default {
     "Windows / macOS / Linux",
   ],
   appUiNote: "",
-  eyebrow: "どんなボットにするかは、あなた次第",
+  eyebrow: "ボットの一つひとつを、あなたが決める",
   stage: {
     task: "ダウンロード内の請求書を「経費」フォルダーに整理して。",
     invoice: "invoice_03.pdf",

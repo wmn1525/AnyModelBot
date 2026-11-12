@@ -1,7 +1,7 @@
 // chat · en
 export default {
   aria: "Conversation with {name}",
-  infoPanel: "Info panel (⌘⇧I)",
+  infoPanel: "Right panel (⌘⇧I)",
   newConvCmd: "New conversation (/new)",
   toBottom: "Scroll to bottom",
   copyMessage: "Copy message",
@@ -77,7 +77,7 @@ export default {
     guideTitle: "Hi, I'm {name}",
     guideBody: "Take 5 minutes and walk through the checklist to see what I can do.",
     title: "Start chatting with {name}",
-    body: "Test your bot right here. Connect WeChat, Feishu, Telegram, Slack or Discord in the info panel.",
+    body: "Test your bot right here. Connect WeChat, Feishu, Telegram, Slack or Discord in the right panel.",
     sample: "What can you help me with?",
     helpChip: "/help for commands",
   },

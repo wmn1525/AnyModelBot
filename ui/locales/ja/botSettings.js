@@ -144,7 +144,7 @@ export default {
     "rules": "ルール",
     "rulesSub": "定期的な確認とリマインダー",
     "rulesCount": {
-      "other": "ルール {count} 件。情報パネルの「タスク」で確認できます"
+      "other": "ルール {count} 件。右パネルの「タスク」で確認できます"
     },
     "newRule": "新規作成"
   }

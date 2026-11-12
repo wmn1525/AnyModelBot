@@ -3,6 +3,14 @@
     "value": "Gestern ich bin ins Kino.",
     "reason": "The German tutor demonstrates correcting this deliberately incorrect German sentence; translate the explanation, not the exercise."
   },
+  "home.chat.personas.german.asks[0].q": {
+    "value": "Ich bin nach Hause gegangen gestern.",
+    "reason": "Suggested message in the interactive phone demo: a deliberately misordered German sentence for the tutor to correct; the reply's explanation is translated, the exercise is not."
+  },
+  "home.chat.personas.german.asks.0.q": {
+    "value": "Ich bin nach Hause gegangen gestern.",
+    "reason": "Same entry as home.chat.personas.german.asks[0].q, spelled the way scripts/locales-check.ts writes array paths (site/scripts/check-i18n.ts uses brackets)."
+  },
   "download.items.mac-arm64": {
     "value": "macOS Apple silicon",
     "reason": "Operating system and processor platform names, retained as technical product identifiers."

@@ -25,7 +25,7 @@ const REFRESH_MARGIN_MS = 5 * 60_000;
 const MAX_POLL_S = 60;
 /** 飞书说令牌无效或过期的错误码：换一次令牌再试 */
 const TOKEN_CODES = new Set([99991663, 99991668, 99991677, 20005]);
-const RECONNECT = "Ask the user to re-authorize this account in Settings > Connections.";
+const RECONNECT = "Ask the user to re-authorize this account under Connect apps.";
 
 /** 模型给的时间（ISO 或日期）转成秒。空就不限 */
 function seconds(v: unknown, name: string): string | undefined {

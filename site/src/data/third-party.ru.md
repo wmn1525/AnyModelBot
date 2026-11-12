@@ -1,6 +1,6 @@
 # Уведомления о сторонних компонентах
 
-[简体中文](./THIRD_PARTY_NOTICES.md) | [English](./THIRD_PARTY_NOTICES_en.md) | [日本語](./THIRD_PARTY_NOTICES_ja.md) | [한국어](./THIRD_PARTY_NOTICES_ko.md) | Русский
+[简体中文](./THIRD_PARTY_NOTICES.md) | [English](./THIRD_PARTY_NOTICES_en.md) | [日本語](./THIRD_PARTY_NOTICES_ja.md) | [한국어](./THIRD_PARTY_NOTICES_ko.md) | Русский | [Español](./THIRD_PARTY_NOTICES_es.md) | [Português (Brasil)](./THIRD_PARTY_NOTICES_pt.md)
 
 Сам anymodel bot распространяется под лицензией MIT, см. LICENSE. Перечисленные ниже компоненты включены в программу или перенесены в неё; каждый сохраняет исходную лицензию.
 
@@ -84,6 +84,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 - yauzl 3.4.0 — MIT
 - yaml 2.9.1 — ISC
 - electron-updater 6.8.12 — MIT
+- @modelcontextprotocol/client 2.2.0 — MIT
 
 Лицензии транзитивных зависимостей находятся внутри соответствующих пакетов в node_modules. Настольное приложение также включает Electron (MIT), Chromium и другие компоненты; их лицензии находятся в LICENSE и LICENSES.chromium.html в папке установки.
 
@@ -237,3 +238,34 @@ SOFTWARE.
 ```
 
 Уведомления о зависимостях самого Cua Driver находятся в поставляемом с ним THIRD_PARTY_NOTICES.md.
+
+## yuque-mcp (официальный MCP-сервер Yuque, поставляется одним файлом — MIT)
+
+Источник: https://github.com/yuque/yuque-mcp-server (npm-пакет yuque-mcp 1.0.0)
+
+- Поставляется одним собранным файлом (`vendor/yuque-mcp/yuque-mcp.mjs`, создаётся скриптом `scripts/vendor-yuque-mcp.mjs`; единственное изменение — чтение версии из `package.json` во время работы заменено константой). Его использует «Подключить приложения › Yuque» для подключения к Yuque.
+- Включённые в этот файл зависимости и их лицензии перечислены в прилагаемом `THIRD_PARTY_LICENSES.txt` (в репозитории — `vendor/yuque-mcp/`, в установленном приложении — `resources/yuque-mcp/`).
+
+```
+MIT License
+
+Copyright (c) 2026 cwg
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

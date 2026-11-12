@@ -1,12 +1,12 @@
 export default {
-  "aria": "정보 패널",
+  "aria": "오른쪽 패널",
   "botSettings": "봇 설정",
   "closeTitle": "닫기(⌘⇧I)",
-  "closeAria": "정보 패널 닫기",
+  "closeAria": "오른쪽 패널 닫기",
   "channels": "채널",
   "channelsDefault": "기본적으로 이 봇이 응답합니다",
   "channelsManage": "채팅 채널 관리",
-  "channelsSub": "모든 봇이 이 계정을 공유합니다. 설정 > 연결에서 추가하세요",
+  "channelsSub": "모든 봇이 이 계정을 공유합니다. 설정 > 채팅 채널에서 추가하세요",
   "approvals": "승인 대기",
   "due": "{time} 만료",
   "noApprovals": "대기 중인 승인이 없습니다",
@@ -100,5 +100,8 @@ export default {
     "stop": "중지",
     "activity": "작업 내역"
   },
-  "tasks": "작업"
+  "tasks": "작업",
+  "tabsLabel": "패널 탭",
+  "tab": { "app": "작업 공간", "overview": "개요", "tasks": "작업", "memory": "기억" },
+  "noTasks": "아직 작업이나 규칙이 없습니다"
 };

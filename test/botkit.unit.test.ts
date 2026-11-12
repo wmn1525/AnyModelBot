@@ -12,7 +12,7 @@ import { catalogConfig } from "../src/botkit/config.js";
 import { checkStatic } from "../src/botkit/check.js";
 import { runEvals } from "../src/botkit/evals.js";
 import { localized, parseManifest, versionGte } from "../src/botkit/format.js";
-import { BotInstaller, CatalogError, instanceId } from "../src/botkit/installer.js";
+import { BotInstaller, CatalogError, followedAvatar, instanceId } from "../src/botkit/installer.js";
 import { packBuiltinCatalog, packCatalog, whoUsesSkill } from "../src/botkit/pack.js";
 import { prune, unsupportedKeywords, validate } from "../src/botkit/schema.js";
 import { generateCatalogKeys, signCatalog, verifyCatalog } from "../src/botkit/sign.js";
@@ -60,6 +60,8 @@ describe("bot.json", () => {
     expect(bad({ id: "Bad_ID" })).toContain("format.id");
     expect(bad({ name: { "zh-CN": "名" } })).toContain("format.name");
     expect(bad({ avatar: "pink" })).toContain("format.avatar");
+    expect(bad({ avatar: "film" })).toContain("format.avatar"); // 别人的专属形象
+    expect(parseManifest({ ...good, id: "printfilm", avatar: "film" }).issues).toEqual([]);
     expect(bad({ permissions: ["root"] })).toContain("format.permissions");
     expect(bad({ starters: { "zh-CN": ["一句"], en: ["a", "b"] } })).toContain("format.starters");
     expect(bad({ skills: [{ name: "media", source: "x", sha256: "0".repeat(64), author: "a", license: "MIT", url: "https://a" }] })).toContain("format.skills");
@@ -575,6 +577,40 @@ describe("目录", () => {
       expect(JSON.parse(fs.readFileSync(ws("app/state.json"), "utf8")).title).toBe("my project");
       expect(await installer.update(id)).toBe("current");
       expect(network).not.toHaveBeenCalled();
+    });
+    it("目录换了头像：没换过头像的实例跟着换（不用等升级），用户自己选过的不动", async () => {
+      const bot = await inst.install("fixture-bot", "zh-CN");
+      expect(bot.settings.avatar).toBe("blue");
+      expect(bot.app!.avatar).toBe("blue");
+      const dir = path.join(repo, "bots", "fixture-bot");
+      const swap = (avatar: string) => {
+        const f = path.join(dir, "bot.json");
+        fs.writeFileSync(f, fs.readFileSync(f, "utf8").replace(/"avatar": "\w+"/, `"avatar": "${avatar}"`));
+        const bundledDir = path.join(tmp, `builtin-${avatar}`);
+        expect(packBuiltinCatalog({ root: repo, outDir: bundledDir }).failures).toEqual([]);
+        return new BotInstaller({ ...inst.o, catalog: new BotCatalog({ dataDir: data, appVersion: "9.9.9", bundledDir }) });
+      };
+      swap("law").followAvatars();
+      expect(store.getBot(id)!.settings.avatar).toBe("law");
+      expect(store.getBot(id)!.app!.avatar).toBe("law");
+      store.updateBot(id, { settings: { ...store.getBot(id)!.settings, avatar: "red" } });
+      swap("code").followAvatars();
+      expect(store.getBot(id)!.settings.avatar).toBe("red");
+      expect(store.getBot(id)!.app!.avatar).toBe("code");
+    });
+    it("0.1.30 以前装的目录 Bot 没记目录给的头像：还是当年借的专家头像就换成专属形象", () => {
+      expect(followedAvatar("design", { catalogId: "printfilm" }, "film")).toBe("film");
+      expect(followedAvatar("design", { catalogId: "ppt-master" }, "slides")).toBe("slides");
+      expect(followedAvatar("data", { catalogId: "company-research" }, "dossier")).toBe("dossier");
+      expect(followedAvatar("finance", { catalogId: "us-stock-research" }, "ticker")).toBe("ticker");
+      expect(followedAvatar("red", { catalogId: "printfilm" }, "film")).toBe("red");
+      expect(followedAvatar("", { catalogId: "printfilm" }, "film")).toBe("film");
+      expect(followedAvatar("design", { catalogId: "printfilm", avatar: "film" }, "film")).toBe("design");
+    });
+    it("目录里两个 Bot 不能用同一个头像", () => {
+      makeBot(path.join(repo, "bots", "twin-bot"), "twin-bot");
+      const r = packBuiltinCatalog({ root: repo, outDir: path.join(tmp, "builtin-twin") });
+      expect(r.failures.map((f) => [path.basename(f.dir), f.issues.map((i) => i.rule)])).toEqual([["twin-bot", ["format.avatar"]]]);
     });
     it("目录升级不能覆盖用户导入的同名技能，即使尚未部署到运行目录", async () => {
       await inst.install("fixture-bot", "zh-CN");

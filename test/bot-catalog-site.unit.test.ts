@@ -1,10 +1,10 @@
-// 上架的 Bot：五种语言都要有，官网 /bots 的数据和头像要跟上。忘了在 site/ 运行 npm run sync 时，这里会失败。
+// 上架的 Bot：每种界面语言都要有，官网 /bots 的数据和头像要跟上。忘了在 site/ 运行 npm run sync 时，这里会失败。
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = path.join(import.meta.dirname, "..");
-const LANGS = ["zh-CN", "en", "ja", "ko", "ru"];
+const LANGS = ["zh-CN", "en", "ja", "ko", "ru", "es", "pt"];
 const ids = fs.readdirSync(path.join(ROOT, "bots")).filter((d) => fs.existsSync(path.join(ROOT, "bots", d, "bot.json"))).sort();
 const manifest = (id: string) => JSON.parse(fs.readFileSync(path.join(ROOT, "bots", id, "bot.json"), "utf8"));
 

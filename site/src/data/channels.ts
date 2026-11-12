@@ -1,11 +1,13 @@
 import ja from "./channels.ja";
 import ko from "./channels.ko";
 import ru from "./channels.ru";
+import es from "./channels.es";
+import pt from "./channels.pt";
 // 首页"在哪都能用"（sections/Devices.astro）里的聊天渠道：切换台里的入口和接入步骤都由这里生成。
 //
 // 不放在 i18n 里：中英文页面展示的渠道可以不同，不是同一份内容的两种语言——
 // 中文页面是微信、飞书；英文页面是 Slack、Telegram、Discord（用户 2026-11-01 定的：英文页不出现微信 / 飞书）。
-// 接入步骤和应用 设置 › 连接 里的说明一致（ui/screens/connections.js）。账号全局共用，所有机器人都能用。
+// 接入步骤和应用 设置 › 聊天渠道 里的说明一致（ui/screens/connections.js）。账号全局共用，所有机器人都能用。
 // 还没做好、要标出来的渠道写 soon（卡片和标签上标出来，接入指南里不放步骤），做好了再补步骤、去掉 soon。
 // 所以两边条数可以不同，check-i18n 的"结构一致"不适用；禁词扫描（scripts/banned.ts）照样覆盖这个文件。
 //
@@ -28,7 +30,7 @@ export interface Channel {
 }
 
 export const CHANNELS: Record<Lang, Channel[]> = {
-  ja, ko, ru,
+  ja, ko, ru, es, pt,
   zh: [
     {
       id: "wechat", icon: "chat", title: "微信", body: "扫码接入，在微信里直接聊，图片和文件也能发。", format: "渠道（iLink 扫码登录）",

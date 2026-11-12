@@ -1,0 +1,71 @@
+export default {
+  "slogan": "Cualquier modelo, un solo asistente",
+  "gatewayFailed": "El gateway de modelos integrado no se inició: {error}. Corrígelo, reinicia la app y vuelve a conectar.",
+  "unknownReason": "motivo desconocido",
+  "line": {
+    "label": "Dominio de la API",
+    "sub": "Elige un dominio o compara los tiempos de respuesta. No hay cambio automático.",
+    "global": "modelflare.dev",
+    "cn": "origin.modelflare.dev",
+    "cf": "cf.modelflare.dev",
+    "test": "Probar dominios",
+    "testing": "Probando…",
+    "testNote": "Las pruebas se hacen desde el dispositivo donde se ejecuta okbot: mediana del tiempo de respuesta y cuántos de 3 sondeos tuvieron éxito. No usa ninguna clave de API ni llama a modelos; no mide la velocidad de generación.",
+    "result": "{ms} ms · {count}/{total} exitosos",
+    "timeout": "Tiempo agotado",
+    "unreachable": "Inaccesible"
+  },
+  "login": {
+    "label": "Iniciar sesión o registrarse con OKINTO",
+    "waiting": "Termina de iniciar sesión en tu navegador; volverás aquí automáticamente",
+    "reopen": "Volver a abrir la página de inicio de sesión ↗",
+    "copyLink": "Copiar enlace",
+    "manualHint": "Después de iniciar sesión, el navegador abre una dirección que no carga. Es normal. Copia el enlace completo de la barra de direcciones y pégalo abajo.",
+    "manualLabel": "Enlace después de iniciar sesión",
+    "manualSubmit": "Terminar de iniciar sesión",
+    "manualSending": "Iniciando sesión…",
+    "hint": "Inicia sesión en la ventana de OKINTO para cargar tu saldo, los grupos y los modelos disponibles. No necesitas copiar una clave API."
+  },
+  "model": {
+    "found": {
+      "one": "Conectado: se encontró {n} modelo",
+      "many": "Conectado: se encontraron {n} modelos",
+      "other": "Conectado: se encontraron {n} modelos"
+    },
+    "hint": "Elige un modelo predeterminado. Puedes cambiarlo cuando quieras desde un chat.",
+    "filter": "Filtrar modelos",
+    "default": "Modelo predeterminado",
+    "noMatch": "No hay modelos que coincidan",
+    "mediaHint": "Modelos predeterminados para generar imágenes y videos.",
+    "image": "Imagen",
+    "imageLabel": "Modelo de imagen predeterminado",
+    "video": "Video",
+    "videoLabel": "Modelo de video predeterminado",
+    "console": "Abrir consola ↗",
+    "empty": "Tu cuenta aún no tiene modelos disponibles. Habilita modelos en la consola y luego vuelve y actualiza.",
+    "saving": "Guardando…",
+    "start": "Empezar a chatear",
+    "startAnyway": "Empezar de todos modos"
+  },
+  "useKey": "Conectar con una clave API",
+  "keyOnly": "Servicio: https://api.okinto.com · Usa una clave API de este sitio",
+  "createKey": "Crear una clave en la consola de OKINTO New API ↗",
+  "key": {
+    "label": "Clave API",
+    "placeholder": "Pega tu clave API de OKINTO New API",
+    "paste": "Pegar del portapapeles",
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "showKey": "Mostrar clave",
+    "hideKey": "Ocultar clave",
+    "retype": "Volver a introducir",
+    "checkGroup": "Comprobar el grupo en la consola ↗",
+    "useCn": "Cambiar a la ruta optimizada para China y reintentar",
+    "note": "Tu clave permanece en este dispositivo y nunca se escribe en registros ni argumentos de la línea de comandos.",
+    "connecting": "Conectando…",
+    "submit": "Conectar OKINTO New API",
+    "slow": "La red es lenta.",
+    "slowLine": "La red es lenta. Puedes cambiar de ruta en Avanzado.",
+    "advanced": "Avanzado"
+  }
+};

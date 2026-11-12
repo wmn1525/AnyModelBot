@@ -1,4 +1,5 @@
 export default {
+  "timeBasedNote": "時間帯別料金はスナップショット取得時点の値です。実際の料金はリクエスト時刻と OKINTO の請求に従います。",
   "eyebrow": "料金 · 従量課金",
   "h2mark": "月額料金なし",
   "h2rest": "。使った分だけお支払い。",

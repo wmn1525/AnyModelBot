@@ -13,10 +13,10 @@ export default {
   "cta": "okbot 내려받기",
   "strip": {
     "title": "준비된 봇으로 바로 시작할 수도 있습니다",
-    "lead": "기업을 조사하고 프레젠테이션이나 숏폼·시리즈 드라마를 만드세요. 「둘러보기」에서 전용 화면을 갖춘 봇을 선택할 수 있습니다.",
+    "lead": "조사, 슬라이드, 숏폼 영상까지. 「둘러보기」에서 골라 쓰세요.",
     "all": "모든 봇 보기"
   },
-  "minimumVersion": "AnyModelBot {version} 이상이 필요합니다.",
+  "minimumVersion": "okbot {version} 이상이 필요합니다.",
   "requirements": {
     "printfilm": "기획과 편집에는 Python 3.10+, 미디어 검증과 렌더링에는 FFmpeg(ffprobe 포함)가 필요합니다. AI 이미지는 OKINTO 사용량에 따라 과금됩니다. 이번 버전은 OKINTO 영상 생성을 지원하지 않으며 로컬 영상을 가져와 편집할 수 있습니다."
   }

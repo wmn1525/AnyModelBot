@@ -7,6 +7,20 @@ import { scopeLabel } from "../../agent/memory.js";
 import { t } from "../../i18n/index.js";
 import { HttpError, readJson, send, publicBot, publicMessage, CollectReply, webEvent, consoleConvId, publicApproval, accountCall, isLoopback, type Route, type WebContext } from "../http.js";
 
+/** 界面发回来的「以后都允许」只留下原来就有的（撤销可以，添加不行） */
+function keepGranted(cur: Record<string, Record<string, string>>, next: unknown): Record<string, Record<string, string>> {
+  if (!next || typeof next !== "object") return cur;
+  const out: Record<string, Record<string, string>> = {};
+  for (const [app, tools] of Object.entries(cur)) {
+    const want = (next as Record<string, unknown>)[app];
+    if (!want || typeof want !== "object") continue;
+    const kept: Record<string, string> = {};
+    for (const [name, hash] of Object.entries(tools)) if ((want as Record<string, unknown>)[name] === hash) kept[name] = hash;
+    if (Object.keys(kept).length) out[app] = kept;
+  }
+  return out;
+}
+
 export function botsRoutes(ctx: WebContext): Route {
   const { app, host, live, startLive, runLive, interceptWeb } = ctx;
   return async (req, res, url, seg, p, m) => {
@@ -78,10 +92,13 @@ export function botsRoutes(ctx: WebContext): Route {
           ...(b.media !== undefined ? { media: { ...cur.media, ...b.media } } : {}),
           ...(b.quietHours !== undefined ? { quietHours: { ...cur.quietHours, ...b.quietHours } } : {}),
           ...(b.nudge !== undefined ? { nudge: b.nudge } : {}),
+          // 应用：整份换（界面每次给完整的一份）；「以后都允许」只能在对话里批出来，这里只能撤销（不能凭空加）
+          ...(b.apps !== undefined ? { apps: { ...cur.apps, ...b.apps, alwaysAllow: keepGranted(cur.apps.alwaysAllow, b.apps?.alwaysAllow) } } : {}),
           memory: { ...cur.memory, ...(b.memory ?? {}) },
           steward: { ...cur.steward, ...(b.steward ?? {}) },
         });
         app.store.updateBot(id, { settings: merged });
+        if (b.apps !== undefined) app.agent.refreshIdle().catch(() => {});
         // 暂停 / 恢复后台工作：恢复时排着的 run、主动消息要放出来，经任务服务改
         if (typeof b.paused === "boolean") app.tasks.setPaused(id, b.paused, "web");
         const next = app.store.getBot(id)!;

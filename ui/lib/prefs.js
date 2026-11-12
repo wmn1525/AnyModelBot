@@ -1,5 +1,5 @@
 // 本机界面偏好：设置 › 外观（字体大小、字体、对话宽度、代码换行、动画、毛玻璃）、设置 › 常规里的对话习惯（发送键、完成通知），
-// 以及拖分隔条调过的侧栏 / 信息面板宽度。
+// 以及拖分隔条调过的侧栏 / 信息面板宽度、侧栏是否收起。
 // 和主题（lib/theme.js）一样存在 localStorage：每个浏览器 / 桌面窗口各一份，不进服务端配置。
 // 外观类的偏好解析成 <html> 上的 data-* 属性（取值见 design/tokens/semantic.css「用户偏好」），CSS 只认这些属性；
 // 首帧前 index.html 先按同样的规则套一遍，避免闪——改这里的解析规则时两处一起改。
@@ -18,7 +18,9 @@ export const PREF_DEFAULTS = Object.freeze({
   sendKey: "enter", //  发送：enter（Shift+Enter 换行）| mod（⌘/Ctrl+Enter 发送，Enter 换行）
   notify: false, //     窗口不在前台时，回复完成 / 需要确认弹系统通知
   sideW: 0, //          侧栏宽度（px），拖分隔条调的；0 = 默认（tokens 的 --side-w，窄窗口时更窄）
-  panelW: 0, //         信息面板宽度（px），同上
+  panelW: 0, //         右侧面板宽度（px），同上
+  workW: 0, //          右侧面板放着工作台（专业 Bot 的专属界面）时的宽度（px），同上；0 = 默认（tokens 的 --work-w）
+  sideHidden: false, // 侧栏收起（顶部最左边的按钮）
   updateDismissed: "", // 侧栏叉掉的新版本提示是哪个版本；更新的版本照样提示
 });
 /** "恢复默认外观"重置的键（对话习惯不动） */
@@ -48,10 +50,11 @@ function sanitize(raw) {
   if (!raw || typeof raw !== "object") return p;
   for (const [k, list] of Object.entries(CHOICES)) if (list.includes(raw[k])) p[k] = raw[k];
   for (const k of ["fontName", "codeFont"]) if (typeof raw[k] === "string") p[k] = cleanFontName(raw[k]);
-  for (const k of ["codeWrap", "notify"]) if (typeof raw[k] === "boolean") p[k] = raw[k];
+  for (const k of ["codeWrap", "notify", "sideHidden"]) if (typeof raw[k] === "boolean") p[k] = raw[k];
   if (typeof raw.updateDismissed === "string") p.updateDismissed = raw.updateDismissed.slice(0, 32);
   // 宽度只粗查一下是不是合理的像素数；精确的范围（最窄 / 最宽 / 窗口占比）由 CSS 的 clamp() 和 Splitter 管
   for (const k of ["sideW", "panelW"]) if (Number.isFinite(raw[k]) && raw[k] >= 120 && raw[k] <= 1200) p[k] = Math.round(raw[k]);
+  if (Number.isFinite(raw.workW) && raw.workW >= 120 && raw.workW <= 2400) p.workW = Math.round(raw.workW);
   return p;
 }
 
@@ -91,8 +94,8 @@ function apply(p) {
   d.codeWrap = p.codeWrap ? "on" : "off";
   d.motion = p.motion === "off" ? "off" : p.motion === "on" ? "full" : mqMotion.matches ? "reduce" : "full";
   d.glass = mqGlass.matches ? "off" : "on"; // 没有设置项，只跟随系统的"降低透明度"
-  // 拖过的宽度：<html> 上内联 --side-w-user / --panel-w-user（shell.css 取 var(--side-w-user, var(--side-w))）
-  for (const [k, prop] of [["sideW", "--side-w-user"], ["panelW", "--panel-w-user"]])
+  // 拖过的宽度：<html> 上内联 --side-w-user / --panel-w-user / --work-w-user（shell.css 取 var(--side-w-user, var(--side-w))）
+  for (const [k, prop] of [["sideW", "--side-w-user"], ["panelW", "--panel-w-user"], ["workW", "--work-w-user"]])
     if (p[k]) root.style.setProperty(prop, `${p[k]}px`);
     else root.style.removeProperty(prop);
 }

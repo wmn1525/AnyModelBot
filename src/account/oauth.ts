@@ -8,6 +8,7 @@ import crypto from "node:crypto";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import { lang, t, tl, type Lang } from "../i18n/index.js";
+import { fetchFailureReason } from "../providers/modelflare.js";
 
 export interface OidcEndpoints {
   issuer: string;
@@ -60,7 +61,7 @@ export async function discover(issuer: string, fetchImpl: typeof fetch = fetch):
   try {
     res = await fetchImpl(`${issuer}/.well-known/openid-configuration`, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(15_000) });
   } catch (e) {
-    throw new OAuthError("network", t("account.host_unreachable", { host: new URL(issuer).host, reason: (e as Error).message }));
+    throw new OAuthError("network", t("account.host_unreachable", { host: new URL(issuer).host, reason: fetchFailureReason(e) }));
   }
   if (!res.ok) throw new OAuthError("discovery", t("account.discovery_failed", { status: res.status }), res.status);
   const doc = (await res.json().catch(() => ({}))) as Record<string, unknown>;
@@ -89,7 +90,7 @@ async function tokenRequest(endpoint: string, params: Record<string, string>, fe
       signal: AbortSignal.timeout(20_000),
     });
   } catch (e) {
-    throw new OAuthError("network", t("account.unreachable", { reason: (e as Error).message }));
+    throw new OAuthError("network", t("account.unreachable", { reason: fetchFailureReason(e) }));
   }
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok) {

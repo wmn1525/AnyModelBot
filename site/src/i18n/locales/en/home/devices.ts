@@ -1,7 +1,7 @@
 export default {
-  "h2": "Reachable everywhere.",
-  "h2dim": "One bot, one memory.",
-  "lead": "Desktop, Docker and browser — plus Slack, Telegram and Discord in your pocket.",
+  "h2": "You can find it wherever you are.",
+  "h2dim": "Same bot, same memory.",
+  "lead": "Desktop, Docker, and the browser — plus Slack, Telegram, or Discord on your phone.",
   "items": {
     "desktop": {
       "title": "Desktop",
@@ -28,7 +28,7 @@ export default {
     "memo": "Daily report at 5 pm",
     "memoLabel": "Memory"
   },
-  "chatBody": "Message it from the chat apps you already use — on your phone, too.",
+  "chatBody": "After you connect, you can send tasks from your phone; the computer or server running the bot needs to stay on and online.",
   "howTo": "See the steps",
   "guideTitle": "Setup guide",
   "note": "No standalone iOS/Android app yet; on your phone, chat with it in Slack, Telegram or Discord. The web console is local or self-hosted — not a cloud web app.",

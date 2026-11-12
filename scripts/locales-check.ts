@@ -8,11 +8,12 @@ import { inspectLocale } from "./lib/locale-check.mjs";
 import { loadDicts, TARGET_LANGS } from "./i18n-check.mjs";
 import manifest from "../ui/locales/manifest.json" with { type: "json" };
 import { catalogs } from "../src/i18n/messages/index.js";
-import { translations } from "../src/i18n/index.js";
+import { translations, type TranslatedLang } from "../src/i18n/index.js";
 import sourceExceptions from "../site/src/i18n/source-exceptions.json" with { type: "json" };
 import { RAW_DICTS } from "../site/src/i18n/catalogs.js";
 import { CHANNELS } from "../site/src/data/channels.js";
 import { ANNOUNCEMENTS } from "../site/src/data/announcements.js";
+import { LOCALES } from "../site/src/i18n/locales.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const statusOnly = process.argv.includes("--status");
@@ -21,7 +22,7 @@ const server = Object.fromEntries(Object.entries(catalogs).map(([ns, c]) => [ns,
 const report = [];
 let blocked = false;
 for (const locale of manifest.locales.filter((l) => !["zh-CN", "en"].includes(l.code))) {
-  const lang = locale.code as "ja" | "ko" | "ru";
+  const lang = locale.code as TranslatedLang;
   const surfaces = {
     app: inspectLocale(ui.en, ui[lang], lang),
     server: inspectLocale(server, translations[lang], lang),
@@ -29,9 +30,9 @@ for (const locale of manifest.locales.filter((l) => !["zh-CN", "en"].includes(l.
     channels: inspectLocale(CHANNELS.en, CHANNELS[lang], lang),
     announcements: inspectLocale(ANNOUNCEMENTS.map((a) => a.en), ANNOUNCEMENTS.map((a) => a[lang]), lang),
   };
-  const missingDocs = ["README", "CHANGELOG", "CONTRIBUTING", "SECURITY", "THIRD_PARTY_NOTICES", "docs/development", "docs/privacy"]
+  const missingDocs = ["README", "CHANGELOG", "CONTRIBUTING", "SECURITY", "THIRD_PARTY_NOTICES", "docs/development", "docs/privacy", "docs/skills"]
     .map((name) => `${name}_${lang}.md`).filter((file) => !fs.existsSync(path.join(root, file)) || !fs.readFileSync(path.join(root, file), "utf8").trim());
-  if (RAW_DICTS[lang].meta?.lang !== lang) surfaces.website.errors.push({ key: "meta.lang", reason: "wrong HTML language tag" });
+  if (RAW_DICTS[lang].meta?.lang !== LOCALES[locale.siteCode as keyof typeof LOCALES].tag) surfaces.website.errors.push({ key: "meta.lang", reason: "wrong HTML language tag" });
   const image = RAW_DICTS[lang].meta?.ogImage;
   if (!image || !fs.existsSync(path.join(root, "site/public", image))) missingDocs.push(`site/public${image || "/og/<missing>"}`);
   const ready = Object.values(surfaces).every((s) => !s.errors.length) && !missingDocs.length;

@@ -18,6 +18,8 @@ export interface BotAppRef {
   permissions: BotPermission[];
   /** 装进 <data>/dsh/<botId>/skills/ 的技能名（升级、卸载时只动这些） */
   skills: string[];
+  /** 目录上次给它的头像。设置里的头像还是这个（用户没换过）时，目录换了头像它跟着换 */
+  avatar?: string;
   /** 用户改过人设：不再跟随目录升级 */
   customized?: boolean;
   /** 目录里已下架 */
@@ -35,6 +37,7 @@ export function normalizeAppRef(raw: unknown): BotAppRef | null {
     runtime: String(r.runtime ?? ""),
     permissions: Array.isArray(r.permissions) ? r.permissions.filter((p: unknown) => (BOT_PERMISSIONS as readonly unknown[]).includes(p)) : [],
     skills: Array.isArray(r.skills) ? r.skills.map(String) : [],
+    ...(typeof r.avatar === "string" && r.avatar ? { avatar: r.avatar } : {}),
     ...(r.customized ? { customized: true } : {}),
     ...(r.removed ? { removed: r.removed } : {}),
   };

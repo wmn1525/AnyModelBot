@@ -16,7 +16,7 @@ export default {
   copyright: "© 2026 okbot · MIT",
   art: "キャラクター画像 © okbot プロジェクト",
   tagline:
-    "あなたのパソコンで動く AI の仲間。キー1つで主要モデルを使い、頭脳をいつでも切り替えられます。",
+    "あなたのパソコンで動く AI ボットのチーム。OKINTO にログインすれば、キー1つで主要モデルを使えます。",
   featured: "掲載サイト",
   featuredMore: "全{count}件を表示",
   featuredLess: "折りたたむ",

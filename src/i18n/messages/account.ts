@@ -18,7 +18,7 @@ export const zh = {
   routing_invalid: "不认识的性价比选项",
   routing_unsupported: "OKINTO New API 暂不支持为应用签发的 Key 设置性价比",
   // oauth.ts
-  host_unreachable: "连不上 {host}（{reason}）",
+  host_unreachable: "连不上 {host}（{reason}）。请检查网络；如果在用代理或 VPN，请开启系统代理或 TUN 模式后重试",
   discovery_failed: "读取登录配置失败（HTTP {status}）",
   discovery_bad_endpoint: "登录配置里的 {key} 无效",
   discovery_issuer_mismatch: "登录配置的发行方不匹配",

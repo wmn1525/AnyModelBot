@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-把 anymodelbot_design/logo avator/ 里的毛绒机器人原图（6 个基础角色 + 专家/ 下的 12 个领域专家）拆成可动的图层，输出 ui/design/bots/<key>.webp。
+把 anymodelbot_design/logo avator/ 里的毛绒机器人原图（6 个基础角色 + 专家/ 下的 12 个领域专家 + 目录/ 下的 4 个目录 Bot 专属形象）拆成可动的图层，输出 ui/design/bots/<key>.webp。
 
 每个角色一张横向精灵图，8 格，每格 CELL×CELL，坐标系相同（叠在一起就是原图）：
   0 head      头（不含耳朵和头顶配件；面罩上的眼睛已抹掉，眼睛由 avatar.js 用 SVG 画，才能眨眼、换表情）
@@ -84,6 +84,16 @@ CHARS = {
                 ear=dict(cutL=359, cutR=1175, y0=505, y1=819), top=dict(x0=500, x1=1035, cut=293, stem=(598, 939))),
     "translate": dict(src="专家/翻译-通通.png", eyes=[(622.4, 685.8), (907.8, 685.8)], er=44, patch=(1.6, 2.4), visor=(465, 542, 1068, 822, 134),
                 ear=dict(cutL=362, cutR=1171, y0=529, y1=827), top=dict(x0=632, x1=901, cut=283, stem=(726, 789))),
+    # —— 4 个目录 Bot 的专属形象（anymodelbot_design/logo avator/目录/）：gpt-image-2.5 以「数数」为参考图编辑生成，
+    #    绿幕抠图后按两眼对齐到专家的标准眼位，几何量过再核对过。咔咔的面罩外圈有一道白色缝线，面罩只量到缝线以内 ——
+    "slides": dict(src="目录/PPT大师-演演.png", eyes=[(622.7, 677.9), (907.5, 678.0)], er=45, patch=(1.6, 2.4), visor=(465, 538, 1071, 812, 133),
+                ear=dict(cutL=361, cutR=1173, y0=527, y1=813), top=dict(x0=529, x1=992, cut=284, stem=(699, 813))),
+    "film": dict(src="目录/影视创作室-咔咔.png", eyes=[(622.7, 678.0), (907.5, 678.1)], er=45, patch=(1.6, 2.4), visor=(485, 559, 1055, 792, 110),
+                ear=dict(cutL=361, cutR=1173, y0=523, y1=807), top=dict(x0=589, x1=951, cut=288, stem=(703, 818))),
+    "dossier": dict(src="目录/尽调助手-察察.png", eyes=[(622.7, 677.9), (907.5, 678.2)], er=45, patch=(1.6, 2.4), visor=(465, 537, 1072, 812, 133),
+                ear=dict(cutL=361, cutR=1175, y0=527, y1=811), top=dict(x0=584, x1=1027, cut=286, stem=(698, 818))),
+    "ticker": dict(src="目录/美股研报-盘盘.png", eyes=[(622.7, 678.0), (907.5, 678.0)], er=44, patch=(1.6, 2.4), visor=(463, 538, 1070, 812, 133),
+                ear=dict(cutL=364, cutR=1170, y0=528, y1=809), top=dict(x0=587, x1=956, cut=289, stem=(702, 812))),
 }
 
 

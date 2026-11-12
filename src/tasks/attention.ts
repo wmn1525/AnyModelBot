@@ -9,7 +9,7 @@
  */
 import { MESSENGER_LABEL, isMessenger } from "../core/types.js";
 import type { ApprovalRow, Store } from "../store/db.js";
-import { defaultLine, questionsOf, type QuestionItem } from "../agent/approvals.js";
+import { appConnectOf, appToolOf, defaultLine, promptText, questionsOf, type AppConnectPayload, type QuestionItem } from "../agent/approvals.js";
 import type { AttentionItem as DeliveryItem } from "../delivery/index.js";
 import { logger } from "../log.js";
 import { t as tr } from "../i18n/index.js";
@@ -29,7 +29,7 @@ export type AttentionKind = "question" | "approval" | "failed" | "rule" | "deliv
  * open（打开对话；budget 是打开机器人设置的预算）、continue（加预算接着做：任务 $1，规则每月 $3）、
  * act（规则改为执行；suggest 的 dismiss 是继续观察）
  */
-export type AttentionAction = "answer" | "approve" | "deny" | "retry" | "stop" | "dismiss" | "relogin" | "open" | "continue" | "act";
+export type AttentionAction = "answer" | "approve" | "deny" | "retry" | "stop" | "dismiss" | "relogin" | "open" | "continue" | "act" | "connect";
 
 export interface AttentionItem {
   /** 稳定 id：approval:<id>、task:<id>、rule:<id>、suggest:<规则>、delivery:<会话>:held|failed、login:<bot>:<渠道>、reserve:<bot>（预算留给聊天） */
@@ -55,6 +55,8 @@ export interface AttentionItem {
   actions: AttentionAction[];
   conversationId?: string;
   channel?: string;
+  /** 连接应用的卡片（去连接 / 重新授权 / 更新密钥…）：界面的「去连接」打开对应的弹窗（actions 里有 connect） */
+  appConnect?: AppConnectPayload;
   taskId?: string;
   /** 规则（3d）：连续失败的、执行时的审批、问要不要改为执行的 */
   ruleId?: string;
@@ -202,7 +204,9 @@ export function approvalItems(store: Store, rows: ApprovalRow[]): AttentionItem[
     const rule = r.ruleId ? store.getRule(r.ruleId) : undefined;
     const channel = store.getConversation(r.conversationId)?.channel ?? r.conversationId.split(":")[1] ?? "";
     const qs = questionsOf(r);
-    const line = r.kind === "approval" ? r.detail || r.reason || r.tool : qs.map((q) => q.question).join(" / ") || r.detail;
+    const connect = appConnectOf(r);
+    // 应用工具的审批：哪个应用的哪个工具 + 关键参数；其余审批照旧是命令或原因
+    const line = connect ? promptText(r) : appToolOf(r) ? [r.tool, r.detail].filter(Boolean).join(" · ") : r.kind === "approval" ? r.detail || r.reason || r.tool : qs.map((q) => q.question).join(" / ") || r.detail;
     const note = r.kind === "question" ? defaultLine(r) : undefined;
     const budget = r.kind === "question" && r.tool === BUDGET_TOOL;
     const head = task
@@ -223,7 +227,9 @@ export function approvalItems(store: Store, rows: ApprovalRow[]): AttentionItem[
       ...(note ? { note } : {}),
       since: r.createdAt,
       severity: "warn",
-      actions: r.kind === "approval" ? ["approve", "deny"] : ["answer"],
+      // 连接应用的卡片：不是批不批的事，给「去连接」（界面打开连接弹窗）和「拒绝」（先不连）
+      actions: connect ? ["connect", "deny"] : r.kind === "approval" ? ["approve", "deny"] : ["answer"],
+      ...(connect ? { appConnect: connect } : {}),
       conversationId: r.conversationId,
       channel,
       ...(r.taskId ? { taskId: r.taskId } : {}),

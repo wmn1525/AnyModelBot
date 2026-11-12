@@ -13,11 +13,11 @@
   .kit-head p { margin: 0; }
   .kit-section { display: grid; gap: var(--space-2); }
   .kit-section > h2 { margin: 0; }
-  .kit-card { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--well); border-radius: var(--r-lg); }
+  .kit-card { display: grid; gap: var(--space-2); padding: var(--group-pad); background: var(--well); border-radius: var(--r-card); }   /* 内容里的一块：小卡片 */
   .kit-grid { --kit-col-min: 280px; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(min(var(--kit-col-min), 100%), 1fr)); }
   .kit-field { display: grid; gap: var(--space-1); }
   .kit-empty { padding: var(--space-5); text-align: center; }
-  .kit-meter { height: var(--space-2); background: var(--well); border-radius: var(--r-full); overflow: hidden; }
+  .kit-meter { height: var(--space-2); background: var(--well); border-radius: var(--r-ctl); overflow: hidden; }
   .kit-meter > i { display: block; height: 100%; background: var(--fg); border-radius: inherit; transition: width var(--dur-base) var(--ease-out); }
   .kit-table { width: 100%; border-collapse: collapse; }
   .kit-table th { text-align: left; font-weight: var(--fw-medium); color: var(--fg-2); font-size: var(--fs-sm); padding: var(--space-1) var(--space-2); }
@@ -48,7 +48,7 @@
   .kit-list-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-height: var(--ctl-md); padding: 0 0 var(--space-1) var(--space-2-5); }
   .kit-list-head h2 { margin: 0; }
   /* 列表行：和 App 侧栏、设置导航同一种行，悬停一层淡灰、选中深一级，平的 */
-  .kit-item { --focus-offset: -2px; display: grid; gap: var(--space-0-5); width: 100%; min-width: 0; padding: var(--space-2) var(--space-2-5); border-radius: var(--r-md); background: transparent; color: var(--fg); font: inherit; text-align: start; cursor: pointer; transition: background var(--t-fast); }
+  .kit-item { --focus-offset: -2px; display: grid; gap: var(--space-0-5); width: 100%; min-width: 0; padding: var(--space-2) var(--space-2-5); border-radius: var(--r-row); background: transparent; color: var(--fg); font: inherit; text-align: start; cursor: pointer; transition: background var(--t-fast); }
   .kit-item:hover { background: var(--side-hover); }
   .kit-item.on, .kit-item[aria-current="true"] { background: var(--side-active); }
   .kit-item-title { font-weight: var(--fw-medium); line-height: var(--lh-snug); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
@@ -61,9 +61,9 @@
   .kit-bar-text p { margin: 0; font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kit-bar-actions { flex: none; display: flex; align-items: center; gap: var(--ctl-gap); }
   .kit-ws-body { flex: 1; display: grid; gap: var(--space-5); align-content: start; padding: var(--space-3) var(--kit-body-px) var(--space-8); min-width: 0; }
-  /* 分页：静止的分段控件（选中的一格是 thumb 的底色），不画下划线 */
-  .kit-tabs { display: inline-flex; flex-wrap: wrap; gap: var(--space-0-5); justify-self: start; max-width: 100%; padding: var(--space-0-5); border-radius: var(--r-md); background: var(--seg-track); }
-  .kit-tabs button { --focus-offset: -2px; height: var(--ctl-xs); padding: 0 var(--space-2-5); border-radius: var(--r-sm); background: transparent; color: var(--ctl-fg); font: inherit; font-size: var(--fs-sm); white-space: nowrap; cursor: pointer; transition: color var(--t-fast), background var(--t-fast); }
+  /* 分页：和 App 的标签页、分段一个样子——胶囊轨道里一颗静止的胶囊（项 28 高），不画下划线 */
+  .kit-tabs { display: inline-flex; flex-wrap: wrap; gap: var(--space-0-5); justify-self: start; max-width: 100%; padding: var(--space-0-5); border-radius: var(--r-ctl); background: var(--seg-track); }
+  .kit-tabs button { --focus-offset: -2px; height: var(--ctl-sm); padding: 0 var(--ctl-px-sm); border-radius: var(--r-ctl); background: transparent; color: var(--ctl-fg); font: inherit; font-size: var(--fs-sm); white-space: nowrap; cursor: pointer; transition: color var(--t-fast), background var(--t-fast); }
   .kit-tabs button:hover:not([aria-selected="true"]) { color: var(--fg); background: var(--pill); }
   .kit-tabs button[aria-selected="true"] { background: var(--seg-thumb-bg); box-shadow: var(--seg-edge); color: var(--fg); font-weight: var(--fw-medium); }
   /* 每次都一样的说明（免责声明、数据范围）：末尾一行小字 */

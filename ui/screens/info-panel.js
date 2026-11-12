@@ -1,4 +1,4 @@
-// 信息面板：点悬浮胶囊或 ⌘⇧I 打开，面板自己的 ✕ 关闭，⚙ 进机器人设置。
+// 右侧面板里关于这个机器人的几个标签（screens/work-panel.js 摆放）：概览（渠道、待审批、最近会话，目录 Bot 的说明）、任务、记忆。
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { html, Icon, Badge, Button, Sheet, Skeleton } from "../components/ui.js";
 import { ActivityLine, currentStep, useNow } from "../components/activity.js";
@@ -10,7 +10,8 @@ import { markDone } from "../lib/guide.js";
 import { fmtAgo, fmtClock, fmtDur, fmtTime } from "../lib/format.js";
 import { PausedLine, TaskGroup } from "../components/tasks.js";
 import { DeliveredFiles } from "../components/files.js";
-import { t } from "../lib/i18n.js";
+import { tr } from "../lib/catalog.js";
+import { t, useLang } from "../lib/i18n.js";
 
 export function usePoll(fn, ms, deps = []) {
   const [data, setData] = useState(null);
@@ -108,29 +109,42 @@ function ConversationSheet({ conv, onClose }) {
   <//>`;
 }
 
-export function InfoPanel({ bot, leaving, onClose, onOpenBotSettings, onOpenChat, onOpenConnections }) {
+/** 目录 Bot 的说明：能做什么、用到的技能（作者和许可证，链回原页面）、需要的权限。和面板上别的分组同一种写法 */
+export function AboutSection({ entry }) {
+  const lang = useLang();
+  const notes = (list) => html`<div class="list">${list.map((x) => html`<div key=${x} class="row compact"><div class="who"><div class="sub wrap tone-fg t-control">${x}</div></div></div>`)}</div>`;
+  return html`<div class="list-head">${t("botapp.info.what")}</div>
+    ${notes(tr(entry.about, lang) || [])}
+    ${entry.skills.length > 0 && html`<div class="list-head">${t("botapp.info.skills")}</div>
+      <div class="list">${entry.skills.map((s) => html`<a key=${s.url} class="row compact clickable" href=${s.url} target="_blank" rel="noopener noreferrer">
+        <div class="who"><div class="name">${s.name}</div><div class="sub">${s.author} · ${s.license}</div></div>
+      </a>`)}</div>`}
+    <div class="list-head">${t("botapp.info.perms")}</div>
+    ${notes(entry.permissions.map((p) => t(`botapp.perm.${p}`)))}`;
+}
+
+/**
+ * 「概览」标签：暂停的提示、待审批、渠道、最近会话；目录 Bot 在最后列出它的说明（AboutSection）。
+ * 还没有实例的目录 Bot（bot 为空）只有说明。
+ */
+export function OverviewTab({ bot, entry, onOpenChat, onOpenConnections }) {
+  return html`${bot && html`<${BotOverview} key=${bot.id} bot=${bot} onOpenChat=${onOpenChat} onOpenConnections=${onOpenConnections} />`}
+    ${entry && html`<${AboutSection} entry=${entry} />`}`;
+}
+
+function BotOverview({ bot, onOpenChat, onOpenConnections }) {
   const [detail, , reloadDetail] = usePoll(() => api(`/bots/${bot.id}`), 5000, [bot.id]);
   const [channels] = usePoll(() => api("/channel-accounts"), 5000, []);
   const [appr, , reloadAppr] = usePoll(() => api(`/approvals?status=pending&bot=${encodeURIComponent(bot.id)}`), 4000, [bot.id]);
   const [convs] = usePoll(() => api(`/conversations?bot=${encodeURIComponent(bot.id)}`), 8000, [bot.id]);
   const [viewing, setViewing] = useState(null);
-  // 任务来自的会话：网页的就是这里的对话，微信、飞书的在会话记录里看
-  const openConv = (task) => (task.channel === "web" ? onOpenChat() : setViewing((convs?.conversations || []).find((c) => c.id === task.conversationId) || null));
   const pending = (appr && appr.approvals) || [];
   // 上手清单：加了任何一个聊天渠道账号，就算接好了渠道
   const mine = (channels?.accounts || []).filter((a) => a.defaultBot === bot.id);
   useEffect(() => {
     if (channels?.accounts?.length) markDone("weixin");
   }, [channels]);
-  // leaving：关上后还在播滑出的那一小会儿（main.js 的 usePresence），不再接收操作
-  return html`<aside class=${`panel${leaving ? " leaving" : ""}`} aria-label=${t("info.aria")} inert=${leaving || undefined}>
-    <div class="panel-head">
-      <span class="title">${bot.name}</span>
-      <button type="button" class="icon-btn" title=${t("info.botSettings")} aria-label=${t("info.botSettings")} onClick=${onOpenBotSettings}><${Icon} name="gear" size="md" /></button>
-      <button type="button" class="icon-btn panel-close" title=${t("info.closeTitle")} aria-label=${t("info.closeAria")} onClick=${onClose}><${Icon} name="close" size="md" /></button>
-    </div>
-    <div class="panel-body">
-      ${detail?.bot?.settings?.paused && html`<${PausedLine} onResume=${async () => (await api(`/bots/${bot.id}/settings`, { method: "PUT", body: { paused: false } }), reloadDetail())} />`}
+  return html`${detail?.bot?.settings?.paused && html`<${PausedLine} onResume=${async () => (await api(`/bots/${bot.id}/settings`, { method: "PUT", body: { paused: false } }), reloadDetail())} />`}
       <div class="list-head">${t("info.channels")}</div>
       <div class="list">
         ${mine.map((a) => html`<div key=${`${a.channel}-${a.key}`} class="row clickable" role="button" tabindex="0" onClick=${() => onOpenConnections(`channel-${a.channel}-${a.key}`)} onKeyDown=${(e) => e.key === "Enter" && onOpenConnections(`channel-${a.channel}-${a.key}`)}>
@@ -151,10 +165,6 @@ export function InfoPanel({ bot, leaving, onClose, onOpenBotSettings, onOpenChat
           <button type="button" class="text" style="justify-self:start" onClick=${reloadAppr}>${t("common.refresh")}</button></div>`
         : html`<div class="list"><div class="row"><span class="hint">${t("info.noApprovals")}</span></div></div>`}
 
-      <${TaskGroup} key=${bot.id} botId=${bot.id} onOpenConv=${openConv} />
-
-      <${MemorySection} botId=${bot.id} />
-
       <div class="list-head">${t("info.recent")}</div>
       <div class="list">
         ${!convs && html`<div class="row"><${Skeleton} w="60%" /></div>`}
@@ -165,7 +175,23 @@ export function InfoPanel({ bot, leaving, onClose, onOpenBotSettings, onOpenChat
           <span class="hint num">${fmtAgo(c.updatedAt)}</span>
         </div>`)}
       </div>
-    </div>
-    ${viewing && html`<${ConversationSheet} conv=${viewing} onClose=${() => setViewing(null)} />`}
-  </aside>`;
+    ${viewing && html`<${ConversationSheet} conv=${viewing} onClose=${() => setViewing(null)} />`}`;
+}
+
+/** 「任务」标签：这个机器人的任务和规则（components/tasks.js 的 TaskGroup）。任务来自的会话：网页的就是中间的对话，微信、飞书的在会话记录里看 */
+export function TasksTab({ bot, onOpenChat }) {
+  const [viewing, setViewing] = useState(null);
+  const openConv = (task) => {
+    if (task.channel === "web") return onOpenChat();
+    api(`/conversations?bot=${encodeURIComponent(bot.id)}`)
+      .then((d) => setViewing((d.conversations || []).find((c) => c.id === task.conversationId) || null))
+      .catch(failed);
+  };
+  return html`<${TaskGroup} key=${bot.id} botId=${bot.id} onOpenConv=${openConv} head=${false} empty=${t("info.noTasks")} />
+    ${viewing && html`<${ConversationSheet} conv=${viewing} onClose=${() => setViewing(null)} />`}`;
+}
+
+/** 「记忆」标签 */
+export function MemoryTab({ bot }) {
+  return html`<${MemorySection} key=${bot.id} botId=${bot.id} />`;
 }

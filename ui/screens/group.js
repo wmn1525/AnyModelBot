@@ -363,9 +363,18 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
   const unique = members.filter((b) => b.name.trim() && members.filter((x) => nameKey(x) === nameKey(b)).length === 1);
   const writerWords = t("firstUse.writerWords").split("|").map((w) => w.trim().toLowerCase()).filter(Boolean);
   const writer = unique.find((b) => writerWords.some((w) => nameKey(b).includes(w)));
-  const exampleMember = writer || unique[0];
-  const example = exampleMember ? t(writer ? "firstUse.writerExample" : "firstUse.genericExample", { name: exampleMember.name.trim() }) : "";
-  const fillExample = () => {
+  // 第一条：有写作类成员就用起草的例子，否则是第一位不重名成员的通用例子。两位不重名成员出 2 条，三位及以上最多 3 条：
+  // 第二条请下一位提修改建议，第三条请再下一位整理结论——一眼看出可以换人接着干。没有不重名成员时不出示例
+  const first = writer || unique[0];
+  const rest = unique.filter((b) => b !== first);
+  const examples = first
+    ? [
+        t(writer ? "firstUse.writerExample" : "firstUse.genericExample", { name: first.name.trim() }),
+        ...(rest[0] ? [t("firstUse.reviseExample", { name: rest[0].name.trim() })] : []),
+        ...(rest[1] ? [t("firstUse.summaryExample", { name: rest[1].name.trim() })] : []),
+      ]
+    : [];
+  const fillExample = (example) => {
     // Append rather than discard a draft, using the member name the real mention parser accepts.
     setText((v) => v.trim() ? `${v}\n${example}` : example);
     requestAnimationFrame(() => { ta.current?.focus(); autoGrow(ta.current); });
@@ -391,13 +400,18 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
         <${HistoryPageButton} history=${history} direction="before" />
         ${loadErr && html`<${Notice} tone="red" action=${html`<button type="button" class="btn" onClick=${load}>${t("common.retry")}</button>`}>${t("chat.error.loadHistory", { error: loadErr })}<//>`}
         ${items === null && html`<div class="chat-skel"><${Skeleton} w="40%" /><${Skeleton} w="28%" /></div>`}
-        ${empty && html`<div class="chat-empty">
+        ${empty && html`<div class="chat-empty group-empty">
           <${GroupAvatars} bots=${members} size=${56} />
           <h2>${group.name}</h2>
-          <h3>${t("firstUse.groupTitle")}</h3>
-          <p>${t("firstUse.groupDesc")}</p>
-          <p class="group-rules">${t("firstUse.groupRules")}</p>
-          ${example && html`<button type="button" class="btn group-example" onClick=${fillExample}>${example}</button>`}
+          <p>${t("firstUse.groupTitle")}</p>
+          <ul class="group-rules">
+            <li>${t("firstUse.groupRule1")}</li>
+            <li>${t("firstUse.groupRule2")}</li>
+            <li>${t("firstUse.groupRule3")}</li>
+          </ul>
+          ${examples.length > 0 && html`<div class="group-examples" role="list" aria-label=${t("firstUse.groupExamples")}>
+            ${examples.map((e) => html`<button type="button" role="listitem" class="group-example" key=${e} onClick=${() => fillExample(e)}>${e}</button>`)}
+          </div>`}
         </div>`}
         ${rows}
         <${HistoryPageButton} history=${history} direction="after" />

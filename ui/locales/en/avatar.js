@@ -20,6 +20,10 @@ export default {
     marketing: { name: "Buzz", field: "Marketing", about: "A little megaphone on top for sharing good news." },
     cooking: { name: "Chef", field: "Cooking", about: "Chef's hat on, with two creamy blush patches." },
     translate: { name: "Globe", field: "Translation", about: "A little globe on top that turns toward whoever you talk to." },
+    slides: { name: "Deck", field: "Presentations", about: "A fan of slide cards on top and cream stitching round the ears." },
+    film: { name: "Clap", field: "Film", about: "A clapperboard on top, brass film reels for ears and white stitching round the visor." },
+    dossier: { name: "Sleuth", field: "Due diligence", about: "Mustard tweed, leather ear patches and a brass magnifying glass on top." },
+    ticker: { name: "Ticker", field: "Stock research", about: "A ticker strip across the forehead and a glowing trend arrow on top." },
   },
-  groups: { expert: "Field experts" },
+  groups: { expert: "Field experts", own: "Signature look", base: "Characters" },
 };

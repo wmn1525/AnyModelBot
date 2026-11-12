@@ -1,5 +1,6 @@
 // Authored localization. Keep technical identifiers unchanged.
 export default {
+  botQuotaOpen: "Bot クレジットを表示：残り {percent}%",
   "localUser": "ローカルユーザー",
   "settingsTitle": "設定（⌘,）",
   "settings": "設定",
@@ -12,8 +13,9 @@ export default {
   "belowLine": "通知ライン {amount} を下回っています",
   "botQuota": "Bot クレジット",
   "botLeft": "残り {percent}%",
-  "botQuotaOpen": "Bot クレジット残り {percent}%、詳細を表示",
-  "botQuotaScope": "AnyModelBot でのみ使用できます",
+  "botQuotaScope": "Bot クレジットは AnyModelBot でのみ使用できます",
+  "quotaTip": "Bot クレジット残り {percent}%",
+  "balanceTip": "残高 {amount}",
   "subscribeBonus": "サブスクリプションなら、プランのクレジットの 10% を Bot クレジットとして追加",
   "update": "バージョン {version} を利用できます — ダウンロード ↗",
   "updateDismiss": "このバージョンの通知を表示しない",
@@ -28,6 +30,9 @@ export default {
     "confirm": "完全に削除"
   },
   "bots": "ボット",
+  "collapse": "サイドバーを隠す",
+  "expand": "サイドバーを表示",
+  "searchShortcut": "チャット履歴を検索（{keys}）",
   "newShortcut": "新しいボット（⌘N）",
   "newMenu": "新規作成",
   "newBotItem": "新しいボット",
@@ -58,5 +63,22 @@ export default {
   },
   "needs": {
     "other": "対応待ち {count}件"
+  },
+  "section": {
+    "name": "セクション名",
+    "untitled": "新しいセクション",
+    "new": "新しいセクション",
+    "moreFor": "「{name}」セクションのその他の操作",
+    "actionsFor": "「{name}」セクションの操作",
+    "up": "上へ移動",
+    "down": "下へ移動",
+    "delete": "セクションを削除",
+    "deleteTitle": "「{name}」セクションを削除しますか？",
+    "deleteMove": "中のボットとグループチャットは「{name}」に移動します。削除はされません。",
+    "deleteInbox": "今後、新着の Bot は「見つける」にだけ表示されます。",
+    "moveTo": "セクションへ移動",
+    "moveItem": "セクションへ移動…",
+    "moveFor": "「{name}」を移動",
+    "dropHere": "ここにドロップ"
   }
 };

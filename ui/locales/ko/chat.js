@@ -1,6 +1,6 @@
 export default {
   "aria": "{name}와의 대화",
-  "infoPanel": "정보 패널(⌘⇧I)",
+  "infoPanel": "오른쪽 패널(⌘⇧I)",
   "newConvCmd": "새 대화(/new)",
   "toBottom": "맨 아래로 이동",
   "copyMessage": "메시지 복사",
@@ -76,7 +76,7 @@ export default {
     "guideTitle": "안녕하세요, 저는 {name}입니다",
     "guideBody": "5분 동안 시작 체크리스트를 따라 제가 할 수 있는 일을 살펴보세요.",
     "title": "{name}와 대화 시작",
-    "body": "여기서 바로 봇을 사용해 보세요. 정보 패널에서 WeChat, Feishu, Telegram, Slack, Discord를 연결할 수 있습니다.",
+    "body": "여기서 바로 봇을 사용해 보세요. 오른쪽 패널에서 WeChat, Feishu, Telegram, Slack, Discord를 연결할 수 있습니다.",
     "sample": "어떤 일을 도와줄 수 있어?",
     "helpChip": "/help로 명령어 보기"
   },

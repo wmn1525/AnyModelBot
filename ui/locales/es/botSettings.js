@@ -1,0 +1,152 @@
+export default {
+  "skills": {
+    "head": "Habilidades",
+    "note": "Agrega flujos de trabajo a este bot. Los cambios se aplican cuando termina lo que está haciendo.",
+    "import": "Importar ZIP",
+    "importSub": "Una habilidad por ZIP, hasta 20 MB",
+    "empty": "Aún no hay habilidades importadas",
+    "enable": "Habilitar {name}",
+    "files": "{count} archivos · {size} KB",
+    "instructions": "Ver las instrucciones de la habilidad",
+    "add": "Agregar habilidad",
+    "addBody": "Una vez agregada, el bot puede usar esta habilidad en las tareas relacionadas.",
+    "replace": "Reemplazar habilidad",
+    "replaceBody": "Ya hay una habilidad instalada con este nombre. Al reemplazarla se actualizan sus archivos y se conserva su estado habilitado o deshabilitado.",
+    "removeTitle": "¿Eliminar la habilidad “{name}”?",
+    "removeBody": "Solo se eliminará la habilidad de este bot. Los archivos de su espacio de trabajo se conservan.",
+    "errors": {
+      "invalid_zip": "No se pudo leer el ZIP. Elige un archivo ZIP completo y sin cifrar.",
+      "too_large": "El paquete de la habilidad es demasiado grande: hasta 20 MB comprimido, 64 MB descomprimido, 2000 entradas y 256 KB para SKILL.md.",
+      "unsafe_path": "El ZIP contiene rutas no admitidas, nombres duplicados o enlaces simbólicos.",
+      "missing_skill": "No se encontró SKILL.md. Elige un ZIP que contenga las instrucciones de la habilidad.",
+      "multiple_skills": "El ZIP contiene varios archivos SKILL.md. Importa cada habilidad en un ZIP aparte.",
+      "invalid_skill": "SKILL.md no es válido: se requieren un nombre, una descripción y un cuerpo de instrucciones válidos.",
+      "reserved_name": "Este nombre está reservado para una habilidad integrada o una habilidad incluida con el bot.",
+      "conflict": "La habilidad instalada cambió. Vuelve a seleccionar el ZIP para confirmar el reemplazo.",
+      "not_found": "No se encontró la habilidad. Actualiza la lista.",
+      "too_many": "Un bot puede tener hasta 100 habilidades importadas. Primero elimina las que no uses."
+    }
+  },
+  "back": "Volver al chat",
+  "backTitle": "Volver al chat (Esc)",
+  "title": "Ajustes del bot",
+  "identity": "Identidad",
+  "avatar": "Avatar",
+  "avatarHint": "Cada personaje tiene sus propios gestos",
+  "name": "Nombre",
+  "prompt": "Personalidad / prompt del sistema",
+  "promptHint": "Se guarda al salir del campo",
+  "promptPlaceholder": "p. ej., Eres un asistente útil. Da respuestas concisas y precisas.",
+  "model": {
+    "head": "Modelo",
+    "default": "Modelo predeterminado",
+    "defaultSub": "Aun así, puedes cambiarlo temporalmente en un chat",
+    "followGlobal": "Usar el predeterminado global",
+    "followGlobalWith": "Usar el predeterminado global ({model})",
+    "utility": "Modelo para tareas en segundo plano",
+    "utilitySub": "Organización de la memoria, gestor del contexto y notas de traspaso",
+    "sameAsChat": "Igual que el modelo del chat"
+  },
+  "budget": {
+    "name": "Presupuesto",
+    "signedOut": "Inicia sesión en OKINTO para definir un límite de gasto aparte para este bot",
+    "signIn": "Iniciar sesión",
+    "off": "Comparte el saldo de tu cuenta con los demás bots, sin un límite aparte",
+    "on": "Registra el gasto de este bot por separado y se detiene al llegar al límite",
+    "usage": "{used} usados, quedan {remain}",
+    "exhausted": "{used} usados, no queda nada, así que el bot pausó las llamadas al modelo",
+    "limit": "Límite (USD)",
+    "limitSub": "Incluye lo que ya se gastó. Si lo aumentas, el bot se reanuda automáticamente.",
+    "limitLabel": "Límite del presupuesto (USD)",
+    "playground": "El inicio de sesión en Playground usa el saldo de la cuenta. Usa el modo de clave API para cuotas independientes por bot."
+  },
+  "perm": {
+    "head": "Permisos",
+    "name": "Acceso a archivos",
+    "workspaceSub": "Solo puede modificar el espacio de trabajo de este bot; todo lo demás necesita tu aprobación",
+    "readonlySub": "No puede modificar archivos; los comandos se ejecutan en un sandbox de solo lectura",
+    "title": "Escritura en el espacio de trabajo (predeterminado): solo puede modificar el espacio de trabajo de este bot; todo lo demás necesita aprobación. Solo lectura: no puede modificar archivos; los comandos se ejecutan en un sandbox de solo lectura. Acceso total: los comandos se ejecutan sin sandbox; solo los borrados recursivos siguen necesitando confirmación.",
+    "workspace": "Escritura en el espacio de trabajo",
+    "readonly": "Solo lectura",
+    "full": "Acceso total"
+  },
+  "memory": {
+    "head": "Memoria",
+    "name": "Memoria a largo plazo",
+    "review": "Ordenar automáticamente después de cada turno",
+    "reviewLabel": "Ordenar la memoria automáticamente",
+    "team": "Permitir escribir en la memoria del equipo",
+    "teamSub": "Compartida por todos los bots",
+    "teamLabel": "Memoria del equipo"
+  },
+  "context": {
+    "head": "Contexto",
+    "name": "Compactar automáticamente o iniciar un nuevo segmento",
+    "sub": "Ordena el contexto a medida que crece y deja una nota de traspaso",
+    "label": "Gestor del contexto"
+  },
+  "computer": {
+    "head": "Uso de la computadora",
+    "backend": "Backend",
+    "backendLabel": "Backend de uso de la computadora",
+    "cuaNote": "Incluido, para macOS, Windows y Linux",
+    "codex": "Puente de Codex",
+    "macOnly": "Solo macOS",
+    "macOnlyUnavailable": "Solo macOS, no disponible en este dispositivo",
+    "approval": "Aprobación",
+    "approvalLabel": "Aprobación del uso de la computadora",
+    "autoSub": "Todas las acciones se ejecutan automáticamente",
+    "askSub": "Pregunta antes de hacer clic, escribir y otras acciones que cambian la interfaz; la lectura de la pantalla sigue siendo automática",
+    "auto": "Ejecutar automáticamente",
+    "ask": "Preguntar antes de cambiar la interfaz"
+  },
+  "danger": {
+    "head": "Zona de peligro",
+    "delete": "Eliminar bot",
+    "deleteSub": "Eliminar de forma permanente este bot y todas sus conversaciones"
+  },
+  "access": {
+    "head": "Quién puede usarlo",
+    "policy": "Solo el propietario y las personas que permitas",
+    "owner": "Propietario en {channel}",
+    "reset": "Cambiar",
+    "resetOwnerTitle": "¿Cambiar el propietario en {channel}?",
+    "resetOwnerBody": "La próxima persona que le escriba al bot se convertirá en el propietario en {channel}, y habrá que volver a permitir a “{who}”.",
+    "allowed": "Permitidos",
+    "denied": "Denegados",
+    "deniedSub": "Denegado ({when}); si vuelve a escribir, no recibe respuesta",
+    "allow": "Permitir",
+    "remove": "Quitar",
+    "removeDeniedTitle": "¿Quitar a “{who}”?",
+    "removeDeniedBody": "Si vuelve a escribir después de esto, aparecerá de nuevo en las solicitudes de uso del panel de información.",
+    "revokeTitle": "¿Dejar de permitir a “{who}”?",
+    "revokeBody": "Si vuelve a escribir, solo recibirá un aviso breve y habrá que volver a permitirle el acceso."
+  },
+  "media": {
+    "head": "Imágenes y video",
+    "confirm": "Confirmar antes de generar",
+    "alwaysSub": "Preguntarme qué modelo usar antes de cada generación",
+    "autoSub": "Preguntarme solo cuando cueste más de $0.5",
+    "auto": "Preguntar cuando haga falta",
+    "always": "Preguntar siempre"
+  },
+  "proactive": {
+    "head": "Mensajes proactivos",
+    "pause": "Pausar el trabajo en segundo plano",
+    "pauseSub": "Las tareas, las reglas y los mensajes enviados por el bot esperan; el chat funciona como siempre",
+    "quiet": "No molestar",
+    "quietSub": "Los resultados en segundo plano esperan hasta que termine",
+    "quietFrom": "No molestar desde",
+    "quietTo": "No molestar hasta",
+    "nudge": "Recordatorio de renovación de WeChat",
+    "nudgeSub": "Cuando todavía hay mensajes pendientes de envío, te pide una respuesta antes de que se cierre la ventana de 24 horas",
+    "rules": "Reglas",
+    "rulesSub": "Revisiones y recordatorios programados",
+    "rulesCount": {
+      "one": "{count} regla, en el panel derecho, en Tareas",
+      "many": "{count} reglas, en el panel derecho, en Tareas",
+      "other": "{count} reglas, en el panel derecho, en Tareas"
+    },
+    "newRule": "Nueva"
+  }
+};

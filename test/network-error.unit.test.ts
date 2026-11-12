@@ -38,7 +38,7 @@ describe("local network proxy failures", () => {
     expect(explainLocalProxyError(message)).toBe(message);
   });
 
-  it.each(["zh-CN", "en", "ja", "ko", "ru"] as const)("localizes the advice in %s", (lang) => withLang(lang, () => {
+  it.each(["zh-CN", "en", "ja", "ko", "ru", "es", "pt"] as const)("localizes the advice in %s", (lang) => withLang(lang, () => {
     const hint = localProxyFailureHint(agentError)!;
     expect(hint).toContain("127.0.0.1:7897");
     expect(hint).toContain("AnyModelBot");

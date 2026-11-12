@@ -197,7 +197,9 @@ export function tasksRoutes(ctx: WebContext): Route {
       if (seg.length === 2 && m === "GET") return send(res, 200, { approval: publicApproval(row, app.store) });
       if (seg.length === 3 && m === "POST" && (seg[2] === "approve" || seg[2] === "deny")) {
         if (row.kind !== "approval") throw new HttpError(400, t("web.notApproval"));
-        const ok = app.agent.approvals.decide(row.id, seg[2] === "approve", "web");
+        // always：应用工具的「以后这个工具都允许」（只对写入类的卡片有效，见 agent/approvals.ts）
+        const body = await readJson(req).catch(() => ({}));
+        const ok = app.agent.approvals.decide(row.id, seg[2] === "approve", "web", { always: body?.always === true });
         if (!ok) throw new HttpError(409, t("web.requestDone"));
         return send(res, 200, { approval: publicApproval(app.store.getApproval(row.id)!, app.store) });
       }

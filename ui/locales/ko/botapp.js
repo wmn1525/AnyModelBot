@@ -11,18 +11,13 @@ export default {
   app: {
     sample: "샘플",
     placeholder: "말하면 화면이 바뀝니다",
-    conversation: "전체 대화",
-    info: "정보",
-    uiFailed: "화면에 문제가 생겨 대화로 전환했습니다.",
+    uiFailed: "화면을 열지 못했습니다. 대화에서 계속 사용할 수 있습니다.",
     openUrlTitle: "이 페이지를 열까요?",
     openUrlConfirm: "열기",
     removed: "이 봇은 카탈로그에서 내려갔습니다. 데이터는 남아 있습니다.",
     removedSecurity: "이 봇은 보안 문제로 내려갔고 스킬은 비활성화되었습니다. 데이터는 남아 있습니다.",
-    starters: "이렇게 시작해 보세요",
-    more: "더 보기",
-    less: "접기",
   },
-  info: { what: "할 수 있는 일", skills: "사용하는 스킬", perms: "필요한 권한", settings: "봇 설정" },
+  info: { what: "할 수 있는 일", skills: "사용하는 스킬", perms: "필요한 권한" },
   perm: {
     "workspace-write": "자기 폴더 읽기와 쓰기",
     network: "인터넷 사용",
@@ -30,7 +25,6 @@ export default {
     "computer-use": "컴퓨터 조작",
     accounts: "연결한 계정 사용",
   },
-  view: { label: "보기", app: "작업 공간", chat: "대화" },
   intro: {
     hello: "안녕하세요, {name}입니다.",
     try: "이렇게 시작해 보세요",

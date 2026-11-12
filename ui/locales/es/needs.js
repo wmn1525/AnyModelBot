@@ -1,0 +1,22 @@
+export default {
+  "title": "Te necesita",
+  "head": "{bot}: {what}",
+  "headSpaced": "{bot}: {what}",
+  "collapse": "Contraer",
+  "viewTask": "Ver tarea",
+  "viewRule": "Ver regla",
+  "openChat": "Abrir conversación",
+  "reply": "Responder…",
+  "approveOnce": "Aprobar una vez",
+  "deny": "Denegar",
+  "stop": "Detener",
+  "relogin": "Escanear de nuevo",
+  "answerPlaceholder": "Tu respuesta",
+  "send": "Enviar",
+  "none": "Nada te necesita por ahora",
+  "dismiss": "No volver a mostrar",
+  "continue": "Continuar",
+  "raiseBudget": "Cambiar presupuesto",
+  "toAct": "Pasar a actuar",
+  "keepObserving": "Seguir observando"
+};

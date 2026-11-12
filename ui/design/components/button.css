@@ -1,13 +1,15 @@
 /* 按钮。.text 改编自 yetone/magpie internal/gui/assets/app.css（MIT，© 2026 yetone）。
    定制方式：在变体或上下文里覆盖 --btn-* / --ib-* 变量，不要直接改属性。
    状态（见 README「状态」）：悬停叠一层、按下再深一级（不缩小）、键盘焦点外描边、禁用变淡且不响应、
-   加载（aria-busy）保持本色只是不可点。 */
+   加载（aria-busy）保持本色只是不可点。
+   形状：按钮一律是胶囊（--r-ctl），图标按钮是圆（参考 Grok）。
+   内边距：左右跟着高度取 --ctl-px-*（32 → 14，28 → 12，40 → 20），换尺寸时两样一起换（README「内边距」）。 */
 
 /* —— .btn [primary | ghost | danger] [sm | lg] [block] —— */
 .btn {
   --btn-h: var(--ctl-md);
-  --btn-px: var(--space-3);
-  --btn-r: var(--r-md);
+  --btn-px: var(--ctl-px-md);
+  --btn-r: var(--r-ctl);
   --btn-fs: var(--fs-sm);
   --btn-bg: var(--pill);
   --btn-bg-hover: var(--pill-hover);
@@ -39,14 +41,14 @@
   --btn-bg: var(--red); --btn-bg-hover: color-mix(in srgb, var(--red) 88%, var(--fg)); --btn-bg-press: color-mix(in srgb, var(--red) 78%, var(--fg));
   --btn-fg: var(--on-danger);
 }
-.btn.sm { --btn-h: var(--ctl-sm); --btn-px: var(--space-2-5); }
-.btn.lg { --btn-h: var(--ctl-xl); --btn-fs: var(--fs-lg); --btn-r: var(--r-lg); }
+.btn.sm { --btn-h: var(--ctl-sm); --btn-px: var(--ctl-px-sm); }
+.btn.lg { --btn-h: var(--ctl-xl); --btn-px: var(--ctl-px-xl); --btn-fs: var(--fs-lg); }
 .btn.block { width: 100%; }
 
 /* —— 图标按钮 .icon-btn [xs] [on]：on / aria-expanded 是"打开着"，比悬停深一级 —— */
 .icon-btn {
-  --ib-size: 26px;
-  --ib-r: var(--r-md);
+  --ib-size: var(--ctl-sm);
+  --ib-r: var(--r-ctl);
   --ib-fg: var(--muted);
   --ib-fg-hover: var(--fg);
   --ib-bg-hover: var(--pill);
@@ -60,11 +62,14 @@
 .icon-btn.on:not(:disabled), .icon-btn[aria-expanded="true"]:not(:disabled) { background: var(--ib-bg-on); color: var(--ib-fg-hover); }   /* 打开时悬停也保持打开的样子 */
 .icon-btn:active:not(:disabled) { background: var(--ib-bg-press); }
 .icon-btn:disabled { opacity: var(--o-disabled); }
-.icon-btn.xs { --ib-size: 18px; --ib-r: var(--r-sm); }
+.icon-btn.xs { --ib-size: 20px; }
 
-/* —— 文字按钮 .text [danger | accent]：悬停底和旁边 26 高的图标按钮差不多高 —— */
+/* —— 文字按钮 .text [danger | accent]：和旁边 28 高的图标按钮一样高，也是胶囊。
+   单行控件定高、居中：字号调大时只是字变大，按钮还是 28 高、左右还是 --ctl-px-sm（不靠上下内边距撑高）。
+   形状只给真的按钮和链接：别处借 .text 取颜色的文字（侧栏分组名）不带内边距，字仍在所在行的内容线上 —— */
+:is(button, a).text { display: inline-flex; align-items: center; min-height: var(--ctl-sm); padding: 0 var(--ctl-px-sm); }
 .text {
-  font-size: var(--fs-sm); color: var(--ctl-fg); padding: var(--space-1) var(--space-2); border-radius: var(--r-sm); white-space: nowrap;
+  font-size: var(--fs-sm); color: var(--ctl-fg); border-radius: var(--r-ctl); white-space: nowrap;
   transition: background var(--t-fast), color var(--t-fast);
 }
 .text:hover:not(:disabled) { background: var(--pill); color: var(--fg); }

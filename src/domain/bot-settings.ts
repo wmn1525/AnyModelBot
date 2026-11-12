@@ -5,8 +5,15 @@ export type CuBackend = "cua" | "codex";
 export type CuApproval = "auto" | "ask-input";
 /** auto = 只在预计花费超过上限时问（视频算不出花费也问）；always = 每次生成前都问 */
 export type MediaConfirm = "auto" | "always";
-/** 内置头像角色（ui/components/avatar.js 的 BOT_CHARS）：6 个基础角色 + 12 个领域专家；blue 是默认头像 */
-export const BOT_AVATARS = ["blue", "yellow", "green", "red", "purple", "orange", "law", "health", "finance", "code", "design", "writing", "education", "science", "data", "marketing", "cooking", "translate"] as const;
+/** 头像选择器里人人可选的角色（ui/components/avatar.js 的 BOT_CHARS + EXPERT_CHARS）：6 个基础角色 + 12 个领域专家；blue 是默认头像 */
+export const PICKABLE_AVATARS = ["blue", "yellow", "green", "red", "purple", "orange", "law", "health", "finance", "code", "design", "writing", "education", "science", "data", "marketing", "cooking", "translate"] as const;
+/**
+ * 目录 Bot 的专属形象（avatar.js 的 CATALOG_CHARS）：一个形象只属于一个目录 Bot，别的 Bot（包括别的目录 Bot）不能用，
+ * 选择器也只在它自己的设置里列出。值是所属目录 Bot 的 id。用户 2026-11-09：两个 Bot 共用一个头像是最忌讳的。
+ */
+export const CATALOG_AVATARS = { slides: "ppt-master", film: "printfilm", dossier: "company-research", ticker: "us-stock-research" } as const;
+/** 服务端认的全部头像：可选的 + 专属的 */
+export const BOT_AVATARS = [...PICKABLE_AVATARS, ...(Object.keys(CATALOG_AVATARS) as (keyof typeof CATALOG_AVATARS)[])] as const;
 export type BotAvatarKey = (typeof BOT_AVATARS)[number];
 
 export interface BotSettings {
@@ -58,6 +65,45 @@ export interface BotSettings {
    * 聊天照常，正在跑的那一轮照常做完（tasks/service.ts setPaused、delivery/index.ts）
    */
   paused: boolean;
+  /** 连接应用（tools/apps/service.ts）：这个机器人能用哪些应用和工具 */
+  apps: BotApps;
+}
+
+export interface BotApps {
+  /** all = 使用全部已连接的应用（默认，之后新连的也算）；selected = 只用选定的（之后新连的不自动加进来） */
+  mode: "all" | "selected";
+  /** mode = selected 时选中的应用：内置应用的 id，或 custom:<连接 id> */
+  selected: string[];
+  /** 这个机器人关掉的工具：应用 → 工具名 */
+  toolsOff: Record<string, string[]>;
+  /** 「以后这个工具都允许」：应用 → 工具名 → 当时工具定义的指纹（定义变了就不算数，重新问） */
+  alwaysAllow: Record<string, Record<string, string>>;
+}
+
+const APP_KEY = /^[A-Za-z0-9:_-]{1,80}$/;
+const TOOL_NAME_MAX = 200;
+
+export function normalizeBotApps(raw: unknown): BotApps {
+  const r = (raw && typeof raw === "object" ? raw : {}) as any;
+  const keys = (v: unknown): string[] => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === "string" && APP_KEY.test(x)))].slice(0, 200) : []);
+  const toolsOff: Record<string, string[]> = {};
+  if (r.toolsOff && typeof r.toolsOff === "object") {
+    for (const [k, v] of Object.entries(r.toolsOff)) {
+      if (!APP_KEY.test(k) || !Array.isArray(v)) continue;
+      const names = [...new Set(v.filter((x): x is string => typeof x === "string" && !!x && x.length <= TOOL_NAME_MAX))].slice(0, 2000);
+      if (names.length) toolsOff[k] = names;
+    }
+  }
+  const alwaysAllow: Record<string, Record<string, string>> = {};
+  if (r.alwaysAllow && typeof r.alwaysAllow === "object") {
+    for (const [k, v] of Object.entries(r.alwaysAllow)) {
+      if (!APP_KEY.test(k) || !v || typeof v !== "object") continue;
+      const tools: Record<string, string> = {};
+      for (const [name, hash] of Object.entries(v as Record<string, unknown>)) if (name && name.length <= TOOL_NAME_MAX && typeof hash === "string" && hash) tools[name] = hash.slice(0, 64);
+      if (Object.keys(tools).length) alwaysAllow[k] = tools;
+    }
+  }
+  return { mode: r.mode === "selected" ? "selected" : "all", selected: keys(r.selected), toolsOff, alwaysAllow };
 }
 
 export const DEFAULT_SETTINGS: BotSettings = {
@@ -73,6 +119,7 @@ export const DEFAULT_SETTINGS: BotSettings = {
   quietHours: { ...DEFAULT_QUIET },
   nudge: true,
   paused: false,
+  apps: { mode: "all", selected: [], toolsOff: {}, alwaysAllow: {} },
 };
 
 export function normalizeSettings(raw: unknown): BotSettings {
@@ -116,5 +163,6 @@ export function normalizeSettings(raw: unknown): BotSettings {
     },
     nudge: b(r.nudge, DEFAULT_SETTINGS.nudge),
     paused: b(r.paused, DEFAULT_SETTINGS.paused),
+    apps: normalizeBotApps(r.apps),
   };
 }

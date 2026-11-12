@@ -84,9 +84,31 @@ export default {
       "name": "Globe",
       "field": "번역",
       "about": "머리 위 작은 지구본이 대화 상대 쪽으로 돌아가요."
+    },
+    "slides": {
+      "name": "Deck",
+      "field": "프레젠테이션",
+      "about": "머리 위에 부채꼴로 펼친 슬라이드 카드, 귀에는 크림색 바느질."
+    },
+    "film": {
+      "name": "Clap",
+      "field": "영상 제작",
+      "about": "머리 위에 슬레이트, 귀는 황동 필름 릴, 바이저 둘레에 흰 바느질."
+    },
+    "dossier": {
+      "name": "Sleuth",
+      "field": "기업 실사",
+      "about": "겨자색 트위드에 가죽 귀 패치, 머리 위에는 황동 돋보기."
+    },
+    "ticker": {
+      "name": "Ticker",
+      "field": "주식 리서치",
+      "about": "이마에 시세 전광판 띠, 머리 위에는 빛나는 추세 화살표."
     }
   },
   "groups": {
-    "expert": "분야 전문가"
+    "expert": "분야 전문가",
+    "own": "전용 캐릭터",
+    "base": "캐릭터"
   }
 };

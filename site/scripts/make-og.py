@@ -1,6 +1,7 @@
-# 生成静态图形资源：favicon / App 图标（Eyes 标记，静态居中）与 OG 分享图（zh / en，1200×630）。
+# 生成静态图形资源：各语言的 OG 分享图（1200×630）。
 # 产物提交到 public/；改了文案或标记后手动运行：python3 scripts/make-og.py（需要 Pillow 与 Noto Sans SC）。
 # 中文首页的微信分享方图单独生成：python3 scripts/make-og.py wechat-home
+# favicon / App 图标和桌面 App 是同一个毛绒机器人图标，不在这里画：在仓库根目录运行 python3 scripts/build-app-icons.py site。
 import os
 import sys
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -16,11 +17,13 @@ MONO = os.path.join(SITE, "node_modules/geist/dist/fonts/geist-mono/GeistMono-Me
 BOTS = ["主-蓝色", "黄色小萌", "绿草", "红魔", "紫钻", "橙色探险者"]
 
 COPY = {
-    "zh": {"h1": ["你的 AI 搭子，", "住在你自己的电脑里。"], "mark": "住在你自己的电脑里", "sub": "任意模型，每台设备，数据留在你电脑上。", "chips": ["对话存本机", "按量付费 · App 免费", "MIT 开源"]},
-    "en": {"h1": ["AI teammates that", "live on your machine."], "mark": "live on your machine", "sub": "Any model. Every device. Your data, your machine.", "chips": ["Chats stay local", "Pay per use · App is free", "MIT open source"]},
-    "ja": {"h1": ["あなたの AI パートナーを、", "あなたのパソコンに。"], "mark": "あなたのパソコンに", "sub": "好きなモデルで。チャットは手元に保存。", "chips": ["チャットは本機に保存", "アプリ無料・従量課金", "MIT オープンソース"]},
-    "ko": {"h1": ["내 컴퓨터에서 함께하는", "나만의 AI 어시스턴트."], "mark": "나만의 AI 어시스턴트", "sub": "원하는 모델로. 대화는 내 기기에 저장.", "chips": ["대화는 내 기기에", "앱 무료 · 사용량 과금", "MIT 오픈 소스"]},
-    "ru": {"h1": ["Ваш ИИ-помощник", "на вашем компьютере."], "mark": "на вашем компьютере", "sub": "Любая модель. Разговоры хранятся у вас.", "chips": ["История у вас", "Приложение бесплатно", "Открытый код · MIT"]},
+    "zh": {"h1": ["你的 AI 机器人团队，", "跑在自己的电脑上。"], "mark": "跑在自己的电脑上", "sub": "任意模型，每台设备，数据留在你电脑上。", "chips": ["对话存本机", "按量付费 · App 免费", "MIT 开源"]},
+    "en": {"h1": ["Your team of AI bots,", "running on your computer."], "mark": "running on your computer", "sub": "Any model. Every device. Your data, your machine.", "chips": ["Chats stay local", "Pay per use · App is free", "MIT open source"]},
+    "ja": {"h1": ["あなたのパソコンで動く", "AI ボットのチーム。"], "mark": "AI ボットのチーム", "sub": "好きなモデルで。チャットは手元に保存。", "chips": ["チャットは本機に保存", "アプリ無料・従量課金", "MIT オープンソース"]},
+    "ko": {"h1": ["내 컴퓨터에서 실행하는", "나만의 AI 봇 팀."], "mark": "나만의 AI 봇 팀", "sub": "원하는 모델로. 대화는 내 기기에 저장.", "chips": ["대화는 내 기기에", "앱 무료 · 사용량 과금", "MIT 오픈 소스"]},
+    "ru": {"h1": ["Ваша команда ИИ-ботов", "на вашем компьютере."], "mark": "на вашем компьютере", "sub": "Любая модель. Разговоры хранятся у вас.", "chips": ["История у вас", "Приложение бесплатно", "Открытый код · MIT"]},
+    "es": {"h1": ["Tu equipo de bots de IA,", "en tu computadora."], "mark": "en tu computadora", "sub": "Cualquier modelo y dispositivo. Tus datos, contigo.", "chips": ["Chats en local", "Pago por uso · App gratis", "Código abierto MIT"]},
+    "pt": {"h1": ["Sua equipe de bots de IA,", "no seu computador."], "mark": "no seu computador", "sub": "Qualquer modelo e aparelho. Seus dados com você.", "chips": ["Chats locais", "Pague pelo uso · App grátis", "Código aberto MIT"]},
 }
 
 # Source fonts from google/fonts (SIL OFL), supplied at generation time. The website
@@ -54,20 +57,6 @@ def font(path, size, weight=None):
     return f
 
 
-def icons():
-    for name, size in [("favicon-32.png", 32), ("apple-touch-icon.png", 180), ("icon-192.png", 192), ("icon-512.png", 512)]:
-        bg = Image.new("RGBA", (size, size), (0, 0, 0, 0) if name.startswith("favicon") else BG + (255,))
-        m = mark(size if name.startswith("favicon") else int(size * 0.78))
-        bg.alpha_composite(m, ((size - m.width) // 2, (size - m.height) // 2))
-        bg.save(os.path.join(PUB, name), optimize=True)
-    # maskable：内容在中心 80% 安全区内
-    size = 512
-    bg = Image.new("RGBA", (size, size), BG + (255,))
-    m = mark(int(size * 0.62))
-    bg.alpha_composite(m, ((size - m.width) // 2, (size - m.height) // 2))
-    bg.save(os.path.join(PUB, "icon-maskable-512.png"), optimize=True)
-
-
 def og(lang):
     c = COPY[lang]
     W, H = 1200, 630
@@ -80,6 +69,11 @@ def og(lang):
     head = font(CJK, 64, 600) if lang == "zh" else font(GEIST, 68)
     sub = font(CJK, 28, 400) if lang == "zh" else font(GEIST_R, 28)
     chip = font(CJK, 20, 400) if lang == "zh" else font(MONO, 18)
+    # 标题太长时缩小字号，别压到右边的机器人（x ≥ 760）
+    size = 64 if lang == "zh" else 68
+    while lang not in LOCAL_FONTS and max(d.textlength(line, font=head) for line in c["h1"]) > 680:
+        size -= 1
+        head = font(CJK, size, 600) if lang == "zh" else font(GEIST, size)
     if lang in LOCAL_FONTS:
         face = LOCAL_FONTS[lang]
         if not os.path.isfile(face):
@@ -157,10 +151,7 @@ if __name__ == "__main__":
     if sys.argv[1:] == ["wechat-home"]:
         wechat_home()
         sys.exit(0)
-    # Specify languages to regenerate only those sharing cards, leaving icons intact.
     selected = sys.argv[1:] or list(COPY)
-    if not sys.argv[1:]:
-        icons()
     for lang in selected:
         if lang not in COPY:
             raise SystemExit(f"Unknown language: {lang}; choose {', '.join(COPY)}")

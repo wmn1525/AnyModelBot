@@ -1,9 +1,9 @@
 export default {
-  "h1a": "내 기기에서 실행하는",
+  "h1a": "내 컴퓨터에서 실행하는",
   "h1pre": "나만의 ",
-  "h1mark": "AI 어시스턴트",
+  "h1mark": "AI 봇 팀",
   "h1b": ".",
-  "lead": "짧은 설정으로 성격과 역할을 정하세요. 파일 정리, 명령 실행은 물론 일하는 방식까지 기억합니다. 키 하나로 주요 모델을 모두 이용할 수 있습니다.",
+  "lead": "OKINTO에 로그인하면 GPT, Claude 등의 모델을 사용할 수 있습니다. 일마다 다른 봇에게 맡기거나, 여러 봇이 함께 처리하게 하세요.",
   "demo": "데모 보기",
   "github": "GitHub에서 보기 · 스타 {stars}개",
   "trust": [
@@ -12,7 +12,7 @@ export default {
     "Windows / macOS / Linux"
   ],
   "appUiNote": "",
-  "eyebrow": "어떤 봇으로 만들지는 내 마음대로",
+  "eyebrow": "봇 하나하나를 내가 정합니다",
   "stage": {
     "task": "다운로드 폴더의 청구서를 경비 폴더에 정리해 줘.",
     "invoice": "invoice_03.pdf",

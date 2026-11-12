@@ -52,7 +52,7 @@ describe("官方 Bot 随应用内置", () => {
     expect(fs.existsSync(path.join(bundledDir, "index.json.sig"))).toBe(false);
   });
 
-  it("四个 Bot 的界面、五种语言示例、技能和缩略图全部能离线加载", async () => {
+  it("四个 Bot 的界面、各语言示例、技能和缩略图全部能离线加载", async () => {
     for (const entry of catalog.list()) {
       const uiDir = await catalog.ensureUi(entry);
       expect(fs.existsSync(path.join(uiDir, "ui/index.html"))).toBe(true);

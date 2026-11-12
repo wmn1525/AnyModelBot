@@ -1,0 +1,522 @@
+export default {
+  "tabs": {
+    "general": "General",
+    "appearance": "Apariencia",
+    "modelflare": "Modelos",
+    "computer": "Uso de la computadora",
+    "connections": "Canales de chat",
+    "privacy": "Privacidad y seguridad",
+    "network": "Red y acceso",
+    "data": "Datos",
+    "troubleshoot": "Solución de problemas",
+    "about": "Acerca de"
+  },
+  "connections": {
+    "feishu": "Mensajes de Feishu",
+    "channelSub": "Escríbeles a tus bots desde estas apps. Todos los bots comparten las cuentas, y al enviar /bot y un nombre en un chat cambias a otro bot.",
+    "channelKeys": "{channel} canal chat conexión cuenta bot /bot channel connection account",
+    "manage": "Administrar",
+    "defaultIs": "{bot} responde de forma predeterminada",
+    "requests": "{count} solicitudes de acceso",
+    "defaultBot": "Bot predeterminado",
+    "defaultBotHint": "Responde los chats nuevos. Envía /bot en un chat para ver los bots, y /bot y un nombre una vez para cambiar; ese chat se queda con el nuevo bot.",
+    "removeAccount": "Quitar esta cuenta",
+    "removeChannelBody": "Ningún bot podrá enviar ni recibir mensajes con esta cuenta, y se borrará su lista de permitidos. El historial de chats se conserva.",
+    "notionSub": "Páginas y bases de datos. Los bots de solo lectura solo pueden leer, y ningún bot puede eliminar páginas",
+    "feishuSub": "Lee tus chats y mensajes en tu nombre, en modo de solo lectura",
+    "notionKeys": "notion notas documentos base de datos conexión cuenta autorizar notes docs database connection account authorize",
+    "feishuKeys": "feishu lark mensajes chats conexión cuenta autorizar messages connection account authorize",
+    "viaToken": "Token",
+    "viaOAuth": "Autorizada",
+    "needsReauth": "La autorización venció. Vuelve a autorizar",
+    "dataMoved": "Las cuentas de datos, como Notion y Feishu, se trasladaron a Conectar apps.",
+    "dataMovedKeys": "cuentas de datos notion feishu conectar apps mcp data accounts connect apps",
+    "openApps": "Abrir Conectar apps",
+    "reauthorize": "Volver a autorizar",
+    "rename": "Cambiar nombre",
+    "remove": "Quitar",
+    "removeTitle": "¿Quitar {name}?",
+    "removeBody": "Ningún bot podrá usar esta cuenta. Puedes volver a agregarla más tarde.",
+    "notionOAuthTitle": "Autorizar Notion",
+    "oauthFailed": "No se pudo abrir la página de autorización. Vuelve a intentarlo más tarde",
+    "openAgain": "¿No se abrió? Haz clic aquí",
+    "waiting": "Esperando tu aprobación…",
+    "notionTokenTitle": "Conectar Notion con un token",
+    "notionTokenHint": "Un token de acceso personal tiene acceso a todo lo que puedes ver; una conexión interna solo accede a las páginas compartidas con ella.",
+    "createToken": "Crear un token ↗",
+    "tokenLabel": "Token",
+    "add": "Agregar",
+    "feishuTitle": "Agregar una cuenta de Feishu",
+    "feishuAppHint": "La app necesita permisos de usuario para leer mensajes. A continuación escanearás un código para autorizarla.",
+    "next": "Siguiente",
+    "qrAlt": "Código QR de autorización de Feishu",
+    "openInBrowser": "Abrir en el navegador ↗",
+    "retry": "Reintentar",
+    "renameHint": "Puedes usar este nombre cuando hables con un bot, por ejemplo: “revisa mi Feishu del trabajo”.",
+    "nameLabel": "Nombre",
+    "save": "Guardar",
+    "dataSub": "Los bots pueden leer estas cuentas por ti. Todos los bots las comparten y puedes agregar varias, así que puedes decir “revisa los mensajes de mi Feishu del trabajo”.",
+    "connect": "Conectar",
+    "addOne": "Agregar otra",
+    "addAnother": "Agregar otra cuenta",
+    "addAnotherSub": "Una app puede tener varias cuentas",
+    "how": {
+      "weixin": "Escanea un código QR con WeChat en tu teléfono",
+      "feishu": "Escanea un código con Feishu en tu teléfono. La app se crea automáticamente",
+      "telegram": "Crea un bot con @BotFather y pega su token",
+      "slack": "Crea una app de Slack y pega dos tokens",
+      "discord": "Crea una app de Discord y pega el token de su bot"
+    },
+    "connectTitle": "Conectar {channel}",
+    "connectedTitle": "{channel} conectado",
+    "connectingTitle": "Conectando {channel}…",
+    "failedTitle": "No se pudo conectar {channel}",
+    "waitingScan": "Esperando a que escanees…",
+    "waitingOwner": "Envía el primer mensaje para terminar la vinculación",
+    "useToken": "Usar un token en su lugar",
+    "useOneClick": "Usar la autorización con un clic",
+    "useApp": "Usar mi propia app",
+    "useScan": "Escanear un código en su lugar",
+    "feishuPortal": "Feishu Open Platform ↗",
+    "oauthTimedOut": "Tardó demasiado y la página de autorización venció. Vuelve a empezar.",
+    "steps": {
+      "weixin": [
+        "Escanea el código de abajo con “Escanear” en WeChat en tu teléfono",
+        "Confirma en tu teléfono"
+      ],
+      "feishu": [
+        "Escanea el código de abajo con Feishu en tu teléfono",
+        "Sigue las indicaciones para crear la app de tu bot"
+      ],
+      "feishuApp": [
+        "En {link}, activa “Bot”, elige “Recibir eventos mediante una conexión persistente” en la suscripción de eventos y suscríbete a {event}",
+        "Activa estos permisos: {p1}, {p2}, {p3}, {p4}",
+        "Escribe el App ID y el App Secret abajo"
+      ],
+      "telegram": [
+        "Busca {bot} en Telegram y envía {cmd} para crear un bot",
+        "Escribe abajo el token que te da"
+      ],
+      "slack": [
+        "En {link}, crea una app, activa Socket Mode y genera un App-Level Token con {conn}",
+        "Dale al Bot Token {s1}, {s2}, {s3} y {s4}, y suscríbete al evento {event}",
+        "Permite los mensajes en App Home y luego instala la app en tu espacio de trabajo de Slack",
+        "Escribe ambos tokens abajo"
+      ],
+      "discord": [
+        "En el {link}, crea una app, agrega un Bot y copia su token",
+        "Usa el OAuth2 URL Generator con la casilla bot marcada para agregarlo a un servidor en el que estés",
+        "Escribe el token abajo y luego envíale un mensaje directo en Discord"
+      ],
+      "notion": [
+        "En la página del navegador que se acaba de abrir, elige qué compartir y aprueba",
+        "Vuelve aquí. La cuenta aparecerá sola"
+      ],
+      "feishuData": [
+        "Escanea el código con Feishu en tu teléfono para crear tu app personal",
+        "Vuelve a escanear para permitirle leer tus chats y mensajes"
+      ],
+      "feishuDataApp": [
+        "Escanea el código con Feishu en tu teléfono para permitirle leer tus chats y mensajes"
+      ]
+    },
+    "tryIt": "Envíale un mensaje en {channel}",
+    "switchBot": "Para hablar con otro bot, envía /bot y su nombre",
+    "ownerWaiting": "Esperando tu primer mensaje. Quien escriba primero se convierte en el propietario, y todos los demás necesitan su aprobación.",
+    "ownerBound": "{who} es el propietario. Ya puedes empezar a chatear.",
+    "ownerLogin": "Tu cuenta de {channel} es la propietaria. Ya puedes empezar a chatear.",
+    "openChat": "Abrir {channel} ↗",
+    "done": "Listo",
+    "fix": "Cambiar los datos de conexión",
+    "limit": {
+      "weixin": "La regla de WeChat: por cada mensaje que envías, puede responder hasta 10 veces en un plazo de 24 horas.",
+      "telegram": "Por ahora solo se atienden los chats directos. Los mensajes enviados mientras la app está cerrada se recuperan si la vuelves a abrir en un plazo de 24 horas.",
+      "slack": "Por ahora solo se atienden los chats directos. Los mensajes enviados mientras la app está cerrada no se reciben.",
+      "discord": "Por ahora solo se atienden los chats directos. Los mensajes enviados mientras la app está cerrada no se reciben."
+    },
+    "connection": "Conexión",
+    "viaScan": "Código QR de WeChat",
+    "changeApp": "Cambiar app",
+    "changeToken": "Cambiar token",
+    "removed": "Se quitó {name}"
+  },
+  "gateway": {
+    "running": "En ejecución",
+    "starting": "Iniciando",
+    "restarting": "Reiniciando",
+    "failed": "Falló",
+    "stopped": "Detenido",
+    "external": "Endpoint externo"
+  },
+  "theme": {
+    "light": "Claro",
+    "dark": "Oscuro"
+  },
+  "textSize": {
+    "sm": "Pequeño",
+    "md": "Predeterminado",
+    "lg": "Grande",
+    "xl": "Muy grande"
+  },
+  "font": {
+    "system": "Sistema",
+    "serif": "Serif",
+    "custom": "Personalizada"
+  },
+  "width": {
+    "normal": "Predeterminado",
+    "wide": "Ancho",
+    "full": "Completo"
+  },
+  "side": {
+    "label": "Ajustes",
+    "back": "Volver a la app",
+    "backTitle": "Volver a la app (Esc)",
+    "search": "Buscar en los ajustes",
+    "nav": "Secciones de ajustes"
+  },
+  "groups": {
+    "theme": "Tema",
+    "text": "Texto",
+    "layout": "Diseño",
+    "effects": "Efectos",
+    "desktop": "App de escritorio",
+    "account": "Cuenta",
+    "models": "Modelos",
+    "official": "Claves de API oficiales",
+    "line": "Conexión",
+    "channels": "Canales de chat",
+    "data": "Cuentas de datos"
+  },
+  "searchResults": "Resultados de la búsqueda",
+  "noMatch": "No hay ajustes que coincidan",
+  "preview": {
+    "label": "Vista previa",
+    "reply": "Por supuesto, y el manejo de errores también queda más claro. Con {b} activado, la línea de abajo se ajusta:"
+  },
+  "logout": {
+    "title": "¿Cerrar sesión en OKINTO?",
+    "body": "Esto revoca el acceso de esta computadora. Tus bots y conversaciones se conservan y continúan cuando vuelvas a iniciar sesión.",
+    "confirm": "Cerrar sesión",
+    "notRevoked": "El servidor no confirmó la revocación. Aquí ya cerraste sesión; puedes volver a revocar el acceso en Apps autorizadas, en el sitio web de OKINTO"
+  },
+  "notifyDenied": "Las notificaciones no están permitidas. Permítelas para esta página en los ajustes del sistema o en la configuración del sitio de tu navegador",
+  "rows": {
+    "language": {
+      "sub": "Se usa en la interfaz, en el menú de la bandeja del sistema y en los mensajes del sistema de tus bots",
+      "keys": "idioma lengua español inglés chino japonés coreano ruso portugués language english chinese 中文 English 日本語 한국어 Español Português"
+    },
+    "sendKey": {
+      "name": "Enviar con",
+      "sub": "{key} agrega un salto de línea. Enter no envía mientras escribes con un método de entrada",
+      "keys": "enviar enter intro salto de línea nueva línea atajo teclado send return new line newline shortcut keyboard"
+    },
+    "notify": {
+      "name": "Notificar cuando termine una respuesta",
+      "sub": "Cuando la ventana no está al frente, muestra una notificación del sistema cuando un bot termina de responder o necesita que confirmes algo",
+      "keys": "notificación notificar aviso alerta segundo plano notification notify alert background"
+    },
+    "close": {
+      "name": "Al cerrar la ventana",
+      "sub": "Mientras está oculta en la bandeja del sistema, los bots siguen enviando y recibiendo mensajes en segundo plano",
+      "keys": "bandeja salir cerrar minimizar segundo plano tray quit close minimize background",
+      "tray": "Ocultar en la bandeja",
+      "quit": "Salir"
+    },
+    "autostart": {
+      "name": "Abrir al iniciar sesión",
+      "sub": "Se inicia en segundo plano cuando inicias sesión en tu computadora",
+      "keys": "inicio arranque iniciar sesión arranque automático startup launch login boot autostart"
+    },
+    "browser": {
+      "name": "Abrir en el navegador",
+      "sub": "Abre esta misma interfaz local en tu navegador predeterminado",
+      "keys": "navegador web browser"
+    },
+    "guide": {
+      "name": "Lista de primeros pasos",
+      "hidden": "Oculta. Vuelve a empezar para que aparezca de nuevo en la página de chat y en la parte inferior de la barra lateral",
+      "progress": "Descubre lo que pueden hacer tus bots, paso a paso · {done}/{total} completados",
+      "keys": "guía primeros pasos tutorial lista configuración inicial guide onboarding checklist getting started",
+      "restart": "Volver a empezar",
+      "restarted": "Lista reiniciada"
+    },
+    "theme": {
+      "name": "Tema",
+      "sub": "Claro, oscuro o igual que el sistema",
+      "keys": "tema apariencia oscuro claro noche modo theme appearance dark light night mode"
+    },
+    "textSize": {
+      "name": "Tamaño del texto",
+      "subDesktop": "Solo cambia el texto. Para escalar también los íconos y el espaciado, usa Zoom más abajo",
+      "sub": "Solo cambia el texto; los íconos y el espaciado siguen igual",
+      "keys": "tamaño del texto tamaño de fuente letra más grande text size font size larger bigger"
+    },
+    "font": {
+      "name": "Fuente de la interfaz",
+      "sub": "La predeterminada del sistema, serif o cualquier fuente instalada en tu computadora",
+      "keys": "fuente tipografía tipo de letra serif font family typeface"
+    },
+    "fontName": {
+      "name": "Fuente personalizada",
+      "subSet": "Separa varias fuentes con comas para usarlas como alternativa en orden. Las fuentes que no estén instaladas se reemplazan por la fuente del sistema",
+      "subEmpty": "Escribe el nombre de una fuente, por ejemplo Inter. Mientras tanto, se usa la fuente del sistema",
+      "keys": "fuente personalizada tipografía font custom typeface",
+      "placeholder": "Nombre de la fuente"
+    },
+    "codeFont": {
+      "name": "Fuente del código",
+      "sub": "Fuente monoespaciada para bloques de código, comandos y rutas. Déjalo en blanco para usar la fuente monoespaciada del sistema",
+      "keys": "fuente código monoespaciada code font monospace",
+      "placeholder": "Monoespaciada del sistema"
+    },
+    "zoom": {
+      "name": "Zoom",
+      "sub": "Agranda o reduce todo lo que hay en la ventana, incluidos los íconos y el espaciado",
+      "keys": "zoom escala más grande más pequeño ampliar reducir scale bigger smaller"
+    },
+    "chatWidth": {
+      "name": "Ancho del chat",
+      "sub": "Amplía la conversación en pantallas grandes para que el código y las tablas largas se ajusten menos",
+      "keys": "ancho amplio completo conversación columna width wide full conversation column"
+    },
+    "codeWrap": {
+      "name": "Ajustar líneas de código",
+      "sub": "Ajusta las líneas largas de los bloques de código en lugar de desplazarse hacia los lados",
+      "keys": "código ajuste de línea ajustar code wrap line wrap"
+    },
+    "motion": {
+      "name": "Animaciones",
+      "sub": "Si se desactivan, las transiciones, las ventanas emergentes y los avatares de los bots quedan quietos. La opción Sistema sigue tu ajuste de Reducir movimiento",
+      "keys": "animación animaciones movimiento transición reducir movimiento animation motion transition reduce motion"
+    },
+    "resetAppearance": {
+      "name": "Restablecer la apariencia",
+      "subDesktop": "Restablece el tema, las fuentes, el zoom y todos los ajustes anteriores a sus valores predeterminados",
+      "sub": "Restablece el tema, las fuentes y todos los ajustes anteriores a sus valores predeterminados",
+      "keys": "restablecer restaurar predeterminado reset restore default",
+      "button": "Restablecer"
+    },
+    "account": {
+      "name": "Cuenta de OKINTO",
+      "signedIn": "Sesión iniciada",
+      "enterprise": "El uso de {name} se factura a la billetera de tu organización",
+      "signedOut": "Inicia sesión para ver el uso, las notificaciones y tu enlace de invitación, y para definir presupuestos para bots individuales",
+      "keys": "cuenta iniciar sesión registrarse cerrar sesión account sign in sign up log in log out login",
+      "logout": "Cerrar sesión",
+      "login": "Iniciar sesión",
+      "apiKey": "Conectar con una clave API de api.okinto.com",
+      "noBrowserLogin": "Conexión con clave API"
+    },
+    "connection": {
+      "name": "Conexión",
+      "subExternal": "Endpoint definido por la variable de entorno AMB_MAGPIE_BASE_URL (desarrollo/pruebas)",
+      "playground": "Usa tu sesión de Playground de New API; las solicitudes se facturan al grupo seleccionado",
+      "nameSignedIn": "Conexión de cuenta",
+      "subSignedIn": "Usando tu cuenta de OKINTO",
+      "sub": "Usando una clave API del sitio OKINTO",
+      "keys": "Modelos de la conexión con clave API de OKINTO",
+      "rekey": "Sustituir clave API",
+      "disconnect": "Desconectar"
+    },
+    "balance": {
+      "name": "Saldo",
+      "error": "No se pudo cargar: {error}",
+      "updated": "Actualizado a las {time}",
+      "keys": "saldo recargar billetera crédito balance top up wallet credit",
+      "refresh": "Actualizar saldo",
+      "topUp": "Recargar ↗",
+      "fromToken": "Cuota restante de esta clave API; consulta el saldo de la cuenta en la consola",
+      "fromAccount": "Saldo de la cuenta de New API",
+      "fromKey": "Según la facturación de New API; el alcance de la cuota depende de la configuración del sitio"
+    },
+    "lowBalance": {
+      "name": "Alerta de saldo bajo",
+      "sub": "Recibe una sola alerta en la app cuando tu saldo baje de este monto. Se restablece después de recargar",
+      "keys": "alerta saldo bajo recordatorio alert low balance reminder",
+      "none": "Desactivada"
+    },
+    "lowBalancePush": {
+      "name": "Enviar también las alertas a tus apps de chat",
+      "sub": "Las envía tu bot: en WeChat, a quien escaneó el código QR de inicio de sesión (tiene que haber escrito recientemente); en Feishu, al chat directo más reciente; en Telegram, Slack y Discord, al propietario",
+      "keys": "notificación push alerta push alert wechat feishu lark telegram slack discord"
+    },
+    "usage": {
+      "name": "Uso",
+      "sub": "Gasto por día y por modelo",
+      "keys": "uso gasto costo facturación usage spending cost billing"
+    },
+    "notifications": {
+      "name": "Notificaciones",
+      "unread": "{count} sin leer",
+      "sub": "Notificaciones y anuncios de OKINTO",
+      "keys": "notificación anuncio mensaje notification announcement message"
+    },
+    "invite": {
+      "name": "Invitar amigos",
+      "sub": "Obtén una recompensa cuando tus amigos se registren y recarguen a través de tu enlace",
+      "keys": "invitar referido recompensa invite referral reward",
+      "copy": "Copiar enlace de invitación"
+    },
+    "line": {
+      "name": "Dominio de la API",
+      "sub": "Elige un dominio o compara los tiempos de respuesta. Los cambios se aplican a las solicitudes nuevas",
+      "keys": "dominio velocidad latencia red ruta domain speed latency modelflare origin cf network route"
+    },
+    "defaultModel": {
+      "name": "Modelo predeterminado",
+      "sub": "Se usa cuando un bot no define el suyo",
+      "keys": "modelo predeterminado default model",
+      "auto": "Automático (el primero de la lista)"
+    },
+    "imageModel": {
+      "name": "Modelo de imagen predeterminado",
+      "sub": "Se usa de forma predeterminada cuando un bot genera imágenes",
+      "keys": "imagen foto generar modelo image picture generate model"
+    },
+    "videoModel": {
+      "name": "Modelo de video predeterminado",
+      "sub": "Se usa de forma predeterminada cuando un bot genera videos",
+      "keys": "video generar modelo generate model"
+    },
+    "keyQuality": {
+      "name": "Costo-beneficio",
+      "sub": "Si se prueban primero las rutas más baratas o las más estables",
+      "keys": "económico equilibrado calidad enrutamiento ruta grupo costo cheap balanced quality routing route group cost"
+    },
+    "effort": {
+      "sub": "Un valor más alto implica un razonamiento más profundo y respuestas más lentas. En Automático, decide el modelo. No afecta a los modelos que no se pueden ajustar.",
+      "keys": "esfuerzo de razonamiento pensar profundidad reasoning effort thinking depth"
+    },
+    "autoModel": "Automático ({model})",
+    "models": {
+      "name": "Modelos disponibles",
+      "error": "No se pudo cargar: {error}",
+      "sub": "Modelos disponibles para tu cuenta",
+      "keys": "modelos lista actualizar models list refresh",
+      "count": {
+        "one": "{count} modelo",
+        "many": "{count} modelos",
+        "other": "{count} modelos"
+      }
+    },
+    "console": {
+      "name": "Consola de OKINTO",
+      "sub": "Facturación y facturas",
+      "keys": "consola panel facturación factura console dashboard billing invoice"
+    },
+    "cuStatus": {
+      "name": "Backend de uso de la computadora",
+      "ready": "Disponible",
+      "notReady": "No disponible",
+      "keys": "uso de la computadora accesibilidad grabación de pantalla computer use cua accessibility screen recording"
+    },
+    "cuNotice": {
+      "name": "Permisos del sistema",
+      "keys": "permiso permisos permission permissions"
+    },
+    "cuPerBot": {
+      "name": "Activar por bot",
+      "sub": "Cada bot puede activar el uso de la computadora y definir su propio modo de aprobación",
+      "keys": "bot bots",
+      "open": "Abrir ajustes del bot"
+    },
+    "keyStorage": {
+      "name": "Almacenamiento de claves",
+      "sub": "Las claves de API solo se guardan en la configuración aislada del gateway integrado en esta computadora, nunca en los registros ni en los argumentos de la línea de comandos",
+      "keys": "seguridad clave almacenamiento security key storage"
+    },
+    "accountStorage": {
+      "name": "Credenciales de la cuenta",
+      "sub": "Las credenciales de inicio de sesión de OKINTO solo se guardan en la carpeta de datos, y solo tu usuario del sistema puede leerlas. La interfaz solo ve el nombre de tu cuenta",
+      "keys": "seguridad iniciar sesión credenciales security sign in credentials"
+    },
+    "token": {
+      "name": "Token de acceso",
+      "required": "Obligatorio: la interfaz escucha en una dirección no local, o la app de escritorio genera uno aleatorio en cada inicio",
+      "local": "Solo escucha en esta computadora, así que no se necesita token",
+      "keys": "token acceso access"
+    },
+    "sandbox": {
+      "name": "Sandbox de los bots",
+      "sub": "La interfaz local rechaza las solicitudes que vienen de los sandbox de los bots, así que los bots no pueden aprobar sus propias acciones ni leer tu configuración",
+      "keys": "seguridad sandbox aislamiento security dsh"
+    },
+    "screens": {
+      "name": "Capturas de pantalla",
+      "sub": "Las capturas de pantalla del uso de la computadora solo se envían al modelo, nunca a los chats",
+      "keys": "privacidad captura de pantalla privacy screenshot"
+    },
+    "webSearch": {
+      "name": "Búsqueda web",
+      "sub": "Búsqueda gratuita de forma predeterminada. Si agregas una clave, se usa primero",
+      "keys": "búsqueda buscar web internet search tavily exa bocha zhipu keenable searxng",
+      "auto": "Automático",
+      "bocha": "Bocha",
+      "zhipu": "Zhipu"
+    },
+    "webSearchKey": {
+      "name": "Clave de {provider}",
+      "placeholder": "Pega la clave",
+      "rejected": "Clave rechazada. Por ahora se usa la búsqueda gratuita",
+      "remove": "Quitar",
+      "keys": "búsqueda clave api search key"
+    },
+    "webSearchUrl": {
+      "name": "Dirección de SearXNG",
+      "keys": "búsqueda dirección url search searxng address"
+    },
+    "listen": {
+      "name": "Dirección de escucha",
+      "sub": "Para cambiarla, define AMB_UI_HOST / AMB_UI_PORT y reinicia",
+      "keys": "puerto host dirección escucha port address listen",
+      "copy": "Copiar dirección"
+    },
+    "dataDir": {
+      "name": "Carpeta de datos",
+      "sub": "SQLite, espacios de trabajo de los bots, estado de inicio de sesión de WeChat y configuración del gateway integrado",
+      "keys": "ruta carpeta directorio datos path folder directory data",
+      "copy": "Copiar ruta"
+    },
+    "version": {
+      "name": "Versión",
+      "keys": "versión actualizar actualización version update upgrade",
+      "available": "La versión {version} está disponible",
+      "latest": "Tienes la versión más reciente",
+      "download": "Descargar ↗",
+      "notes": "Novedades"
+    },
+    "licenses": {
+      "name": "Licencias y avisos de terceros",
+      "sub": "MIT. Algunos estilos de la interfaz están adaptados de magpie (MIT)",
+      "keys": "licencia licencias avisos código abierto license licenses notices open source"
+    },
+    "diagnostics": {
+      "name": "Diagnóstico",
+      "gateway": "Gateway integrado",
+      "restarts": {
+        "one": "Se reinició {count} vez",
+        "many": "Se reinició {count} veces",
+        "other": "Se reinició {count} veces"
+      },
+      "keys": "gateway magpie diagnóstico diagnostics"
+    },
+    "troubleshoot": {
+      "sub": "Estado del gateway y del proceso del agente, pruebas de modelo y de agente, registros recientes y copia del diagnóstico",
+      "keys": "registro registros prueba agente atascado cargando colgado diagnóstico reiniciar comandos lentos log logs test agent stuck spinning hang diagnostics restart PowerShell pwsh slow commands"
+    },
+    "links": {
+      "sub": "Sitio web y documentación",
+      "docs": "Documentación ↗"
+    }
+  },
+  "rekey": {
+    "title": "Cambiar clave de OKINTO New API",
+    "submit": "Verificar y guardar"
+  },
+  "disconnect": {
+    "title": "¿Desconectar OKINTO New API?",
+    "body": "Esto elimina la clave API de este equipo. Tus bots y conversaciones se conservan para cuando vuelvas a conectar.",
+    "confirm": "Desconectar"
+  }
+};

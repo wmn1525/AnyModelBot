@@ -14,7 +14,7 @@ export default {
     "research": "Summarise the conclusions of these three papers."
   },
   "answer": {
-    "copy": "“AI teammates that live on your machine.” — want two more options?",
+    "copy": "“A team of AI bots that runs on your computer.” — want two more options?",
     "code": "The loop uses <=, so the last pass reads arr[len]. Switch it to <.",
     "research": "All three find data quality beats scale; they disagree on evaluation."
   },

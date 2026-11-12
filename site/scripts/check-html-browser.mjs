@@ -31,7 +31,7 @@ try {
   page.on("response", response => { if (response.url().startsWith(origin) && response.status() >= 400) problems.push(response.status() + " " + response.url()); });
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
-    for (const lang of ["", "en", "ja", "ko", "ru"]) {
+    for (const lang of ["", "en", "ja", "ko", "ru", "es", "pt"]) {
       for (const view of ["", "download", "pricing", "privacy", "partners"]) {
         const pathname = "/" + [lang, view].filter(Boolean).join("/");
         const response = await page.goto(origin + pathname, { waitUntil: "networkidle" });
@@ -42,7 +42,7 @@ try {
         assert(dimensions.content <= dimensions.viewport + 1, pathname + " overflow at " + width + ": " + JSON.stringify(dimensions));
         const text = await page.locator("body").innerText();
         assert(!/Modelflare|modelflare\.dev|anymodel\.bot/.test(text), pathname + " upstream branding");
-        if (!view || view === "pricing") assert(text.includes("okinto"), pathname + " AI provider");
+        if (!view || view === "pricing") assert(/okinto/i.test(text), pathname + " AI provider");
         if (view === "download") {
           const urls = await page.locator("a[data-dl-platform]").evaluateAll(links => links.map(link => link.href));
           assert(urls.length >= 4);

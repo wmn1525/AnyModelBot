@@ -11,18 +11,13 @@ export default {
   app: {
     sample: "Sample",
     placeholder: "Say something and the view updates",
-    conversation: "Full conversation",
-    info: "Info",
-    uiFailed: "The view hit a problem, so this switched to the conversation.",
+    uiFailed: "The view couldn't open. You can keep going in the chat.",
     openUrlTitle: "Open this page?",
     openUrlConfirm: "Open",
     removed: "This bot was removed from the catalog. Your data is still here.",
     removedSecurity: "This bot was removed for security reasons and its skills are disabled. Your data is still here.",
-    starters: "Try one of these",
-    more: "Show more",
-    less: "Show less",
   },
-  info: { what: "What it does", skills: "Skills used", perms: "Permissions", settings: "Bot settings" },
+  info: { what: "What it does", skills: "Skills used", perms: "Permissions" },
   perm: {
     "workspace-write": "Read and write its own folder",
     network: "Use the internet",
@@ -30,7 +25,6 @@ export default {
     "computer-use": "Control your computer",
     accounts: "Use accounts you connected",
   },
-  view: { label: "View", app: "Workspace", chat: "Chat" },
   intro: {
     hello: "Hi, I'm {name}.",
     try: "Try one of these",

@@ -1,0 +1,63 @@
+export default {
+  "sidebar": {
+    "discover": "Descobrir",
+    "mine": "Meus",
+    "latest": "Novos",
+    "new": "Novidade"
+  },
+  "discover": {
+    "title": "Descobrir",
+    "lead": "Ferramentas prontas. Abra uma, use e é só dizer o que mudar.",
+    "featured": "Destaques",
+    "latest": "Novos",
+    "empty": "Nenhum resultado"
+  },
+  "app": {
+    "sample": "Exemplo",
+    "placeholder": "Diga algo e a interface se atualiza",
+    "uiFailed": "Não foi possível abrir a interface. Você pode continuar pelo chat.",
+    "openUrlTitle": "Abrir esta página?",
+    "openUrlConfirm": "Abrir",
+    "removed": "Este bot foi removido do catálogo. Seus dados continuam aqui.",
+    "removedSecurity": "Este bot foi removido por motivos de segurança e as habilidades dele foram desativadas. Seus dados continuam aqui."
+  },
+  "info": {
+    "what": "O que ele faz",
+    "skills": "Habilidades usadas",
+    "perms": "Permissões"
+  },
+  "perm": {
+    "workspace-write": "Ler e gravar na própria pasta",
+    "network": "Usar a internet",
+    "channel-send": "Enviar mensagens a canais de chat por conta própria",
+    "computer-use": "Controlar seu computador",
+    "accounts": "Usar as contas que você conectou"
+  },
+  "intro": {
+    "hello": "Oi, eu sou {name}.",
+    "try": "Experimente uma destas",
+    "note": "Ou diga o que você quer. Só começo a trabalhar depois da sua primeira mensagem; até lá, tudo aqui é um exemplo."
+  },
+  "tip": {
+    "kept": "{name} fica em Meus. Amanhã ele ainda vai estar aqui."
+  },
+  "remove": {
+    "title": "Remover {name}?",
+    "body": "Ele sai da barra lateral. Você ainda pode encontrá-lo em Descobrir.",
+    "confirm": "Remover",
+    "keep": "Manter os dados para continuar de onde parou",
+    "done": "{name} removido. Você pode encontrá-lo de novo em Descobrir"
+  },
+  "errors": {
+    "catalog_not_found": "Este bot não foi encontrado.",
+    "catalog_removed": "Este bot foi removido do catálogo.",
+    "catalog_download_failed": "Não foi possível carregar os arquivos deste bot. Tente de novo.",
+    "catalog_failed": "Algo deu errado. Tente de novo.",
+    "file_not_found": "Este arquivo não foi encontrado.",
+    "inbox_too_large": "Este arquivo é grande demais.",
+    "skill_conflict": "Uma habilidade desta atualização entra em conflito com uma habilidade importada. Remova ou renomeie a habilidade importada primeiro.",
+    "reserved_skill": "Este bot tem um nome de habilidade inválido e não pode ser instalado.",
+    "dev_invalid": "Esta pasta não é um pacote de bot válido.",
+    "dev_loopback_only": "Pastas locais só podem ser carregadas quando o app roda neste computador."
+  }
+};

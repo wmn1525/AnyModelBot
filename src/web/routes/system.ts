@@ -105,7 +105,9 @@ export function systemRoutes(ctx: WebContext): Route {
     if (p === "/agent" && m === "GET") {
       const items = app.attention.list();
       return send(res, 200, { ...app.agent.status(), busy: [...new Set([...live.bots(), ...app.runtime.busyBots()])], background: app.tasks.background(), attention: items.length, needs: app.attention.byBot(items),
-        cuBlocked: Object.keys(app.cuPermissions.view().blocked) });
+        cuBlocked: Object.keys(app.cuPermissions.view().blocked),
+        // 连接应用里有没有要用户处理凭证的连接（头像上的提醒点）
+        appsAttention: app.apps.attention() });
     }
     // —— 新手引导（上手清单）：进度写进 config.json；读的时候把能从数据里看出来做过的步骤并进去 ——
     if (p === "/guide") {

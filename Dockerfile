@@ -53,6 +53,8 @@ COPY --from=magpie /out/magpie ./bin/magpie
 COPY --from=dsh /app/dsh-runtime/node_modules ./dsh-runtime/node_modules
 COPY dsh-runtime/package.json ./dsh-runtime/
 COPY dsh-runtime/plugins ./dsh-runtime/plugins
+# 语雀官方 MCP 的固定版本（单文件，scripts/vendor-yuque-mcp.mjs 生成）：连接应用 › 语雀 用它
+COPY vendor/yuque-mcp ./vendor/yuque-mcp
 COPY LICENSE THIRD_PARTY_NOTICES*.md CHANGELOG*.md ./
 RUN mkdir -p /data && chown node:node /data
 USER node

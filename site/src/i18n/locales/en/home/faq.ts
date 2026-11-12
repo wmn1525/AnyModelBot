@@ -6,7 +6,7 @@ export default {
   "items": [
     {
       "q": "How do I import my own skills?",
-      "a": "Go to Bot settings → Skills → Import ZIP, preview it, then add it. Each ZIP contains one SKILL.md and can be up to 20 MB; scripts and references are preserved. Importing does not contact GitHub. Software and network requirements depend on the skill. Import the same name again to confirm replacement."
+      "a": "Go to the bot's settings → Skills → Import ZIP, preview it, then add it. Each ZIP contains one SKILL.md and can be up to 20 MB; scripts and references are preserved. Importing does not contact GitHub. Software and network requirements depend on the skill. Import the same name again to confirm replacement."
     },
     {
       "q": "How do I find an older conversation?",
@@ -37,8 +37,8 @@ export default {
       "a": "Yes. Add the account once in Settings › Connections and every bot shares it. Each service can have several accounts, each with an alias. A default bot answers new chats; send /bot and a name once to switch, and that chat stays with the new bot. Send /bot to see your bots."
     },
     {
-      "q": "Can bots work with my Notion?",
-      "a": "Yes, once you authorize it. Add accounts in Settings › Connections, as many as you like, then ask any bot about them by number or alias. Bots can read and edit pages but can't delete them, and read-only bots can only read."
+      "q": "Can bots work with my apps, such as Notion or GitHub?",
+      "a": "Yes, once you connect them. Use Connect apps in the avatar menu: GitHub, Notion, Linear, Atlassian and Canva are built in, and you can add custom MCP connectors. You can connect several accounts of the same app and ask any bot about them by number or alias. Read-only tools run right away, writes ask you first, and deletes or anything sent to other people always ask. Read-only bots can only read."
     },
     {
       "q": "I don't have a okinto account.",

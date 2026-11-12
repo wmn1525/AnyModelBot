@@ -12,11 +12,11 @@ export default {
   ],
   "cta": "下载 okbot",
   "strip": {
-    "title": "也可以直接用现成的 Bot",
-    "lead": "做研究、做 PPT，或制作短视频与分集短剧。完成首次设置后，在侧边栏点「发现」，选择带专属界面的 Bot。",
+    "title": "也可以直接用现成的机器人",
+    "lead": "做研究、做 PPT 或短视频，在「发现」里就能选用。",
     "all": "查看全部 Bot"
   },
-  "minimumVersion": "需要 AnyModelBot {version} 及以上版本。",
+  "minimumVersion": "需要 okbot {version} 及以上版本。",
   "requirements": {
     "printfilm": "规划和编辑需要本机 Python 3.10+；素材校验与成片合成需要 FFmpeg（含 ffprobe）。AI 图片通过 OKINTO 按用量计费；当前版本尚不支持 OKINTO 视频生成，可导入本地视频进行剪辑。"
   }

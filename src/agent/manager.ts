@@ -13,8 +13,11 @@ import { ApiFallbacks, type ApiFallback } from "./api-fallback.js";
 import type { MediaModel, MediaPlan, MediaService } from "../tools/media/index.js";
 import { SearchAborted, type SearchService, type WebSource } from "../tools/search.js";
 import { ConnectionError } from "../tools/accounts/index.js";
-import type { ConnectionService } from "../tools/accounts/connections.js";
-import { APPROVAL_TTL_MS, ApprovalCenter, RULE_APPROVAL_TTL_MS, TASK_APPROVAL_TTL_MS, type QuestionItem } from "./approvals.js";
+import type { AppService, GateInput } from "../tools/apps/service.js";
+import { AppError } from "../tools/apps/types.js";
+import { CUSTOM_APP, appName, builtinApp, customKey } from "../tools/apps/catalog.js";
+import type { ToolInfo } from "../tools/apps/types.js";
+import { ALWAYS_RESULT, APPROVAL_TTL_MS, APPS_BY, ApprovalCenter, RULE_APPROVAL_TTL_MS, TASK_APPROVAL_TTL_MS, appConnectOf, type AppConnectPayload, type AppToolPayload, type QuestionItem } from "./approvals.js";
 import { MemoryError, MemoryStore, type Scope } from "./memory.js";
 import type { TaskHost, TaskService } from "../tasks/service.js";
 import { DEFAULT_SETTINGS, type BotSettings, type MediaConfirm } from "./settings.js";
@@ -57,8 +60,8 @@ export interface AgentManagerOptions {
   mediaReady?: () => boolean;
   /** 联网搜索（amb-web-search 插件经 bridge 调用，DSH 的 web_search 用它）；缺省时搜索返回不可用 */
   search?: SearchService;
-  /** 已授权账号（全局，amb-connections 插件经 bridge 调用）；缺省时机器人没有这些工具 */
-  connections?: ConnectionService;
+  /** 连接应用（全局，amb-connections 插件经 bridge 调用，见 tools/apps/service.ts）；缺省时机器人没有这些工具 */
+  apps?: AppService;
   /** 需要让用户看到的提示（代理进程起不来等） */
   onNotice?: (text: string) => void;
   /** 模型的上下文长度（OKINTO 模型资料），写进 DSH 补丁 */
@@ -206,7 +209,7 @@ export class AgentManager {
       steward: (b) => this.stewardCall(b),
       media: (b) => this.mediaOp(b),
       search: (b, signal) => this.searchOp(b, signal),
-      connections: (b, signal) => this.connectionOp(b, signal),
+      apps: (b, signal) => this.appOp(b, signal),
       cuPermission: async (b) => this.cuPermissionOp(b),
       // amb-control 插件按机器人取指令；不认识的机器人（已删除、已停止）让它别再来
       control: {
@@ -226,6 +229,17 @@ export class AgentManager {
     });
     this.memory = new MemoryStore(path.join(o.dataDir, "memory"));
     this.apiFallbacks = new ApiFallbacks(path.join(o.dataDir, "dsh", "api-fallback.json"));
+    // 连接变了（连上、断开、谁能用）：提示词里那一段马上更新；现有账号的工具清单变了的，空闲的代理进程换新的
+    let appsTimer: NodeJS.Timeout | undefined;
+    o.apps?.onChange(() => {
+      if (appsTimer) return;
+      appsTimer = setTimeout(() => {
+        appsTimer = undefined;
+        for (const h of this.hosts.values()) h.syncPrompt();
+        void this.refreshIdle();
+      }, 500);
+      appsTimer.unref?.();
+    });
   }
 
   /** 生图 / 生视频服务；未接内置网关时没有 */
@@ -261,7 +275,10 @@ export class AgentManager {
         onNotice: this.o.onNotice,
         // 拉起进程时读：登录或退出 OKINTO 之后的新进程跟着变
         media: this.mediaOn(),
-        connections: () => this.o.connections?.available() ?? {},
+        apps: () => {
+          const input = this.appInput(botId);
+          return { config: this.o.apps?.pluginConfig(botId, input) ?? { apps: false, tools: [] }, prompt: this.o.apps?.promptText(botId, input) ?? "" };
+        },
         contextWindow: this.o.contextWindow,
         apiInfo: this.o.apiInfo,
         effort: this.o.effort,
@@ -738,31 +755,204 @@ export class AgentManager {
     }
   }
 
+  // ---------- 连接应用（tools/apps/service.ts）----------
+
+  /** 这个机器人用应用时的判定输入：权限档位、应用设置、目录 Bot 有没有声明 accounts 权限、是不是只观察的规则 */
+  private appInput(botId: string, sessionId = ""): GateInput {
+    const st = this.settings(botId);
+    const app = this.o.store.getBot(botId)?.app;
+    const rule = sessionId && !this.o.store.conversationForSession(sessionId) ? this.ruleOf(botId, sessionId) : undefined;
+    return { permission: st.permission, apps: st.apps, allowed: !app || app.permissions.includes("accounts"), ...(rule ? { ruleMode: rule.mode === "act" ? ("act" as const) : ("observe" as const) } : {}) };
+  }
+
+  /** 这次调用落在哪个会话、是不是后台任务或规则里来的（没人在旁边看：审批等得久，连接卡片不等） */
+  private askContext(botId: string, sessionId: string) {
+    const conversationId = this.resolveConversation(botId, sessionId);
+    const chat = !!this.o.store.conversationForSession(sessionId);
+    const t = chat ? undefined : this.taskOf(botId, sessionId);
+    const rule = t || chat ? undefined : this.ruleOf(botId, sessionId);
+    const fields = t ? { taskId: t.taskId, runId: t.runId, ttlMs: TASK_APPROVAL_TTL_MS } : rule ? { ruleId: rule.ruleId, runId: rule.runId, ttlMs: RULE_APPROVAL_TTL_MS } : {};
+    return { conversationId, background: !!(t || rule), rule, fields };
+  }
+
+  /** 等一条审批行离开 pending。回合被中止（signal）时作废它 */
+  private async awaitRow(id: string, signal: AbortSignal) {
+    const onAbort = () => void this.approvals.cancel(id, "agent");
+    signal.addEventListener("abort", onAbort, { once: true });
+    try {
+      for (;;) {
+        if (signal.aborted) return undefined;
+        const row = await this.approvals.wait(id, 60_000);
+        if (!row || row.status !== "pending") return row;
+      }
+    } finally {
+      signal.removeEventListener("abort", onAbort);
+    }
+  }
+
+  /**
+   * 应用工具的审批：不用问的直接过；要问的在对话里出审批卡片（和电脑操作的审批走同一套：渠道里也能批），等用户决定。
+   * 返回 undefined = 可以执行；返回文字 = 不执行，文字给模型看。
+   */
+  private async passGate(botId: string, sessionId: string, input: GateInput, target: { key: string; app: string; name: string; tool: Pick<ToolInfo, "name" | "category" | "hash"> & { title?: string } }, args: unknown, signal: AbortSignal): Promise<string | undefined> {
+    const apps = this.o.apps!;
+    const g = apps.gate(input, target.key, target.tool);
+    if (g.action === "allow") return undefined;
+    if (g.action === "deny") return g.reason;
+    const ctx = this.askContext(botId, sessionId);
+    const info = apps.approvalInfo(target.key, target.app, target.name, target.tool, args, g.always);
+    const payload: AppToolPayload = { ...info, hash: target.tool.hash };
+    const row = this.approvals.create({
+      kind: "approval",
+      botId,
+      conversationId: ctx.conversationId,
+      sessionId,
+      tool: `${info.appName} · ${info.toolTitle}`,
+      detail: info.params.map(([k, v]) => `${k}: ${v}`).join(", "),
+      reason: "",
+      payload: JSON.stringify({ appTool: payload }),
+      ...ctx.fields,
+    });
+    const decided = await this.awaitRow(row.id, signal);
+    if (!decided || decided.status === "cancelled") return "The call was cancelled.";
+    if (decided.status !== "allowed") return decided.status === "expired" ? "Nobody answered the approval request in time, so the call was not made. Do not retry unless the user asks." : "The user denied this call. Do not retry it unless the user asks.";
+    if (decided.result === ALWAYS_RESULT && g.always) this.grantAlways(botId, target.key, target.tool.name, target.tool.hash);
+    return undefined;
+  }
+
+  /** 「以后这个工具都允许」：只对这个机器人的这一个工具，记下当时工具定义的指纹（机器人设置 › 应用 里能看到、能撤销） */
+  private grantAlways(botId: string, key: string, tool: string, hash: string): void {
+    const bot = this.o.store.getBot(botId);
+    if (!bot) return;
+    const apps = bot.settings.apps;
+    this.o.store.updateBot(botId, { settings: { ...bot.settings, apps: { ...apps, alwaysAllow: { ...apps.alwaysAllow, [key]: { ...(apps.alwaysAllow[key] ?? {}), [tool]: hash } } } } });
+    log.info("app tool always allowed", { bot: botId, app: key, tool });
+  }
+
+  /**
+   * 要用户去连接或修复一个应用：在对话里出一张卡片（去连接 / 重新授权 / 去登录 / 更新密钥 / 更新链接），等用户处理。
+   * 连上了卡片变成已连接，原来的任务接着做。渠道里发起的任务：渠道里只提示回到电脑上处理，电脑上有同样的卡片。
+   * 后台任务和规则里没人在旁边，不等。同一个会话里同一个应用只有一张卡片。
+   */
+  private async repairRequest(botId: string, sessionId: string, key: string, reason: string, signal: AbortSignal): Promise<"connected" | "declined" | "unavailable"> {
+    const apps = this.o.apps!;
+    const need = apps.repairKind(key);
+    if (!need) return "connected";
+    const ctx = this.askContext(botId, sessionId);
+    if (ctx.background || !ctx.conversationId) return "unavailable";
+    const same = this.approvals.pendingChat(ctx.conversationId).find((r) => appConnectOf(r)?.app === key);
+    const payload: AppConnectPayload = { app: key, appName: need.name, custom: need.custom, kind: need.kind, reason: reason.replace(/\s+/g, " ").trim().slice(0, 300), ...(need.accountId ? { accountId: need.accountId } : {}) };
+    const row = same ?? this.approvals.create({ kind: "approval", botId, conversationId: ctx.conversationId, sessionId, tool: "app_connect", detail: need.name, reason: payload.reason, payload: JSON.stringify({ appConnect: payload }) });
+    const settle = () => {
+      if (!apps.repairKind(key)) this.approvals.decide(row.id, true, APPS_BY);
+    };
+    const off = apps.onChange(settle);
+    try {
+      settle();
+      const decided = await this.awaitRow(row.id, signal);
+      return decided?.status === "allowed" ? "connected" : "declined";
+    } finally {
+      off();
+    }
+  }
+
+  /** 跑一次应用调用；连接出了凭证问题（要重新授权、密钥被拒、链接失效）时出修复卡片，用户处理完自动重试刚才那一步 */
+  private async withRepair<T>(botId: string, sessionId: string, run: () => Promise<T>, signal: AbortSignal, fallbackKey?: string): Promise<T> {
+    try {
+      return await run();
+    } catch (e) {
+      // 还没连的应用不在这里出卡片：把错误给模型，由它用 app_connect 说明为什么要连（卡片上要写原因）；这里只管凭证出了问题的
+      const key = e instanceof AppError && e.repair ? (e.repair.state === "off" ? undefined : e.repair.app) : fallbackKey && this.o.apps!.repairKind(fallbackKey) ? fallbackKey : undefined;
+      if (!key || signal.aborted) throw e;
+      const r = await this.repairRequest(botId, sessionId, key, "", signal);
+      if (r !== "connected") throw e;
+      return run();
+    }
+  }
+
+  /**
+   * 插件 → 宿主：应用工具。op = list（connected_accounts）、tools（app_tools）、schema（app_tool_schema）、call（app_call）、
+   * connect（app_connect）；带 service 的是现有账号的那几个工具（notion_search…）。
+   * 凭证只在宿主这边；判定（谁能用、要不要问）在这里再做一遍，插件只是不注册不该有的工具。错误文字直接给模型看。
+   */
+  private async appOp(b: any, signal: AbortSignal): Promise<{ text?: string; error?: string }> {
+    const botId = String(b?.botId ?? "");
+    const apps = this.o.apps;
+    if (!apps || !this.hosts.has(botId)) return { error: "Connected apps are not available." };
+    const sessionId = String(b?.sessionId ?? "");
+    const input = this.appInput(botId, sessionId);
+    const args = (b?.args && typeof b.args === "object" ? b.args : {}) as Record<string, unknown>;
+    const op = String(b?.op ?? "");
+    try {
+      if (!input.allowed) return { error: "Connected apps are not available to this bot." };
+      if (b?.service !== undefined) {
+        const service = String(b.service);
+        if (service === "accounts") return { text: apps.listText(botId, input) };
+        const legacy = apps.legacyTool(service, op);
+        if (!legacy) return { error: `Unknown service: ${service}` };
+        if (!apps.allows(botId, input.apps, legacy.key)) return { error: `${appName(legacy.key)} is not available to this bot. The user can change that in this bot's settings under Apps.` };
+        const run = async () => {
+          const denied = await this.passGate(botId, sessionId, input, { key: legacy.key, app: legacy.key, name: appName(legacy.key), tool: legacy.tool }, args, signal);
+          if (denied) throw new AppError(denied);
+          return apps.legacyCall(service, op, args, signal);
+        };
+        return { text: await this.withRepair(botId, sessionId, run, signal, legacy.key) };
+      }
+      switch (op) {
+        case "list":
+          return { text: apps.listText(botId, input) };
+        case "tools":
+          return { text: apps.searchTools(botId, input, args) };
+        case "schema":
+          return { text: apps.toolSchema(botId, input, args) };
+        case "call": {
+          const callArgs = (args.arguments && typeof args.arguments === "object" && !Array.isArray(args.arguments) ? args.arguments : {}) as Record<string, unknown>;
+          const run = async () => {
+            const p = apps.prepare(botId, input, args);
+            const denied = await this.passGate(botId, sessionId, input, p, callArgs, signal);
+            if (denied) throw new AppError(denied);
+            return apps.call(p.conn, p.tool.name, callArgs, signal);
+          };
+          return { text: await this.withRepair(botId, sessionId, run, signal) };
+        }
+        case "connect":
+          return await this.appConnect(botId, sessionId, input, args, signal);
+        default:
+          return { error: "unknown op" };
+      }
+    } catch (e) {
+      if (e instanceof AppError || e instanceof ConnectionError) return { error: e.message };
+      if (signal.aborted) return { error: "The call was cancelled." };
+      log.warn("app op failed", { bot: botId, op, message: (e as Error).message?.slice(0, 200) });
+      return { error: "The connected app is temporarily unavailable." };
+    }
+  }
+
+  /** app_connect：模型发现这次任务要用一个还没连的应用，请用户去连（对话里出卡片，连上后接着做） */
+  private async appConnect(botId: string, sessionId: string, input: GateInput, args: Record<string, unknown>, signal: AbortSignal): Promise<{ text?: string; error?: string }> {
+    const apps = this.o.apps!;
+    const raw = String(args.app ?? "").trim();
+    const lower = raw.toLowerCase();
+    const custom = apps.store.list(CUSTOM_APP).find((c) => c.label.toLowerCase() === lower);
+    const builtin = builtinApp(lower) ?? [...apps.connectable(botId, input)].find((x) => x.name.en.toLowerCase() === lower || x.name.zh === raw);
+    const key = custom ? customKey(custom.id) : builtin?.id;
+    if (!key) {
+      const more = apps.connectable(botId, input).map((x) => x.id);
+      return { error: `There is no app "${raw.slice(0, 80)}". Apps the user can connect: ${more.join(", ") || "none"}. For anything else the user can add a custom connector under Connect apps.` };
+    }
+    const label = custom ? custom.label : appName(key);
+    if (!apps.allows(botId, input.apps, key)) return { error: `${label} is not available to this bot. The user can change that in this bot's settings under Apps.` };
+    const r = await this.repairRequest(botId, sessionId, key, String(args.reason ?? ""), signal);
+    if (r === "unavailable") return { error: `${label} is not connected, and nobody is here to connect it now. Tell the user to connect it under Connect apps, then continue.` };
+    if (r === "declined") return { error: `The user did not connect ${label}. Continue without it, or ask the user what to do.` };
+    this.hosts.get(botId)?.syncPrompt();
+    return { text: `${label} is connected. Continue the task.\n\n${apps.searchTools(botId, this.appInput(botId, sessionId), { app: custom ? custom.label : key })}` };
+  }
+
   /**
    * 生图 / 生视频：只在该机器人有回合进行中时受理（工具调用只会发生在回合里）。
    * models / docs 直接回答；image / video 直接生成，预计花费超过上限或设成每次都问时（mediaAsk）先问用户用哪个模型。
    */
-  /**
-   * 已授权账号：全局一份，所有机器人共用，机器人之间的差别只来自权限。写操作在这里再查一次（插件只是不给写工具）：
-   * 只读机器人和观察规则不能写。错误文字直接给模型看（tools/accounts/index.ts）。
-   */
-  private async connectionOp(b: any, signal: AbortSignal): Promise<{ text?: string; error?: string }> {
-    const botId = String(b?.botId ?? "");
-    const connections = this.o.connections;
-    if (!connections || !this.hosts.has(botId)) return { error: "Connected accounts are not available." };
-    const service = String(b?.service ?? "");
-    const op = String(b?.op ?? "");
-    if (connections.isWrite(service, op)) {
-      if (this.settings(botId).permission === "readonly") return { error: "This bot is read-only, so it can't change anything in connected accounts." };
-      if (this.ruleOf(botId, String(b?.sessionId ?? ""))?.mode === "observe") return { error: "This rule only observes, so it can't change anything in connected accounts." };
-    }
-    try {
-      return { text: await connections.run(service, op, (b?.args ?? {}) as Record<string, unknown>, signal) };
-    } catch (e) {
-      return { error: e instanceof ConnectionError ? e.message : "The connected account is temporarily unavailable." };
-    }
-  }
-
   private async mediaOp(b: any): Promise<{ text?: string; error?: string }> {
     const botId = String(b?.botId ?? "");
     // 后台任务里还不能生成（确认要问用户，3b 才有任务的提问）

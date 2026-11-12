@@ -2,7 +2,7 @@
 import type { Catalog } from "../types.js";
 
 export const zh = {
-  unreachable: "连不上 {host}（{reason}）",
+  unreachable: "连不上 {host}（{reason}）。请检查网络；如果在用代理或 VPN，请开启系统代理或 TUN 模式后重试",
   timeout: "超时",
   invalid_key: "Key 无效或已被撤销",
   forbidden: "这个 Key 没有权限调用该模型或分组",
@@ -14,7 +14,7 @@ export const zh = {
 } satisfies Catalog;
 
 export const en: Catalog<typeof zh> = {
-  unreachable: "Can't reach {host} ({reason})",
+  unreachable: "Can't reach {host} ({reason}). Check your network. If you use a proxy or VPN, turn on its system proxy or TUN mode and try again",
   timeout: "timed out",
   invalid_key: "The key is invalid or has been revoked",
   forbidden: "This key isn't allowed to use this model or group",

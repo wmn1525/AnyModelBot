@@ -1,6 +1,6 @@
 export default {
   aria: "Разговор с {name}",
-  infoPanel: "Панель сведений (⌘⇧I)",
+  infoPanel: "Правая панель (⌘⇧I)",
   newConvCmd: "Новый разговор (/new)",
   toBottom: "Прокрутить вниз",
   copyMessage: "Копировать сообщение",
@@ -79,7 +79,7 @@ export default {
     guideTitle: "Привет, я {name}",
     guideBody: "Пройдите вводные шаги за 5 минут и узнайте, что я умею.",
     title: "Начните разговор с {name}",
-    body: "Проверьте бота прямо здесь. Подключите WeChat, Feishu, Telegram, Slack или Discord на панели сведений.",
+    body: "Проверьте бота прямо здесь. Подключите WeChat, Feishu, Telegram, Slack или Discord на правой панели.",
     sample: "С чем ты можешь мне помочь?",
     helpChip: "/help — список команд",
   },

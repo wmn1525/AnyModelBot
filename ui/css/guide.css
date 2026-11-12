@@ -12,15 +12,15 @@
 .chat-empty.with-guide { padding-top: var(--space-12); }
 .guide-card {
   width: min(540px, 100%); margin-top: var(--space-2); padding: var(--card-pad);
-  display: grid; gap: var(--space-3); text-align: left; color: var(--fg);
-  background: var(--well); border-radius: var(--r-well);
+  display: grid; gap: var(--stack-gap); text-align: left; color: var(--fg);
+  background: var(--well); border-radius: var(--r-card-lg);
 }
 .guide-card-head { display: flex; align-items: baseline; gap: var(--space-2); }
 .guide-count { font-size: var(--fs-xs); color: var(--muted); }
-.guide-steps { list-style: none; margin: 0 calc(-1 * var(--space-2)); padding: 0; display: grid; gap: var(--space-0-5); }
+.guide-steps { list-style: none; margin: 0 calc(-1 * var(--item-px)); padding: 0; display: grid; gap: var(--space-0-5); }   /* 步骤的悬停底往外伸，字在卡片的内容线上 */
 .guide-step {
   display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: var(--ctl-xl);
-  padding: var(--space-1-5) var(--space-2); border-radius: calc(var(--r-well) - var(--space-1));
+  padding: var(--space-1-5) var(--item-px); border-radius: var(--r-item);
   text-align: left; font-size: var(--fs-md); color: var(--fg);
 }
 button.guide-step { transition: background var(--t-fast); }
@@ -35,7 +35,7 @@ button.guide-step > .ic { color: var(--muted); }
 .guide-step.done .n { background: var(--pill-press); color: var(--fg-2); }
 .guide-step.done .title { color: var(--muted); font-weight: var(--fw-regular); }
 /* 当前这一步：底色深一级（状态，不是又一层容器），序号换成主操作色 */
-.guide-step.open { align-items: flex-start; padding: var(--space-2-5) var(--space-2); background: var(--well-hover); }
+.guide-step.open { align-items: flex-start; padding: var(--space-2-5) var(--item-px); background: var(--well-hover); }
 .guide-step.open .n { background: var(--primary); color: var(--on-primary); }
 .guide-step .body { flex: 1; min-width: 0; display: grid; gap: var(--space-1-5); }
 .guide-step.open .title { font-weight: var(--fw-semibold); }
@@ -47,7 +47,7 @@ button.guide-step > .ic { color: var(--muted); }
 /* —— 侧栏左下角的清单入口：账户行上面，和侧栏的行对齐 —— */
 .guide-pill {
   flex: none; display: flex; align-items: center; gap: var(--space-2-5); height: var(--ctl-xl); margin: 0 var(--side-inset);
-  padding: 0 var(--side-row-px); border-radius: var(--r-lg); background: var(--side-hover);
+  padding: 0 var(--side-row-px); border-radius: var(--r-row); background: var(--side-hover);
   font-size: var(--fs-md); color: var(--fg); text-align: left;
   transition: background var(--t-fast);
 }
@@ -62,7 +62,7 @@ button.guide-step > .ic { color: var(--muted); }
 /* —— 引导卡片：浮层玻璃，放在要点的地方旁边（.up / .down / .left），小三角指过去 —— */
 .guide-coach {
   position: fixed; z-index: calc(var(--z-modal) - 1); width: min(300px, calc(100vw - 2 * var(--pane-gap)));
-  padding: var(--card-pad); display: grid; gap: var(--space-2-5); color: var(--fg);
+  padding: var(--card-pad); display: grid; gap: var(--stack-gap); color: var(--fg);
   background: var(--glass-pop); backdrop-filter: var(--glass-filter-lg);
   border-radius: var(--r-pane); box-shadow: var(--shadow-pop);
   animation: fade-in var(--dur-base) var(--ease-out);
@@ -76,7 +76,7 @@ button.guide-step > .ic { color: var(--muted); }
 .guide-coach-top { display: flex; align-items: center; gap: var(--space-2); }
 .guide-coach-top .icon-btn { margin-right: calc(-1 * var(--space-1-5)); }
 .guide-done {
-  display: inline-flex; align-items: center; gap: var(--space-1); height: var(--ctl-xs); padding: 0 var(--space-2); border-radius: var(--r-full);
+  display: inline-flex; align-items: center; gap: var(--space-1); height: var(--ctl-xs); padding: 0 var(--ctl-px-xs); border-radius: var(--r-ctl);
   background: var(--green-soft); color: var(--green); font-size: var(--fs-2xs); font-weight: var(--fw-semibold);
   animation: fade-in var(--dur-base) var(--ease-out);
 }

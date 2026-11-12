@@ -1,0 +1,63 @@
+export default {
+  "sidebar": {
+    "discover": "Descubrir",
+    "mine": "Míos",
+    "latest": "Nuevos",
+    "new": "Nuevo"
+  },
+  "discover": {
+    "title": "Descubrir",
+    "lead": "Herramientas listas para usar. Abre una, úsala y simplemente di qué quieres cambiar.",
+    "featured": "Destacados",
+    "latest": "Nuevos",
+    "empty": "Sin resultados"
+  },
+  "app": {
+    "sample": "Ejemplo",
+    "placeholder": "Di algo y la vista se actualiza",
+    "uiFailed": "No se pudo abrir la vista. Puedes continuar en el chat.",
+    "openUrlTitle": "¿Abrir esta página?",
+    "openUrlConfirm": "Abrir",
+    "removed": "Este bot se retiró del catálogo. Tus datos siguen aquí.",
+    "removedSecurity": "Este bot se retiró por motivos de seguridad y sus habilidades están desactivadas. Tus datos siguen aquí."
+  },
+  "info": {
+    "what": "Qué hace",
+    "skills": "Habilidades que usa",
+    "perms": "Permisos"
+  },
+  "perm": {
+    "workspace-write": "Leer y escribir en su propia carpeta",
+    "network": "Usar internet",
+    "channel-send": "Enviar mensajes a canales de chat por su cuenta",
+    "computer-use": "Controlar tu computadora",
+    "accounts": "Usar las cuentas que conectaste"
+  },
+  "intro": {
+    "hello": "Hola, soy {name}.",
+    "try": "Prueba una de estas",
+    "note": "O simplemente di lo que quieres. Solo empiezo a trabajar después de tu primer mensaje; hasta entonces, todo lo que ves aquí es un ejemplo."
+  },
+  "tip": {
+    "kept": "{name} se queda en Míos. Mañana seguirá aquí."
+  },
+  "remove": {
+    "title": "¿Quitar {name}?",
+    "body": "Desaparece de la barra lateral. Aún puedes encontrarlo en Descubrir.",
+    "confirm": "Quitar",
+    "keep": "Conservar sus datos para continuar donde lo dejaste",
+    "done": "Se quitó {name}. Puedes volver a encontrarlo en Descubrir"
+  },
+  "errors": {
+    "catalog_not_found": "No se encontró este bot.",
+    "catalog_removed": "Este bot se retiró del catálogo.",
+    "catalog_download_failed": "No se pudieron cargar los archivos de este bot. Vuelve a intentarlo.",
+    "catalog_failed": "Algo salió mal. Vuelve a intentarlo.",
+    "file_not_found": "No se encontró este archivo.",
+    "inbox_too_large": "Este archivo es demasiado grande.",
+    "skill_conflict": "Una habilidad de esta actualización entra en conflicto con una habilidad importada. Primero quita o cambia el nombre de la habilidad importada.",
+    "reserved_skill": "Este bot tiene un nombre de habilidad no válido y no se puede instalar.",
+    "dev_invalid": "Esta carpeta no es un paquete de bot válido.",
+    "dev_loopback_only": "Las carpetas locales solo se pueden cargar cuando la app se ejecuta en esta máquina."
+  }
+};

@@ -1,9 +1,9 @@
 export default {
-  "h1a": "AI teammates",
-  "h1pre": "that ",
-  "h1mark": "live on your machine",
+  "h1a": "Your team of AI bots",
+  "h1pre": "",
+  "h1mark": "running on your computer",
   "h1b": ".",
-  "lead": "A few lines of persona decide what it does and how it talks. It sorts files, runs commands and remembers how you work. One key for every major model.",
+  "lead": "Sign in with OKINTO to use GPT, Claude, and more. Give different jobs to different bots, or let them work together.",
   "demo": "Watch demo",
   "github": "View on GitHub, {stars} stars",
   "trust": [
@@ -12,7 +12,7 @@ export default {
     "Windows / macOS / Linux"
   ],
   "appUiNote": "",
-  "eyebrow": "You decide who it is",
+  "eyebrow": "You define each bot",
   "stage": {
     "task": "Sort the invoices in Downloads into Expenses.",
     "invoice": "invoice_03.pdf",

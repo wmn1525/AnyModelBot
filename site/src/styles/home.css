@@ -519,7 +519,10 @@
   .phone__who small { overflow: hidden; color: var(--text-2); font-size: 11px; font-weight: 400; white-space: nowrap; text-overflow: ellipsis; }
   .phone__who small::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: var(--ok); vertical-align: 1px; }
   .phone__log { flex: 1; display: grid; align-content: start; gap: 10px; min-height: 0; padding: 14px 12px; overflow: hidden; }
-  .phone--full .phone__log { align-content: end; }
+  /* 认识机器人的手机能聊：对话区是滚动容器，消息少时贴底（.phone__thread 的 margin-top: auto），多了往上滚，滚动条藏起来 */
+  .phone--full .phone__log { display: flex; flex-direction: column; padding: 0; overflow-y: auto; scrollbar-width: none; }
+  .phone--full .phone__log::-webkit-scrollbar { display: none; }
+  .phone__thread { display: grid; align-content: start; gap: 10px; margin-top: auto; padding: 14px 12px; }
   .phone__day { justify-self: center; margin-bottom: 4px; padding: 2px 10px; border-radius: var(--r-btn); background: color-mix(in srgb, var(--text), transparent 93%); color: var(--text-2); font-size: 11px; }
   [data-theme="light"] .phone__day { background: rgba(17, 24, 39, .06); }
   .phone__log .msg { max-width: 84%; font-size: 13.5px; line-height: 1.5; }
@@ -532,12 +535,34 @@
   .phone__input { display: flex; flex: none; align-items: center; gap: 8px; height: 40px; margin: 10px; padding: 0 14px; border-radius: 20px; background: var(--phone-bubble); box-shadow: inset 0 0 0 1px var(--line); color: var(--text-2); font-size: 12.5px; }
   .phone--full .phone__input { margin: 8px 12px 6px; padding: 0 5px; }
   .phone__input span { flex: 1; min-width: 0; }
+  .phone__input:focus-within { box-shadow: inset 0 0 0 1px var(--accent-fg); }
+  .phone__field { flex: 1; min-width: 0; height: 100%; padding: 0 2px; border: 0; background: none; color: var(--text); font: inherit; outline: none; }
+  .phone__field::placeholder { color: var(--text-2); opacity: 1; }
+  @media (pointer: coarse) { .phone__field { font-size: 16px; } } /* iOS 上小于 16px 的输入框一聚焦就会放大整页 */
+  /* 建议问题：输入框上面一排小胶囊，放不下就横向滑（右边缘淡出）；用过的那条收起来。无 JS 时不显示 */
+  .phone__chips { display: flex; flex: none; gap: 6px; padding: 8px 20px 0 12px; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; mask-image: linear-gradient(90deg, #000 calc(100% - 20px), transparent); }
+  .phone__chips::-webkit-scrollbar { display: none; }
+  html:not(.js) .phone__chips { display: none; }
+  .phone__chip { flex: none; height: 28px; padding: 0 11px; border: 0; border-radius: 14px; background: none; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--text); font: inherit; font-size: 12px; white-space: nowrap; cursor: pointer; transition: box-shadow var(--dur-fast), color var(--dur-fast), background var(--dur-fast); }
+  @media (hover: hover) { .phone__chip:hover { box-shadow: inset 0 0 0 1px var(--accent-fg); color: var(--accent-fg); } } /* 触屏点完不留悬停色 */
+  .phone__chip:focus-visible { outline-offset: -2px; border-radius: 14px; }
+  /* 下载卡：对话末尾，和机器人的气泡左对齐（头像 26 + 间距 8） */
+  .phone__cta { display: grid; gap: 4px; margin-left: 34px; padding: 12px; border-radius: 16px; background: color-mix(in srgb, var(--accent) 7%, var(--phone-bubble)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-fg) 32%, transparent); }
+  .phone__cta-title { font-size: 13.5px; font-weight: 600; line-height: 1.4; }
+  .phone__cta-body { color: var(--text-2); font-size: 12px; line-height: 1.5; }
+  .phone__cta .dl { display: grid; justify-items: stretch; margin-top: 6px; }
+  .phone__cta .btn { --btn-h: 34px; justify-content: center; padding: 0 12px; font-size: 13px; }
+  html.js .phone__cta.is-in { animation: fade-swap var(--dur-base) var(--ease-out); }
   .phone__plus, .phone__send { position: relative; flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; }
   .phone__plus { box-shadow: inset 0 0 0 1.5px var(--line-strong); }
   .phone__plus::before, .phone__plus::after { content: ""; position: absolute; width: 12px; height: 1.5px; border-radius: 1px; background: var(--text-2); }
   .phone__plus::after { rotate: 90deg; }
   /* 发送键：深色黄绿钮墨色箭头，浅色墨色钮黄绿箭头（和 App 的发送键一致） */
   .phone__send { background: var(--signal-bg); }
+  button.phone__send { padding: 0; border: 0; cursor: pointer; transition: opacity var(--dur-fast), scale var(--dur-fast); }
+  button.phone__send:active { scale: .92; }
+  button.phone__send:focus-visible { border-radius: 50%; }
+  .phone__input:has(.phone__field:placeholder-shown) .phone__send { opacity: .45; }
   .phone__send::before { content: ""; width: 8px; height: 8px; margin-top: 4px; border-left: 2px solid var(--signal-fg); border-top: 2px solid var(--signal-fg); rotate: 45deg; }
   .phone__home { flex: none; display: block; width: 36%; height: 4px; margin: 4px auto 8px; border-radius: 2px; background: var(--text); opacity: .45; }
   html.js .phone__log.is-swap { animation: fade-swap var(--dur-base) var(--ease-out); }

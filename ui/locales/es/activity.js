@@ -1,0 +1,23 @@
+export default {
+  "lessThanTenth": "<0.1 s",
+  "seconds": "{s} s",
+  "waitingModel": "Esperando a {model}",
+  "runningTool": "Ejecutando {tool}",
+  "subagent": "Subagente trabajando",
+  "compact": "Compactando el contexto",
+  "job": "Comando en segundo plano en ejecución",
+  "stepLabel": "{status}: {title}",
+  "failed": "Falló",
+  "running": "En curso",
+  "done": "Listo",
+  "expandDetail": "{label}, mostrar detalles",
+  "collapseDetail": "{label}, ocultar detalles",
+  "tokens": "Entrada {input} tokens · salida {output} tokens",
+  "input": "Argumentos",
+  "reply": "Respuesta",
+  "output": "Salida",
+  "noSteps": "Aún no hay pasos",
+  "expand": "Mostrar actividad",
+  "collapse": "Ocultar actividad",
+  "stepFor": "{step}, {d} hasta ahora"
+};

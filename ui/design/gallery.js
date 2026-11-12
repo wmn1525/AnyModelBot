@@ -125,6 +125,12 @@ function SegDemo() {
   return html`<${Seg} label="API 域名" value=${v} onChange=${setV} options=${[["global", "api.okinto.com"], ["cn", "api.okinto.com"], ["cf", "api.okinto.com"]]} />
     <${Seg} label="禁用" value="a" disabled onChange=${() => {}} options=${[["a", "开"], ["b", "关"]]} />`;
 }
+function TabsDemo() {
+  const [v, setV] = useState("app");
+  const tabs = (cls, items) => html`<div class=${cls} role="tablist" aria-label="看法">
+    ${items.map(([id, label]) => html`<button type="button" role="tab" key=${id} aria-selected=${v === id} onClick=${() => setV(id)}>${label}</button>`)}</div>`;
+  return html`${tabs("tabs", [["app", "工作台"], ["chat", "对话"]])}${tabs("tabs", [["app", "概览"], ["chat", "文件"], ["log", "运行记录"]])}${tabs("tabs bare", [["app", "工作台"], ["chat", "对话"]])}`;
+}
 function SwitchDemo() {
   const [on, setOn] = useState(true);
   return html`<${Switch} label="长期记忆" value=${on} onChange=${setOn} /><${Switch} label="关" value=${false} onChange=${() => {}} />
@@ -406,8 +412,9 @@ function WinApp({ screen = "chat", open: initial = false }) {
     <aside class="side">
       ${settings
         ? html`<div class="side-top start"><button type="button" class="side-back"><${Icon} name="arrowLeft" size="md" />返回应用</button></div>`
-        : html`<div class="side-top"><span class="side-brand"><img src="/amb/static/assets/favicon-64.png" alt="" /><span>okbot</span></span><${IconButton} icon="plus" iconSize="md" label="新建机器人" /></div>`}
-      <label class="side-search"><${Icon} name="search" size="sm" /><input type="search" placeholder="搜索" /></label>
+        : html`<div class="side-top"><${IconButton} icon="sidebar" iconSize="md" class="side-toggle" label="收起侧栏" /><span class="side-brand"><img src="/amb/static/assets/favicon-64.png" alt="" /><span>okbot</span></span><span class="grow"></span>
+            <${IconButton} icon="search" iconSize="md" label="搜索聊天记录" /><${IconButton} icon="plus" iconSize="md" class="side-new" label="新建机器人" /></div>`}
+      ${settings && html`<label class="side-search"><${Icon} name="search" size="sm" /><input type="search" placeholder="查找设置" /></label>`}
       <nav class="side-list">
         ${settings
           ? html`<button type="button" class="nav-item sel"><${Icon} name="sliders" size="md" /><span>常规</span></button>
@@ -504,7 +511,7 @@ function Gallery() {
    utilities   .t-*（文字角色）.stack .cluster .grow .truncate .tone-* */`}>
           ${() => html`<${Notice} action=${html`<a class="btn" href="#custom">看定制示例</a>`}>写新界面前先在这里找现成的 token 和组件；找不到再加，并且加在 token 文件里。<//>`}
         <//>
-        <${Demo} col title="容器与层次" note="一组东西 = 底色深一级（--well）+ 间距；里面不再套框、行间不画线；常驻的边只留给浮层玻璃" code=${`.card { background: var(--well); border-radius: var(--r-well); }        /* 不描边、不加投影 */
+        <${Demo} col title="容器与层次" note="一组东西 = 底色深一级（--well）+ 间距；里面不再套框、行间不画线；常驻的边只留给浮层玻璃" code=${`.card { background: var(--well); border-radius: var(--r-card-lg); }        /* 不描边、不加投影 */
 .card .cmd { font-family: var(--code); }                                /* 卡片里的命令是一行等宽字，不再套底 */
 .notice.red { --notice-bg: var(--red-wash); --notice-ic: var(--red); }  /* 提示：淡底 + 图标 + --fg 字，不描边、无色条 */`}>
           ${() => html`<div class="card"><div class="meta">需要你的批准 · <span class="num">A7K2</span></div><div class="q">机器人想在工作区之外写入文件</div>
@@ -614,6 +621,7 @@ const { mounted, leaving } = usePresence(open);   /* design/motion.js：退场�
 
       <${Section} id="menus" title="菜单与分段">
         <${Demo} title="Seg" note="两个以上的选项；中性 thumb 按值滑动">${() => html`<${SegDemo} />`}<//>
+        <${Demo} title="Tabs" note="切换一整块内容（顶栏、面板里的看法）：胶囊轨道里一颗静止的白色胶囊；.bare 没有轨道，选中是一层填充" code=${`<div class="tabs" role="tablist"><button role="tab" aria-selected="true">工作台</button><button role="tab" aria-selected="false">对话</button></div>`}>${() => html`<${TabsDemo} />`}<//>
         <${Demo} title="Switch" note="只有开 / 关两态；打开 = 主操作色（浅色墨、深色近白）" code=${`<${"${Switch}"} label="长期记忆" value=\${on} onChange=\${setOn} />`}>${() => html`<${SwitchDemo} />`}<//>
         <${Demo} title="Stops" note="几档离散的值（模型选择器的性价比、模型智能）；← → 一档，Home / End 两头；value = -1 时不在任何一档上" code=${`<${"${Stops}"} label="性价比" count={3} value=\${i} onChange=\${setI} />`}>${() => html`<${StopsDemo} />`}<//>
         <${Demo} title="MenuButton · Menu" note="↑↓ 选择，Enter 执行，Esc 关闭">${() => html`<${MenuButtonDemo} /><${MenuDemo} />`}<//>

@@ -9,13 +9,17 @@
   assets/tray.png, tray@2x    托盘（macOS 菜单栏 / Linux），18 / 36，Electron 在高分屏自动换 @2x
   ui/assets/favicon-*.png     管理界面的浏览器标签图标，32 / 64
   ui/assets/apple-touch-icon  手机浏览器加到主屏幕，180，满版不透明（iOS 自己切圆角）
+  site/public/                官网 anymodel.bot 用同一个图标：favicon.ico（16/32/48）、favicon-32.png、apple-touch-icon.png（180 满版）、
+                              icon-192 / icon-512（Web App 清单、结构化数据 logo）、icon-maskable-512（满版直角，系统自己切形状）
 
-只用 Pillow：  python3 scripts/build-app-icons.py
+只用 Pillow：  python3 scripts/build-app-icons.py        全部重新生成
+              python3 scripts/build-app-icons.py site   只生成官网那几张（app 同理只生成 App 的）
 换图标时只替换原图（≥1024 的正方形），重跑脚本，提交生成的文件。
 """
 import io
 import os
 import struct
+import sys
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
@@ -23,6 +27,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "anymodelbot_design", "icon", "1024x1024.png")
 ASSETS = os.path.join(ROOT, "assets")
 UI_ASSETS = os.path.join(ROOT, "ui", "assets")
+SITE_PUBLIC = os.path.join(ROOT, "site", "public")
 
 LANCZOS = Image.Resampling.LANCZOS
 CORNER = 0.225  # 圆角半径 / 方块边长（Apple 824 的方块配 185.4 的圆角）
@@ -107,8 +112,11 @@ def ico_bmp(im: Image.Image) -> bytes:
     return header + xor + bytes(mask)
 
 
-def write_ico(src: Image.Image, path: str) -> None:
-    sizes = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256]  # 100%–200% 缩放下任务栏、标题栏、资源管理器各视图用到的尺寸
+# 100%–200% 缩放下任务栏、标题栏、资源管理器各视图用到的尺寸
+WIN_ICO_SIZES = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256]
+
+
+def write_ico(src: Image.Image, path: str, sizes: list[int] = WIN_ICO_SIZES) -> None:
     frames = [(s, png_bytes(app_icon(src, s)) if s >= 256 else ico_bmp(app_icon(src, s))) for s in sizes]
     offset = 6 + 16 * len(frames)
     head = struct.pack("<HHH", 0, 1, len(frames))
@@ -119,13 +127,17 @@ def write_ico(src: Image.Image, path: str) -> None:
         f.write(head + b"".join(d for _, d in frames))
 
 
-def main() -> None:
-    src = Image.open(SRC).convert("RGBA")
-    if src.width != src.height or src.width < 1024:
-        raise SystemExit(f"原图需要是 ≥1024 的正方形：{SRC} 是 {src.width}×{src.height}")
-    if src.width != 1024:
-        src = src.resize((1024, 1024), LANCZOS)
+def site_icons(src: Image.Image) -> None:
+    """官网的标签页、主屏、Web App 清单和结构化数据 logo。大图是毛绒照片质感，不做调色板压缩（背景渐变会出色带）。"""
+    write_ico(src, os.path.join(SITE_PUBLIC, "favicon.ico"), [16, 32, 48])  # 浏览器和搜索引擎默认会请求 /favicon.ico
+    save_png(app_icon(src, 32), os.path.join(SITE_PUBLIC, "favicon-32.png"))
+    save_png(render(src, 180, 0, shape=False), os.path.join(SITE_PUBLIC, "apple-touch-icon.png"))
+    save_png(app_icon(src, 192), os.path.join(SITE_PUBLIC, "icon-192.png"))
+    save_png(app_icon(src, 512), os.path.join(SITE_PUBLIC, "icon-512.png"))
+    save_png(render(src, 512, 0, shape=False), os.path.join(SITE_PUBLIC, "icon-maskable-512.png"))
 
+
+def app_icons(src: Image.Image) -> None:
     write_icns(src, os.path.join(ASSETS, "icon.icns"))
     write_ico(src, os.path.join(ASSETS, "icon.ico"))
     for s in [16, 24, 32, 48, 64, 128, 256, 512]:
@@ -137,6 +149,21 @@ def main() -> None:
     save_png(app_icon(src, 32), os.path.join(UI_ASSETS, "favicon-32.png"))
     save_png(app_icon(src, 64), os.path.join(UI_ASSETS, "favicon-64.png"))
     save_png(render(src, 180, 0, shape=False), os.path.join(UI_ASSETS, "apple-touch-icon.png"))
+
+
+def main() -> None:
+    targets = sys.argv[1:] or ["app", "site"]
+    if any(t not in ("app", "site") for t in targets):
+        raise SystemExit("用法：python3 scripts/build-app-icons.py [app] [site]")
+    src = Image.open(SRC).convert("RGBA")
+    if src.width != src.height or src.width < 1024:
+        raise SystemExit(f"原图需要是 ≥1024 的正方形：{SRC} 是 {src.width}×{src.height}")
+    if src.width != 1024:
+        src = src.resize((1024, 1024), LANCZOS)
+    if "app" in targets:
+        app_icons(src)
+    if "site" in targets:
+        site_icons(src)
 
 
 if __name__ == "__main__":

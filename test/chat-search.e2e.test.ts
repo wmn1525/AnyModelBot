@@ -308,7 +308,7 @@ describe.skipIf(!browserAvailable)("chat search UI", () => {
     await page.close();
   });
 
-  it.each(["zh-CN", "en", "ja", "ko", "ru"])("renders %s search with working filters", async (lang) => {
+  it.each(["zh-CN", "en", "ja", "ko", "ru", "es", "pt"])("renders %s search with working filters", async (lang) => {
     const page = await pageFor(1200, lang, lang === "en" ? "dark" : "light");
     await page.keyboard.press("Control+Shift+f");
     const results = page.locator('[data-screen="message-search"]');

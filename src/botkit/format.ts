@@ -4,14 +4,14 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { BOT_AVATARS, type BotAvatarKey } from "../domain/bot-settings.js";
+import { BOT_AVATARS, CATALOG_AVATARS, type BotAvatarKey } from "../domain/bot-settings.js";
 import { BOT_PERMISSIONS, type BotPermission } from "../domain/app-ref.js";
 import { RESERVED_SKILLS } from "../skills/archive.js";
 export { BOT_PERMISSIONS, normalizeAppRef, type BotAppRef, type BotPermission } from "../domain/app-ref.js";
 
 /** 文案必须有这两种语言；其余语言缺了退回 en */
 export const REQUIRED_LANGS = ["zh-CN", "en"] as const;
-export const BOT_LANGS = ["zh-CN", "en", "ja", "ko", "ru"] as const;
+export const BOT_LANGS = ["zh-CN", "en", "ja", "ko", "ru", "es", "pt"] as const;
 
 /** 示例数据按语言放一份：sample.<语言>.json。规则和文案一样，zh-CN、en 必须有，其余语言缺了退回 en */
 export const sampleName = (lang: string): string => `sample.${lang}.json`;
@@ -131,6 +131,10 @@ export function parseManifest(raw: unknown): { manifest?: BotManifest; issues: I
     if (!Array.isArray(x) || x.length < 2 || x.length > 3 || !x.every(isStr)) fail("starters", `${p} 要写 2–3 句可点的话`);
   });
   if (!(BOT_AVATARS as readonly unknown[]).includes(r.avatar)) fail("avatar", `avatar 只能是 ${BOT_AVATARS.join("、")} 之一`);
+  else {
+    const owner = (CATALOG_AVATARS as Record<string, string>)[r.avatar];
+    if (owner && owner !== r.id) fail("avatar", `${r.avatar} 是 ${owner} 的专属形象，别的 Bot 不能用`);
+  }
   if (!Array.isArray(r.permissions) || !r.permissions.every((p) => (BOT_PERMISSIONS as readonly unknown[]).includes(p))) fail("permissions", `permissions 只能包含 ${BOT_PERMISSIONS.join("、")}`);
   else if (new Set(r.permissions).size !== r.permissions.length) fail("permissions", "permissions 里有重复项");
   if (!Array.isArray(r.skills)) fail("skills", "skills 要写成数组，没有引入技能时写 []");

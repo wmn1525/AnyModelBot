@@ -2,20 +2,24 @@
   {
     "id": "company-research",
     "minAppVersion": "0.1.20",
-    "avatar": "data",
+    "avatar": "dossier",
     "name": {
       "zh-CN": "尽调助手",
       "en": "Company Research",
       "ja": "企業リサーチ",
       "ko": "기업 리서치",
-      "ru": "Исследование компаний"
+      "ru": "Исследование компаний",
+      "es": "Análisis de empresas",
+      "pt": "Pesquisa de empresas"
     },
     "summary": {
-      "zh-CN": "本机公司尽调：四路研究、策展、简报与可溯源报告/PDF",
-      "en": "Local company diligence with parallel research, curation, and sourced reports",
-      "ja": "手元のデバイスで企業を調査：4 方面のリサーチ、選別、要約、出典付きレポートと PDF",
-      "ko": "내 기기에서 기업 실사: 네 방향 조사, 선별, 브리핑, 출처 있는 보고서와 PDF",
-      "ru": "Изучает компании на вашем устройстве и пишет отчёт со ссылками на источники"
+      "zh-CN": "在你的电脑上做公司尽调，生成可追溯的简报和 PDF。",
+      "en": "Company research on your computer, with sourced briefings and PDF reports.",
+      "ja": "手元のパソコンで企業を調査し、出典付きの要約と PDF レポートを作成します。",
+      "ko": "내 컴퓨터에서 기업을 실사하고 출처가 있는 브리핑과 PDF를 만듭니다.",
+      "ru": "Изучает компании на вашем компьютере: сводки и PDF со ссылками на источники.",
+      "es": "Investiga empresas en tu computadora: resúmenes con fuentes e informes en PDF.",
+      "pt": "Pesquisa empresas no seu computador, com resumos e PDFs que citam as fontes."
     },
     "about": {
       "zh-CN": [
@@ -42,6 +46,16 @@
         "Порядок исследования и экспорт в PDF повторяют открытый проект Company Research Agent",
         "Отчёты и источники остаются на вашем устройстве. Если начать в чат-канале, результат придёт туда же",
         "Только для информации и обучения, не является инвестиционной рекомендацией"
+      ],
+      "es": [
+        "Sigue el flujo de investigación y la exportación a PDF del proyecto de código abierto Company Research Agent",
+        "Los informes y las fuentes se quedan en tu dispositivo; inícialo desde un canal de chat y el resultado llega ahí mismo",
+        "Solo con fines informativos y de aprendizaje; no es asesoramiento de inversión"
+      ],
+      "pt": [
+        "Segue o fluxo de pesquisa e a exportação em PDF do projeto de código aberto Company Research Agent",
+        "Os relatórios e as fontes ficam no seu dispositivo; comece em um canal de chat e o resultado volta para lá",
+        "Apenas para fins informativos e de aprendizado, não é recomendação de investimento"
       ]
     },
     "starters": {
@@ -69,26 +83,40 @@
         "Проведи полное исследование Stripe и подготовь отчёт",
         "Открой источники и результаты отбора из последнего отчёта",
         "Экспортируй текущий отчёт в PDF"
+      ],
+      "es": [
+        "Haz un análisis completo de Stripe y genera un informe",
+        "Abre las fuentes y la selección del informe más reciente",
+        "Exporta el informe actual a PDF"
+      ],
+      "pt": [
+        "Faça uma due diligence completa da Stripe e gere um relatório",
+        "Abra as fontes e a curadoria do relatório mais recente",
+        "Exporte o relatório atual para PDF"
       ]
     }
   },
   {
     "id": "ppt-master",
     "minAppVersion": "0.1.20",
-    "avatar": "design",
+    "avatar": "slides",
     "name": {
       "zh-CN": "PPT 大师",
       "en": "PPT Master",
       "ja": "PPT マスター",
       "ko": "PPT 마스터",
-      "ru": "Мастер PPT"
+      "ru": "Мастер PPT",
+      "es": "PPT Master",
+      "pt": "PPT Master"
     },
     "summary": {
-      "zh-CN": "把文档或主题做成可编辑的 PPTX，也能做模板、改现有的 PPT",
-      "en": "Turn documents or topics into editable PPTX decks, or edit decks you have",
-      "ja": "文書やテーマから編集可能な PPTX を作成。テンプレート作成や既存の PPT の編集も",
-      "ko": "문서나 주제를 편집 가능한 PPTX로 만들고, 템플릿 제작과 기존 PPT 수정도 합니다",
-      "ru": "Делает редактируемые PPTX из документов и тем, создаёт шаблоны, правит слайды"
+      "zh-CN": "把文档或主题做成可编辑的 PPT，也能改现有的演示文稿。",
+      "en": "Turn documents or topics into editable slides, or edit decks you already have.",
+      "ja": "文書やテーマから編集可能なスライドを作成。既存のプレゼン資料も編集できます。",
+      "ko": "문서나 주제를 편집 가능한 슬라이드로 만들고, 기존 발표 자료도 수정합니다.",
+      "ru": "Делает редактируемые слайды из документов и тем, правит готовые презентации.",
+      "es": "Crea diapositivas editables a partir de documentos o temas, o edita las tuyas.",
+      "pt": "Transforma documentos e temas em slides editáveis ou edita suas apresentações."
     },
     "about": {
       "zh-CN": [
@@ -115,6 +143,16 @@
         "Использует рабочий процесс и инструменты экспорта открытого проекта PPT Master (hugohe3/ppt-master)",
         "Файлы проекта и PPTX остаются на устройстве, а содержимое документов уходит выбранной модели",
         "Слайды экспортируются как обычные фигуры, их можно править в PowerPoint. Качество зависит от модели"
+      ],
+      "es": [
+        "Basado en el flujo de trabajo y las herramientas de exportación del proyecto de código abierto PPT Master (hugohe3/ppt-master)",
+        "Los archivos del proyecto y las presentaciones se quedan en tu dispositivo; el contenido de los documentos se envía al modelo que elijas",
+        "Las diapositivas se exportan como formas nativas que puedes seguir editando en PowerPoint; la calidad depende del modelo elegido"
+      ],
+      "pt": [
+        "Baseado no fluxo de trabalho e nas ferramentas de exportação do projeto de código aberto PPT Master (hugohe3/ppt-master)",
+        "Os arquivos do projeto e as apresentações ficam no seu dispositivo; o conteúdo dos documentos é enviado ao modelo que você escolher",
+        "Os slides são exportados como formas nativas que você pode continuar editando no PowerPoint; a qualidade depende do modelo escolhido"
       ]
     },
     "starters": {
@@ -142,26 +180,40 @@
         "Быстро сделай презентацию 16:9 на 5 слайдов о том, как лучше проводить удалённые планёрки, подтверждение не нужно",
         "Сделай презентацию запуска продукта на 8 слайдов, сначала покажи план",
         "Сделай многоразовый шаблон квартального обзора в простом стиле"
+      ],
+      "es": [
+        "Haz rápidamente una presentación 16:9 de 5 páginas sobre cómo mejorar las reuniones semanales remotas, sin pedirme confirmación",
+        "Haz una presentación de lanzamiento de producto de 8 páginas y muéstrame primero el plan",
+        "Crea una plantilla reutilizable para revisiones trimestrales, con un estilo limpio"
+      ],
+      "pt": [
+        "Faça rapidamente uma apresentação 16:9 com 5 slides sobre como melhorar as reuniões semanais remotas, sem precisar confirmar",
+        "Faça uma apresentação de lançamento de produto com 8 slides e me mostre o plano antes",
+        "Crie um template reutilizável de revisão trimestral com um estilo limpo"
       ]
     }
   },
   {
     "id": "printfilm",
     "minAppVersion": "0.1.23",
-    "avatar": "design",
+    "avatar": "film",
     "name": {
       "zh-CN": "影视创作室",
       "en": "Film Studio",
       "ja": "映像スタジオ",
       "ko": "영상 스튜디오",
-      "ru": "Киностудия"
+      "ru": "Киностудия",
+      "es": "Estudio de cine",
+      "pt": "Estúdio de cinema"
     },
     "summary": {
-      "zh-CN": "短视频与分集短剧：剧本、资产、分镜、配音、剪辑与成片",
-      "en": "Short videos and dramas: scripts, assets, storyboards, voices and finished films",
-      "ja": "短編動画・連続ドラマの脚本、素材、絵コンテ、音声、完成映像",
-      "ko": "숏폼과 드라마의 대본, 자산, 스토리보드, 음성, 완성 영상",
-      "ru": "Видео и сериалы: сценарии, материалы, раскадровка, озвучка и готовые фильмы"
+      "zh-CN": "做短视频和分集短剧，从剧本、分镜到配音、剪辑和成片。",
+      "en": "Short videos and serials: script, storyboard, voice, editing, and final cut.",
+      "ja": "短編動画と連続ドラマを、脚本・絵コンテから音声・編集・完成まで制作します。",
+      "ko": "숏폼과 시리즈 드라마를 대본, 스토리보드부터 음성, 편집, 완성까지 만듭니다.",
+      "ru": "Короткие видео и сериалы: от сценария и раскадровки до озвучки и монтажа.",
+      "es": "Videos cortos y series: guion, guion gráfico, voz, edición y montaje final.",
+      "pt": "Vídeos curtos e séries: roteiro, storyboard, voz, edição e corte final."
     },
     "about": {
       "zh-CN": [
@@ -188,6 +240,16 @@
         "Перенос сценариев, раскадровки, дизайна материалов и сборки FFmpeg из PRINTFILM",
         "Модели через Modelflare; проекты и медиа хранятся на вашем устройстве",
         "Редактирование кадров, версии, общая библиотека и продолжение работы"
+      ],
+      "es": [
+        "Adapta de PRINTFILM la escritura de guiones, los guiones gráficos, el diseño de recursos y la composición con FFmpeg",
+        "Los modelos funcionan a través de Modelflare; los proyectos y los archivos multimedia se quedan en tu dispositivo",
+        "Edita planos individuales, conserva tomas, reutiliza recursos y retoma trabajos interrumpidos"
+      ],
+      "pt": [
+        "Traz do PRINTFILM a escrita de roteiros, os storyboards, o design de elementos e a composição com FFmpeg",
+        "Os modelos rodam pelo Modelflare; os projetos e a mídia ficam no seu dispositivo",
+        "Edite planos individuais, guarde tomadas, reutilize elementos e retome trabalhos interrompidos"
       ]
     },
     "starters": {
@@ -215,26 +277,40 @@
         "Сделай из моей идеи короткий фильм; сначала покажи сценарий и раскадровку",
         "Создай драму из трёх эпизодов; начни с истории, персонажей и плана",
         "Открой свободный холст и создай персонажа и сцену"
+      ],
+      "es": [
+        "Convierte mi idea en un video corto completo; muéstrame primero el guion y el guion gráfico",
+        "Crea una serie de tres episodios; planifica primero la historia, el reparto y los episodios",
+        "Abre un lienzo libre y crea un recurso de personaje y otro de escenario"
+      ],
+      "pt": [
+        "Transforme minha ideia em um vídeo curto completo; mostre o roteiro e o storyboard antes",
+        "Crie uma série de três episódios; planeje a história, o elenco e os episódios antes",
+        "Abra um canvas livre e crie um personagem e um cenário"
       ]
     }
   },
   {
     "id": "us-stock-research",
     "minAppVersion": "0.1.20",
-    "avatar": "finance",
+    "avatar": "ticker",
     "name": {
       "zh-CN": "美股研报",
       "en": "US Stock Research",
       "ja": "米国株リサーチ",
       "ko": "미국 주식 리서치",
-      "ru": "Анализ акций США"
+      "ru": "Анализ акций США",
+      "es": "Acciones de EE. UU.",
+      "pt": "Ações dos EUA"
     },
     "summary": {
-      "zh-CN": "查美股财报和申报文件，写出每个数字都能追溯的研究报告",
-      "en": "Research US-listed companies from SEC filings, with every number traceable",
-      "ja": "米国上場企業の決算と SEC 提出書類を調べ、すべての数字をたどれるレポートを作成",
-      "ko": "미국 상장사의 재무제표와 SEC 공시를 조사해 모든 숫자를 추적할 수 있는 보고서를 작성",
-      "ru": "Изучает компании США по документам SEC, каждое число в отчёте можно проверить"
+      "zh-CN": "查阅美股财报和申报文件，写出数据可追溯的研究报告。",
+      "en": "Research US-listed companies from SEC filings, with every number traceable.",
+      "ja": "米国上場企業の決算と SEC 提出書類を調べ、数字の出典をたどれるレポートを作成します。",
+      "ko": "미국 상장사의 재무제표와 SEC 공시를 조사해 수치를 추적할 수 있는 보고서를 작성합니다.",
+      "ru": "Изучает компании США по документам SEC, каждое число в отчёте можно проверить.",
+      "es": "Analiza empresas de EE. UU. con documentos de la SEC; cada cifra es rastreable.",
+      "pt": "Pesquisa empresas dos EUA nos documentos da SEC, com cada número rastreável."
     },
     "about": {
       "zh-CN": [
@@ -261,6 +337,16 @@
         "Изучает компании США по отчётности в SEC EDGAR: составляет план, собирает данные, проверяет и пишет отчёт",
         "Журнал запросов и исходные данные остаются в рабочей папке. Котировок, P/E и скринера акций нет",
         "Процесс вдохновлён открытым проектом Dexter, но его кода здесь нет и связи с ним нет. Это не инвестиционная рекомендация"
+      ],
+      "es": [
+        "Investiga empresas que cotizan en EE. UU. con los documentos de SEC EDGAR: planifica, obtiene los datos, los verifica y luego escribe un informe",
+        "Los registros de consultas y los datos originales se quedan en tu espacio de trabajo. No tiene cotizaciones, ratios P/E ni filtro de acciones",
+        "Inspirado en el proyecto de código abierto Dexter, sin usar su código ni tener relación con él. No es asesoramiento de inversión"
+      ],
+      "pt": [
+        "Pesquisa empresas listadas nos EUA a partir dos documentos no SEC EDGAR: planeja, coleta, confere e depois escreve um relatório",
+        "Os registros de coleta e os dados originais ficam no seu espaço de trabalho. Não tem cotações, índices P/L nem filtro de ações",
+        "Inspirado no projeto de código aberto Dexter, sem nenhum código dele e sem vínculo com ele. Não é recomendação de investimento"
       ]
     },
     "starters": {
@@ -288,6 +374,16 @@
         "Изучи динамику выручки и валовой маржи NVIDIA за пять лет и подготовь отчёт",
         "Сравни выручку и операционную маржу Microsoft и Alphabet за три года",
         "Прочитай факторы риска в последнем 10-K Tesla и выдели пять главных"
+      ],
+      "es": [
+        "Analiza la evolución de los ingresos y el margen bruto de NVIDIA en cinco años y haz un informe",
+        "Compara los ingresos y el margen operativo de Microsoft y Alphabet en los últimos tres años",
+        "Lee los factores de riesgo del 10-K más reciente de Tesla y resume los cinco principales"
+      ],
+      "pt": [
+        "Pesquise a evolução da receita e da margem bruta da NVIDIA em cinco anos e faça um relatório",
+        "Compare a receita e a margem operacional da Microsoft e da Alphabet em três anos",
+        "Leia os fatores de risco do 10-K mais recente da Tesla e resuma os cinco principais"
       ]
     }
   }

@@ -1,5 +1,6 @@
 // sidebar · zh-CN：侧栏（screens/sidebar.js）
 export default {
+  botQuotaOpen: "查看 Bot 额度：剩余 {percent}%",
   /** 没登录、也没有用户名时左下角显示的名字 */
   localUser: "本机用户",
   settingsTitle: "设置（⌘,）",
@@ -15,8 +16,9 @@ export default {
   /** Bot 额度：Modelflare 发的、只能在 AnyModelBot 里用的额度（左下角的圆环和点开的卡片） */
   botQuota: "Bot 额度",
   botLeft: "剩余 {percent}%",
-  botQuotaOpen: "Bot 额度剩余 {percent}%，查看详情",
-  botQuotaScope: "只能在 AnyModelBot 里使用",
+  botQuotaScope: "Bot 额度只能在 AnyModelBot 里使用",
+  quotaTip: "Bot 额度剩余 {percent}%",
+  balanceTip: "余额 {amount}",
   subscribeBonus: "订阅套餐另送套餐额度 10% 的 Bot 额度",
   update: "发现新版本 {version}，去下载 ↗",
   updateDismiss: "不再提示这个版本",
@@ -31,6 +33,9 @@ export default {
     confirm: "永久删除",
   },
   bots: "机器人",
+  collapse: "收起侧栏",
+  expand: "展开侧栏",
+  searchShortcut: "搜索聊天记录（{keys}）",
   newShortcut: "新建机器人（⌘N）",
   newMenu: "新建",
   newBotItem: "新建机器人",
@@ -58,5 +63,22 @@ export default {
     settings: "机器人设置",
     copyId: "复制机器人 ID",
     delete: "删除机器人",
+  },
+  section: {
+    name: "分组名称",
+    untitled: "新分组",
+    new: "新建分组",
+    moreFor: "「{name}」分组的更多操作",
+    actionsFor: "「{name}」分组的操作",
+    up: "上移",
+    down: "下移",
+    delete: "删除分组",
+    deleteTitle: "删除「{name}」分组？",
+    deleteMove: "里面的机器人和群聊会移到「{name}」，不会被删除。",
+    deleteInbox: "以后新上架的 Bot 只在「发现」里出现。",
+    moveTo: "移到分组",
+    moveItem: "移到分组…",
+    moveFor: "移动「{name}」",
+    dropHere: "拖到这里",
   },
 };

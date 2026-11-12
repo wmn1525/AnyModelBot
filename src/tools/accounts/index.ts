@@ -11,6 +11,7 @@
 import crypto from "node:crypto";
 import { registerSecret } from "../../log.js";
 import { t, tl, type MessageKey, type Params } from "../../i18n/index.js";
+import type { SecretStore } from "../apps/secrets.js";
 
 export const ACCOUNT_SERVICES = ["notion", "feishu"] as const;
 export type AccountService = (typeof ACCOUNT_SERVICES)[number];
@@ -151,19 +152,37 @@ interface KvStore {
   setKV(key: string, value: string): void;
 }
 
+/** 凭证文件里一个账号的键 */
+export const accountSecretId = (id: string) => `account:${id}`;
+
 export class AccountStore {
   private accounts: ConnectedAccount[] = [];
+  /** 上次写进凭证文件的内容（没变就不写） */
+  private written = new Map<string, string>();
+  private listeners = new Set<() => void>();
 
-  constructor(private kv: KvStore) {
+  /**
+   * secrets：令牌放的地方（<数据目录>/app-secrets.json，见 apps/secrets.ts）。给了它，数据库里只留名字、序号和状态；
+   * 以前写在数据库里的令牌在这里搬过去（搬完数据库里就没有了，用户不用重新授权）。没给（测试）时令牌和账号放在一起。
+   */
+  constructor(
+    private kv: KvStore,
+    private secrets?: SecretStore,
+  ) {
     let raw: unknown;
     try {
       raw = JSON.parse(kv.getKV(ACCOUNTS_KV) ?? "[]");
     } catch {
       raw = [];
     }
+    let inline = false;
     for (const a of Array.isArray(raw) ? raw : []) {
       if (!a || typeof a !== "object") continue;
-      if (!(ACCOUNT_SERVICES as readonly unknown[]).includes(a.service) || typeof a.id !== "string" || typeof a.identity !== "string" || !validAuth(a.auth)) continue;
+      if (!(ACCOUNT_SERVICES as readonly unknown[]).includes(a.service) || typeof a.id !== "string" || typeof a.identity !== "string") continue;
+      const stored = a.auth === undefined && secrets ? secrets.get(accountSecretId(a.id)) : a.auth;
+      if (!validAuth(stored)) continue;
+      if (a.auth !== undefined && secrets) inline = true;
+      else if (secrets) this.written.set(a.id, JSON.stringify(stored));
       this.accounts.push({
         id: a.id,
         service: a.service,
@@ -171,15 +190,35 @@ export class AccountStore {
         identity: a.identity,
         needsReauth: a.needsReauth === true,
         createdAt: Number(a.createdAt) || 0,
-        auth: a.auth,
+        auth: stored,
       });
-      secretsOf(a.auth).forEach(registerSecret);
+      secretsOf(stored).forEach(registerSecret);
     }
+    // 旧版本把令牌写在数据库里：搬到凭证文件，数据库里那份马上去掉
+    if (inline) this.save();
+  }
+
+  /** 账号变了（添加、移除、改名、授权状态变化）：应用页和机器人的工具清单跟着更新 */
+  onChange(fn: () => void): () => void {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
   }
 
   private save(): void {
     for (const a of this.accounts) secretsOf(a.auth).forEach(registerSecret);
-    this.kv.setKV(ACCOUNTS_KV, JSON.stringify(this.accounts));
+    if (!this.secrets) {
+      this.kv.setKV(ACCOUNTS_KV, JSON.stringify(this.accounts));
+    } else {
+      // 先写凭证再写数据库：中途断电时宁可多一条没人用的凭证，也不要一个没有令牌的账号
+      for (const a of this.accounts) {
+        const json = JSON.stringify(a.auth);
+        if (this.written.get(a.id) === json) continue;
+        this.secrets.set(accountSecretId(a.id), a.auth);
+        this.written.set(a.id, json);
+      }
+      this.kv.setKV(ACCOUNTS_KV, JSON.stringify(this.accounts.map(({ auth: _auth, ...rest }) => rest)));
+    }
+    for (const fn of this.listeners) fn();
   }
 
   list(service?: AccountService): ConnectedAccount[] {
@@ -257,6 +296,8 @@ export class AccountStore {
     this.accounts = this.accounts.filter((a) => a.id !== id);
     if (this.accounts.length === before) return false;
     this.save();
+    this.secrets?.delete(accountSecretId(id));
+    this.written.delete(id);
     return true;
   }
 
@@ -279,7 +320,7 @@ export class AccountStore {
   resolve(service: AccountService, selector: unknown): ConnectedAccount {
     const name = SERVICE_NAME[service];
     const list = this.list(service);
-    if (!list.length) throw new ConnectionError(`No ${name} account is connected. Ask the user to add one in Settings > Connections.`);
+    if (!list.length) throw new ConnectionError(`No ${name} account is connected. Ask the user to connect one under Connect apps.`);
     const raw = selector === undefined || selector === null ? "" : String(selector).trim();
     if (!raw) {
       if (list.length === 1) return list[0];

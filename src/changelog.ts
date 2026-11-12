@@ -22,7 +22,7 @@ export interface ChangelogEntry {
 /** 界面语言 → 文件名：简体中文是 CHANGELOG.md，其他是 CHANGELOG_<语言>.md；不认识的语言用英文 */
 export function changelogFile(lang: string): string {
   if (lang === "zh-CN") return "CHANGELOG.md";
-  return ["en", "ja", "ko", "ru"].includes(lang) ? `CHANGELOG_${lang}.md` : "CHANGELOG_en.md";
+  return ["en", "ja", "ko", "ru", "es", "pt"].includes(lang) ? `CHANGELOG_${lang}.md` : "CHANGELOG_en.md";
 }
 
 /** 按 "## <版本> - <日期>" 切开；版本号不是 x.y.z 的段落（比如"未发布"）跳过，内容为空的也跳过。新的在前，和文件里一样 */

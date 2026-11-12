@@ -55,7 +55,7 @@ export default {
     weixin: {
       title: "Connect {name} to WeChat",
       desc: "Scan a QR code, then message it directly in WeChat. No new app to install, and it's online whenever your computer is on.",
-      how: ["Click the bot's name at the top to open the info panel, then “Manage chat channels”", "On the WeChat row, click “Connect”", "Scan the code with WeChat and confirm on your phone"],
+      how: ["Click the bot's name at the top to open the right panel, then “Manage chat channels”", "On the WeChat row, click “Connect”", "Scan the code with WeChat and confirm on your phone"],
       note: "WeChat's rule: for each message you send, it can reply up to 10 times within 24 hours. For Feishu, Telegram, Slack or Discord, add an account in the same place. All bots share accounts, and you can send /bot and a name in a chat to switch bots.",
       doneText: "Send it a message in WeChat. To talk to a different bot, send /bot.",
     },
@@ -73,9 +73,9 @@ export default {
     memory: {
       title: "Let it remember you",
       desc: "Tell it your preferences and details you use often. It remembers them in new chats and in WeChat, but never stores passwords, keys and the like.",
-      how: ["Just say “Remember…”. It also notes important things on its own as you chat", "To make it forget, say “Forget…”, or delete it under “Memory” in the info panel"],
+      how: ["Just say “Remember…”. It also notes important things on its own as you chat", "To make it forget, say “Forget…”, or delete it under “Memory” in the right panel"],
       try: "Remember: keep answers short and lead with the conclusion.",
-      doneText: "Got it. You can view or delete it under “Memory” in the info panel.",
+      doneText: "Got it. You can view or delete it under “Memory” in the right panel.",
     },
     media: {
       title: "Generate an image",

@@ -14,7 +14,7 @@ export interface CatalogBot {
 }
 export const catalogBots = data as CatalogBot[];
 
-const CODE: Record<Lang, string> = { zh: "zh-CN", en: "en", ja: "ja", ko: "ko", ru: "ru" };
-/** 五种语言都有；万一缺了退回英文，和 App 的规则一样 */
+const CODE: Record<Lang, string> = { zh: "zh-CN", en: "en", ja: "ja", ko: "ko", ru: "ru", es: "es", pt: "pt" };
+/** 各种语言都有；万一缺了退回英文，和 App 的规则一样 */
 export const textOf = <T>(field: Localized<T>, lang: Lang): T => field[CODE[lang]] ?? field.en;
 export const stillOf = (bot: CatalogBot): string => `/bot-stills/${bot.avatar}.webp`;

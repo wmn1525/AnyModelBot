@@ -21,4 +21,5 @@ import runtime from "./runtime.js";
 import modelflare from "./modelflare.js";
 import official from "./official.js";
 import connections from "./connections.js";
-export default { connections, media, activity, magpie, app, cu, approvals, pwsh, desktop, tasks, channel, web, cli, rules, delivery, access, diag, account, agent, runtime, modelflare, official } satisfies TranslatedCatalog;
+import apps from "./apps.js";
+export default { connections, apps, media, activity, magpie, app, cu, approvals, pwsh, desktop, tasks, channel, web, cli, rules, delivery, access, diag, account, agent, runtime, modelflare, official } satisfies TranslatedCatalog;

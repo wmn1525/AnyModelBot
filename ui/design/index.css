@@ -18,6 +18,7 @@
 @import url("components/badge.css") layer(components);
 @import url("components/list.css") layer(components);
 @import url("components/seg.css") layer(components);
+@import url("components/tabs.css") layer(components);
 @import url("components/switch.css") layer(components);
 @import url("components/stops.css") layer(components);
 @import url("components/popover.css") layer(components);

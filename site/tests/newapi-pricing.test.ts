@@ -29,6 +29,17 @@ describe("OKINTO pricing", () => {
     const parts = operator.toString().startsWith("<") ? [short, long] : [long, short];
     expect(expressionTiers('len ' + operator + ' 200000 ? ' + parts[0] + ' : ' + parts[1])[0].conditions?.[0].value).toBe(max);
   });
+  it("samples UTC weekday/hour tariffs at the snapshot time, including exact boundaries", () => {
+    const expr = 'weekday("UTC") >= 1 && weekday("UTC") <= 5 && ((hour("UTC") >= 1 && hour("UTC") < 4) || (hour("UTC") >= 6 && hour("UTC") < 10)) ? tier("peak", p * 0.3 + cr * 0.006 + c * 1.2) : tier("off_peak", p * 0.15 + cr * 0.003 + c * 0.6)';
+    for (const [iso, input] of [["2026-11-12T01:00:00Z", 0.3], ["2026-11-12T03:59:59Z", 0.3], ["2026-11-12T04:00:00Z", 0.15], ["2026-11-12T06:00:00Z", 0.3], ["2026-11-12T10:00:00Z", 0.15], ["2026-11-14T02:00:00Z", 0.15]] as const) {
+      expect(expressionTiers(expr, new Date(iso))[0].unit_prices.input).toBe(input);
+    }
+    expect(() => expressionTiers('evil("UTC") > 1 ? tier("x", p*1+c*2) : tier("y", p*2+c*3)')).toThrow();
+    expect(() => expressionTiers('hour("LOCAL") > 1 ? tier("x", p*1+c*2) : tier("y", p*2+c*3)')).toThrow();
+  });
+  it("accepts documented one-hour cache-write terms without including cache in estimates", () => {
+    expect(expressionTiers('tier("base", p*8 + c*40 + cr*0.2 + cc*10 + cc1h*16)')[0].unit_prices).toEqual({ input: 8, output: 40 });
+  });
   it("refuses unknown expressions and failed API responses instead of displaying a guessed price", () => {
     expect(() => expressionTiers('tier("x", p*5 + c*30 + unknown*4)')).toThrow();
     expect(() => expressionTiers('globalThis.process.exit()')).toThrow();

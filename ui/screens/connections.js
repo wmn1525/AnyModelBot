@@ -1,8 +1,8 @@
-// 设置 › 连接：全局一份，所有机器人共用；同一个服务可以加多个账号，都能起别名。两类账号：
-// - 聊天渠道（微信、飞书、Telegram、Slack、Discord）：从这里和机器人聊。账号有一个默认机器人，聊天时发一次 /bot 名字
-//   就换过去，之后这个会话一直和它聊（src/core/routes.ts）。
-// - 数据账号（Notion、飞书消息）：机器人能读写的账号。可以对任何机器人说「看我第一个飞书和第二个飞书的消息」，
-//   序号就是这里显示的序号（src/tools/accounts/index.ts）。
+// 设置 › 聊天渠道：全局一份，所有机器人共用；同一个渠道可以加多个账号，都能起别名。
+// 聊天渠道（微信、飞书、Telegram、Slack、Discord）是从哪里和机器人聊：账号有一个默认机器人，聊天时发一次 /bot 名字
+// 就换过去，之后这个会话一直和它聊（src/core/routes.ts）。
+// 机器人能读写的应用（Notion、飞书云文档和消息、自定义 MCP…）不在这里，在「连接应用」（screens/apps.js）；
+// 这一页原来放数据账号的位置只留一句说明和入口。这里的「飞书」是聊天渠道，和应用页里的飞书不是一回事。
 // 令牌不会回到界面：接口只给名字、序号、状态和掩码。
 //
 // 添加和管理是两个弹窗。添加只做一件事：照步骤连上，然后告诉你下一步做什么；管理才有别名、默认机器人、谁能用、更换连接方式。
@@ -16,12 +16,7 @@ import { markDone } from "../lib/guide.js";
 import { confirmSheet, failed, saved, toast } from "../lib/store.js";
 import { has, t } from "../lib/i18n.js";
 
-const NOTION_PORTAL = "https://www.notion.so/developers";
 const POLL_MS = 2000;
-/** 等浏览器里授权最多轮询这么久，和授权页的有效期一致 */
-const OAUTH_WAIT_MS = 10 * 60_000;
-
-const serviceName = (service) => (service === "feishu" ? t("settings.connections.feishu") : "Notion");
 
 /** 聊天渠道，按这个顺序列 */
 const CHANNELS = ["weixin", "feishu", "telegram", "slack", "discord"];
@@ -63,7 +58,6 @@ function chatLink(channel, st) {
  * focusRow 指向一个渠道账号时（信息面板、「需要你」跳过来）直接打开它的管理弹窗；账号有问题就同时打开修复。
  */
 export function useConnections(focusRow = "") {
-  const [accounts, setAccountList] = useState([]);
   const [channelAccounts, setChannelAccounts] = useState([]);
   const [channelsLoaded, setChannelsLoaded] = useState(false);
   const [sheet, setSheet] = useState(null);
@@ -77,11 +71,6 @@ export function useConnections(focusRow = "") {
     requestAnimationFrame(() => document.getElementById(`set-${id}`)?.scrollIntoView({ block: "nearest" }));
     freshTimer.current = setTimeout(() => setFresh(""), 1300);
   };
-  const setAccounts = (next) => {
-    const added = next.find((a) => !accounts.some((p) => p.id === a.id));
-    setAccountList(next);
-    if (added) flashRow(`account-${added.id}`);
-  };
   const updateChannel = async (key, channel, body) => {
     try {
       setChannelAccounts((await api(accountUrl(key, `/${channel}/settings`), { method: "PUT", body })).accounts);
@@ -93,7 +82,6 @@ export function useConnections(focusRow = "") {
     }
   };
   useEffect(() => {
-    api("/connections").then((r) => setAccountList(r.accounts)).catch(failed);
     reloadChannels();
     const timer = setInterval(reloadChannels, 5000);
     return () => (clearInterval(timer), clearTimeout(freshTimer.current));
@@ -104,12 +92,12 @@ export function useConnections(focusRow = "") {
     const m = /^channel-([a-z]+)-(.+)$/.exec(focusRow);
     if (m) setSheet({ kind: "channel", channel: m[1], accountKey: m[2], fix: true });
   }, [focusRow]);
-  return { accounts, setAccounts, channelAccounts, channelsLoaded, reloadChannels, updateChannel, sheet, setSheet, fresh, flashRow };
+  return { channelAccounts, channelsLoaded, reloadChannels, updateChannel, sheet, setSheet, fresh, flashRow };
 }
 
-/** 设置页的行：先是聊天渠道，再是数据账号 */
-export function connectionRows(conn, bots) {
-  return [...channelRows(conn, bots), ...dataRows(conn)];
+/** 设置页的行：聊天渠道，最后一行指向「连接应用」 */
+export function connectionRows(conn, bots, onOpenApps) {
+  return [...channelRows(conn, bots), ...dataRows(conn, onOpenApps)];
 }
 
 /** 已连接的账号在前，没连的渠道在后，最后一行是给已连接的渠道再加一个账号 */
@@ -160,44 +148,16 @@ function channelRows({ channelAccounts, setSheet }, bots) {
   return rows;
 }
 
-/** 数据账号：每个服务已加的账号，下面一行添加入口。别的连接方式在授权弹窗里 */
-function dataRows({ accounts, setAccounts, setSheet }) {
-  const base = { tab: "connections", group: "data", groupNote: t("settings.connections.dataSub") };
-  const remove = async (a) => {
-    if (!(await confirmSheet({ title: t("settings.connections.removeTitle", { name: a.label }), body: t("settings.connections.removeBody"), confirmLabel: t("settings.connections.remove"), danger: true }))) return;
-    try {
-      setAccounts((await api(`/connections/${a.id}`, { method: "DELETE" })).accounts);
-      toast(t("settings.connections.removed", { name: a.label }));
-    } catch (e) {
-      failed(e);
-    }
-  };
-  const reauthorize = (a) => setSheet(a.service === "feishu" ? { kind: "feishu", mode: "oneclick" } : a.method === "token" ? { kind: "notion-token" } : { kind: "notion-oauth" });
-  const rows = [];
-  for (const service of ["notion", "feishu"]) {
-    const list = accounts.filter((x) => x.service === service);
-    for (const a of list) {
-      rows.push({
-        ...base,
-        id: `account-${a.id}`,
-        name: `${serviceName(service)} ${a.number} · ${a.label}`,
-        sub: a.needsReauth ? t("settings.connections.needsReauth") : t(a.method === "token" ? "settings.connections.viaToken" : "settings.connections.viaOAuth"),
-        keys: `${serviceName(service)} ${a.label}`,
-        ctl: html`${a.needsReauth && html`<button type="button" class="btn primary" onClick=${() => reauthorize(a)}>${t("settings.connections.reauthorize")}</button>`}
-          <button type="button" class="text" onClick=${() => setSheet({ kind: "rename", account: a })}>${t("settings.connections.rename")}</button>
-          <button type="button" class="text danger" onClick=${() => remove(a)}>${t("settings.connections.remove")}</button>`,
-      });
-    }
-    rows.push({
-      ...base,
-      id: `add-${service}`,
-      name: serviceName(service),
-      sub: t(`settings.connections.${service}Sub`),
-      keys: t(`settings.connections.${service}Keys`),
-      ctl: html`<button type="button" class="btn" onClick=${() => setSheet(service === "feishu" ? { kind: "feishu", mode: "oneclick" } : { kind: "notion-oauth" })}>${t(list.length ? "settings.connections.addOne" : "settings.connections.connect")}</button>`,
-    });
-  }
-  return rows;
+/** 数据账号（Notion、飞书消息）已经搬到「连接应用」：原来的位置留一句说明和一个入口，打开应用页的「已连接」 */
+function dataRows(_conn, onOpenApps) {
+  return [{
+    tab: "connections",
+    group: "data",
+    id: "data-moved",
+    name: t("settings.connections.dataMoved"),
+    keys: t("settings.connections.dataMovedKeys"),
+    ctl: html`<button type="button" class="btn" onClick=${() => onOpenApps?.()}>${t("settings.connections.openApps")}</button>`,
+  }];
 }
 
 function ErrorLine({ text }) {
@@ -216,97 +176,6 @@ function Steps({ items, current }) {
 }
 
 const QrPlaceholder = () => html`<div class="qr-img empty"><${Spinner} /></div>`;
-
-/** Notion 一键授权：打开系统浏览器，同意后跳回本机；这里等账号列表变化 */
-function NotionOAuthSheet({ conn, onClose }) {
-  const [url, setUrl] = useState("");
-  const [error, setError] = useState("");
-  const [waiting, setWaiting] = useState(true);
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    let stop = false;
-    let timer;
-    const before = JSON.stringify(conn.accounts);
-    const until = Date.now() + OAUTH_WAIT_MS;
-    setUrl("");
-    setError("");
-    setWaiting(true);
-    const poll = async () => {
-      if (stop) return;
-      try {
-        const r = await api("/connections");
-        if (JSON.stringify(r.accounts) !== before) {
-          conn.setAccounts(r.accounts);
-          saved();
-          onClose();
-          return;
-        }
-      } catch {
-        /* 下一轮再试 */
-      }
-      if (Date.now() > until) {
-        setWaiting(false);
-        setError(t("settings.connections.oauthTimedOut"));
-        return;
-      }
-      timer = setTimeout(poll, POLL_MS);
-    };
-    api("/connections/notion/oauth", { method: "POST", body: {} })
-      .then((r) => {
-        if (stop) return;
-        setUrl(r.url);
-        window.open(r.url, "_blank", "noopener");
-        timer = setTimeout(poll, POLL_MS);
-      })
-      .catch((e) => {
-        setWaiting(false);
-        setError(e.message || t("settings.connections.oauthFailed"));
-      });
-    return () => {
-      stop = true;
-      clearTimeout(timer);
-    };
-  }, [attempt]);
-  return html`<${Sheet} title=${t("settings.connections.notionOAuthTitle")} sticky onClose=${onClose}>
-    <div class="qr-flow">
-      <${Steps} items=${stepsOf("notion")} />
-      <${ErrorLine} text=${error} />
-      ${waiting && html`<p class="qr-wait"><${Spinner} /> ${t("settings.connections.waiting")}</p>`}
-      ${waiting && url && outLink(url, t("settings.connections.openAgain"))}
-      ${!waiting && html`<button type="button" class="btn primary" onClick=${() => setAttempt((n) => n + 1)}>${t("settings.connections.retry")}</button>`}
-    </div>
-    <div class="actions"><button type="button" class="text" onClick=${() => conn.setSheet({ kind: "notion-token" })}>${t("settings.connections.useToken")}</button></div>
-  <//>`;
-}
-
-function NotionTokenSheet({ conn, onClose }) {
-  const [token, setToken] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const submit = async (e) => {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      conn.setAccounts((await api("/connections/notion/token", { method: "POST", body: { token: token.trim() } })).accounts);
-      saved();
-      onClose();
-    } catch (err) {
-      setError(err.message || String(err));
-      setBusy(false);
-    }
-  };
-  return html`<${Sheet} title=${t("settings.connections.notionTokenTitle")} sticky onClose=${onClose}>
-    <form onSubmit=${submit}>
-      <p class="hint">${t("settings.connections.notionTokenHint")} <a class="text" href=${NOTION_PORTAL} target="_blank" rel="noopener noreferrer">${t("settings.connections.createToken")}</a></p>
-      <label class="set-field"><span class="k">${t("settings.connections.tokenLabel")}</span>
-        <input class="field mono" type="password" autocomplete="off" spellcheck="false" value=${token} onInput=${(e) => setToken(e.target.value)} />
-      </label>
-      <${ErrorLine} text=${error} />
-      <div class="actions"><button type="button" class="text" onClick=${() => conn.setSheet({ kind: "notion-oauth" })}>${t("settings.connections.useOneClick")}</button><span class="grow"></span><button type="submit" class="btn primary" disabled=${!token.trim() || busy}>${busy ? html`<${Spinner} />` : t("settings.connections.add")}</button></div>
-    </form>
-  <//>`;
-}
 
 /** 飞书的扫码流程：开始之后轮询状态，完成时回调；关掉就取消 */
 function useFeishuFlow(onDone) {
@@ -365,39 +234,6 @@ function FlowSteps({ flow, items, current }) {
   </div>`;
 }
 
-/** 飞书消息：一键授权要扫两次（创建应用、授权读消息）；用已有应用只扫第二次 */
-function FeishuSheet({ conn, mode, onClose }) {
-  const [appId, setAppId] = useState("");
-  const [appSecret, setAppSecret] = useState("");
-  const { flow, error, start } = useFeishuFlow((r) => {
-    conn.setAccounts(r.accounts);
-    saved();
-    onClose();
-  });
-  const appBody = () => ({ appId: appId.trim(), appSecret: appSecret.trim() });
-  const begin = (body) => start("/connections/feishu", body);
-  useEffect(() => {
-    if (mode === "oneclick") begin({});
-  }, []);
-  const showForm = mode === "app" && (!flow || flow.state === "failed");
-  const scanning = !error && !showForm;
-  const items = stepsOf(mode === "app" ? "feishuDataApp" : "feishuData");
-  return html`<${Sheet} title=${t("settings.connections.feishuTitle")} sticky onClose=${onClose}>
-    ${showForm && html`<form onSubmit=${(e) => { e.preventDefault(); begin(appBody()); }}>
-      <p class="hint">${t("settings.connections.feishuAppHint")}</p>
-      <label class="set-field"><span class="k">App ID</span><input class="field mono" value=${appId} placeholder="cli_xxxxxxxx" onInput=${(e) => setAppId(e.target.value)} /></label>
-      <label class="set-field"><span class="k">App Secret</span><input class="field mono" type="password" autocomplete="off" value=${appSecret} onInput=${(e) => setAppSecret(e.target.value)} /></label>
-      <div class="actions"><button type="submit" class="btn primary" disabled=${!appId.trim() || !appSecret.trim()}>${t("settings.connections.next")}</button></div>
-    </form>`}
-    ${scanning && html`<${FlowSteps} flow=${flow} items=${items} current=${mode === "app" ? 0 : flow?.state === "authorize" ? 1 : 0} />`}
-    <${ErrorLine} text=${error} />
-    <div class="actions">
-      <button type="button" class="text" onClick=${() => conn.setSheet({ kind: "feishu", mode: mode === "app" ? "oneclick" : "app" })}>${t(mode === "app" ? "settings.connections.useScan" : "settings.connections.useApp")}</button>
-      ${error && mode === "oneclick" && html`<button type="button" class="btn primary" onClick=${() => begin({})}>${t("settings.connections.retry")}</button>`}
-    </div>
-  <//>`;
-}
-
 /** 添加飞书聊天账号的第一步：扫码创建应用 */
 function FeishuScan({ accountKey, onConfirmed, onManual }) {
   const path = accountUrl(accountKey, "/feishu/one-click");
@@ -411,27 +247,6 @@ function FeishuScan({ accountKey, onConfirmed, onManual }) {
       <button type="button" class="text" onClick=${onManual}>${t("settings.connections.useApp")}</button>
       ${error && html`<button type="button" class="btn primary" onClick=${() => start(path, {})}>${t("settings.connections.retry")}</button>`}
     </div>`;
-}
-
-function RenameSheet({ conn, account, onClose }) {
-  const [label, setLabel] = useState(account.label);
-  const submit = async (e) => {
-    e.preventDefault();
-    try {
-      conn.setAccounts((await api(`/connections/${account.id}`, { method: "PUT", body: { label: label.trim() } })).accounts);
-      saved();
-      onClose();
-    } catch (err) {
-      failed(err);
-    }
-  };
-  return html`<${Sheet} title=${t("settings.connections.rename")} onClose=${onClose}>
-    <form onSubmit=${submit}>
-      <p class="hint">${t("settings.connections.renameHint")}</p>
-      <label class="set-field"><span class="k">${t("settings.connections.nameLabel")}</span><input class="field" maxlength="80" value=${label} onInput=${(e) => setLabel(e.target.value)} /></label>
-      <div class="actions"><button type="submit" class="btn primary" disabled=${!label.trim()}>${t("settings.connections.save")}</button></div>
-    </form>
-  <//>`;
 }
 
 /** 谁能用这个账号：使用请求、主人、允许名单、拒绝过的人。名单跟着账号走，能用这个账号的人可以和任何机器人聊 */
@@ -794,9 +609,5 @@ export function ConnectionSheets({ conn, bots }) {
   if (!sheet) return null;
   if (sheet.kind === "channel" && sheet.accountKey) return html`<${ManageChannelSheet} key=${`${sheet.channel}-${sheet.accountKey}`} conn=${conn} bots=${bots} channel=${sheet.channel} accountKey=${sheet.accountKey} fix=${sheet.fix} onClose=${close} />`;
   if (sheet.kind === "channel") return html`<${AddChannelSheet} key=${sheet.channel} conn=${conn} bots=${bots} channel=${sheet.channel} onClose=${close} />`;
-  if (sheet.kind === "notion-oauth") return html`<${NotionOAuthSheet} conn=${conn} onClose=${close} />`;
-  if (sheet.kind === "notion-token") return html`<${NotionTokenSheet} conn=${conn} onClose=${close} />`;
-  if (sheet.kind === "feishu") return html`<${FeishuSheet} key=${sheet.mode} conn=${conn} mode=${sheet.mode} onClose=${close} />`;
-  if (sheet.kind === "rename") return html`<${RenameSheet} conn=${conn} account=${sheet.account} onClose=${close} />`;
   return null;
 }

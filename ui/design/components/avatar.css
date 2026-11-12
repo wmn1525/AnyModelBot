@@ -57,6 +57,10 @@
 .bot-face[data-char="marketing"] { --bf-eye: var(--bot-marketing-eye); --bf-glow: var(--bot-marketing-glow); }
 .bot-face[data-char="cooking"] { --bf-eye: var(--bot-cooking-eye); --bf-glow: var(--bot-cooking-glow); }
 .bot-face[data-char="translate"] { --bf-eye: var(--bot-translate-eye); --bf-glow: var(--bot-translate-glow); }
+.bot-face[data-char="slides"] { --bf-eye: var(--bot-slides-eye); --bf-glow: var(--bot-slides-glow); }
+.bot-face[data-char="film"] { --bf-eye: var(--bot-film-eye); --bf-glow: var(--bot-film-glow); }
+.bot-face[data-char="dossier"] { --bf-eye: var(--bot-dossier-eye); --bf-glow: var(--bot-dossier-glow); }
+.bot-face[data-char="ticker"] { --bf-eye: var(--bot-ticker-eye); --bf-glow: var(--bot-ticker-glow); }
 .bot-face.pokeable { cursor: pointer; }
 .bot-face.neutral { filter: grayscale(1) contrast(.85) brightness(1.06); opacity: .5; }
 
@@ -403,6 +407,20 @@
 /* 学学：流苏垂到头上，下半截在头那一层，帽子一动流苏就断开。帽子不动，靠头和耳朵表现（important：盖过上面通用的摆动、弹簧和耷拉） */
 .bot-face[data-char="education"] :is(.bf-top, .bf-top .bf-pin) { animation: none !important; rotate: 0deg !important; }
 
+/* —— 4 个目录 Bot 的专属形象：同样借上面的动作 —— */
+/* 演演：幻灯片卡片轻轻摇，做完一页像翻了一下 */
+.bot-face[data-char="slides"]:is([data-state="thinking"], [data-state="replying"], [data-state="working"]) .bf-top { animation: bf-sway var(--bf-sway) var(--ease-in-out) infinite alternate; }
+.bot-face[data-char="slides"]:is([data-shot="done"], [data-shot="hello"], [data-shot="love"]) .bf-top .bf-pin { animation: bf-coin var(--bot-done) var(--ease-out); }
+/* 咔咔：场记板一下一下打 */
+.bot-face[data-char="film"]:is([data-state="thinking"], [data-state="replying"], [data-state="working"]) .bf-top { animation: bf-thump var(--bf-beat) var(--ease-out) infinite; }
+.bot-face[data-char="film"]:is([data-shot="done"], [data-shot="hello"]) .bf-top .bf-pin { animation: bf-grow var(--bot-done) var(--ease-out); }
+/* 察察：放大镜左右来回照 */
+.bot-face[data-char="dossier"]:is([data-state="thinking"], [data-state="replying"], [data-state="working"]) .bf-top { animation: bf-sway var(--bf-sway) var(--ease-back) infinite alternate; }
+.bot-face[data-char="dossier"]:is([data-shot="done"], [data-shot="hello"]) .bf-top .bf-pin { animation: bf-grow var(--bot-done) var(--ease-out); }
+/* 盘盘：趋势箭头一闪一闪 */
+.bot-face[data-char="ticker"]:is([data-state="thinking"], [data-state="replying"], [data-state="working"]) .bf-top .bf-img { animation: bf-bulb var(--bf-ring) var(--ease-in-out) infinite; }
+.bot-face[data-char="ticker"]:is([data-shot="done"], [data-shot="hello"]) .bf-top .bf-pin { animation: bf-grow var(--bot-done) var(--ease-out); }
+
 /* —— 粒子（≥ 36px 才画） —— */
 .bot-face .fx, .bot-face .fx i { position: absolute; display: block; pointer-events: none; }
 .fx-rings { left: var(--tip-x); top: var(--tip-y); }
@@ -429,7 +447,7 @@
 
 /* 思考泡泡 */
 .fx-think {
-  right: -14%; top: 0; width: 38%; height: 20%; border-radius: var(--r-full);
+  right: -14%; top: 0; width: 38%; height: 20%; border-radius: var(--r-ctl);
   display: flex; align-items: center; justify-content: center; gap: 9%;
   background: var(--surface-solid); box-shadow: var(--shadow-float);
   animation: fade-in var(--dur-base) var(--ease-out);
@@ -489,7 +507,7 @@
 /* 芽芽长高时飘下来的叶子 */
 .fx-leaf {
   left: var(--tip-x); top: var(--tip-y); width: calc(var(--s) * .12); height: calc(var(--s) * .07);
-  border-radius: 0 100%; background: color-mix(in srgb, var(--bf-glow) 60%, var(--bf-eye));
+  border-radius: 0 100%; background: color-mix(in srgb, var(--bf-glow) 60%, var(--bf-eye));   /* 形状：叶子的轮廓（插画），不是界面的圆角 */
   animation: bf-leaf var(--bot-done) var(--ease-in-out) both;
 }
 @keyframes bf-leaf {
@@ -539,7 +557,7 @@
 .avatar-group { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-1); }
 .avatar-opt {
   display: grid; justify-items: center; align-content: start; gap: var(--space-1); min-width: 0; padding: var(--space-2-5) var(--space-1) var(--space-1-5);
-  border-radius: var(--r-lg); color: var(--muted); font-size: var(--fs-xs);
+  border-radius: var(--r-item); color: var(--muted); font-size: var(--fs-xs);
   transition: background var(--t-fast), color var(--t-fast);
 }
 .avatar-name, .avatar-field { max-width: 100%; overflow-wrap: anywhere; text-align: center; line-height: var(--lh-snug); }
@@ -552,7 +570,7 @@
 
 /* 应用自己的标志（不是 Modelflare 或其他任何人的 logo） */
 .app-mark {
-  display: grid; place-items: center; flex: none; border-radius: 30%;
+  display: grid; place-items: center; flex: none; border-radius: 30%;   /* 形状：应用图标按自己的边长取圆角，大小图标同一个轮廓 */
   background: var(--brand); color: var(--on-brand); box-shadow: inset 0 0 0 1px var(--brand-line);   /* 描边：黄绿在白底上只有 1.15:1，要一道墨色细边 */
 }
 .app-mark svg { width: 56%; height: 56%; }

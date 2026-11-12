@@ -1,11 +1,12 @@
 /* 菜单按钮 .pick、弹出层 .pop、命令面板 .palette，以及两者共用的列表内容。
    .pick / .pop 改编自 yetone/magpie internal/gui/assets/app.css（MIT，© 2026 yetone）。
-   内边距：列表离弹出层边缘 --pop-pad，列表项再缩进 8，于是项的文字、分组名、搜索图标、空状态都落在离边缘 12 的同一条线上。 */
+   内边距：列表离弹出层边缘 --pop-pad（= --list-pad 6），列表项再缩进 --item-px（10），于是项的文字、分组名、搜索图标、空状态都落在离边缘 16（--group-pad）的同一条线上；
+   项高 36（--ctl-lg），命令面板、模型选择器这种主角的列表 40（--ctl-xl）；项的圆角 = 弹出层圆角 − --pop-pad。 */
 
 /* —— 菜单按钮：行右侧的下拉。左边距和同高的 .btn.sm 一样；箭头图标自带留白，右边少一档 —— */
 .pick {
-  display: inline-flex; align-items: center; gap: var(--space-1); height: var(--ctl-sm); max-width: 260px;
-  padding: 0 var(--space-1-5) 0 var(--space-2-5); border-radius: var(--r-md); background: var(--pill); color: var(--fg);
+  display: inline-flex; align-items: center; gap: var(--space-1); height: var(--ctl-md); max-width: 260px;
+  padding: 0 calc(var(--ctl-px-md) - var(--ctl-trail)) 0 var(--ctl-px-md); border-radius: var(--r-ctl); background: var(--pill); color: var(--fg);
   font-size: var(--fs-sm); transition: background var(--t-fast);
 }
 .pick:hover:not(:disabled), .pick[aria-expanded="true"] { background: var(--pill-hover); }
@@ -17,16 +18,16 @@
 
 /* —— 弹出层：只淡入，不位移、不缩放。挂在 <body> 下（ui.js 的 Popover），定位不受祖先的 backdrop-filter / transform 影响 —— */
 .pop {
-  --pop-r: var(--r-xl);
-  --pop-pad: var(--space-1);
-  position: fixed; z-index: var(--z-popover); width: 280px; max-height: 360px; -webkit-app-region: no-drag;
+  --pop-r: var(--r-card-lg);
+  --pop-pad: var(--list-pad);
+  position: fixed; z-index: var(--z-popover); width: 288px; max-height: 380px; -webkit-app-region: no-drag;
   display: flex; flex-direction: column;
   background: var(--glass-pop); backdrop-filter: var(--glass-filter-lg);
   border-radius: var(--pop-r); box-shadow: var(--shadow-pop); overflow: hidden;
   animation: fade-in var(--dur-fast) var(--ease-out);
 }
 .pop.model-picker { width: 340px; max-height: 420px; }
-.pop.model-picker li:not(.group):not(.sep) { min-height: 34px; }
+.pop.model-picker li:not(.group):not(.sep) { min-height: var(--ctl-xl); }
 .model-group-filter { display: flex; flex: none; align-items: center; gap: var(--space-2); padding: var(--space-1-5) var(--space-3); border-bottom: 1px solid var(--line-2); }
 .model-group-filter .k { flex: none; white-space: nowrap; color: var(--fg-2); font-size: var(--fs-sm); }
 .model-group-select { position: relative; flex: 1; min-width: 0; }
@@ -35,7 +36,7 @@
 .model-group-select option { color: var(--fg); background: var(--bg); }
 
 /* —— 模型选择器的两个滑块（TierPanel）：性价比、模型智能；标题在左，当前值大字居中，滑块下面是档名或两头的说法 —— */
-.tiers { position: relative; display: grid; padding: var(--space-3) var(--space-4) var(--space-2-5); overflow-y: auto; }
+.tiers { position: relative; display: grid; padding: var(--space-3) var(--group-pad) var(--space-2-5); overflow-y: auto; }
 .tiers-reset { position: absolute; top: var(--space-2); right: var(--space-2); }
 .tier { display: grid; gap: var(--space-2); padding: var(--space-1) 0 var(--space-3); }
 .tier + .tier { padding-top: var(--space-3); }
@@ -45,7 +46,7 @@
 .tier-val.custom { color: var(--muted); font-weight: var(--fw-medium); }
 .tier-model {
   justify-self: center; display: inline-flex; align-items: center; gap: var(--space-0-5); max-width: 100%;
-  margin-top: calc(-1 * var(--space-1-5)); padding: 0 var(--space-1-5); height: var(--ctl-xs); border-radius: var(--r-sm);
+  margin-top: calc(-1 * var(--space-1-5)); padding: 0 var(--space-1-5); height: var(--ctl-xs); border-radius: var(--r-ctl);
   font-size: var(--fs-sm); color: var(--fg-2); transition: background var(--t-fast), color var(--t-fast);
 }
 .tier-model:hover { background: var(--sel); color: var(--fg); }
@@ -108,26 +109,29 @@
   animation: fade-in var(--dur-base) var(--ease-out);
 }
 .palette {
+  /* 命令面板是面板一级的面：圆角 --r-pane，列表离边 --pane-gap、项缩进 --pane-item-px，字在 20 上，项的圆角 24 − 8 = --r-row */
   --pop-r: var(--r-pane);
-  --pop-pad: var(--space-1);
-  -webkit-app-region: no-drag; position: fixed; z-index: var(--z-palette); left: 50%; top: 14vh; width: min(520px, calc(100vw - 2 * var(--float-inset))); translate: -50% 0;
+  --pop-pad: var(--pane-gap);
+  --item-px: var(--pane-item-px);
+  --group-pad: var(--pane-px);
+  -webkit-app-region: no-drag; position: fixed; z-index: var(--z-palette); left: 50%; top: 14vh; width: min(560px, calc(100vw - 2 * var(--float-inset))); translate: -50% 0;
   max-height: 60vh; display: flex; flex-direction: column;
   background: var(--glass-pop); backdrop-filter: var(--glass-filter-lg);
   border-radius: var(--pop-r); box-shadow: var(--shadow-modal); overflow: hidden;
   animation: fade-in var(--dur-fast) var(--ease-out);
 }
-.palette .search input { height: 46px; font-size: var(--fs-lg); }
-.palette li { min-height: 36px; font-size: var(--fs-md); }
+.palette .search input { height: 52px; font-size: var(--fs-xl); }
+.palette li { min-height: var(--ctl-xl); font-size: var(--fs-md); }
 .palette li kbd { margin-left: auto; font-family: var(--code); font-size: var(--fs-2xs); color: var(--muted); }
 
 /* —— 共用内容：搜索框、列表项、分组、分隔、空状态、底部操作。都不画线：分组之间、搜索框和底部操作与列表之间只靠间距 —— */
-:is(.pop, .palette) .search { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-3); color: var(--muted); flex: none; transition: color var(--t-fast); }
+:is(.pop, .palette) .search { display: flex; align-items: center; gap: var(--space-2-5); padding: 0 var(--group-pad); color: var(--muted); flex: none; transition: color var(--t-fast); }
 :is(.pop, .palette) .search:focus-within { color: var(--fg-2); }
-:is(.pop, .palette) .search input { flex: 1; min-width: 0; background: none; border: 0; outline: none; height: 38px; font-size: var(--fs-md); }
+:is(.pop, .palette) .search input { flex: 1; min-width: 0; background: none; border: 0; outline: none; height: 42px; font-size: var(--fs-md); }
 :is(.pop, .palette) .search input::placeholder { color: var(--placeholder); }
 :is(.pop, .palette) ul { list-style: none; margin: 0; overflow-y: auto; padding: var(--pop-pad); flex: 1 1 auto; }
 :is(.pop, .palette) li {
-  display: flex; align-items: center; gap: var(--space-2); min-height: 30px; padding: 0 var(--space-2);
+  display: flex; align-items: center; gap: var(--space-2-5); min-height: var(--ctl-lg); padding: 0 var(--item-px);
   border-radius: calc(var(--pop-r) - var(--pop-pad));
   font-size: var(--fs-sm); white-space: nowrap;
 }
@@ -144,21 +148,21 @@
 :is(.pop, .palette) li .check { color: var(--accent); margin-left: auto; display: none; }
 :is(.pop, .palette) li.cur .check { display: inline-flex; }
 :is(.pop, .palette) li.group {
-  min-height: 22px; padding: var(--space-1-5) var(--space-2) 0;
+  min-height: 24px; padding: var(--space-2) var(--item-px) 0;
   font-size: var(--fs-2xs); font-weight: var(--fw-semibold); color: var(--muted); pointer-events: none;
 }
 :is(.pop, .palette) li.sep { min-height: 0; height: var(--space-1-5); padding: 0; pointer-events: none; }   /* 分组之间留一段空，不画线 */
 /* 两行的项（命令 + 说明、图标 + 标题 + 说明）：上下内边距相同，两行之间 2px，和列表行的标题 / 说明一致 */
-:is(.pop, .palette) li.explained { white-space: normal; padding: var(--space-1-5) var(--space-2); align-items: flex-start; flex-direction: column; gap: var(--space-0-5); }
+:is(.pop, .palette) li.explained { white-space: normal; padding: var(--space-2) var(--item-px); align-items: flex-start; flex-direction: column; gap: var(--space-0-5); }
 /* Menu 的说明项：[图标] 标题 / 说明两行 [✓] */
-:is(.pop, .palette) li.rich { white-space: normal; padding: var(--space-1-5) var(--space-2); }
-:is(.pop, .palette) li .lead { flex: none; align-self: flex-start; margin-top: 2px; color: var(--ctl-fg); display: inline-flex; }   /* 微调：14px 图标和第一行文字（约 17.5px 行高）居中 */
+:is(.pop, .palette) li.rich { white-space: normal; padding: var(--space-2) var(--item-px); }
+:is(.pop, .palette) li .lead { flex: none; align-self: flex-start; margin-top: 3px; color: var(--ctl-fg); display: inline-flex; }   /* 微调：14px 图标和第一行文字（约 20px 行高）居中 */
 :is(.pop, .palette) li .txt { flex: 1; min-width: 0; display: grid; gap: var(--space-0-5); }
 :is(.pop, .palette) li .txt .n { font-size: var(--fs-xs); line-height: var(--lh-snug); }
-:is(.pop, .palette) .empty { padding: var(--space-3-5) var(--space-3); color: var(--muted); font-size: var(--fs-sm); text-align: center; }
+:is(.pop, .palette) .empty { padding: var(--group-pad); color: var(--muted); font-size: var(--fs-sm); text-align: center; }
 :is(.pop, .palette) .foot { flex: none; padding: 0 var(--pop-pad) var(--pop-pad); display: flex; }
 :is(.pop, .palette) .foot button {
-  flex: 1; height: 30px; border-radius: calc(var(--pop-r) - var(--pop-pad));
+  flex: 1; height: var(--ctl-lg); border-radius: calc(var(--pop-r) - var(--pop-pad));
   font-size: var(--fs-sm); color: var(--ctl-fg);
 }
 :is(.pop, .palette) .foot button { transition: background var(--t-fast), color var(--t-fast); }

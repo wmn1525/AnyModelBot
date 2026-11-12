@@ -31,6 +31,18 @@
       "siteCode": "ru",
       "name": "Русский",
       "ready": true
+    },
+    {
+      "code": "es",
+      "siteCode": "es",
+      "name": "Español",
+      "ready": true
+    },
+    {
+      "code": "pt",
+      "siteCode": "pt",
+      "name": "Português (Brasil)",
+      "ready": true
     }
   ]
 }

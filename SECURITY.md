@@ -1,6 +1,6 @@
 # Security Policy · 安全策略
 
-[English](#english) | [简体中文](#简体中文) | [日本語](./SECURITY_ja.md) | [한국어](./SECURITY_ko.md) | [Русский](./SECURITY_ru.md)
+[English](#english) | [简体中文](#简体中文) | [日本語](./SECURITY_ja.md) | [한국어](./SECURITY_ko.md) | [Русский](./SECURITY_ru.md) | [Español](./SECURITY_es.md) | [Português (Brasil)](./SECURITY_pt.md)
 
 ## English
 

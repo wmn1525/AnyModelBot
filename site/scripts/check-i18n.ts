@@ -2,7 +2,7 @@ import sourceExceptions from "../src/i18n/source-exceptions.json";
 // zh / en 文案 key 一致性（§14）：结构、数组长度都要一致。
 import { zh } from "../src/i18n/zh";
 import { RAW_DICTS } from "../src/i18n/catalogs";
-import { LANGS, READY_LANGS } from "../src/i18n/locales";
+import { LANGS, LOCALES, READY_LANGS } from "../src/i18n/locales";
 import { CHANNELS } from "../src/data/channels";
 import { ANNOUNCEMENTS } from "../src/data/announcements";
 import fs from "node:fs";
@@ -20,17 +20,17 @@ function cmp(a: unknown, b: unknown, p: string) {
     for (const k of ka) if (kb.includes(k)) cmp((a as any)[k], (b as any)[k], `${p}.${k}`);
   } else if (typeof a !== typeof b) diffs.push(`${p}：类型不同`);
   else if (typeof a === "string") {
-    if (/^(ja|ko|ru)\./.test(p) && a.trim() && !(b as string).trim()) diffs.push(`${p}：空译文`);
-    const exception = (sourceExceptions as Record<string, { value: string; reason: string }>)[p.replace(/^(ja|ko|ru)\./, "")];
-    if (/^(ja|ko|ru)\./.test(p) && !(exception?.value === a && exception.reason) && a === b && a.length > 18 && /[A-Za-z]{3,}\s+[a-z]{3,}/.test(a) && !/[`{}<>]|https?:\/\//.test(a)) diffs.push(`${p}：尚未翻译的英文正文`);
+    if (/^(ja|ko|ru|es|pt)\./.test(p) && a.trim() && !(b as string).trim()) diffs.push(`${p}：空译文`);
+    const exception = (sourceExceptions as Record<string, { value: string; reason: string }>)[p.replace(/^(ja|ko|ru|es|pt)\./, "")];
+    if (/^(ja|ko|ru|es|pt)\./.test(p) && !(exception?.value === a && exception.reason) && a === b && a.length > 18 && /[A-Za-z]{3,}\s+[a-z]{3,}/.test(a) && !/[`{}<>]|https?:\/\//.test(a)) diffs.push(`${p}：尚未翻译的英文正文`);
     const va = [...a.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(","), vb = [...(b as string).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(",");
     if (va !== vb) diffs.push(`${p}：变量不同（${va} / ${vb}）`);
   }
 }
 const selected = process.argv.includes("--release") ? LANGS : READY_LANGS;
-for (const lang of selected) cmp(["ja", "ko", "ru"].includes(lang) ? RAW_DICTS.en : zh, RAW_DICTS[lang], lang);
+for (const lang of selected) cmp(lang === "zh" || lang === "en" ? zh : RAW_DICTS.en, RAW_DICTS[lang], lang);
 for (const lang of selected.filter((l) => !["zh", "en"].includes(l))) {
-  if ((RAW_DICTS[lang] as any).meta?.lang !== lang) diffs.push(`${lang}.meta.lang：HTML 语言标记错误`);
+  if ((RAW_DICTS[lang] as any).meta?.lang !== LOCALES[lang].tag) diffs.push(`${lang}.meta.lang：HTML 语言标记错误`);
   cmp(CHANNELS.en, CHANNELS[lang], `${lang}.channels`);
   CHANNELS[lang].forEach((channel, i) => {
     if (channel.id !== CHANNELS.en[i]?.id || channel.icon !== CHANNELS.en[i]?.icon) diffs.push(`${lang}.channels[${i}]：技术标识不能翻译`);

@@ -14,7 +14,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { BOT_AVATARS } from "../agent/settings.js";
+import { PICKABLE_AVATARS } from "../agent/settings.js";
 import { appVersion } from "../version.js";
 import { dirHash } from "../botkit/bundle.js";
 import { checkStatic } from "../botkit/check.js";
@@ -68,11 +68,11 @@ function cmdNew(): void {
   const dest = path.resolve(opt("dir") || path.join("bots", id));
   if (fs.existsSync(dest)) die(`目录已存在：${dest}`);
   fs.cpSync(path.join(findAppRoot(), "assets", "bot-template"), dest, { recursive: true });
-  // 头像按 id 稳定地挑一个；上新里撞了可以手动换
+  // 头像按 id 稳定地在可选角色里挑一个（专属形象各有主人）；和已上架的 Bot 撞了要换，check 会拦
   let h = 0;
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   const f = path.join(dest, "bot.json");
-  fs.writeFileSync(f, fs.readFileSync(f, "utf8").replaceAll("__ID__", id).replaceAll("__APP_VERSION__", appVersion()).replaceAll("__AVATAR__", BOT_AVATARS[h % BOT_AVATARS.length]));
+  fs.writeFileSync(f, fs.readFileSync(f, "utf8").replaceAll("__ID__", id).replaceAll("__APP_VERSION__", appVersion()).replaceAll("__AVATAR__", PICKABLE_AVATARS[h % PICKABLE_AVATARS.length]));
   console.log(`已创建 ${dest}\n把里面的 TODO 都填完，再运行 amb-bot check ${path.relative(process.cwd(), dest)}`);
 }
 

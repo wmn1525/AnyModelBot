@@ -8,6 +8,7 @@ import features from "./features";
 import handson from "./handson";
 import memory from "./memory";
 import bots from "./bots";
+import chat from "./chat";
 import quips from "./quips";
 import oss from "./oss";
 import faq from "./faq";
@@ -24,6 +25,7 @@ export default {
   handson,
   memory,
   bots,
+  chat,
   quips,
   oss,
   faq,

@@ -1,8 +1,11 @@
-// 新建机器人（参考 Grok Bot 的创建页）：头像角色 + 名称 + 人设，下面是从模板开始。
+// 新建机器人（参考 Grok Bot 的创建页）：头像角色 + 名称 + 人设 + 模型，下面是从模板开始。
+// 模型一组和机器人设置页的「模型」组是同一种结构（分组小标题 + 圆角卡片 + 一行默认模型，同一个下拉和面板），
+// 只放默认模型这一行：后台小任务模型和预算有合理的默认值，创建后到机器人设置里改。
 // 默认头像是天天。头像只管长相，选模板不会换头像：机器人做什么由人设决定。
 import { useEffect, useRef, useState } from "preact/hooks";
 import { html, Icon, IconButton, Button, Notice, autoGrow } from "../components/ui.js";
-import { PickModel, shortModel, sameModel } from "../components/model-picker.js";
+import { shortModel, sameModel } from "../components/model-picker.js";
+import { ModelButton } from "./bot-settings.js";
 import { BotAvatar, AvatarPicker, MAIN_CHAR } from "../components/avatar.js";
 import { api } from "../lib/api.js";
 import { createStore, failed } from "../lib/store.js";
@@ -34,7 +37,7 @@ export const TEMPLATES = [
 /** 正在填的新机器人：侧栏那一行占位跟着显示头像和名字，建好后原地换成真的那一行 */
 export const newBotDraft = createStore(null);
 
-export function NewBotScreen({ first, onCreated, onCancel, models, modelsError, reloadModels, defaultModel }) {
+export function NewBotScreen({ first, onCreated, onCancel, models, modelsError, reloadModels, defaultModel, account, onAccount }) {
   const [name, setName] = useState("");
   const [prompt, setPrompt] = useState("");
   const [tpl, setTpl] = useState("");
@@ -108,19 +111,21 @@ export function NewBotScreen({ first, onCreated, onCancel, models, modelsError, 
           <textarea class="field" ref=${promptRef} rows="3" placeholder=${t("newBot.personaPlaceholder")} value=${prompt}
             onInput=${(e) => { setPrompt(e.target.value); setTpl(""); }} />
         </label>
-        <details class="new-model-settings" open=${needsPick || undefined}>
-          <summary>${t("firstUse.modelSettings")}<span class="hint">${!models && !modelsError ? t("firstUse.modelLoading")
-            : model ? shortModel(model)
-            : inherited ? t("firstUse.inherit", { model: shortModel(inherited) })
-            : t("firstUse.modelNone")}</span></summary>
-          <p class="hint">${t("firstUse.modelHint")}</p>
-          <${PickModel} value=${model} models=${models} modelsError=${modelsError} reloadModels=${reloadModels} onChange=${setModel}
-            resetLabel=${inherited ? t("firstUse.inherit", { model: shortModel(inherited) }) : undefined} label=${t("firstUse.modelSettings")} />
-        </details>
+        <div class="new-model">
+          <div class="list-head">${t("botSettings.model.head")}</div>
+          <div class="list">
+            <div class="row" id="new-bot-model">
+              <div class="who"><div class="name">${t("botSettings.model.default")}</div><div class="sub">${t("botSettings.model.defaultSub")}</div></div>
+              <div class="ctl"><${ModelButton} value=${model} models=${models} modelsError=${modelsError} reloadModels=${reloadModels} onChange=${setModel}
+                resetLabel=${inherited ? t("botSettings.model.followGlobalWith", { model: shortModel(inherited) }) : t("botSettings.model.followGlobal")}
+                tiers=${{ account, onAccount: onAccount || (() => {}), effective: inherited || (models && models[0]) || "" }} /></div>
+            </div>
+          </div>
+        </div>
         ${modelsError && html`<${Notice} tone="red" action=${html`<button type="button" class="btn" onClick=${reloadModels}>${t("common.retry")}</button>`}>${t("firstUse.modelFailed")}<//>`}
         ${needsPick && html`<${Notice} tone="amber">${t(model || defaultModel ? "firstUse.modelUnavailable" : "firstUse.modelPickFirst")}<//>`}
-        <p class="hint">${t("firstUse.moreCapabilities")}</p>
-        <${Button} type="submit" variant="primary" size="lg" loading=${busy} disabled=${!name.trim() || !modelAvailable}>${t("newBot.create")}<//>
+        <p class="hint new-note">${t("firstUse.moreCapabilities")}</p>
+        <${Button} type="submit" variant="primary" size="lg" block loading=${busy} disabled=${!name.trim() || !modelAvailable}>${t("newBot.create")}<//>
       </form>
       <div class="new-sugg">
         <div class="list-head">${t("newBot.fromTemplate")}</div>

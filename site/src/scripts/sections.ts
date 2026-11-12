@@ -179,6 +179,7 @@ const track = (n: string, p?: object) => { try { (window as any).umami?.track(n,
 // 换角色：工牌绕竖轴翻面换人、挂绳往换人的方向晃一下，证件照打招呼；在岗的那个低头看工牌，其余几个转头看它；
 // 手机里的回复先"正在输入"再逐字打出。鼠标拨过工牌它会晃（阻尼弹簧，转轴在挂绳顶端，写 --swing）。
 // 窄屏上一排角色可横滑，选中的滚到中间；舞台上左右滑动也能换角色。
+// 手机里能聊：点建议问题或自己打字，机器人回一句写好的话（工牌证件照同时冒思考泡泡），回完一轮在对话末尾放下载卡。
 (() => {
   const tabs = $$<HTMLButtonElement>("[data-bot-tabs] [role=tab]");
   const crew = $("[data-crew]");
@@ -235,6 +236,94 @@ const track = (n: string, p?: object) => { try { (window as any).umami?.track(n,
     done();
   };
 
+  // —— 手机里能聊 ——
+  // 回复都是 HTML 里写好的（建议问题的 data-a、每个角色的 data-free、表单的 data-more），不调用模型；
+  // 访客打的字只显示在气泡里，不发到任何地方，埋点只记角色和"建议 / 自己打字"。每个角色一段对话，换角色时各自保留。
+  const form = $<HTMLFormElement>("[data-chat]", crew);
+  const field = form ? $<HTMLInputElement>(".phone__field", form) : null;
+  const chipRow = $("[data-chat-chips]", crew);
+  const live = $("[data-chat-live]", crew);
+  const viewOf = (k: string) => $<HTMLElement>(`[data-phone="${k}"]`, crew)!;
+  const busy = new Set<string>();
+  const syncChat = (k: string) => {
+    if (!chipRow || !field) return;
+    const chips = $$<HTMLButtonElement>("[data-chip-bot]", chipRow);
+    chips.forEach((c) => (c.hidden = c.dataset.chipBot !== k || c.dataset.used === "1"));
+    chipRow.hidden = chips.every((c) => c.hidden);
+    chipRow.scrollLeft = 0;
+    field.setAttribute("aria-label", viewOf(k).dataset.inputLabel ?? "");
+  };
+  const toEnd = (log: HTMLElement, smooth = true) => log.scrollTo({ top: log.scrollHeight, behavior: smooth && !reduce ? "smooth" : "auto" });
+  const say = async (k: string, text: string, answer: string, kind: "chip" | "free") => {
+    busy.add(k);
+    const view = viewOf(k);
+    view.dataset.chatted = "1";
+    const log = $(".phone__log", view)!, thread = $(".phone__thread", view)!, cta = $("[data-chat-cta]", view)!;
+    const status = $("[data-phone-status]", view);
+    const photo = faceOf($(`[data-panel="${k}"] .badge-card__photo`, crew));
+    const add = (el: HTMLElement) => {
+      thread.insertBefore(el, cta); // 下载卡一直在最后
+      while (thread.children.length > 42) thread.children[1].remove(); // 第 0 个是日期，聊太久就从最早的消息删起
+      toEnd(log);
+    };
+    const mine = document.createElement("p");
+    mine.className = "msg msg--user";
+    mine.textContent = text;
+    add(mine);
+    if (photo) setState(photo, "thinking");
+    if (status) { status.dataset.idle ??= status.textContent ?? ""; status.textContent = form?.dataset.typing ?? ""; }
+    await wait(reduce ? 200 : 450);
+    const row = document.createElement("div");
+    row.className = "phone__reply";
+    const face = $(".phone__reply .bot-face", view)?.cloneNode(true);
+    if (face) row.append(face);
+    const p = document.createElement("p");
+    p.className = "msg msg--bot is-typing";
+    row.append(p);
+    add(row);
+    if (live) live.textContent = answer; // 读屏一次读完整句，不跟着逐字打
+    if (!reduce) {
+      await wait(700);
+      if (photo) setState(photo, "replying");
+      const step = Math.max(1, Math.ceil(answer.length / 64)); // 长句也在 1.5 秒左右打完
+      for (let i = step; i < answer.length; i += step) {
+        p.textContent = answer.slice(0, i);
+        toEnd(log, false);
+        await wait(24);
+      }
+    }
+    p.textContent = answer;
+    p.classList.remove("is-typing");
+    if (status) status.textContent = status.dataset.idle ?? "";
+    if (photo) { setState(photo, "idle"); playShot(photo, "done"); }
+    if (cta.hidden) { cta.hidden = false; cta.classList.add("is-in"); }
+    toEnd(log);
+    busy.delete(k);
+    track("crew_chat_send", { bot_id: k, kind });
+  };
+  chipRow?.addEventListener("click", (e) => {
+    const chip = (e.target as Element).closest<HTMLButtonElement>("[data-chip-bot]");
+    const k = chip?.dataset.chipBot;
+    if (!chip || !k || busy.has(k)) return;
+    const kb = chip.matches(":focus-visible");
+    chip.dataset.used = "1";
+    say(k, chip.textContent?.trim() ?? "", chip.dataset.a ?? "", "chip");
+    syncChat(k);
+    // 用键盘点的：焦点挪到下一条建议，没有了就挪到输入框（触屏不挪，免得弹出键盘）
+    if (kb) ($$<HTMLButtonElement>("[data-chip-bot]", chipRow).find((c) => !c.hidden) ?? field)?.focus();
+  });
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const k = crew.dataset.char ?? tabs[0].dataset.bot!;
+    const text = field?.value.trim().slice(0, 200) ?? "";
+    if (!text || busy.has(k)) return;
+    const view = viewOf(k);
+    const answer = view.dataset.asked ? form.dataset.more ?? "" : view.dataset.free ?? "";
+    view.dataset.asked = "1";
+    field!.value = "";
+    say(k, text, answer, "free");
+  });
+
   let flip = 0;
   const select = (k: string, focus = false, quiet = false) => {
     const prev = crew.dataset.char ?? k;
@@ -245,6 +334,7 @@ const track = (n: string, p?: object) => { try { (window as any).umami?.track(n,
       if (on && list.scrollWidth > list.clientWidth) list.scrollTo({ left: t.offsetLeft - (list.clientWidth - t.offsetWidth) / 2, behavior: reduce ? "auto" : "smooth" });
     });
     crew.dataset.char = k;
+    syncChat(k);
 
     // 工牌翻面：转到侧面（看不见的那一刻）换人，再转回来
     const swap = () => {
@@ -269,7 +359,7 @@ const track = (n: string, p?: object) => { try { (window as any).umami?.track(n,
       const reply = $<HTMLElement>(".msg--bot", p);
       if (reply?.dataset.text) { reply.textContent = reply.dataset.text; reply.classList.remove("is-typing"); }
       p.hidden = p.dataset.phone !== k;
-      if (p.hidden || reduce) return;
+      if (p.hidden || reduce || p.dataset.chatted) return; // 已经聊过的那段不再重打开场白
       const log = $(".phone__log", p)!; log.classList.remove("is-swap"); void log.offsetWidth; log.classList.add("is-swap");
       typeReply(p);
     });
@@ -290,7 +380,8 @@ const track = (n: string, p?: object) => { try { (window as any).umami?.track(n,
   // 触屏横向滑过舞台换角色；纵向滚动交给浏览器（CSS 里 touch-action: pan-y）
   if (stage) {
     let x0 = 0, y0 = 0, id = -1;
-    stage.addEventListener("pointerdown", (e) => { if (e.pointerType === "touch") { x0 = e.clientX; y0 = e.clientY; id = e.pointerId; } });
+    // 在建议问题上横滑是滚动那一排、在输入框上是选字，不算换角色
+    stage.addEventListener("pointerdown", (e) => { if (e.pointerType === "touch" && !(e.target as Element).closest(".phone__chips, .phone__input")) { x0 = e.clientX; y0 = e.clientY; id = e.pointerId; } });
     stage.addEventListener("pointercancel", () => (id = -1));
     stage.addEventListener("pointerup", (e) => {
       if (e.pointerId !== id) return;
