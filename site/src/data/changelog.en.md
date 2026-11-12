@@ -50,6 +50,47 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 - Improved first-use model selection, actionable errors, Discover covers and recent conversation search; fixed verification-code handling and interface layouts.
 - Adapted OKINTO to the upstream directory and route refactor, preserving balance currencies, unlimited quotas and group endpoints without advertising upstream-only Bot credit promotions.
 
+## 0.1.30 - 2026-11-10
+
+### New
+
+- **Bot credits:** Accounts with Modelflare Bot credits see a ring and the percentage left in the bottom-left corner. Click it to see your Bot credits, account balance and the Top up link. Bot credits are usable only in AnyModelBot, and requests from keys the app issues use them first. The numbers refresh when you open the card and after each message is handled. Accounts without Bot credits see the same corner as before.
+- **$1 in Bot credits for new accounts:** The sign-in page and the API key page now mention the sign-up credit. Modelflare subscriptions add Bot credits worth 10% of the plan, as the credit card also explains.
+- **What's new:** After an update, the first launch shows what changed, and you can scroll down through every version. Clicking the new-version notice in the sidebar shows the new version's notes first, so you can decide before you download or restart. The changelog is always available in Settings → About.
+- **Official bots as desktop workspaces:** Company Research, PPT Master, Film Studio and US Stock Research show your work in a list on the left and the content on the right. New starts a short guided form. The top bar switches between Workspace and Chat, where you see the full conversation. US Stock Research charts the key numbers, Film Studio has a storyboard with picture, video and audio lanes, and PPT Master lets you page through previews.
+- **Model choice in bots with their own UI:** The input box works like a regular chat, with the model picker, the + menu and slash commands.
+- **Recent chats in search:** Before you type, the search dialog lists recent chats grouped as Today, Yesterday, Previous 7 days and Earlier.
+
+### Improvements and fixes
+
+- The account menu is as wide as the account area, and hovering darkens only the avatar. The settings navigation fills the sidebar, with the account area pinned to the bottom.
+- Starters in bots with their own UI are a row of single-line chips; hover to read a long one in full.
+
+## 0.1.29 - 2026-11-09
+
+### New
+
+- **Automatic update downloads, enabled by default:** Installed desktop apps download new versions in the background, then offer Restart and update in the sidebar and Settings → About. Turn automatic downloads off in Settings → General to download manually.
+- Installation requires your click and waits until you have no active chats or background tasks. Normal quits do not install updates automatically.
+- Users on 0.1.28 or earlier must manually install this version once before using in-app updates. Supported on macOS, Windows and Linux AppImage; Docker and source deployments still update manually.
+- **Back to the app after signing in:** After you approve in the browser, the page waits until the app is actually connected before it says you're signed in, then takes you back to AnyModelBot. If something fails, it tells you why. The API key page also lets you sign in with a Modelflare account instead.
+- **A model picked for your first sign-in:** If you have no default model yet, the app picks a low-cost model that supports tools (DeepSeek first), so the trial credit covers a few typical tasks. If none fits, it explains why and lets you choose.
+- **macOS Computer Use permissions asked only when needed:** The first time a bot needs to click, type or look at the screen without Accessibility or Screen Recording permission, that turn stops and the chat says which permission is missing, with buttons to request it, open the matching settings page and check again. If the app has to be reopened, unsent drafts are kept.
+- **Discover covers:** Official bots now have illustrated cover scenes that follow the light or dark theme, and featured bots show as large cards.
+
+### Improvements and fixes
+
+- Clearer error messages: low balance, expired credentials, unavailable models, rate limits and network failures each get their own explanation and a matching action, such as Top up or switching models. The raw error sits under Error details and can be copied with secrets removed. The same error no longer pops up twice, the sidebar shows only "Failed: reason", and Send again warns that the whole task runs from the start. The company research bot folds task errors the same way.
+- The account area in the bottom left always shows your balance and a Top up link, and low balance is flagged there instead of in a separate in-app notice. Its menu has feedback, check for updates and sign out; signing out while tasks are running asks first. With your own API key, you can sign in to Modelflare from here and keep your keys and settings.
+- Getting started checklist: "Connect your usual chat app" lets you pick a channel and opens its settings, and only counts once it is actually connected. "Say hello" needs a real reply. After you say "remember …", the checklist updates within seconds. Guidance no longer pops up while you have a draft or a task is running, and the checklist folds away once everything is done.
+- After you replace a key or switch model source, the app reminds you to check your existing bots' models. It stays quiet on first setup.
+- Saving bot settings several times in a row shows a single "Saved". New bots keep model settings collapsed with the inherited default shown, and no longer silently pick the first model in the list. Creating a multi-bot group explains how it works, with example prompts based on its members.
+- Clicking Discover while searching takes you back to Discover.
+- Bots with their own interface (company research, PPT Master, film studio, US stock research) now use the same composer as regular chats. Starters are a row of cards, so long ones are no longer cut off. The latest reply is rendered as Markdown, long replies can be expanded, and you can open the full conversation.
+- A cleaner interface: fewer divider lines and borders, filled input fields, and fixed Needs you and Discover rows in the sidebar, with a blue dot instead of a count (the count is still in the tooltip and for screen readers).
+- Cleaner bot avatar edges: the light fringe around avatars on dark backgrounds is gone, and small avatars now use images pre-scaled for their size, so edges look smoother.
+- macOS installers are checked for a Developer ID signature and Apple notarization before release, and are not published if either check fails.
+
 ## 0.1.28 - 2026-11-08
 
 ### Improvements and fixes
@@ -59,6 +100,18 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 - Added local chat history search with bot, conversation, channel and date filters and links to the original messages.
 - Fixed catalog bot content sizing and scrolling, and added media task tracking and recovery.
 - Included driver download retries, Electron checksum caching and Intel Mac Apple networking fixes; retained OKINTO sign-in, grouped models and image generation.
+
+## 0.1.27 - 2026-11-08
+
+### New
+
+- **Official bots ship with the app:** Company Research, PPT Master, Film Studio and US Stock Research include their UIs, samples, personas and skills in the installer. First preview and installation need no bot package downloads. Model calls and online research still need a network connection.
+
+### Improvements and fixes
+
+- Fixed clipped catalog bot content and missing scrolling. The input box no longer covers content, and upgrades preserve existing projects and data.
+- Release builds reuse Electron's bundled checksum data to reduce network timeouts when fetching checksum files, while retaining full hash verification.
+- GitHub Intel Mac builds now fall back to TCP for Apple services to work around known HTTP/3 connection drops. Signing, timestamps and notarization remain required.
 
 ## 0.1.26 - 2026-11-06
 

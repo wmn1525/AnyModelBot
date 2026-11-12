@@ -13,7 +13,7 @@ describe("local network proxy failures", () => {
   it("recognizes the reported nested Windows error before it is truncated", () => withLang("zh-CN", () => {
     const message = turnFailedText(new Error(agentError), []);
     expect(message).toContain("本机网络代理 127.0.0.1:7897 拒绝连接");
-    expect(message).toContain("彻底退出并重开 AnyModelBot");
+    expect(message).toContain("彻底退出并重开 okbot");
     expect(message).not.toContain("API error");
     expect(message).not.toContain("换域名");
   }));
@@ -41,7 +41,7 @@ describe("local network proxy failures", () => {
   it.each(["zh-CN", "en", "ja", "ko", "ru", "es", "pt"] as const)("localizes the advice in %s", (lang) => withLang(lang, () => {
     const hint = localProxyFailureHint(agentError)!;
     expect(hint).toContain("127.0.0.1:7897");
-    expect(hint).toContain("AnyModelBot");
+    expect(hint).toContain("okbot");
     expect(hint).not.toMatch(/runtime\.|\{address\}/);
   }));
 
