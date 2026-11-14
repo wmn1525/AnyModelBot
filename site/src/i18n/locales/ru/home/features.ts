@@ -43,7 +43,7 @@ export default {
       },
       {
         "title": "Три домена API",
-        "body": "Выберите modelflare.dev, origin.modelflare.dev или cf.modelflare.dev и сравните скорость в настройках. Автоматического переключения нет."
+        "body": "Выберите api.okinto.com, origin.api.okinto.com или cf.api.okinto.com и сравните скорость в настройках. Автоматического переключения нет."
       },
       {
         "title": "Изображения и файлы в Slack, Telegram и Discord",

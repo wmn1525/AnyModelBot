@@ -1,28 +1,27 @@
 {
-  "fetchedAt": "2026-11-12T10:21:10+08:00",
+  "fetchedAt": "2026-11-14T19:52:42+08:00",
   "pricingVersion": "a42d372ccf0b5dd13ecf71203521f9d2",
   "source": "https://api.okinto.com/api/pricing",
   "stale": false,
   "counts": {
-    "models": 58,
-    "text": 47,
+    "models": 57,
+    "text": 46,
     "media": 11,
-    "vendors": 13
+    "vendors": 12
   },
   "vendors": [
-    "OpenAI",
-    "xAI",
     "Anthropic",
-    "Moonshot",
-    "阿里巴巴",
     "智谱",
     "MiniMax",
-    "Anthropic",
     "xAI",
-    "MiniMax",
+    "OpenAI",
     "DeepSeek",
     "Google",
-    "OpenAI"
+    "Moonshot",
+    "OpenAI",
+    "阿里巴巴",
+    "Anthropic",
+    "xAI"
   ],
   "config": {
     "featuredModels": [
@@ -31,7 +30,7 @@
       "claude-opus-5-5",
       "claude-sonnet-5-5",
       "claude-haiku-5-5",
-      "deepseek-flash"
+      "deepseek-v4-flash"
     ],
     "sampleModel": "gpt-5.6-sol",
     "sampleUsage": {
@@ -43,142 +42,72 @@
   },
   "rows": [
     {
-      "model": "MiniMax-M2",
-      "vendor": "MiniMax",
+      "model": "claude-opus-5-5",
+      "vendor": "Anthropic",
       "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 0.17,
-      "output": 1.53,
-      "officialInput": 0.17,
-      "officialOutput": 1.53,
-      "ratio": 1,
+      "defaultGroup": "Claude-Max",
+      "input": 40,
+      "output": 200,
+      "officialInput": 4,
+      "officialOutput": 20,
+      "ratio": 10,
       "tiers": [
         {
           "label": "standard",
-          "maxInputTokens": null,
-          "input": 0.17,
-          "output": 1.53
-        }
-      ],
-      "groups": [
-        {
-          "id": "随时挂 玩具分组",
-          "kind": "other",
-          "ratio": 0.6,
-          "input": 0.102,
-          "output": 0.918
-        },
-        {
-          "id": "国模",
-          "kind": "other",
-          "ratio": 1,
-          "input": 0.17,
-          "output": 1.53
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 0.17,
-          "output": 1.53,
-          "isDefault": true
-        }
-      ]
-    },
-    {
-      "model": "gpt-6-sol",
-      "vendor": "OpenAI",
-      "contextWindow": null,
-      "defaultGroup": "OpenAi-PLUS",
-      "input": 3,
-      "output": 15,
-      "officialInput": 2,
-      "officialOutput": 10,
-      "ratio": 1.5,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": 272000,
-          "input": 2,
-          "output": 10
-        },
-        {
-          "label": "long_context",
           "maxInputTokens": null,
           "input": 4,
-          "output": 15
+          "output": 20
         }
       ],
       "groups": [
         {
-          "id": "OpenAi-PLUS",
+          "id": "Claude-Max",
           "kind": "other",
-          "ratio": 1.5,
-          "input": 3,
-          "output": 15,
+          "ratio": 10,
+          "input": 40,
+          "output": 200,
           "isDefault": true
-        },
-        {
-          "id": "OpenAi-Pro",
-          "kind": "other",
-          "ratio": 2.5,
-          "input": 5,
-          "output": 25
-        },
-        {
-          "id": "GPT-官key-正价",
-          "kind": "other",
-          "ratio": 3.5,
-          "input": 7,
-          "output": 35
         }
       ]
     },
     {
-      "model": "MiniMax-M2.7-highspeed",
-      "vendor": "MiniMax",
+      "model": "deepseek-v4-flash",
+      "vendor": "DeepSeek",
       "contextWindow": null,
       "defaultGroup": "default",
-      "input": 0.6,
-      "output": 4.8,
-      "officialInput": 0.6,
-      "officialOutput": 4.8,
+      "input": 3,
+      "output": 9,
+      "officialInput": 3,
+      "officialOutput": 9,
       "ratio": 1,
       "tiers": [
         {
-          "label": "standard",
+          "label": "off_peak",
           "maxInputTokens": null,
-          "input": 0.6,
-          "output": 4.8
+          "input": 3,
+          "output": 9
         }
       ],
       "groups": [
         {
-          "id": "随时挂 玩具分组",
-          "kind": "other",
-          "ratio": 0.6,
-          "input": 0.36,
-          "output": 2.88
-        },
-        {
           "id": "default",
           "kind": "other",
           "ratio": 1,
-          "input": 0.6,
-          "output": 4.8,
+          "input": 3,
+          "output": 9,
           "isDefault": true
         },
         {
           "id": "国模",
           "kind": "other",
           "ratio": 1,
-          "input": 0.6,
-          "output": 4.8
+          "input": 3,
+          "output": 9
         }
       ]
     },
     {
-      "model": "MiniMax-M2.5",
+      "model": "MiniMax-M2.7",
       "vendor": "MiniMax",
       "contextWindow": null,
       "defaultGroup": "default",
@@ -197,13 +126,6 @@
       ],
       "groups": [
         {
-          "id": "随时挂 玩具分组",
-          "kind": "other",
-          "ratio": 0.6,
-          "input": 0.18,
-          "output": 0.72
-        },
-        {
           "id": "default",
           "kind": "other",
           "ratio": 1,
@@ -221,63 +143,118 @@
       ]
     },
     {
-      "model": "claude-haiku-4-5-20251001",
+      "model": "claude-fable-5-2",
       "vendor": "Anthropic",
       "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 1,
-      "output": 5,
-      "officialInput": 1,
-      "officialOutput": 5,
-      "ratio": 1,
+      "defaultGroup": "Claude-Max",
+      "input": 80,
+      "output": 400,
+      "officialInput": 8,
+      "officialOutput": 40,
+      "ratio": 10,
       "tiers": [
         {
-          "label": "standard",
+          "label": "base",
           "maxInputTokens": null,
-          "input": 1,
-          "output": 5
+          "input": 8,
+          "output": 40
         }
       ],
       "groups": [
         {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 0.9,
-          "output": 4.5
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 1,
-          "output": 5,
-          "isDefault": true
-        },
-        {
           "id": "Claude-Max",
           "kind": "other",
           "ratio": 10,
+          "input": 80,
+          "output": 400,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "gpt-5.6-sol",
+      "vendor": "OpenAI",
+      "contextWindow": null,
+      "defaultGroup": "default",
+      "input": 5,
+      "output": 30,
+      "officialInput": 5,
+      "officialOutput": 30,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": 272000,
+          "input": 5,
+          "output": 30
+        },
+        {
+          "label": "long_context",
+          "maxInputTokens": null,
           "input": 10,
-          "output": 50
+          "output": 45
+        }
+      ],
+      "groups": [
+        {
+          "id": "vip",
+          "kind": "other",
+          "ratio": 0.8,
+          "input": 4,
+          "output": 24
+        },
+        {
+          "id": "default",
+          "kind": "other",
+          "ratio": 1,
+          "input": 5,
+          "output": 30,
+          "isDefault": true
+        },
+        {
+          "id": "OpenAi-PLUS",
+          "kind": "other",
+          "ratio": 1.4,
+          "input": 7,
+          "output": 42
+        },
+        {
+          "id": "OpenAi-Pro",
+          "kind": "other",
+          "ratio": 2,
+          "input": 10,
+          "output": 60
+        },
+        {
+          "id": "GPT-官key-正价",
+          "kind": "other",
+          "ratio": 3.5,
+          "input": 17.5,
+          "output": 105
         }
       ]
     },
     {
-      "model": "claude-sonnet-4-6",
-      "vendor": "Anthropic",
+      "model": "gpt-6-sol",
+      "vendor": "OpenAI",
       "contextWindow": null,
       "defaultGroup": "default",
-      "input": 3,
-      "output": 15,
-      "officialInput": 3,
-      "officialOutput": 15,
+      "input": 2,
+      "output": 10,
+      "officialInput": 2,
+      "officialOutput": 10,
       "ratio": 1,
       "tiers": [
         {
           "label": "standard",
+          "maxInputTokens": 272000,
+          "input": 2,
+          "output": 10
+        },
+        {
+          "label": "long_context",
           "maxInputTokens": null,
-          "input": 3,
+          "input": 4,
           "output": 15
         }
       ],
@@ -285,103 +262,38 @@
         {
           "id": "vip",
           "kind": "other",
-          "ratio": 0.9,
-          "input": 2.7,
-          "output": 13.5
+          "ratio": 0.8,
+          "input": 1.6,
+          "output": 8
         },
         {
           "id": "default",
           "kind": "other",
           "ratio": 1,
-          "input": 3,
-          "output": 15,
+          "input": 2,
+          "output": 10,
           "isDefault": true
         },
         {
-          "id": "Claude-Max",
+          "id": "OpenAi-PLUS",
           "kind": "other",
-          "ratio": 10,
-          "input": 30,
-          "output": 150
-        }
-      ]
-    },
-    {
-      "model": "claude-sonnet-4-5",
-      "vendor": "Anthropic",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 3,
-      "output": 15,
-      "officialInput": 3,
-      "officialOutput": 15,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 3,
-          "output": 15
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 2.7,
-          "output": 13.5
+          "ratio": 1.4,
+          "input": 2.8,
+          "output": 14
         },
         {
-          "id": "default",
+          "id": "OpenAi-Pro",
           "kind": "other",
-          "ratio": 1,
-          "input": 3,
-          "output": 15,
-          "isDefault": true
-        }
-      ]
-    },
-    {
-      "model": "qwen3.8-flash",
-      "vendor": "阿里巴巴",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 0.1126,
-      "output": 0.380025,
-      "officialInput": 0.1126,
-      "officialOutput": 0.380025,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 0.1126,
-          "output": 0.380025
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 0.10134,
-          "output": 0.342023
+          "ratio": 2,
+          "input": 4,
+          "output": 20
         },
         {
-          "id": "国模",
+          "id": "GPT-官key-正价",
           "kind": "other",
-          "ratio": 1,
-          "input": 0.1126,
-          "output": 0.380025
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 0.1126,
-          "output": 0.380025,
-          "isDefault": true
+          "ratio": 3.5,
+          "input": 7,
+          "output": 35
         }
       ]
     },
@@ -413,9 +325,9 @@
         {
           "id": "vip",
           "kind": "other",
-          "ratio": 0.9,
-          "input": 1.8,
-          "output": 9
+          "ratio": 0.8,
+          "input": 1.6,
+          "output": 8
         },
         {
           "id": "default",
@@ -428,16 +340,16 @@
         {
           "id": "OpenAi-PLUS",
           "kind": "other",
-          "ratio": 1.5,
-          "input": 3,
-          "output": 15
+          "ratio": 1.4,
+          "input": 2.8,
+          "output": 14
         },
         {
           "id": "OpenAi-Pro",
           "kind": "other",
-          "ratio": 2.5,
-          "input": 5,
-          "output": 25
+          "ratio": 2,
+          "input": 4,
+          "output": 20
         },
         {
           "id": "GPT-官key-正价",
@@ -456,131 +368,216 @@
       ]
     },
     {
-      "model": "claude-opus-4-6",
-      "vendor": "Anthropic",
+      "model": "gpt-6.1-terra",
+      "vendor": "OpenAI",
       "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 5,
-      "output": 25,
-      "officialInput": 5,
-      "officialOutput": 25,
-      "ratio": 1,
+      "defaultGroup": "OpenAi-PLUS",
+      "input": 1.4,
+      "output": 7,
+      "officialInput": 1,
+      "officialOutput": 5,
+      "ratio": 1.4,
       "tiers": [
         {
           "label": "standard",
+          "maxInputTokens": 256000,
+          "input": 1,
+          "output": 5
+        },
+        {
+          "label": "long_context",
           "maxInputTokens": null,
-          "input": 5,
-          "output": 25
+          "input": 2,
+          "output": 7.5
         }
       ],
       "groups": [
         {
-          "id": "vip",
+          "id": "OpenAi-PLUS",
           "kind": "other",
-          "ratio": 0.9,
-          "input": 4.5,
-          "output": 22.5
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 5,
-          "output": 25,
+          "ratio": 1.4,
+          "input": 1.4,
+          "output": 7,
           "isDefault": true
         },
         {
-          "id": "Claude-Max",
+          "id": "OpenAi-Pro",
           "kind": "other",
-          "ratio": 10,
-          "input": 50,
-          "output": 250
-        }
-      ]
-    },
-    {
-      "model": "claude-opus-5",
-      "vendor": "Anthropic",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 5,
-      "output": 25,
-      "officialInput": 5,
-      "officialOutput": 25,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 5,
-          "output": 25
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 4.5,
-          "output": 22.5
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 5,
-          "output": 25,
-          "isDefault": true
-        },
-        {
-          "id": "Claude-Max",
-          "kind": "other",
-          "ratio": 10,
-          "input": 50,
-          "output": 250
-        }
-      ]
-    },
-    {
-      "model": "claude-sonnet-5-5",
-      "vendor": "Anthropic",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 2,
-      "output": 10,
-      "officialInput": 2,
-      "officialOutput": 10,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
+          "ratio": 2,
           "input": 2,
           "output": 10
+        },
+        {
+          "id": "Azure-Gpt",
+          "kind": "other",
+          "ratio": 12,
+          "input": 12,
+          "output": 60
+        }
+      ]
+    },
+    {
+      "model": "gpt-6-luna",
+      "vendor": "OpenAI",
+      "contextWindow": null,
+      "defaultGroup": "Azure-Gpt",
+      "input": 24,
+      "output": 144,
+      "officialInput": 2,
+      "officialOutput": 12,
+      "ratio": 12,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": 272000,
+          "input": 2,
+          "output": 12
+        },
+        {
+          "label": "long_context",
+          "maxInputTokens": null,
+          "input": 4,
+          "output": 18
         }
       ],
       "groups": [
         {
-          "id": "vip",
+          "id": "Azure-Gpt",
           "kind": "other",
-          "ratio": 0.9,
-          "input": 1.8,
-          "output": 9
+          "ratio": 12,
+          "input": 24,
+          "output": 144,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "claude-fable-5",
+      "vendor": "Anthropic",
+      "contextWindow": null,
+      "defaultGroup": "Claude-Max",
+      "input": 100,
+      "output": 500,
+      "officialInput": 10,
+      "officialOutput": 50,
+      "ratio": 10,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 10,
+          "output": 50
+        }
+      ],
+      "groups": [
+        {
+          "id": "Claude-Max",
+          "kind": "other",
+          "ratio": 10,
+          "input": 100,
+          "output": 500,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "qwen3.8-flash",
+      "vendor": "阿里巴巴",
+      "contextWindow": null,
+      "defaultGroup": "default",
+      "input": 0.1126,
+      "output": 0.380025,
+      "officialInput": 0.1126,
+      "officialOutput": 0.380025,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 0.1126,
+          "output": 0.380025
+        }
+      ],
+      "groups": [
+        {
+          "id": "国模",
+          "kind": "other",
+          "ratio": 1,
+          "input": 0.1126,
+          "output": 0.380025
         },
         {
           "id": "default",
           "kind": "other",
           "ratio": 1,
-          "input": 2,
-          "output": 10,
+          "input": 0.1126,
+          "output": 0.380025,
           "isDefault": true
-        },
+        }
+      ]
+    },
+    {
+      "model": "claude-haiku-4-5-20251001",
+      "vendor": "Anthropic",
+      "contextWindow": null,
+      "defaultGroup": "Claude-Max",
+      "input": 10,
+      "output": 50,
+      "officialInput": 1,
+      "officialOutput": 5,
+      "ratio": 10,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 1,
+          "output": 5
+        }
+      ],
+      "groups": [
         {
           "id": "Claude-Max",
           "kind": "other",
           "ratio": 10,
+          "input": 10,
+          "output": 50,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "kimi-k3",
+      "vendor": "Moonshot",
+      "contextWindow": null,
+      "defaultGroup": "default",
+      "input": 20,
+      "output": 100,
+      "officialInput": 20,
+      "officialOutput": 100,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
           "input": 20,
           "output": 100
+        }
+      ],
+      "groups": [
+        {
+          "id": "国模",
+          "kind": "other",
+          "ratio": 1,
+          "input": 20,
+          "output": 100
+        },
+        {
+          "id": "default",
+          "kind": "other",
+          "ratio": 1,
+          "input": 20,
+          "output": 100,
+          "isDefault": true
         }
       ]
     },
@@ -604,13 +601,6 @@
       ],
       "groups": [
         {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 0.135,
-          "output": 0.45
-        },
-        {
           "id": "国模",
           "kind": "other",
           "ratio": 1,
@@ -628,273 +618,38 @@
       ]
     },
     {
-      "model": "gpt-6.1-terra",
-      "vendor": "OpenAI",
-      "contextWindow": null,
-      "defaultGroup": "OpenAi-PLUS",
-      "input": 1.5,
-      "output": 7.5,
-      "officialInput": 1,
-      "officialOutput": 5,
-      "ratio": 1.5,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": 256000,
-          "input": 1,
-          "output": 5
-        },
-        {
-          "label": "long_context",
-          "maxInputTokens": null,
-          "input": 2,
-          "output": 7.5
-        }
-      ],
-      "groups": [
-        {
-          "id": "OpenAi-PLUS",
-          "kind": "other",
-          "ratio": 1.5,
-          "input": 1.5,
-          "output": 7.5,
-          "isDefault": true
-        },
-        {
-          "id": "OpenAi-Pro",
-          "kind": "other",
-          "ratio": 2.5,
-          "input": 2.5,
-          "output": 12.5
-        },
-        {
-          "id": "Azure-Gpt",
-          "kind": "other",
-          "ratio": 12,
-          "input": 12,
-          "output": 60
-        }
-      ]
-    },
-    {
-      "model": "claude-opus-4-5-20251101",
-      "vendor": "Anthropic",
+      "model": "MiniMax-M3.1-Flash",
+      "vendor": "MiniMax",
       "contextWindow": null,
       "defaultGroup": "default",
-      "input": 5,
-      "output": 25,
-      "officialInput": 5,
-      "officialOutput": 25,
+      "input": 0.15,
+      "output": 0.6,
+      "officialInput": 0.15,
+      "officialOutput": 0.6,
       "ratio": 1,
       "tiers": [
         {
           "label": "standard",
           "maxInputTokens": null,
-          "input": 5,
-          "output": 25
+          "input": 0.15,
+          "output": 0.6
         }
       ],
       "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 4.5,
-          "output": 22.5
-        },
         {
           "id": "default",
           "kind": "other",
           "ratio": 1,
-          "input": 5,
-          "output": 25,
+          "input": 0.15,
+          "output": 0.6,
           "isDefault": true
-        },
-        {
-          "id": "Claude-Max",
-          "kind": "other",
-          "ratio": 10,
-          "input": 50,
-          "output": 250
-        }
-      ]
-    },
-    {
-      "model": "claude-opus-5-5",
-      "vendor": "Anthropic",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 4,
-      "output": 20,
-      "officialInput": 4,
-      "officialOutput": 20,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 4,
-          "output": 20
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 3.6,
-          "output": 18
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 4,
-          "output": 20,
-          "isDefault": true
-        },
-        {
-          "id": "cursor反代",
-          "kind": "other",
-          "ratio": 1.5,
-          "input": 6,
-          "output": 30
-        },
-        {
-          "id": "AwsQ-Kiro-高缓存",
-          "kind": "other",
-          "ratio": 2.5,
-          "input": 10,
-          "output": 50
-        },
-        {
-          "id": "Claude-Max",
-          "kind": "other",
-          "ratio": 10,
-          "input": 40,
-          "output": 200
-        }
-      ]
-    },
-    {
-      "model": "claude-sonnet-5",
-      "vendor": "Anthropic",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 2,
-      "output": 10,
-      "officialInput": 2,
-      "officialOutput": 10,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 2,
-          "output": 10
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 1.8,
-          "output": 9
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 2,
-          "output": 10,
-          "isDefault": true
-        },
-        {
-          "id": "Claude-Max",
-          "kind": "other",
-          "ratio": 10,
-          "input": 20,
-          "output": 100
-        }
-      ]
-    },
-    {
-      "model": "claude-haiku-4-5",
-      "vendor": "Anthropic",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 1,
-      "output": 5,
-      "officialInput": 1,
-      "officialOutput": 5,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 1,
-          "output": 5
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 0.9,
-          "output": 4.5
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 1,
-          "output": 5,
-          "isDefault": true
-        }
-      ]
-    },
-    {
-      "model": "k3",
-      "vendor": "Anthropic",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 3,
-      "output": 15,
-      "officialInput": 3,
-      "officialOutput": 15,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "base",
-          "maxInputTokens": null,
-          "input": 3,
-          "output": 15
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 2.7,
-          "output": 13.5
         },
         {
           "id": "国模",
           "kind": "other",
           "ratio": 1,
-          "input": 3,
-          "output": 15
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 3,
-          "output": 15,
-          "isDefault": true
+          "input": 0.15,
+          "output": 0.6
         }
       ]
     },
@@ -941,160 +696,38 @@
       ]
     },
     {
-      "model": "MiniMax-M3",
-      "vendor": "MiniMax",
+      "model": "deepseek-v4.1-flash",
+      "vendor": "DeepSeek",
       "contextWindow": null,
       "defaultGroup": "default",
-      "input": 0.3,
-      "output": 1.2,
-      "officialInput": 0.3,
-      "officialOutput": 1.2,
+      "input": 2,
+      "output": 8,
+      "officialInput": 2,
+      "officialOutput": 8,
       "ratio": 1,
       "tiers": [
         {
-          "label": "standard",
+          "label": "off_peak",
           "maxInputTokens": null,
-          "input": 0.3,
-          "output": 1.2
+          "input": 2,
+          "output": 8
         }
       ],
       "groups": [
         {
-          "id": "随时挂 玩具分组",
+          "id": "default",
           "kind": "other",
-          "ratio": 0.6,
-          "input": 0.18,
-          "output": 0.72
+          "ratio": 1,
+          "input": 2,
+          "output": 8,
+          "isDefault": true
         },
         {
           "id": "国模",
           "kind": "other",
           "ratio": 1,
-          "input": 0.3,
-          "output": 1.2
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 0.3,
-          "output": 1.2,
-          "isDefault": true
-        }
-      ]
-    },
-    {
-      "model": "claude-opus-4-8",
-      "vendor": "Anthropic",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 5,
-      "output": 25,
-      "officialInput": 5,
-      "officialOutput": 25,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 5,
-          "output": 25
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 4.5,
-          "output": 22.5
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 5,
-          "output": 25,
-          "isDefault": true
-        },
-        {
-          "id": "Claude-Max",
-          "kind": "other",
-          "ratio": 10,
-          "input": 50,
-          "output": 250
-        }
-      ]
-    },
-    {
-      "model": "kimi-k3",
-      "vendor": "Moonshot",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 20,
-      "output": 100,
-      "officialInput": 20,
-      "officialOutput": 100,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 20,
-          "output": 100
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 18,
-          "output": 90
-        },
-        {
-          "id": "国模",
-          "kind": "other",
-          "ratio": 1,
-          "input": 20,
-          "output": 100
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 20,
-          "output": 100,
-          "isDefault": true
-        }
-      ]
-    },
-    {
-      "model": "gemini-3.1-flash-image-preview",
-      "vendor": "Google",
-      "contextWindow": null,
-      "defaultGroup": "图像-低",
-      "input": 0.5,
-      "output": 60,
-      "officialInput": 0.5,
-      "officialOutput": 60,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 0.5,
-          "output": 60
-        }
-      ],
-      "groups": [
-        {
-          "id": "图像-低",
-          "kind": "other",
-          "ratio": 1,
-          "input": 0.5,
-          "output": 60,
-          "isDefault": true
+          "input": 2,
+          "output": 8
         }
       ]
     },
@@ -1118,11 +751,12 @@
       ],
       "groups": [
         {
-          "id": "随时挂 玩具分组",
+          "id": "default",
           "kind": "other",
-          "ratio": 0.6,
-          "input": 1.2,
-          "output": 2.4
+          "ratio": 1,
+          "input": 2,
+          "output": 4,
+          "isDefault": true
         },
         {
           "id": "国模",
@@ -1130,27 +764,19 @@
           "ratio": 1,
           "input": 2,
           "output": 4
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 2,
-          "output": 4,
-          "isDefault": true
         }
       ]
     },
     {
-      "model": "claude-fable-5",
+      "model": "claude-fable-5-1",
       "vendor": "Anthropic",
       "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 10,
-      "output": 50,
+      "defaultGroup": "Claude-Max",
+      "input": 100,
+      "output": 500,
       "officialInput": 10,
       "officialOutput": 50,
-      "ratio": 1,
+      "ratio": 10,
       "tiers": [
         {
           "label": "standard",
@@ -1160,269 +786,13 @@
         }
       ],
       "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 9,
-          "output": 45
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 10,
-          "output": 50,
-          "isDefault": true
-        },
-        {
-          "id": "cursor反代",
-          "kind": "other",
-          "ratio": 1.5,
-          "input": 15,
-          "output": 75
-        },
-        {
-          "id": "AwsQ-Kiro-高缓存",
-          "kind": "other",
-          "ratio": 2.5,
-          "input": 25,
-          "output": 125
-        },
         {
           "id": "Claude-Max",
           "kind": "other",
           "ratio": 10,
           "input": 100,
-          "output": 500
-        }
-      ]
-    },
-    {
-      "model": "deepseek-flash",
-      "vendor": "DeepSeek",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 0.3,
-      "output": 1.2,
-      "officialInput": 0.3,
-      "officialOutput": 1.2,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "peak",
-          "maxInputTokens": null,
-          "input": 0.3,
-          "output": 1.2
-        }
-      ],
-      "groups": [
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 0.3,
-          "output": 1.2,
+          "output": 500,
           "isDefault": true
-        },
-        {
-          "id": "国模",
-          "kind": "other",
-          "ratio": 1,
-          "input": 0.3,
-          "output": 1.2
-        }
-      ]
-    },
-    {
-      "model": "deepseek-v4-pro",
-      "vendor": "DeepSeek",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 9,
-      "output": 27,
-      "officialInput": 9,
-      "officialOutput": 27,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 9,
-          "output": 27
-        }
-      ],
-      "groups": [
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 9,
-          "output": 27,
-          "isDefault": true
-        },
-        {
-          "id": "国模",
-          "kind": "other",
-          "ratio": 1,
-          "input": 9,
-          "output": 27
-        }
-      ]
-    },
-    {
-      "model": "gpt-6-astra",
-      "vendor": "OpenAI",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 10,
-      "output": 50,
-      "officialInput": 10,
-      "officialOutput": 50,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "0_272k",
-          "maxInputTokens": 272000,
-          "input": 10,
-          "output": 50
-        },
-        {
-          "label": "272k_plus",
-          "maxInputTokens": null,
-          "input": 20,
-          "output": 75
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 9,
-          "output": 45
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 10,
-          "output": 50,
-          "isDefault": true
-        },
-        {
-          "id": "OpenAi-PLUS",
-          "kind": "other",
-          "ratio": 1.5,
-          "input": 15,
-          "output": 75
-        },
-        {
-          "id": "OpenAi-Pro",
-          "kind": "other",
-          "ratio": 2.5,
-          "input": 25,
-          "output": 125
-        },
-        {
-          "id": "GPT-官key-正价",
-          "kind": "other",
-          "ratio": 3.5,
-          "input": 35,
-          "output": 175
-        },
-        {
-          "id": "Azure-Gpt",
-          "kind": "other",
-          "ratio": 12,
-          "input": 120,
-          "output": 600
-        }
-      ]
-    },
-    {
-      "model": "MiniMax-M2.5-highspeed",
-      "vendor": "MiniMax",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 0.6,
-      "output": 2.4,
-      "officialInput": 0.6,
-      "officialOutput": 2.4,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 0.6,
-          "output": 2.4
-        }
-      ],
-      "groups": [
-        {
-          "id": "随时挂 玩具分组",
-          "kind": "other",
-          "ratio": 0.6,
-          "input": 0.36,
-          "output": 1.44
-        },
-        {
-          "id": "国模",
-          "kind": "other",
-          "ratio": 1,
-          "input": 0.6,
-          "output": 2.4
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 0.6,
-          "output": 2.4,
-          "isDefault": true
-        }
-      ]
-    },
-    {
-      "model": "MiniMax-M3.1-Flash",
-      "vendor": "MiniMax",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 0.15,
-      "output": 0.6,
-      "officialInput": 0.15,
-      "officialOutput": 0.6,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 0.15,
-          "output": 0.6
-        }
-      ],
-      "groups": [
-        {
-          "id": "随时挂 玩具分组",
-          "kind": "other",
-          "ratio": 0.6,
-          "input": 0.09,
-          "output": 0.36
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 0.15,
-          "output": 0.6,
-          "isDefault": true
-        },
-        {
-          "id": "国模",
-          "kind": "other",
-          "ratio": 1,
-          "input": 0.15,
-          "output": 0.6
         }
       ]
     },
@@ -1456,18 +826,18 @@
       ]
     },
     {
-      "model": "claude-sonnet-4-5-20250929",
-      "vendor": "Anthropic",
+      "model": "k3",
+      "vendor": "MiniMax",
       "contextWindow": null,
-      "defaultGroup": "Claude-Max",
-      "input": 30,
-      "output": 150,
+      "defaultGroup": "default",
+      "input": 3,
+      "output": 15,
       "officialInput": 3,
       "officialOutput": 15,
-      "ratio": 10,
+      "ratio": 1,
       "tiers": [
         {
-          "label": "standard",
+          "label": "base",
           "maxInputTokens": null,
           "input": 3,
           "output": 15
@@ -1475,191 +845,154 @@
       ],
       "groups": [
         {
-          "id": "Claude-Max",
+          "id": "国模",
           "kind": "other",
-          "ratio": 10,
-          "input": 30,
-          "output": 150,
-          "isDefault": true
-        }
-      ]
-    },
-    {
-      "model": "claude-fable-5-2",
-      "vendor": "Anthropic",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 8,
-      "output": 40,
-      "officialInput": 8,
-      "officialOutput": 40,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "base",
-          "maxInputTokens": null,
-          "input": 8,
-          "output": 40
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 7.2,
-          "output": 36
+          "ratio": 1,
+          "input": 3,
+          "output": 15
         },
         {
           "id": "default",
           "kind": "other",
           "ratio": 1,
-          "input": 8,
-          "output": 40,
-          "isDefault": true
-        },
-        {
-          "id": "cursor反代",
-          "kind": "other",
-          "ratio": 1.5,
-          "input": 12,
-          "output": 60
-        },
-        {
-          "id": "AwsQ-Kiro-高缓存",
-          "kind": "other",
-          "ratio": 2.5,
-          "input": 20,
-          "output": 100
-        },
-        {
-          "id": "Claude-Max",
-          "kind": "other",
-          "ratio": 10,
-          "input": 80,
-          "output": 400
-        }
-      ]
-    },
-    {
-      "model": "claude-opus-4-5",
-      "vendor": "Anthropic",
-      "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 5,
-      "output": 25,
-      "officialInput": 5,
-      "officialOutput": 25,
-      "ratio": 1,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": null,
-          "input": 5,
-          "output": 25
-        }
-      ],
-      "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 4.5,
-          "output": 22.5
-        },
-        {
-          "id": "default",
-          "kind": "other",
-          "ratio": 1,
-          "input": 5,
-          "output": 25,
+          "input": 3,
+          "output": 15,
           "isDefault": true
         }
       ]
     },
     {
-      "model": "glm-5.2",
-      "vendor": "智谱",
+      "model": "deepseek-v4-pro",
+      "vendor": "DeepSeek",
       "contextWindow": null,
       "defaultGroup": "default",
-      "input": 1.4,
-      "output": 4.4,
-      "officialInput": 1.4,
-      "officialOutput": 4.4,
+      "input": 9,
+      "output": 27,
+      "officialInput": 9,
+      "officialOutput": 27,
       "ratio": 1,
       "tiers": [
         {
           "label": "standard",
           "maxInputTokens": null,
-          "input": 1.4,
-          "output": 4.4
+          "input": 9,
+          "output": 27
         }
       ],
       "groups": [
-        {
-          "id": "vip",
-          "kind": "other",
-          "ratio": 0.9,
-          "input": 1.26,
-          "output": 3.96
-        },
         {
           "id": "国模",
           "kind": "other",
           "ratio": 1,
-          "input": 1.4,
-          "output": 4.4
+          "input": 9,
+          "output": 27
         },
         {
           "id": "default",
           "kind": "other",
           "ratio": 1,
-          "input": 1.4,
-          "output": 4.4,
+          "input": 9,
+          "output": 27,
           "isDefault": true
         }
       ]
     },
     {
-      "model": "MiniMax-M2.7",
+      "model": "gpt-5.6-terra",
+      "vendor": "OpenAI",
+      "contextWindow": null,
+      "defaultGroup": "default",
+      "input": 2,
+      "output": 12,
+      "officialInput": 2,
+      "officialOutput": 12,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": 272000,
+          "input": 2,
+          "output": 12
+        },
+        {
+          "label": "long_context",
+          "maxInputTokens": null,
+          "input": 4,
+          "output": 18
+        }
+      ],
+      "groups": [
+        {
+          "id": "vip",
+          "kind": "other",
+          "ratio": 0.8,
+          "input": 1.6,
+          "output": 9.6
+        },
+        {
+          "id": "default",
+          "kind": "other",
+          "ratio": 1,
+          "input": 2,
+          "output": 12,
+          "isDefault": true
+        },
+        {
+          "id": "OpenAi-PLUS",
+          "kind": "other",
+          "ratio": 1.4,
+          "input": 2.8,
+          "output": 16.8
+        },
+        {
+          "id": "OpenAi-Pro",
+          "kind": "other",
+          "ratio": 2,
+          "input": 4,
+          "output": 24
+        },
+        {
+          "id": "GPT-官key-正价",
+          "kind": "other",
+          "ratio": 3.5,
+          "input": 7,
+          "output": 42
+        }
+      ]
+    },
+    {
+      "model": "MiniMax-M2.7-highspeed",
       "vendor": "MiniMax",
       "contextWindow": null,
       "defaultGroup": "default",
-      "input": 0.3,
-      "output": 1.2,
-      "officialInput": 0.3,
-      "officialOutput": 1.2,
+      "input": 0.6,
+      "output": 4.8,
+      "officialInput": 0.6,
+      "officialOutput": 4.8,
       "ratio": 1,
       "tiers": [
         {
           "label": "standard",
           "maxInputTokens": null,
-          "input": 0.3,
-          "output": 1.2
+          "input": 0.6,
+          "output": 4.8
         }
       ],
       "groups": [
         {
-          "id": "随时挂 玩具分组",
-          "kind": "other",
-          "ratio": 0.6,
-          "input": 0.18,
-          "output": 0.72
-        },
-        {
           "id": "default",
           "kind": "other",
           "ratio": 1,
-          "input": 0.3,
-          "output": 1.2,
+          "input": 0.6,
+          "output": 4.8,
           "isDefault": true
         },
         {
           "id": "国模",
           "kind": "other",
           "ratio": 1,
-          "input": 0.3,
-          "output": 1.2
+          "input": 0.6,
+          "output": 4.8
         }
       ]
     },
@@ -1706,113 +1039,15 @@
       ]
     },
     {
-      "model": "gpt-5.6-sol",
-      "vendor": "OpenAI",
-      "contextWindow": null,
-      "defaultGroup": "OpenAi-PLUS",
-      "input": 7.5,
-      "output": 45,
-      "officialInput": 5,
-      "officialOutput": 30,
-      "ratio": 1.5,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": 272000,
-          "input": 5,
-          "output": 30
-        },
-        {
-          "label": "long_context",
-          "maxInputTokens": null,
-          "input": 10,
-          "output": 45
-        }
-      ],
-      "groups": [
-        {
-          "id": "OpenAi-PLUS",
-          "kind": "other",
-          "ratio": 1.5,
-          "input": 7.5,
-          "output": 45,
-          "isDefault": true
-        },
-        {
-          "id": "OpenAi-Pro",
-          "kind": "other",
-          "ratio": 2.5,
-          "input": 12.5,
-          "output": 75
-        },
-        {
-          "id": "GPT-官key-正价",
-          "kind": "other",
-          "ratio": 3.5,
-          "input": 17.5,
-          "output": 105
-        }
-      ]
-    },
-    {
-      "model": "gpt-5.6-terra",
-      "vendor": "OpenAI",
-      "contextWindow": null,
-      "defaultGroup": "OpenAi-PLUS",
-      "input": 3,
-      "output": 18,
-      "officialInput": 2,
-      "officialOutput": 12,
-      "ratio": 1.5,
-      "tiers": [
-        {
-          "label": "standard",
-          "maxInputTokens": 272000,
-          "input": 2,
-          "output": 12
-        },
-        {
-          "label": "long_context",
-          "maxInputTokens": null,
-          "input": 4,
-          "output": 18
-        }
-      ],
-      "groups": [
-        {
-          "id": "OpenAi-PLUS",
-          "kind": "other",
-          "ratio": 1.5,
-          "input": 3,
-          "output": 18,
-          "isDefault": true
-        },
-        {
-          "id": "OpenAi-Pro",
-          "kind": "other",
-          "ratio": 2.5,
-          "input": 5,
-          "output": 30
-        },
-        {
-          "id": "GPT-官key-正价",
-          "kind": "other",
-          "ratio": 3.5,
-          "input": 7,
-          "output": 42
-        }
-      ]
-    },
-    {
-      "model": "claude-opus-4-7",
+      "model": "claude-opus-4-8",
       "vendor": "Anthropic",
       "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 5,
-      "output": 25,
+      "defaultGroup": "Claude-Max",
+      "input": 50,
+      "output": 250,
       "officialInput": 5,
       "officialOutput": 25,
-      "ratio": 1,
+      "ratio": 10,
       "tiers": [
         {
           "label": "standard",
@@ -1823,31 +1058,147 @@
       ],
       "groups": [
         {
+          "id": "Claude-Max",
+          "kind": "other",
+          "ratio": 10,
+          "input": 50,
+          "output": 250,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "vendor": "Anthropic",
+      "contextWindow": null,
+      "defaultGroup": "Claude-Max",
+      "input": 20,
+      "output": 100,
+      "officialInput": 2,
+      "officialOutput": 10,
+      "ratio": 10,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 2,
+          "output": 10
+        }
+      ],
+      "groups": [
+        {
+          "id": "Claude-Max",
+          "kind": "other",
+          "ratio": 10,
+          "input": 20,
+          "output": 100,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "gpt-6",
+      "vendor": "OpenAI",
+      "contextWindow": null,
+      "defaultGroup": "default",
+      "input": 75,
+      "output": 150,
+      "officialInput": 75,
+      "officialOutput": 150,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 75,
+          "output": 150
+        }
+      ],
+      "groups": [
+        {
           "id": "vip",
           "kind": "other",
-          "ratio": 0.9,
-          "input": 4.5,
-          "output": 22.5
+          "ratio": 0.8,
+          "input": 60,
+          "output": 120
         },
         {
           "id": "default",
           "kind": "other",
           "ratio": 1,
-          "input": 5,
-          "output": 25,
+          "input": 75,
+          "output": 150,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "MiniMax-M2.5",
+      "vendor": "MiniMax",
+      "contextWindow": null,
+      "defaultGroup": "default",
+      "input": 0.3,
+      "output": 1.2,
+      "officialInput": 0.3,
+      "officialOutput": 1.2,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 0.3,
+          "output": 1.2
+        }
+      ],
+      "groups": [
+        {
+          "id": "default",
+          "kind": "other",
+          "ratio": 1,
+          "input": 0.3,
+          "output": 1.2,
           "isDefault": true
         },
+        {
+          "id": "国模",
+          "kind": "other",
+          "ratio": 1,
+          "input": 0.3,
+          "output": 1.2
+        }
+      ]
+    },
+    {
+      "model": "claude-opus-5",
+      "vendor": "Anthropic",
+      "contextWindow": null,
+      "defaultGroup": "Claude-Max",
+      "input": 50,
+      "output": 250,
+      "officialInput": 5,
+      "officialOutput": 25,
+      "ratio": 10,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 5,
+          "output": 25
+        }
+      ],
+      "groups": [
         {
           "id": "Claude-Max",
           "kind": "other",
           "ratio": 10,
           "input": 50,
-          "output": 250
+          "output": 250,
+          "isDefault": true
         }
       ]
     },
     {
-      "model": "glm-5.3",
+      "model": "glm-5.2",
       "vendor": "智谱",
       "contextWindow": null,
       "defaultGroup": "default",
@@ -1866,11 +1217,11 @@
       ],
       "groups": [
         {
-          "id": "vip",
+          "id": "国模",
           "kind": "other",
-          "ratio": 0.9,
-          "input": 1.26,
-          "output": 3.96
+          "ratio": 1,
+          "input": 1.4,
+          "output": 4.4
         },
         {
           "id": "default",
@@ -1879,91 +1230,265 @@
           "input": 1.4,
           "output": 4.4,
           "isDefault": true
-        },
-        {
-          "id": "国模",
-          "kind": "other",
-          "ratio": 1,
-          "input": 1.4,
-          "output": 4.4
         }
       ]
     },
     {
-      "model": "codex-auto-review",
-      "vendor": "OpenAI",
+      "model": "claude-opus-4-6",
+      "vendor": "Anthropic",
       "contextWindow": null,
-      "defaultGroup": "OpenAi-PLUS",
-      "input": 7.5,
-      "output": 45,
+      "defaultGroup": "Claude-Max",
+      "input": 50,
+      "output": 250,
       "officialInput": 5,
-      "officialOutput": 30,
-      "ratio": 1.5,
+      "officialOutput": 25,
+      "ratio": 10,
       "tiers": [
         {
           "label": "standard",
           "maxInputTokens": null,
           "input": 5,
+          "output": 25
+        }
+      ],
+      "groups": [
+        {
+          "id": "Claude-Max",
+          "kind": "other",
+          "ratio": 10,
+          "input": 50,
+          "output": 250,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "claude-opus-4-7",
+      "vendor": "Anthropic",
+      "contextWindow": null,
+      "defaultGroup": "Claude-Max",
+      "input": 50,
+      "output": 250,
+      "officialInput": 5,
+      "officialOutput": 25,
+      "ratio": 10,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 5,
+          "output": 25
+        }
+      ],
+      "groups": [
+        {
+          "id": "Claude-Max",
+          "kind": "other",
+          "ratio": 10,
+          "input": 50,
+          "output": 250,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "claude-sonnet-5",
+      "vendor": "Anthropic",
+      "contextWindow": null,
+      "defaultGroup": "Claude-Max",
+      "input": 20,
+      "output": 100,
+      "officialInput": 2,
+      "officialOutput": 10,
+      "ratio": 10,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 2,
+          "output": 10
+        }
+      ],
+      "groups": [
+        {
+          "id": "Claude-Max",
+          "kind": "other",
+          "ratio": 10,
+          "input": 20,
+          "output": 100,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "gpt-5.6",
+      "vendor": "OpenAI",
+      "contextWindow": null,
+      "defaultGroup": "default",
+      "input": 4,
+      "output": 20,
+      "officialInput": 4,
+      "officialOutput": 20,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "0_272k",
+          "maxInputTokens": 272000,
+          "input": 4,
+          "output": 20
+        },
+        {
+          "label": "272k_plus",
+          "maxInputTokens": null,
+          "input": 8,
           "output": 30
         }
       ],
       "groups": [
         {
-          "id": "OpenAi-PLUS",
+          "id": "vip",
           "kind": "other",
-          "ratio": 1.5,
-          "input": 7.5,
-          "output": 45,
+          "ratio": 0.8,
+          "input": 3.2,
+          "output": 16
+        },
+        {
+          "id": "default",
+          "kind": "other",
+          "ratio": 1,
+          "input": 4,
+          "output": 20,
           "isDefault": true
-        },
-        {
-          "id": "OpenAi-Pro",
-          "kind": "other",
-          "ratio": 2.5,
-          "input": 12.5,
-          "output": 75
-        },
-        {
-          "id": "GPT-官key-正价",
-          "kind": "other",
-          "ratio": 3.5,
-          "input": 17.5,
-          "output": 105
         }
       ]
     },
     {
-      "model": "gpt-6-luna",
-      "vendor": "OpenAI",
+      "model": "MiniMax-M3",
+      "vendor": "MiniMax",
       "contextWindow": null,
-      "defaultGroup": "Azure-Gpt",
-      "input": 24,
-      "output": 144,
-      "officialInput": 2,
-      "officialOutput": 12,
-      "ratio": 12,
+      "defaultGroup": "default",
+      "input": 0.3,
+      "output": 1.2,
+      "officialInput": 0.3,
+      "officialOutput": 1.2,
+      "ratio": 1,
       "tiers": [
         {
           "label": "standard",
-          "maxInputTokens": 272000,
-          "input": 2,
-          "output": 12
-        },
-        {
-          "label": "long_context",
           "maxInputTokens": null,
-          "input": 4,
-          "output": 18
+          "input": 0.3,
+          "output": 1.2
         }
       ],
       "groups": [
         {
-          "id": "Azure-Gpt",
+          "id": "default",
           "kind": "other",
-          "ratio": 12,
-          "input": 24,
-          "output": 144,
+          "ratio": 1,
+          "input": 0.3,
+          "output": 1.2,
           "isDefault": true
+        },
+        {
+          "id": "国模",
+          "kind": "other",
+          "ratio": 1,
+          "input": 0.3,
+          "output": 1.2
+        }
+      ]
+    },
+    {
+      "model": "claude-opus-4-5-20251101",
+      "vendor": "Anthropic",
+      "contextWindow": null,
+      "defaultGroup": "Claude-Max",
+      "input": 50,
+      "output": 250,
+      "officialInput": 5,
+      "officialOutput": 25,
+      "ratio": 10,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 5,
+          "output": 25
+        }
+      ],
+      "groups": [
+        {
+          "id": "Claude-Max",
+          "kind": "other",
+          "ratio": 10,
+          "input": 50,
+          "output": 250,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "claude-sonnet-4-5-20250929",
+      "vendor": "Anthropic",
+      "contextWindow": null,
+      "defaultGroup": "Claude-Max",
+      "input": 30,
+      "output": 150,
+      "officialInput": 3,
+      "officialOutput": 15,
+      "ratio": 10,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 3,
+          "output": 15
+        }
+      ],
+      "groups": [
+        {
+          "id": "Claude-Max",
+          "kind": "other",
+          "ratio": 10,
+          "input": 30,
+          "output": 150,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "MiniMax-M2.5-highspeed",
+      "vendor": "MiniMax",
+      "contextWindow": null,
+      "defaultGroup": "default",
+      "input": 0.6,
+      "output": 2.4,
+      "officialInput": 0.6,
+      "officialOutput": 2.4,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 0.6,
+          "output": 2.4
+        }
+      ],
+      "groups": [
+        {
+          "id": "default",
+          "kind": "other",
+          "ratio": 1,
+          "input": 0.6,
+          "output": 2.4,
+          "isDefault": true
+        },
+        {
+          "id": "国模",
+          "kind": "other",
+          "ratio": 1,
+          "input": 0.6,
+          "output": 2.4
         }
       ]
     },
@@ -1987,11 +1512,12 @@
       ],
       "groups": [
         {
-          "id": "随时挂 玩具分组",
+          "id": "default",
           "kind": "other",
-          "ratio": 0.6,
-          "input": 0.18,
-          "output": 0.72
+          "ratio": 1,
+          "input": 0.3,
+          "output": 1.2,
+          "isDefault": true
         },
         {
           "id": "国模",
@@ -1999,20 +1525,170 @@
           "ratio": 1,
           "input": 0.3,
           "output": 1.2
+        }
+      ]
+    },
+    {
+      "model": "codex-auto-review",
+      "vendor": "OpenAI",
+      "contextWindow": null,
+      "defaultGroup": "default",
+      "input": 5,
+      "output": 30,
+      "officialInput": 5,
+      "officialOutput": 30,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 5,
+          "output": 30
+        }
+      ],
+      "groups": [
+        {
+          "id": "vip",
+          "kind": "other",
+          "ratio": 0.8,
+          "input": 4,
+          "output": 24
         },
         {
           "id": "default",
           "kind": "other",
           "ratio": 1,
-          "input": 0.3,
-          "output": 1.2,
+          "input": 5,
+          "output": 30,
+          "isDefault": true
+        },
+        {
+          "id": "OpenAi-PLUS",
+          "kind": "other",
+          "ratio": 1.4,
+          "input": 7,
+          "output": 42
+        },
+        {
+          "id": "OpenAi-Pro",
+          "kind": "other",
+          "ratio": 2,
+          "input": 10,
+          "output": 60
+        },
+        {
+          "id": "GPT-官key-正价",
+          "kind": "other",
+          "ratio": 3.5,
+          "input": 17.5,
+          "output": 105
+        }
+      ]
+    },
+    {
+      "model": "MiniMax-M2",
+      "vendor": "MiniMax",
+      "contextWindow": null,
+      "defaultGroup": "default",
+      "input": 0.17,
+      "output": 1.53,
+      "officialInput": 0.17,
+      "officialOutput": 1.53,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 0.17,
+          "output": 1.53
+        }
+      ],
+      "groups": [
+        {
+          "id": "default",
+          "kind": "other",
+          "ratio": 1,
+          "input": 0.17,
+          "output": 1.53,
+          "isDefault": true
+        },
+        {
+          "id": "国模",
+          "kind": "other",
+          "ratio": 1,
+          "input": 0.17,
+          "output": 1.53
+        }
+      ]
+    },
+    {
+      "model": "gemini-3.1-flash-image-preview",
+      "vendor": "Google",
+      "contextWindow": null,
+      "defaultGroup": "图像",
+      "input": 0.5,
+      "output": 60,
+      "officialInput": 0.5,
+      "officialOutput": 60,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 0.5,
+          "output": 60
+        }
+      ],
+      "groups": [
+        {
+          "id": "图像",
+          "kind": "other",
+          "ratio": 1,
+          "input": 0.5,
+          "output": 60,
           "isDefault": true
         }
       ]
     },
     {
-      "model": "claude-fable-5-1",
-      "vendor": "Anthropic",
+      "model": "glm-5.3",
+      "vendor": "智谱",
+      "contextWindow": null,
+      "defaultGroup": "default",
+      "input": 1.4,
+      "output": 4.4,
+      "officialInput": 1.4,
+      "officialOutput": 4.4,
+      "ratio": 1,
+      "tiers": [
+        {
+          "label": "standard",
+          "maxInputTokens": null,
+          "input": 1.4,
+          "output": 4.4
+        }
+      ],
+      "groups": [
+        {
+          "id": "国模",
+          "kind": "other",
+          "ratio": 1,
+          "input": 1.4,
+          "output": 4.4
+        },
+        {
+          "id": "default",
+          "kind": "other",
+          "ratio": 1,
+          "input": 1.4,
+          "output": 4.4,
+          "isDefault": true
+        }
+      ]
+    },
+    {
+      "model": "gpt-6-astra",
+      "vendor": "OpenAI",
       "contextWindow": null,
       "defaultGroup": "default",
       "input": 10,
@@ -2022,19 +1698,25 @@
       "ratio": 1,
       "tiers": [
         {
-          "label": "standard",
-          "maxInputTokens": null,
+          "label": "0_272k",
+          "maxInputTokens": 272000,
           "input": 10,
           "output": 50
+        },
+        {
+          "label": "272k_plus",
+          "maxInputTokens": null,
+          "input": 20,
+          "output": 75
         }
       ],
       "groups": [
         {
           "id": "vip",
           "kind": "other",
-          "ratio": 0.9,
-          "input": 9,
-          "output": 45
+          "ratio": 0.8,
+          "input": 8,
+          "output": 40
         },
         {
           "id": "default",
@@ -2045,71 +1727,71 @@
           "isDefault": true
         },
         {
-          "id": "cursor反代",
+          "id": "OpenAi-PLUS",
           "kind": "other",
-          "ratio": 1.5,
-          "input": 15,
-          "output": 75
+          "ratio": 1.4,
+          "input": 14,
+          "output": 70
         },
         {
-          "id": "AwsQ-Kiro-高缓存",
+          "id": "OpenAi-Pro",
           "kind": "other",
-          "ratio": 2.5,
-          "input": 25,
-          "output": 125
+          "ratio": 2,
+          "input": 20,
+          "output": 100
         },
         {
-          "id": "Claude-Max",
+          "id": "GPT-官key-正价",
           "kind": "other",
-          "ratio": 10,
-          "input": 100,
-          "output": 500
+          "ratio": 3.5,
+          "input": 35,
+          "output": 175
+        },
+        {
+          "id": "Azure-Gpt",
+          "kind": "other",
+          "ratio": 12,
+          "input": 120,
+          "output": 600
         }
       ]
     },
     {
-      "model": "deepseek-v4.1-flash",
-      "vendor": "DeepSeek",
+      "model": "claude-sonnet-4-6",
+      "vendor": "Anthropic",
       "contextWindow": null,
-      "defaultGroup": "default",
-      "input": 2,
-      "output": 8,
-      "officialInput": 2,
-      "officialOutput": 8,
-      "ratio": 1,
+      "defaultGroup": "Claude-Max",
+      "input": 30,
+      "output": 150,
+      "officialInput": 3,
+      "officialOutput": 15,
+      "ratio": 10,
       "tiers": [
         {
-          "label": "off_peak",
+          "label": "standard",
           "maxInputTokens": null,
-          "input": 2,
-          "output": 8
+          "input": 3,
+          "output": 15
         }
       ],
       "groups": [
         {
-          "id": "default",
+          "id": "Claude-Max",
           "kind": "other",
-          "ratio": 1,
-          "input": 2,
-          "output": 8,
+          "ratio": 10,
+          "input": 30,
+          "output": 150,
           "isDefault": true
-        },
-        {
-          "id": "国模",
-          "kind": "other",
-          "ratio": 1,
-          "input": 2,
-          "output": 8
         }
       ]
     }
   ],
   "sample": {
     "model": "gpt-5.6-sol",
-    "input": "$7.5",
-    "output": "$45",
+    "input": "$5",
+    "output": "$30",
     "officialIn": "$5",
     "officialOut": "$30",
-    "monthly": "$74.25"
+    "monthly": "$49.50"
   }
 }

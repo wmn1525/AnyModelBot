@@ -43,7 +43,7 @@ export default {
       },
       {
         "title": "3つの API ドメイン",
-        "body": "modelflare.dev、origin.modelflare.dev、cf.modelflare.dev から選べます。設定で速度を比べて、自分で選んでください。自動では切り替わりません。"
+        "body": "api.okinto.com、origin.api.okinto.com、cf.api.okinto.com から選べます。設定で速度を比べて、自分で選んでください。自動では切り替わりません。"
       },
       {
         "title": "Slack、Telegram、Discord で画像やファイルを送受信",
