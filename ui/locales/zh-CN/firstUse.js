@@ -5,9 +5,6 @@ export default {
   "signupGift": "可用额度与计费规则以 OKINTO 控制台为准",
   "noKey": "不想配置 API Key？",
   "useAccount": "使用 OKINTO 账号登录",
-  "modelSettings": "模型设置",
-  "inherit": "跟随默认：{model}",
-  "modelHint": "选择这个机器人的聊天模型。生图等能力还需要相应的工具和权限。",
   "modelUnavailable": "当前模型不可用，请重新选择。",
   "modelFailed": "模型列表加载失败，请重试。",
   "moreCapabilities": "生图等能力还需要相应的工具和权限。创建后，可继续配置技能与权限，以及这个机器人的独立记忆。",
@@ -31,7 +28,7 @@ export default {
   "balanceUnavailable": "暂不可用",
   "myAccount": "我的账号",
   "signIn": "登录 OKINTO",
-  "signInSub": "使用更多模型，统一管理余额",
+  "signInSub": "使用更多模型，当前 Key 照常保留",
   "feedback": "意见和反馈",
   "checkUpdate": "检查更新",
   "checking": "检查中…",
@@ -40,8 +37,8 @@ export default {
   "logout": "退出登录",
   "logoutBody": "退出后回到登录页。本地聊天记录、文件和配置会保留。",
   "logoutBusy": "有任务正在运行。退出登录会断开 OKINTO 连接：正在进行的对话会先停止（已生成的内容保留），后台任务会中断，重新登录后可以继续。聊天记录、文件和配置都会保留。要退出吗？",
-  "backConfig": "返回接入配置",
-  "backConfigBody": "返回登录或 Key 配置页，保留已有 Key、模型设置和本地数据。",
+  "backConfig": "切换接入方式",
+  "backConfigBody": "回到登录页，可以登录 OKINTO 或添加其他 API Key。已有的 Key、模型设置和本地数据都会保留。",
   "connectionContinue": "使用已有配置继续",
   "channelTitle": "连接常用聊天工具",
   "channelDesc": "选一个常用渠道，连接后可以在那里和助手聊天。",
@@ -70,7 +67,7 @@ export default {
     "details": "错误详情",
     "status": "状态码 {status}",
     "copy": "复制详情",
-    "retry": "重新发送",
+    "retry": "重试",
     "retryHint": "从头重新执行这条消息",
     "retryTitle": "重新执行这条消息？",
     "retryBody": "重新发送会从头再执行一次整个任务，不是只重试失败的那一步。上次已经完成的操作（例如修改过的文件、发出的消息）可能会再做一次。",
@@ -103,5 +100,8 @@ export default {
     "recheck": "我已开启，重新检测",
     "retry": "重新发送任务",
     "later": "稍后"
-  }
+  },
+  "modelSettings": "模型设置",
+  "inherit": "跟随默认：{model}",
+  "modelHint": "选择这个机器人的聊天模型。生图等能力还需要相应的工具和权限。"
 };

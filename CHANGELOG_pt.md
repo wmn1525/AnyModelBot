@@ -4,6 +4,55 @@
 
 Aqui estão as mudanças que você vai notar no app. Para versões mais antigas, veja as [versões no GitHub](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.35 - 2026-11-14
+
+### Novidades
+
+- **Barra lateral e ícones mais simples:** ações comuns usam Heroicons. No topo ficam recolher, pesquisar e criar; Agendadas passa para a navegação com texto. O botão ao lado da conta baixa atualizações e permite reiniciar para instalar quando estiverem prontas.
+- **Saldo visível nas configurações:** Configurações → Modelos mostra saldo, créditos de Bot e porcentagem restante, com ações para atualizar e recarregar. O anel de saldo e o cartão ao passar o mouse na barra lateral foram removidos.
+
+### Melhorias e correções
+
+- **Prévias estáveis:** endereço e seleção de recursos usam controles compartilhados. Trocar de aba no painel direito preserva a largura, inclusive após ajuste manual. Corrigido o botão de expandir a barra lateral após recolhê-la.
+- **Erros mais claros:** falhas na reserva de cota são classificadas como saldo insuficiente, mesmo com prefixos na mensagem. As ações de recuperação correspondem ao provedor, e a barra lateral não exibe erros brutos.
+- **Permissões do computador mais claras:** uma permissão ausente usa título no singular, e reabrir o app vira a ação principal quando necessário. Rascunhos de conversas e formulários e solicitações pendentes são preservados antes de reabrir.
+- **Correções de regras:** mudar o interruptor ou o destino preserva a opção de desfazer. O proprietário gerencia regras entre conversas e membros de grupos são isolados por identidade. A frequência considera os próximos 30 dias, com sugestões a cada três horas ou diariamente.
+- **Orientações e textos consistentes:** a memória inicial dos modelos e revisões automáticas não concluem mais a etapa de lembrar do usuário. Exemplos, mensagens de desfazer, formulários e orientações de ativação foram alinhados em sete idiomas.
+
+### Sincronização do repositório
+
+- Inclui upstream 0.1.33–0.1.35: regras agendadas, dez modelos de bots, prévias de recursos, diagnóstico de inicialização e correções de interface. Preserva login da OKINTO New API, grupos de modelos, saldos e imagens; o novo resumo da conta mantém moedas e cotas ilimitadas.
+
+## 0.1.34 - 2026-11-14
+
+### Novidades
+
+- **Diagnóstico desde o início:** antes de solicitar o bloqueio de instância única, o aplicativo grava um `startup-<time>-<PID>.log` separado com a versão do sistema, a pasta real de dados, o resultado do bloqueio e as etapas de inicialização. Se não puder gravar nessa pasta, tenta a pasta temporária do sistema.
+- **Opção de diagnóstico:** iniciar com `--diagnose-startup` mostra a localização do log quando o bloqueio não é obtido, ajudando a investigar encerramentos sem janela.
+
+### Melhorias e correções
+
+- Se houver uma segunda inicialização antes de o serviço da interface estar pronto, o pedido de exibir a janela aguarda o fim da inicialização, evitando sua criação prematura.
+- Cada inicialização tem um log próprio; a instância principal mantém os vinte mais recentes. Uma segunda inicialização não rotaciona o `app.log` normal do aplicativo em execução.
+- A atualização melhora o diagnóstico de [#71](https://github.com/modelflare-ai/AnyModelBot/issues/71), mas a causa do encerramento imediato no Win11 Insider Build 26300 ainda não foi confirmada. Se `ELECTRON_RUN_AS_NODE` selecionar o modo Node, o código do aplicativo não será executado; essa variável precisa ser verificada primeiro. No Windows, a pasta padrão de logs é `%APPDATA%\anymodel bot\data\logs`, com um espaço no nome.
+
+## 0.1.33 - 2026-11-14
+
+### Novidades
+
+- **Regras reunidas em Agendado:** a nova página lista as regras de todos os bots e destaca as que precisam de atenção. Cartões da conversa, Tarefas e Agendado compartilham os mesmos controles. Crie regras antes da primeira conversa e mantenha-as desativadas. Alterações feitas pela conversa podem ser desfeitas; uma criação desfeita pode ser restaurada por dez minutos.
+- **Recuperação de execuções e resumos de grupos:** regras de calendário recuperam uma única execução recente dentro do prazo de até doze horas, mostrando o horário original. Regras por intervalo não são recuperadas. Há agendamento mensal, três próximas execuções, fusos e estimativas de custo. Resumos de um grupo do aplicativo preservam a data original mesmo quando atrasados.
+- **Dez modelos de bots:** escolha um papel para escrever, trabalhar ou estudar, confira a persona, a memória e as regras e compare modelos adequados. As regras começam desativadas e pedem destino e grupo de origem quando necessário.
+- **Prévia de recursos no painel direito:** abra arquivos e sites de conversas, grupos e espaços de trabalho sem sair do chat. Compatível com Markdown, texto e código, PDF, imagens e HTML, com download e abertura externa.
+- **Espaços de trabalho adaptados ao painel:** a navegação de projetos dos bots oficiais se recolhe em larguras menores. Expanda o espaço e volte à conversa mantendo o estado da edição.
+- **Continuar após conceder permissões no macOS:** um cartão substitui os erros repetidos. O aplicativo verifica as permissões automaticamente e, quando possível, retoma as etapas pendentes na conversa original, preservando rascunhos. Se houver outra mensagem ou uma espera superior a trinta minutos, é preciso clicar em Continuar.
+
+### Melhorias e correções
+
+- Melhorias no retorno do login do Modelflare, nos nomes e avatares das contas e na orientação inicial. Listas de aplicativos conectados, pesquisa e mensagens de erro estão mais claras.
+- Melhorias no layout do canvas do Film Studio e nos dados dos gráficos do US Stock Research. PPT Master e Company Research também adotam o novo espaço de trabalho.
+- Os resultados identificam a regra de origem e respeitam a preferência de notificações. Uma opção impede a suspensão antes da execução quando conectado à energia; não desperta um computador já suspenso ou fechado.
+
 ## 0.1.32 - 2026-11-12
 
 ### Novidades

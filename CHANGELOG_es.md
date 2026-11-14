@@ -4,6 +4,55 @@
 
 Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, consulta las [versiones publicadas en GitHub](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.35 - 2026-11-14
+
+### Novedades
+
+- **Barra lateral e iconos más sencillos:** las acciones comunes usan Heroicons. Arriba quedan contraer, buscar y crear; Programadas pasa a la navegación con texto. El botón junto a la cuenta descarga actualizaciones y permite reiniciar para instalarlas cuando estén listas.
+- **Saldo visible en Ajustes:** Ajustes → Modelos muestra el saldo, los créditos de Bot y el porcentaje restante, con acciones para actualizar y recargar. Se eliminan el anillo de saldo y la tarjeta al pasar el cursor de la barra lateral.
+
+### Mejoras y correcciones
+
+- **Vistas previas estables:** el campo de dirección y el selector de recursos usan controles compartidos. Cambiar de pestaña en el panel derecho conserva su anchura, incluidos los ajustes manuales. Se corrige el botón para expandir la barra lateral después de contraerla.
+- **Errores más claros:** los fallos al reservar cuota se clasifican como saldo insuficiente, también con mensajes que llevan prefijos. Las acciones de recuperación corresponden al proveedor y la barra lateral no muestra errores sin procesar.
+- **Permisos del ordenador más claros:** se usa un título singular cuando falta un permiso y reabrir la app pasa a ser la acción principal cuando hace falta. Antes de reabrir se conservan los borradores de chats y formularios y las solicitudes pendientes.
+- **Correcciones de reglas:** cambiar el interruptor o el destino conserva la opción de deshacer. El propietario gestiona reglas entre conversaciones y los miembros de grupos quedan aislados por identidad. La frecuencia se calcula para los próximos 30 días y se sugieren intervalos de tres horas o diarios.
+- **Guías y textos coherentes:** la memoria inicial de las plantillas y las revisiones automáticas ya no completan el paso de recordar al usuario. Ejemplos, mensajes de deshacer, formularios y guías de activación se unifican en siete idiomas.
+
+### Sincronización del repositorio
+
+- Incluye upstream 0.1.33–0.1.35: reglas programadas, diez plantillas, vistas previas de recursos, diagnóstico de inicio y correcciones de interfaz. Conserva el inicio de sesión de OKINTO New API, grupos de modelos, saldos e imágenes; el nuevo resumen de cuenta respeta las monedas y cuotas ilimitadas.
+
+## 0.1.34 - 2026-11-14
+
+### Novedades
+
+- **Diagnóstico desde el inicio:** antes de solicitar el bloqueo de instancia única, la aplicación crea un `startup-<time>-<PID>.log` separado con la versión del sistema, la carpeta real de datos, el resultado del bloqueo y las etapas de arranque. Si no puede escribir ahí, intenta usar la carpeta temporal del sistema.
+- **Opción de diagnóstico:** al iniciar con `--diagnose-startup`, se muestra la ubicación del registro si no se obtiene el bloqueo, para investigar cierres sin ventana.
+
+### Mejoras y correcciones
+
+- Si se vuelve a iniciar antes de que el servicio de interfaz esté listo, la solicitud de mostrar la ventana espera hasta terminar el arranque, evitando crearla antes de tiempo.
+- Cada inicio tiene su propio registro y la instancia principal conserva los veinte más recientes. Un segundo inicio no rota el `app.log` habitual de la aplicación en ejecución.
+- Esta actualización mejora el diagnóstico de [#71](https://github.com/modelflare-ai/AnyModelBot/issues/71); aún no se ha confirmado la causa del cierre inmediato en Win11 Insider Build 26300. Si `ELECTRON_RUN_AS_NODE` activa el modo Node, el código de la aplicación no se ejecuta y hay que revisar primero esa variable. La carpeta predeterminada de registros en Windows es `%APPDATA%\anymodel bot\data\logs`, con un espacio en el nombre.
+
+## 0.1.33 - 2026-11-14
+
+### Novedades
+
+- **Todas las reglas en Programado:** la nueva página reúne las reglas de todos los bots y destaca las que requieren atención. Las tarjetas de chat, Tareas y Programado comparten interruptores. Puedes crear reglas antes de la primera conversación y dejarlas desactivadas. Los cambios del chat se pueden deshacer; una creación deshecha se puede restaurar durante diez minutos.
+- **Recuperación de ejecuciones y resúmenes de grupos:** las reglas de calendario recuperan una sola ejecución reciente dentro de un plazo de hasta doce horas e indican la hora prevista. Las reglas por intervalo no se recuperan. Se añaden programación mensual, tres próximas ejecuciones, zonas horarias y estimaciones de gasto. Los resúmenes de un grupo de la aplicación conservan su fecha original aunque lleguen tarde.
+- **Diez plantillas de bots:** elige un papel para escribir, trabajar o estudiar, revisa la personalidad, la memoria y las reglas, y compara modelos adecuados. Las reglas de las plantillas comienzan desactivadas y solicitan destino y grupo de origen cuando hace falta.
+- **Vista previa de recursos a la derecha:** abre archivos y sitios desde conversaciones, grupos y espacios de trabajo sin salir del chat. Admite Markdown, texto y código, PDF, imágenes y HTML, con opciones de descarga y apertura externa.
+- **Espacios de trabajo adaptados al panel:** la navegación de proyectos de los bots oficiales se recoge cuando hay poco ancho. Puedes ampliar el espacio y volver al chat conservando la edición.
+- **Continuar tras conceder permisos en macOS:** una tarjeta sustituye los errores repetidos. La aplicación comprueba los permisos automáticamente y, cuando corresponde, retoma los pasos pendientes en la conversación original conservando los borradores. Si envías otro mensaje o pasan más de treinta minutos, debes pulsar Continuar.
+
+### Mejoras y correcciones
+
+- Mejoras en el regreso del inicio de sesión de Modelflare, nombres y avatares de cuenta y guía inicial. Las listas de aplicaciones conectadas, la búsqueda y los errores son más claros.
+- Mejoras en el lienzo de Film Studio y el procesamiento de gráficos de US Stock Research. PPT Master y Company Research también adoptan el nuevo espacio de trabajo.
+- Los resultados indican su regla de origen y respetan la preferencia de notificaciones. Puedes evitar la suspensión antes de una ejecución cuando el ordenador está enchufado; no despierta un equipo ya suspendido o cerrado.
+
 ## 0.1.32 - 2026-11-12
 
 ### Novedades

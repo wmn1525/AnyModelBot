@@ -11,14 +11,18 @@ export function computerRoutes(ctx: WebContext): Route {
     // —— 电脑操作的系统权限（macOS 桌面版，第 18 项）：状态、系统原生请求、打开设置页、稍后、重新打开应用 ——
     if (p === "/computer-use/relaunch-drafts" && m === "GET") {
       const raw = app.store.getKV("relaunch.drafts");
+      const rawForms = app.store.getKV("relaunch.forms");
       app.store.deleteKV("relaunch.drafts");
+      app.store.deleteKV("relaunch.forms");
       let drafts = {};
+      let forms = {};
       try {
         drafts = raw ? JSON.parse(raw) : {};
+        forms = rawForms ? JSON.parse(rawForms) : {};
       } catch {
         drafts = {};
       }
-      return send(res, 200, { drafts });
+      return send(res, 200, { drafts, forms });
     }
     if (seg[0] === "computer-use" && seg[1] === "permissions") {
       const perms = app.cuPermissions;
@@ -27,8 +31,19 @@ export function computerRoutes(ctx: WebContext): Route {
         return v;
       };
       if (seg.length === 2 && m === "GET") return send(res, 200, perms.view());
+      if (seg[2] === "check" && m === "POST") {
+        void perms.check();
+        return send(res, 200, perms.view());
+      }
+      if (seg[2] === "continue" && m === "POST") {
+        const b = await readJson(req);
+        void perms.check(String(b.botId || ""), true);
+        return send(res, 200, perms.view());
+      }
       if (seg[2] === "request" && m === "POST") {
-        await perms.request(kind((await readJson(req)).kind));
+        const body = await readJson(req);
+        if (body.botId) perms.expand(String(body.botId));
+        await perms.request(kind(body.kind));
         return send(res, 200, perms.view());
       }
       if (seg[2] === "open" && m === "POST") {
@@ -42,10 +57,12 @@ export function computerRoutes(ctx: WebContext): Route {
       if (seg[2] === "relaunch" && m === "POST") {
         if (!app.desktop?.relaunch) throw new HttpError(404, "not supported");
         // 没发出的草稿暂存一次：重新打开后界面取回（GET …/relaunch-drafts）就删掉
-        const b = await readJson(req).catch(() => ({}));
+        const b = await readJson(req);
         const drafts = Object.fromEntries(Object.entries(b?.drafts && typeof b.drafts === "object" ? b.drafts : {})
-          .filter(([k, v]) => typeof v === "string" && k.length <= 200).slice(0, 50).map(([k, v]) => [k, String(v).slice(0, 8000)]));
-        if (Object.keys(drafts).length) app.store.setKV("relaunch.drafts", JSON.stringify(drafts));
+          .filter(([k, v]) => typeof v === "string" && k.length <= 200).map(([k, v]) => [k, String(v)]));
+        app.store.setKV("relaunch.drafts", JSON.stringify(drafts));
+        const forms = b.forms && typeof b.forms === "object" && !Array.isArray(b.forms) ? b.forms : {};
+        app.store.setKV("relaunch.forms", JSON.stringify({ blank: forms.blank, flow: forms.flow, onboarding: forms.onboarding }));
         send(res, 200, { ok: true });
         setTimeout(() => app.desktop?.relaunch?.(), 300);
         return;

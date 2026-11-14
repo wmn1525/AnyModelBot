@@ -1,6 +1,6 @@
 <h1 align="center">okinto 中转</h1>
 
-> 0.1.32 · Windows installers and Linux AppImages download updates in the background by default; installation requires clicking restart and waits while tasks are active. The current unsigned macOS builds continue to use manual installer downloads. Version 0.1.28 and earlier require a manual installation of this release first.
+> 0.1.35 · Scheduled rules, ten bot templates, resource previews, startup diagnostics and interface refinements; preserves OKINTO sign-in, balances, model groups and image generation.
 > App connectors and custom MCP, sidebar groups, right-panel tabs, and Spanish and Portuguese (Brazil); preserves OKINTO sign-in, balances, model groups and image generation.
 > Added a What’s new dialog and changelog in About. Version checks, update downloads and release notes all use this repository.
 
@@ -182,7 +182,7 @@ The full story, in Chinese: [okinto 中转 超级智能体](./docs/blog/superage
 - **It answers to you.** By default a bot replies only to its owner (the WeChat account that scanned the QR code; on Feishu, Telegram, Slack and Discord, the first person to message it after you connect it, which is you) and the people you allow. Anyone else gets a one-line notice and no model is called; you let them in from the info panel, or by replying `yes <code>` in chat.
 - **Replies are not lost.** A reply is saved locally before it is sent; network errors are retried, sending resumes after a restart, and when WeChat's 24-hour window has closed the reply waits and arrives with your next message.
 - **Telemetry kept off.** Telemetry in the bundled computer-use driver is switched off, and the built-in gateway runs with auto-update disabled.
-- **In-app updates.** From 0.1.29, installed desktop apps enable Settings → General → Automatically download updates by default. New versions download in the background and offer Restart and update when ready. Installation requires your click and no running tasks; turn the setting off for manual downloads. Users on 0.1.28 or earlier must manually install 0.1.29 or later once. Docker and source deployments still update manually. From 0.1.30, the first launch after an update shows what changed, the new-version notice shows the notes before you upgrade, and the changelog is always in Settings → About.
+- **In-app updates.** From 0.1.29, installed desktop apps enable Settings → General → Automatically download updates by default. New versions download in the background and offer Restart and update when ready. Installation requires your click and no running tasks; turn the setting off for manual downloads. Users on 0.1.28 or earlier must manually install 0.1.29 or later once. Docker and source deployments still update manually. From 0.1.30, the first launch after an update shows what changed, the update button beside your sidebar account downloads the update and restarts to install it when ready, and the changelog is always in Settings → About.
 - **Light, dark or follow the system.** Six bot characters, and their eyes follow your pointer.
 - **Tray and autostart.** Close the window to hide to the tray; autostart is available on macOS and Windows.
 

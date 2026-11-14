@@ -9,7 +9,7 @@
  *  - 托盘菜单和对话框跟着应用语言（src/i18n）：跟随系统时取系统首选语言，界面里换了语言托盘菜单立刻重建
  * CLI（npm start）与 Docker 走同一套 src/ 代码，本文件只做桌面外壳。
  */
-import { app, BrowserWindow, Menu, Notification, Tray, desktopCapturer, nativeImage, nativeTheme, net, powerMonitor, session, shell, dialog, safeStorage, systemPreferences } from "electron";
+import { app, BrowserWindow, Menu, Notification, Tray, desktopCapturer, nativeImage, nativeTheme, net, powerMonitor, powerSaveBlocker, session, shell, dialog, safeStorage, systemPreferences } from "electron";
 import crypto from "node:crypto";
 import { newApiDesktop } from "./newapi-login.js";
 import { modelflareIssuer } from "../src/providers/modelflare.js";
@@ -24,9 +24,17 @@ import { findAppRoot } from "../src/magpie/supervisor.js";
 import { initFileLog, logFilePath, logger, registerSecret, setConsoleLog } from "../src/log.js";
 import { normalizeLang, onLangChange, setLangPref, setSystemLang, LANGS, t } from "../src/i18n/index.js";
 import { notificationOf, trayTitle, type AttentionItem } from "../src/tasks/attention.js";
+import { acquireDesktopInstance, StartupLog } from "./startup.js";
 
 const log = logger("desktop");
 const SMOKE = process.env.AMB_ELECTRON_SMOKE; // 冒烟测试：截图到该路径后退出
+// Keep the existing profile: it owns OKINTO cookies and the single-instance lock.
+app.setName("okbot");
+const profileDir = SMOKE ? path.join(path.dirname(SMOKE), "electron-profile") : path.join(app.getPath("appData"), "anymodel bot");
+app.setPath("userData", profileDir);
+app.setPath("sessionData", profileDir);
+const startup = new StartupLog(app);
+let windowRequested = false;
 
 let core: App | undefined;
 let win: BrowserWindow | undefined;
@@ -59,7 +67,14 @@ const windowIconPath = () => assetPath(isWin ? "icon.ico" : "icon.png");
 const trayIconPath = () => assetPath(isWin ? "icon.ico" : "tray.png");
 
 function showWindow(): void {
-  if (!win) return createWindow();
+  // A second launch can arrive after Electron is ready but before the local server is ready.
+  if (!app.isReady() || !entryUrl) {
+    windowRequested = true;
+    startup.record("window_activation_deferred");
+    return;
+  }
+  windowRequested = false;
+  if (!win || win.isDestroyed()) return createWindow();
   if (win.isMinimized()) win.restore();
   win.show();
   win.focus();
@@ -149,6 +164,7 @@ function macPermissions(): NonNullable<import("../src/app.js").DesktopHooks["cuP
 }
 
 function createWindow(): void {
+  startup.record("window_creating");
   const debugBuild = isDebugBuild();
   win = new BrowserWindow({
     width: 1200,
@@ -184,7 +200,13 @@ function createWindow(): void {
       if (/^https?:/i.test(url)) void shell.openExternal(url);
     }
   });
-  win.webContents.on("did-finish-load", () => win?.webContents.setZoomFactor(core?.config.ui.zoom ?? 1));
+  win.webContents.on("did-finish-load", () => {
+    startup.record("window_loaded");
+    win?.webContents.setZoomFactor(core?.config.ui.zoom ?? 1);
+  });
+  win.webContents.on("did-fail-load", (_event, code, description, _url, mainFrame) => {
+    if (mainFrame) startup.record("window_load_failed", { code, description });
+  });
   win.on("close", (e) => {
     if (!quitting && tray && core?.config.ui.closeToTray !== false) {
       e.preventDefault();
@@ -222,7 +244,7 @@ function onAttention(items: AttentionItem[]): void {
   renderTray?.();
   const fresh = core?.attention.takeNew(items) ?? [];
   const looking = !!win && win.isVisible() && win.isFocused();
-  if (looking || !fresh.length || !Notification.isSupported()) return;
+  if (looking || !fresh.length || !Notification.isSupported() || core?.store.getKV("desktop.notify") !== "true") return;
   // 一下来好几件时只发最早的两条，其余在「需要你」里
   for (const it of fresh.slice(0, 2)) {
     const n = new Notification({ ...notificationOf(it), icon: windowIconPath() });
@@ -289,10 +311,12 @@ function setAutostart(on: boolean): void {
 }
 
 async function boot(): Promise<void> {
-  const dataDir = process.env.AMB_DATA_DIR ? path.resolve(process.env.AMB_DATA_DIR) : path.join(app.getPath("userData"), "data");
+  startup.record("electron_ready");
+  const dataDir = startup.dataDir ?? (process.env.AMB_DATA_DIR ? path.resolve(process.env.AMB_DATA_DIR) : path.join(app.getPath("userData"), "data"));
   fs.mkdirSync(dataDir, { recursive: true });
   // 尽早打开日志文件：配置读取失败、启动失败也能留下记录
   initFileLog(path.join(dataDir, "logs"));
+  log.info("desktop startup", { startupLog: startup.file });
   const config = loadConfig({ dataDir });
   // 语言：跟随系统时用系统的首选语言（不支持的语言用英文）；偏好本身在 config.ui.lang
   setSystemLang(app.getPreferredSystemLanguages().map(normalizeLang).find((l) => l && LANGS.includes(l)) ?? "en");
@@ -369,16 +393,34 @@ async function boot(): Promise<void> {
     resolveProxy: (url) => session.defaultSession.resolveProxy(url),
     appLink: `${APP_SCHEME}://login-complete`,
     cuPermissions: macPermissions(),
+    ruleNotification: (botId, title, text) => {
+      if (core?.store.getKV("desktop.notify") !== "true" || win?.isFocused() || !Notification.isSupported()) return;
+      const n = new Notification({ title, body: text.split(/\r?\n/)[0].slice(0, 200), icon: windowIconPath() });
+      n.on("click", () => { showWindow(); void win?.webContents.executeJavaScript(`location.hash = ${JSON.stringify(`/chat/${encodeURIComponent(botId)}`)}`); });
+      n.show();
+    },
     relaunch: () => {
       app.relaunch();
       app.quit();
     },
   };
   await core.start();
+  startup.record("core_started");
   if (!core.web) throw new Error(t("desktop.uiNotStarted"));
   // 规则的定时器：电脑醒来、解锁时马上重新看一遍（睡着时错过的按宽限期补跑一次或记为跳过）
-  powerMonitor.on("resume", () => core?.tasks.scheduler.wake());
+  powerMonitor.on("resume", () => core?.tasks.wakeRules());
   powerMonitor.on("unlock-screen", () => core?.tasks.scheduler.wake());
+  let awakeId: number | undefined;
+  const keepAwake = () => {
+    const now = Date.now();
+    const enabled = core?.store.getKV("rules.keepAwake") === "true" && !powerMonitor.isOnBatteryPower();
+    const wanted = enabled && core?.store.listRules().some((r) => r.mode !== "off" && !r.pausedReason && !core?.store.getBot(r.botId)?.settings.paused && ((r.nextRunAt > now && r.nextRunAt - now <= 5 * 60_000) || core?.store.listRuns({ ruleId: r.id, states: ["queued", "running", "settling"], limit: 1 }).length));
+    if (wanted && awakeId === undefined) awakeId = powerSaveBlocker.start("prevent-app-suspension");
+    if (!wanted && awakeId !== undefined) { powerSaveBlocker.stop(awakeId); awakeId = undefined; }
+  };
+  const awakeTimer = setInterval(keepAwake, 10_000); awakeTimer.unref();
+  powerMonitor.on("on-ac", keepAwake); powerMonitor.on("on-battery", keepAwake);
+  app.once("before-quit", () => { clearInterval(awakeTimer); if (awakeId !== undefined) powerSaveBlocker.stop(awakeId); });
   entryUrl = `${core.web.url.replace(/\/$/, "")}/?token=${encodeURIComponent(config.ui.token)}`;
   log.info(`数据目录：${dataDir}`);
   log.info(`管理界面：${core.web.url}`);
@@ -386,7 +428,7 @@ async function boot(): Promise<void> {
   // 「需要你」：托盘、角标、系统通知
   if (!SMOKE) core.attention.onChange(onAttention);
   const atLogin = process.argv.includes("--hidden") || (process.platform === "darwin" && app.getLoginItemSettings().wasOpenedAtLogin);
-  if (!atLogin || SMOKE) createWindow();
+  if (!atLogin || SMOKE || windowRequested) showWindow();
   // 启动前就收到的应用链接（Windows / Linux 从命令行带进来，macOS 的 open-url 在 ready 之前就可能到）
   const early = pendingLink || process.argv.find((a) => a.startsWith(`${APP_SCHEME}://`));
   pendingLink = "";
@@ -430,6 +472,7 @@ if (process.platform === "win32" && app.isPackaged && process.env.AMB_LOG_STDOUT
 let lastErrorBox = 0;
 process.on("uncaughtException", (e) => {
   const err = e as NodeJS.ErrnoException;
+  startup.record("uncaught_exception", { error: err?.stack || String(e) });
   log.error(`uncaught exception: ${err?.stack || String(e)}`);
   if (["EPIPE", "EBADF", "EOF", "ERR_STREAM_DESTROYED"].includes(String(err?.code))) return;
   if (Date.now() - lastErrorBox < 60_000 || !app.isReady()) return;
@@ -443,17 +486,31 @@ process.on("uncaughtException", (e) => {
     })
     .catch(() => {});
 });
-process.on("unhandledRejection", (e) => log.warn(`unhandled rejection: ${(e as Error)?.stack || String(e)}`));
+process.on("unhandledRejection", (e) => {
+  startup.record("unhandled_rejection", { error: (e as Error)?.stack || String(e) });
+  log.warn(`unhandled rejection: ${(e as Error)?.stack || String(e)}`);
+});
+process.on("exit", (code) => startup.record("exit", { code }));
 
-app.setName(PRODUCT);
-// Keep the existing profile when rebranding: it owns account cookies, preferences and the single-instance lock.
-// Smoke runs stay isolated from the user's profile and development window.
-const profileDir = SMOKE ? path.join(path.dirname(SMOKE), "electron-profile") : path.join(app.getPath("appData"), "anymodel bot");
-app.setPath("userData", profileDir);
-app.setPath("sessionData", profileDir);
-if (!app.requestSingleInstanceLock()) {
-  app.quit();
-} else {
+function startupFailed(error: unknown): void {
+  const message = (error as Error)?.message || String(error);
+  startup.record("boot_failed", { error: (error as Error)?.stack || message });
+  log.error((error as Error)?.stack || message);
+  dialog.showErrorBox(t("desktop.bootFailed", { product: PRODUCT }), t("desktop.errorDetail", { message, log: startup.file ?? logFilePath() ?? t("desktop.logDisabled") }));
+  app.exit(1);
+}
+
+function startDesktop(): void {
+  if (!acquireDesktopInstance(app, startup)) {
+    if (process.argv.includes("--diagnose-startup")) {
+      void app.whenReady().then(() => {
+        setSystemLang(app.getPreferredSystemLanguages().map(normalizeLang).find((l) => l && LANGS.includes(l)) ?? "en");
+        dialog.showErrorBox(PRODUCT, t("desktop.errorDetail", { message: t("desktop.instanceLockUnavailable"), log: startup.file ?? t("desktop.logDisabled") }));
+        app.quit();
+      }).catch(startupFailed);
+    } else app.quit();
+    return;
+  }
   // Windows 的系统通知（设置 › 常规 › 回复完成时通知）要求进程的 AppUserModelID 和安装器建的快捷方式一致（= build.appId）
   if (process.platform === "win32") app.setAppUserModelId("dev.anymodel.bot");
   // 应用链接：macOS 走 open-url（要在 ready 之前挂上）；Windows / Linux 是第二个实例带着链接启动
@@ -466,6 +523,7 @@ if (!app.requestSingleInstanceLock()) {
     else app.setAsDefaultProtocolClient(APP_SCHEME);
   }
   app.on("second-instance", (_e, argv) => {
+    startup.record("second_instance_received");
     showWindow();
     const link = argv.find((a) => a.startsWith(`${APP_SCHEME}://`));
     if (link) handleAppLink(link);
@@ -491,9 +549,7 @@ if (!app.requestSingleInstanceLock()) {
   app
     .whenReady()
     .then(boot)
-    .catch((e) => {
-      log.error((e as Error).stack || String(e));
-      dialog.showErrorBox(t("desktop.bootFailed", { product: PRODUCT }), (e as Error).message);
-      app.exit(1);
-    });
+    .catch(startupFailed);
 }
+
+try { startDesktop(); } catch (error) { startupFailed(error); }

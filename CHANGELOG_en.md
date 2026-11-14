@@ -4,6 +4,55 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.35 - 2026-11-14
+
+### New
+
+- **Cleaner sidebar and icons:** standard actions now use Heroicons. Collapse, search and new stay at the top, while Scheduled becomes a labeled navigation item. The update button beside your account downloads updates and restarts to install when ready.
+- **Balance directly in Settings:** Settings → Models shows your account balance, Bot credits and remaining percentage, with refresh and top-up actions. The sidebar balance ring and hover card are removed.
+
+### Improvements and fixes
+
+- **Stable resource previews:** website entry and resource selection use shared controls. Switching right-panel tabs preserves its width, including manual adjustments. Fixed the sidebar expand button becoming unclickable after collapse.
+- **Clearer error recovery:** quota reservation failures are classified as low balance, including errors with prefixed messages. Recovery actions match the account provider, and sidebar previews no longer expose raw error responses.
+- **Clearer computer permissions:** one missing permission uses a singular heading, and reopening the app becomes the main action when required. Chat and form drafts and pending requests are preserved before reopening.
+- **Rule management fixes:** toggling a rule or changing its destination keeps undo available. Owners can manage rules across conversations; group members remain isolated by identity. Frequency counts cover the next 30 days, with lower-frequency suggestions of every three hours or daily.
+- **Consistent onboarding and copy:** template seed memory and automatic reviews no longer complete the remember-you step. Template samples, undo messages, rule forms and activation guidance are aligned across seven languages.
+
+### Fork synchronization
+
+- Includes upstream 0.1.33–0.1.35: scheduled rules, ten bot templates, resource previews, startup diagnostics and interface fixes. Preserves OKINTO New API sign-in, model groups, balances and image generation; the new account overview retains currency units and unlimited quotas.
+
+## 0.1.34 - 2026-11-14
+
+### New
+
+- **Early startup diagnostics:** the desktop app writes a separate `startup-<time>-<PID>.log` before requesting the single-instance lock, recording the OS version, actual data directory, lock result and startup stages. If the data directory is unwritable, it tries the system temporary directory.
+- **Startup troubleshooting switch:** launch with `--diagnose-startup` to show the diagnostic log location when the single-instance lock is not acquired, helping investigate exits without a window.
+
+### Improvements and fixes
+
+- If a second launch arrives before the local interface service is ready, its window activation is queued until startup finishes, avoiding premature window creation.
+- Each launch has its own log; the primary instance retains the latest twenty. A secondary launch does not rotate the running app’s ordinary `app.log`.
+- This improves diagnosis of [#71](https://github.com/modelflare-ai/AnyModelBot/issues/71); the immediate-exit cause on Win11 Insider Build 26300 is not yet confirmed. If `ELECTRON_RUN_AS_NODE` selects Node mode, application code never runs, so that variable still needs checking first. The default Windows log directory is `%APPDATA%\anymodel bot\data\logs`, with a space in the name.
+
+## 0.1.33 - 2026-11-14
+
+### New
+
+- **Scheduled rules in one place:** the new Scheduled page lists rules across all bots and highlights those needing attention. Chat cards, Tasks and Scheduled share on/off controls. Create rules before the first conversation, keep them off, and undo chat-created changes. An undone creation can be restored for ten minutes.
+- **Catch-up runs and group summaries:** calendar rules can catch up once within a grace period of up to twelve hours, with the original due time shown. Interval rules do not catch up. Monthly schedules, the next three runs, time zones and cost estimates are now visible. Group summaries use a chosen in-app group; a late summary keeps its original date.
+- **Ten bot templates:** choose a role for writing, work or learning, preview its persona, memory and rules, and compare suitable models before creating it. Template rules start off and ask for a destination and source group when needed.
+- **Resources in the right panel:** open files and websites from conversations, groups and bot workspaces without leaving the chat. Preview Markdown, text and code, PDFs, images and HTML, with download and external-opening options.
+- **Workspaces that fit the side panel:** official bots collapse project navigation at narrower widths. Expand a workspace and return to chat while keeping the current editing state.
+- **Continue after macOS permission setup:** one permission card replaces repeated errors. The app checks automatically and, when eligible, resumes unfinished steps in the original conversation while preserving drafts. A newer message or a wait over thirty minutes requires Continue.
+
+### Improvements and fixes
+
+- Improved Modelflare sign-in return handling, account names and avatars, and first-use guidance. Connected-app lists, search and error messages are clearer.
+- Improved Film Studio canvas layout and US Stock Research chart-data handling; PPT Master and Company Research also adopt the updated workspace.
+- Rule results identify their source and follow the reply-notification preference. An optional setting prevents sleep shortly before a rule is due while plugged in; it cannot wake an already sleeping or closed computer.
+
 ## 0.1.32 - 2026-11-12
 
 ### New

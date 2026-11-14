@@ -74,7 +74,7 @@ export class NewApiAccountManager {
   get active(): boolean { return !!this.bundle && this.attached; }
   status(): AccountStatus {
     const alerts = this.o.alerts();
-    return { bot: null, topupUrl: `${this.o.origin}/console/topup`, state: this.state, name: this.name, source: this.signedIn ? "account" : this.keyBalance ? "key" : "none", balanceUsd: this.signedIn ? this.balance : this.keyBalance?.available ?? null, usedUsd: this.signedIn ? this.used : this.keyBalance?.used ?? null,
+    return { bot: null, topupUrl: `${this.o.origin}/console/topup`, state: this.state, name: this.name, profileReady: !!this.name || !!this.error, profileUrl: `${this.o.origin}/console/personal`, source: this.signedIn ? "account" : this.keyBalance ? "key" : "none", balanceUsd: this.signedIn ? this.balance : this.keyBalance?.available ?? null, usedUsd: this.signedIn ? this.used : this.keyBalance?.used ?? null,
       balanceUnit: this.signedIn ? "USD" : this.keyBalance?.unit ?? "USD", balanceScope: this.signedIn ? "account" : this.keyBalance?.scope, unlimitedBalance: !this.signedIn && this.keyBalance?.unlimited, billedToEnterprise: false, updatedAt: this.updatedAt, error: this.error,
       loginUrl: this.login ? `${this.o.origin}/login` : "", alerts, keyQuality: { strategy: "balanced", supported: false }, lowBalance: !this.keyBalance?.unlimited && (this.keyBalance?.unit ?? "USD") === "USD" && (this.signedIn ? this.balance : this.keyBalance?.available) != null && alerts.lowBalanceUsd > 0 && (this.signedIn ? this.balance! : this.keyBalance!.available!) < alerts.lowBalanceUsd,
       ...(this.active ? { loginMethod: "newapi-playground" as const, capabilities: { groups: true, usage: true, budgets: false, notifications: false, invite: false, media: true } } : {}),

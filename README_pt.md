@@ -1,6 +1,6 @@
 <h1 align="center">okbot</h1>
 
-> 0.1.32 · Conectores de aplicativos e MCP personalizados, grupos na barra lateral, painel com abas e espanhol e português (Brasil). A integração com a OKINTO foi preservada.
+> 0.1.35 · Regras agendadas, dez modelos de bots, prévias de recursos, diagnóstico de inicialização e melhorias na interface. Login, saldos, grupos e imagens da OKINTO preservados.
 
 <p align="center"><b>Uma equipe de bots de IA no seu próprio computador. Qualquer modelo, pagamento por uso.</b></p>
 
@@ -221,7 +221,7 @@ O runtime é construído sobre o [DeepSeek Harness](https://github.com/deepseek-
 - **Quem manda é você.** Por padrão, um bot só responde ao proprietário (a conta do WeChat que escaneou o QR code; no Feishu, Telegram, Slack e Discord, a primeira pessoa que enviar uma mensagem depois que você o conectar, ou seja, você) e às pessoas que você permitir. Qualquer outra pessoa recebe um aviso de uma linha e nenhum modelo é chamado; você libera o acesso pelo painel de informações ou respondendo `yes <code>` no chat.
 - **As respostas não se perdem.** Cada resposta é salva localmente antes de ser enviada; erros de rede geram novas tentativas, o envio é retomado depois de reiniciar e, quando a janela de 24 horas do WeChat já fechou, a resposta espera e chega junto com a sua próxima mensagem.
 - **Telemetria desligada.** A telemetria do driver de uso do computador incluído está desativada, e o gateway integrado roda com a atualização automática desativada.
-- **Atualizações no app.** A partir da 0.1.29, os apps de desktop instalados ativam por padrão Configurações → Geral → Baixar atualizações automaticamente. As novas versões são baixadas em segundo plano e oferecem Reiniciar e atualizar quando ficam prontas. A instalação exige o seu clique e nenhuma tarefa em execução; desative a opção para baixar manualmente. Quem usa a 0.1.28 ou anterior precisa instalar manualmente a 0.1.29 ou posterior uma vez. Implantações via Docker e a partir do código-fonte continuam sendo atualizadas manualmente. A partir da 0.1.30, a primeira inicialização após uma atualização mostra o que mudou, o aviso de nova versão mostra as notas antes de você atualizar, e o registro de alterações está sempre em Configurações → Sobre.
+- **Atualizações no app.** A partir da 0.1.29, os apps de desktop instalados ativam por padrão Configurações → Geral → Baixar atualizações automaticamente. As novas versões são baixadas em segundo plano e oferecem Reiniciar e atualizar quando ficam prontas. A instalação exige o seu clique e nenhuma tarefa em execução; desative a opção para baixar manualmente. Quem usa a 0.1.28 ou anterior precisa instalar manualmente a 0.1.29 ou posterior uma vez. Implantações via Docker e a partir do código-fonte continuam sendo atualizadas manualmente. A partir da 0.1.30, a primeira inicialização após uma atualização mostra o que mudou, o botão de atualização ao lado da conta na barra lateral baixa a atualização e permite reiniciar para instalá-la quando estiver pronta, e o registro de alterações está sempre em Configurações → Sobre.
 - **Claro, escuro ou igual ao sistema.** Seis personagens de bot, e os olhos deles seguem o ponteiro.
 - **Bandeja e inicialização automática.** Feche a janela para escondê-la na bandeja do sistema; a inicialização automática está disponível no macOS e no Windows.
 

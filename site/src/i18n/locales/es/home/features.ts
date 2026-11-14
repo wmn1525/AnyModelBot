@@ -6,6 +6,18 @@ export default {
     "h3": "Y hay más.",
     "items": [
       {
+        "title": "Programa con una frase",
+        "body": "Gestiona las reglas de todos los bots en Programado: deshacer, horarios mensuales y recuperación de hasta doce horas. El ordenador y la aplicación deben estar encendidos."
+      },
+      {
+        "title": "Empieza con una plantilla",
+        "body": "Diez plantillas para escribir, trabajar y aprender. Revisa la personalidad, la memoria y las reglas antes de crear el bot; las reglas comienzan desactivadas."
+      },
+      {
+        "title": "Vista previa de archivos y sitios",
+        "body": "Previsualiza archivos y sitios en el panel derecho sin cambiar su anchura al cambiar de pestaña. Admite Markdown, texto, PDF, imágenes y HTML, con descarga y apertura externa."
+      },
+      {
         "title": "Importa tus propias habilidades",
         "body": "Importa un ZIP en los ajustes del bot para agregar flujos de trabajo, como informes o procesamiento de documentos. Puedes activar, desactivar o reemplazar cada habilidad."
       },
@@ -27,7 +39,7 @@ export default {
       },
       {
         "title": "Tus gastos de un vistazo",
-        "body": "El saldo, las alertas de saldo bajo y el uso diario están en la app, y cada bot puede tener su propio límite de gasto."
+        "body": "Consulta el saldo y los créditos de Bot y recarga en Ajustes → Modelos. Incluye avisos de saldo bajo, uso diario y límites de gasto por bot."
       },
       {
         "title": "Tres dominios de API",

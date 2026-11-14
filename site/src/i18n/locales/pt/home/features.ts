@@ -6,6 +6,18 @@ export default {
     "h3": "E tem mais.",
     "items": [
       {
+        "title": "Agende com uma frase",
+        "body": "Gerencie as regras de todos os bots em Agendado: desfazer, horários mensais e recuperação em até doze horas. O computador e o aplicativo devem estar ligados."
+      },
+      {
+        "title": "Comece com um modelo",
+        "body": "Dez modelos de bots para escrever, trabalhar e aprender. Confira persona, memória e regras antes de criar; as regras começam desativadas."
+      },
+      {
+        "title": "Prévia de arquivos e sites",
+        "body": "Veja arquivos e sites no painel direito, mantendo a largura ao trocar de aba. Suporta Markdown, texto, PDF, imagens e HTML, com download e abertura externa."
+      },
+      {
         "title": "Importe suas próprias habilidades",
         "body": "Importe um ZIP nas configurações do bot para adicionar fluxos de trabalho, como relatórios ou processamento de documentos. Você pode ativar, desativar ou substituir cada habilidade."
       },
@@ -27,7 +39,7 @@ export default {
       },
       {
         "title": "Gastos sempre à vista",
-        "body": "Saldo, alertas de saldo baixo e uso diário ficam no app, e cada bot pode ter seu próprio limite de gastos."
+        "body": "Veja o saldo e os créditos de Bot e recarregue em Configurações → Modelos. Há alertas de saldo baixo, uso diário e limites de gastos por bot."
       },
       {
         "title": "Três domínios de API",

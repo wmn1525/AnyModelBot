@@ -49,6 +49,33 @@ export const RELEASE = {
   days: 30,
   /** 各版本的一句话亮点（可选），没有就显示"okbot {version} 已发布" */
   highlights: {
+    "0.1.35": {
+      "zh": "更简洁的界面、余额展示与规则修复",
+      "en": "Cleaner UI, visible balances and rule fixes",
+      "ja": "すっきりした画面、残高表示とルール修正",
+      "ko": "간결한 화면, 잔액 표시와 규칙 수정",
+      "ru": "Лаконичный интерфейс, баланс и исправления правил",
+      "es": "Interfaz más sencilla, saldo visible y reglas corregidas",
+      "pt": "Interface mais simples, saldo visível e regras corrigidas"
+    },
+    "0.1.34": {
+      zh: "启动诊断与重复启动处理改进",
+      en: "Startup diagnostics and second-launch handling",
+      ja: "起動診断と二重起動時の表示を改善",
+      ko: "시작 진단과 재실행 처리 개선",
+      ru: "Диагностика и обработка повторного запуска",
+      es: "Diagnóstico y gestión del segundo inicio",
+      pt: "Diagnóstico e tratamento da segunda inicialização",
+    },
+    "0.1.33": {
+      zh: "定时规则、机器人模板和右侧预览",
+      en: "Scheduled rules, bot templates and resource previews",
+      ja: "スケジュール、テンプレート、プレビュー",
+      ko: "예약 규칙, 봇 템플릿, 리소스 미리보기",
+      ru: "Расписание, шаблоны и просмотр ресурсов",
+      es: "Reglas programadas, plantillas y vistas previas",
+      pt: "Regras agendadas, modelos e prévias",
+    },
     "0.1.32": {
       zh: "新增西班牙语和葡萄牙语（巴西）界面",
       en: "Now in Spanish and Portuguese (Brazil)",

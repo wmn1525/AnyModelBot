@@ -5,9 +5,6 @@ export default {
   "signupGift": "Available credit and billing rules are shown in the OKINTO console",
   "noKey": "Prefer not to configure an API key?",
   "useAccount": "Sign in with OKINTO",
-  "modelSettings": "Model settings",
-  "inherit": "Use default: {model}",
-  "modelHint": "Choose this bot’s chat model. Image generation and other capabilities also require the appropriate tools and permissions.",
   "modelUnavailable": "This model is unavailable. Choose another model.",
   "modelFailed": "Could not load models. Please retry.",
   "moreCapabilities": "Image generation and other capabilities also require the appropriate tools and permissions. After creation, you can configure skills, permissions, and this bot’s own memory.",
@@ -31,7 +28,7 @@ export default {
   "balanceUnavailable": "Temporarily unavailable",
   "myAccount": "My account",
   "signIn": "Sign in to OKINTO",
-  "signInSub": "Access more models and manage your balance in one place.",
+  "signInSub": "More models. Your current keys keep working.",
   "feedback": "Feedback",
   "checkUpdate": "Check for updates",
   "checking": "Checking…",
@@ -40,8 +37,8 @@ export default {
   "logout": "Sign out",
   "logoutBody": "Return to sign-in. Local chats, files and settings will be kept.",
   "logoutBusy": "Tasks are running. Signing out disconnects OKINTO: conversations in progress are stopped first (what's already generated is kept), and background tasks are interrupted and can be resumed after you sign in again. Chats, files and settings are kept. Sign out?",
-  "backConfig": "Return to connection setup",
-  "backConfigBody": "Return to sign-in or key setup, keeping existing keys, model settings and local data.",
+  "backConfig": "Change how you connect",
+  "backConfigBody": "Go back to sign-in to use OKINTO or add another API key. Your existing keys, model settings and local data are kept.",
   "connectionContinue": "Continue with existing connections",
   "channelTitle": "Connect your usual chat app",
   "channelDesc": "Choose a chat app to talk to your assistant there.",
@@ -70,7 +67,7 @@ export default {
     "details": "Error details",
     "status": "Status {status}",
     "copy": "Copy details",
-    "retry": "Send again",
+    "retry": "Retry",
     "retryHint": "Runs this message again from the start",
     "retryTitle": "Run this message again?",
     "retryBody": "Sending it again runs the whole task from the start, not just the step that failed. Actions that already completed last time (such as edited files or sent messages) may happen again.",
@@ -103,5 +100,8 @@ export default {
     "recheck": "I've turned it on — check again",
     "retry": "Send the task again",
     "later": "Later"
-  }
+  },
+  "modelSettings": "Model settings",
+  "inherit": "Use default: {model}",
+  "modelHint": "Choose this bot’s chat model. Image generation and other capabilities also require the appropriate tools and permissions."
 };

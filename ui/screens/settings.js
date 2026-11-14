@@ -4,8 +4,9 @@
 // 外观（主题、字体、动画…）和对话习惯（发送键、通知）是本机界面偏好，存在浏览器里（lib/theme.js、lib/prefs.js）；
 // 其余设置走服务端 /settings。
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { html, Icon, IconButton, Seg, Switch, Sheet, CopyButton, Skeleton, MenuButton } from "../components/ui.js";
-import { AccountButton, Balance, UpdateNotice } from "./sidebar.js";
+import { html, Button, Icon, IconButton, Seg, Switch, Sheet, CopyButton, Skeleton, MenuButton } from "../components/ui.js";
+import { AccountButton, SideActions } from "./sidebar.js";
+import { AccountBalance, balanceText } from "../components/account-balance.js";
 import { PickModel, effortOptions, setEffort, shortModel, showsStrategy, strategyOptions, useEffort } from "../components/model-picker.js";
 import { DomainConnection } from "../components/domain-connection.js";
 import { NotificationsSheet, UsageSheet } from "./account.js";
@@ -13,7 +14,7 @@ import { api } from "../lib/api.js";
 import { UpdateActions, updateDescription } from "../components/app-update.js";
 import { MF_CONSOLE, MF_DOCS_LINK, MF_TOPUP, usd, accountBalance } from "../lib/links.js";
 import { useStore, confirmSheet, failed, saved, toast } from "../lib/store.js";
-import { guide, resetGuide, visibleSteps } from "../lib/guide.js";
+import { guide, resetGuide, showGuide, progress, visibleSteps } from "../lib/guide.js";
 import { themeMode, setThemeMode } from "../lib/theme.js";
 import { prefs, setPrefs, resetAppearance, appearanceChanged, fontStack } from "../lib/prefs.js";
 import { canNotify, requestNotify } from "../lib/notify.js";
@@ -182,10 +183,12 @@ function NoticesSheet({ onClose }) {
 }
 
 /** 设置时的侧栏：返回应用 | 查找设置 | 分页 | 账户 */
-export function SettingsSide({ tab, query, onQuery, onTab, onBack, username, account, update, onUpdateChanged }) {
+export function SettingsSide({ tab, query, onQuery, onTab, onBack, username, account, update, onUpdateChanged, nav }) {
   const searching = !!query.trim();
   return html`<aside class="side" aria-label=${t("settings.side.label")}>
     <div class="side-top start">
+      ${nav && html`<${SideActions} ...${nav}><span class="grow"></span><//>`}
+    </div><div class="settings-back-row">
       <button type="button" class="side-back" title=${t("settings.side.backTitle")} onClick=${onBack}><${Icon} name="arrowLeft" size="md" />${t("settings.side.back")}</button>
     </div>
     <label class="side-search">
@@ -200,7 +203,6 @@ export function SettingsSide({ tab, query, onQuery, onTab, onBack, username, acc
           onClick=${() => { onQuery(""); onTab(id); }}><${Icon} name=${icon} size="md" /><span>${tabLabel(label)}</span></button>`;
       })}
     </nav>
-    <${UpdateNotice} update=${update} onChanged=${onUpdateChanged} />
     <div class="side-foot"><${AccountButton} username=${username} account=${account} update=${update} onUpdateChanged=${onUpdateChanged} settingsOn onSettings=${() => onTab("general")} onModelflare=${() => { onQuery(""); onTab("modelflare"); }} /></div>
   </aside>`;
 }
@@ -212,6 +214,9 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
   const [rekey, setRekey] = useState(false);
   const [notices, setNotices] = useState(false);
   const [sheet, setSheet] = useState(""); // usage | notifications | login
+  const [leaving, setLeaving] = useState(false);
+  const [balanceRefreshing, setBalanceRefreshing] = useState(false);
+  const balanceRequest = useRef(null);
   // 官方 API：各家的连接状态；keySheet 是正在填 Key 的那一家
   const [official, setOfficial] = useState(null);
   const [keySheet, setKeySheet] = useState(null);
@@ -283,22 +288,34 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       failed(e);
     }
   };
-  const logout = async () => {
-    if (!(await confirmSheet({ title: t("settings.logout.title"), body: t("settings.logout.body"), confirmLabel: t("settings.logout.confirm"), danger: true }))) return;
+  const refreshBalance = () => {
+    if (balanceRequest.current) return balanceRequest.current;
+    setBalanceRefreshing(true);
+    balanceRequest.current = api("/account/refresh", { method: "POST", body: { maxAgeMs: 3000 } })
+      .then(onAccount)
+      .catch(failed)
+      .finally(() => { balanceRequest.current = null; setBalanceRefreshing(false); });
+    return balanceRequest.current;
+  };
+  // 账户操作只放在常规页底部，保留运行中任务提示和退出前的确认。
+  const leaveAccount = async () => {
+    if (leaving) return;
     try {
-      const r = await api("/account/logout", { method: "POST", body: {} });
-      if (!r.revoked) failed(t("settings.logout.notRevoked"));
-      onAccount(r);
-      onMfChanged();
+      const state = await api("/agent").catch(() => ({}));
+      const busy = !!(state.busy?.length || Object.values(state.background || {}).some((n) => Number(n) > 0));
+      const title = t(signedIn ? "firstUse.logout" : "firstUse.backConfig");
+      const body = signedIn ? t(busy ? "firstUse.logoutBusy" : "firstUse.logoutBody") : t("firstUse.backConfigBody");
+      if (!(await confirmSheet({ title, body, confirmLabel: title, danger: signedIn }))) return;
+      setLeaving(true);
+      const result = await api(signedIn ? "/account/logout" : "/account/setup", { method: "POST", body: signedIn ? { stopRunning: busy } : {} });
+      if (signedIn && result.revoked === false) failed(t("settings.logout.notRevoked"));
+      window.dispatchEvent(new Event("amb-connection-change"));
     } catch (e) {
       failed(e);
+    } finally {
+      setLeaving(false);
     }
   };
-  const refreshBalance = () =>
-    api("/account/refresh", { method: "POST", body: {} })
-      .then(onAccount)
-      .catch(failed);
-  // 性价比（Key 的路由策略）：OKINTO 不支持时状态里 supported 变成 false，这一行随之消失
   const putKeyQuality = (strategy) =>
     api("/account/key-quality", { method: "PUT", body: { strategy } })
       .then((r) => {
@@ -339,6 +356,9 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
   const managed = mf && mf.mode === "managed";
   const signedIn = !!(acct && acct.state === "signed_in");
   useEffect(() => {
+    if (tab === "modelflare" && managed && mf.connected && acct) void refreshBalance();
+  }, [tab, managed, !!mf?.connected, !!acct]);
+  useEffect(() => {
     if (managed && tab === "modelflare") api("/official").then((r) => setOfficial(r.providers)).catch(failed);
   }, [managed, tab]);
   const officialChanged = async (r) => {
@@ -368,7 +388,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
   const rows = useMemo(() => {
     if (!s) return [];
     const guideSteps = g.loaded ? visibleSteps(g) : [];
-    const acctName = signedIn ? acct.name || t("settings.rows.account.signedIn") : "";
+    const acctName = signedIn ? acct.name ? `${acct.name}${acct.email ? ` · ${acct.email}` : ""}` : t("settings.rows.account.signedIn") : "";
     const gw = status && status.gateway;
     const alertLines = ALERT_LINES();
     return [
@@ -376,12 +396,14 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
         ctl: html`<${MenuButton} width=${220} label=${t("common.lang.label")} value=${langPref} onChange=${(v) => changeLang(v).then(() => saved()).catch(failed)} options=${LANG_OPTIONS()} />` },
       { tab: "general", id: "send-key", name: t("settings.rows.sendKey.name"), sub: t("settings.rows.sendKey.sub", { key: p.sendKey === "mod" ? "Enter" : "Shift+Enter" }), keys: t("settings.rows.sendKey.keys"),
         ctl: html`<${Seg} label=${t("settings.rows.sendKey.name")} value=${p.sendKey} onChange=${(v) => { setPrefs({ sendKey: v }); saved(); }} options=${[["enter", "Enter"], ["mod", MOD_ENTER]]} />` },
-      canNotify && { tab: "general", id: "notify", name: t("settings.rows.notify.name"), sub: t("settings.rows.notify.sub"), keys: t("settings.rows.notify.keys"),
+      canNotify && { tab: "general", id: "notify", name: t("settings.rows.notify.name"), sub: t("scheduled.notifySub"), keys: t("settings.rows.notify.keys"),
         ctl: html`<${Switch} label=${t("settings.rows.notify.name")} value=${p.notify} onChange=${toggleNotify} />` },
+      desktop && { tab: "general", id: "rules-awake", name: t("scheduled.keepAwakeSetting"), sub: t("scheduled.keepAwakeHint"), keys: "schedule sleep 定时 睡眠", // i18n-ignore: multilingual command search keywords
+        ctl: html`<${Switch} label=${t("scheduled.keepAwakeSetting")} value=${!!s.keepAwakeForRules} onChange=${(v) => put({ keepAwakeForRules: v }, { keepAwakeForRules: v })} />` },
       g.loaded && { tab: "general", id: "guide", name: t("settings.rows.guide.name"),
-        sub: g.hidden ? t("settings.rows.guide.hidden") : t("settings.rows.guide.progress", { done: guideSteps.filter((x) => g.done.includes(x.id)).length, total: guideSteps.length }),
+        sub: g.seen.includes("completed") ? t("guide.completed") : g.hidden ? t("settings.rows.guide.hidden") : t("settings.rows.guide.progress", { done: progress(g), total: guideSteps.length }),
         keys: t("settings.rows.guide.keys"),
-        ctl: html`<button type="button" class="text" onClick=${() => resetGuide().then(() => toast(t("settings.rows.guide.restarted"))).catch(failed)}>${t("settings.rows.guide.restart")}</button>` },
+        ctl: html`<button type="button" class="text" onClick=${() => (g.hidden ? showGuide() : resetGuide()).catch(failed)}>${t(g.hidden ? "welcome.showAgain" : "settings.rows.guide.restart")}</button>` },
       desktop && { tab: "general", group: "desktop", id: "close", name: t("settings.rows.close.name"), sub: t("settings.rows.close.sub"), keys: t("settings.rows.close.keys"),
         ctl: html`<${Seg} label=${t("settings.rows.close.name")} value=${s.closeToTray} onChange=${(v) => put({ closeToTray: v }, { closeToTray: v })} options=${[[true, t("settings.rows.close.tray")], [false, t("settings.rows.close.quit")]]} />` },
       desktop && s.autostart.supported && { tab: "general", group: "desktop", id: "autostart", name: t("settings.rows.autostart.name"), sub: t("settings.rows.autostart.sub"), keys: t("settings.rows.autostart.keys"),
@@ -392,6 +414,9 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
           onChange=${(v) => put({ autoDownloadUpdates: v }, { autoDownloadUpdates: v })} />` },
       desktop && { tab: "general", group: "desktop", id: "browser", name: t("settings.rows.browser.name"), sub: t("settings.rows.browser.sub"), keys: t("settings.rows.browser.keys"),
         ctl: html`<button type="button" class="text" onClick=${() => api("/desktop/open-in-browser", { method: "POST", body: {} }).catch(failed)}>${t("common.open")}</button>` },
+      { tab: "general", group: "account", id: "account-session", name: signedIn ? t("settings.rows.account.name") : t("settings.rows.connection.name"),
+        sub: signedIn ? acctName : t("firstUse.backConfigBody"), keys: `${t("settings.rows.account.keys")} ${t(signedIn ? "firstUse.logout" : "firstUse.backConfig")}`,
+        ctl: html`<button type="button" class="text" disabled=${leaving} onClick=${leaveAccount}>${t(signedIn ? "firstUse.logout" : "firstUse.backConfig")}</button>` },
 
       { tab: "appearance", searchOnly: true, id: "theme", name: t("settings.rows.theme.name"), sub: t("settings.rows.theme.sub"), keys: t("settings.rows.theme.keys"),
         ctl: html`<${Seg} label=${t("settings.rows.theme.name")} value=${mode} onChange=${(m) => { setThemeMode(m); saved(); }} options=${THEMES()} />` },
@@ -417,7 +442,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       { tab: "appearance", id: "reset-appearance", name: t("settings.rows.resetAppearance.name"), sub: desktop ? t("settings.rows.resetAppearance.subDesktop") : t("settings.rows.resetAppearance.sub"), keys: t("settings.rows.resetAppearance.keys"),
         ctl: html`<button type="button" class="text" disabled=${!customized} onClick=${resetLook}>${t("settings.rows.resetAppearance.button")}</button>` },
 
-      managed && acct && { tab: "modelflare", id: "account", name: t("settings.rows.account.name"),
+      managed && acct && { tab: "modelflare", searchOnly: true, id: "account", name: t("settings.rows.account.name"),
         sub: signedIn ? (acct.billedToEnterprise ? t("settings.rows.account.enterprise", { name: acctName }) : acctName) : acct.state === "unavailable" ? acct.error : t(acct.loginMethod === "newapi-playground" ? "settings.rows.account.signedOut" : "settings.rows.account.apiKey"), keys: t("settings.rows.account.keys"),
         ctl: signedIn
           ? html`<button type="button" class="text danger" onClick=${logout}>${t("settings.rows.account.logout")}</button>`
@@ -432,10 +457,10 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
               ${!signedIn && html`<button type="button" class="text" onClick=${() => setRekey(true)}>${t("settings.rows.connection.rekey")}</button>
                 <button type="button" class="text danger" onClick=${disconnect}>${t("settings.rows.connection.disconnect")}</button>`}`
           : html`<span class="val" title=${mf && mf.baseUrl}>${mf && mf.baseUrl}</span>` },
-      managed && acct && mf.connected && { tab: "modelflare", id: "balance", name: t("settings.rows.balance.name"),
+      managed && acct && mf.connected && { tab: "modelflare", searchOnly: true, id: "balance", name: t("settings.rows.balance.name"),
         sub: acct.error ? t("settings.rows.balance.error", { error: acct.error }) : acct.source === "key" ? t(`settings.rows.balance.${acct.balanceScope === "token" ? "fromToken" : acct.balanceScope === "account" ? "fromAccount" : "fromKey"}`) : acct.updatedAt ? t("settings.rows.balance.updated", { time: fmtTimeOfDay(acct.updatedAt) }) : t("common.reading"), keys: t("settings.rows.balance.keys"),
         ctl: html`<span class=${`balance${acct.lowBalance ? " low" : ""}`}>${accountBalance(acct)}</span>
-          <button type="button" class="icon-btn" title=${t("common.refresh")} aria-label=${t("settings.rows.balance.refresh")} onClick=${refreshBalance}><${Icon} name="refresh" size="sm" /></button>
+          <${Button} variant="ghost" size="sm" icon="refresh" aria-label=${t("settings.rows.balance.refresh")} loading=${balanceRefreshing} onClick=${refreshBalance}>${t("common.refresh")}<//>
           <a class="btn" href=${acct.topupUrl || MF_TOPUP} target="_blank" rel="noopener noreferrer">${t("settings.rows.balance.topUp")}</a>` },
       managed && acct?.loginMethod !== "newapi-playground" && acct && mf.connected && { tab: "modelflare", group: "account", id: "low-balance", name: t("settings.rows.lowBalance.name"), sub: t("settings.rows.lowBalance.sub"), keys: t("settings.rows.lowBalance.keys"),
         ctl: html`<${Seg} label=${t("settings.rows.lowBalance.name")} value=${acct.alerts.lowBalanceUsd} onChange=${(v) => putAlerts({ lowBalanceUsd: v })}
@@ -530,7 +555,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       { tab: "about", id: "links", name: "OKINTO New API", sub: t("settings.rows.links.sub"),
         ctl: html`<a class="text" href=${MF_CONSOLE} target="_blank" rel="noopener noreferrer">api.okinto.com ↗</a><a class="text" href=${MF_DOCS_LINK} target="_blank" rel="noopener noreferrer">${t("settings.rows.links.docs")}</a>` },
     ].filter(Boolean);
-  }, [s, mf, mode, p, models, modelsError, cu, status, update, bots, acct, invite, unread, g, media, lang, langPref, conn.accounts, conn.channelAccounts, effort, official]);
+  }, [s, mf, mode, p, models, modelsError, cu, status, update, bots, acct, invite, unread, g, media, lang, langPref, conn.accounts, conn.channelAccounts, effort, official, leaving, balanceRefreshing]);
 
   const needle = q.trim().toLowerCase();
   const shown = needle ? rows.filter((r) => !r.custom && `${r.name} ${r.sub || ""} ${r.keys || ""}`.toLowerCase().includes(needle)) : rows.filter((r) => r.tab === tab && !r.searchOnly);
@@ -550,10 +575,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
         <${ThemeCards} value=${mode} flash=${flash === "theme"} onChange=${(m) => { setThemeMode(m); saved(); }} />`}
       ${s && !needle && tab === "modelflare" && acctRow && html`<div class="list acct-card">
         <${Row} id=${acctRow.id} name=${acctRow.name} sub=${acctRow.sub} title=${acctRow.sub} flash=${flash === acctRow.id}>${acctRow.ctl}<//>
-        ${balRow && html`<div class=${`acct-bal${flash === balRow.id ? " flash" : ""}`} id="set-balance">
-          <${Balance} account=${acct} note=${html`<span>${balRow.sub}</span><${IconButton} icon="refresh" size="xs" iconSize="xs" label=${t("settings.rows.balance.refresh")} onClick=${refreshBalance} />`} />
-          <a class=${`btn${acct.lowBalance ? " primary" : ""}`} href=${acct.topupUrl || MF_TOPUP} target="_blank" rel="noopener noreferrer">${t("settings.rows.balance.topUp")}</a>
-        </div>`}
+        ${balRow && html`<${AccountBalance} account=${acct} refreshing=${balanceRefreshing} onRefresh=${refreshBalance} flash=${flash === balRow.id} />`}
       </div>`}
       ${s && !needle && tab === "troubleshoot" ? html`<${TroubleshootPane} bots=${bots} desktop=${desktop} />` : parts.map(({ label, note, rows: list }) => html`${label && html`<div class="set-part">${label}</div>`}${note && html`<p class="set-note">${note}</p>`}
         <div class="list">${list.map((r) => r.custom || html`<${Row} key=${r.id} id=${r.id} name=${r.name} sub=${r.sub} title=${r.title || r.sub} flash=${flash === r.id || conn.fresh === r.id}>${r.ctl}<//>`)}</div>`)}
@@ -569,7 +591,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       <${AccountLogin} manual=${!!(acct && acct.manualLogin)} onSignedIn=${(a) => { setSheet(""); if (a) onAccount(a); onMfChanged(); reloadModels?.(); }} />
     <//>`}
     ${keySheet && html`<${Sheet} title=${officialName(keySheet)} onClose=${() => setKeySheet(null)}>
-      <${OfficialKeyForm} provider=${keySheet} onConnected=${officialChanged} />
+      <${OfficialKeyForm} desktop=${!!status?.desktop} provider=${keySheet} onConnected=${officialChanged} />
     <//>`}
   </section>`;
 }
