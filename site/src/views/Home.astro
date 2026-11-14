@@ -24,7 +24,7 @@ interface Props {
 }
 const { lang, largeCard = false } = Astro.props;
 // 微信分享卡片：短文案和方图只给中文首页。<title> 和 description 带搜索关键词，不动
-const share = lang === "zh" ? { ogTitle: "okbot｜你的 AI 搭子，住在你的电脑里", ogDescription: "整理文件、跑命令、记住你的习惯，一个 Key 用上主流模型。", ogImage: { url: `${ORIGIN}/og/okbot.png`, width: 1200, height: 630 }, twitterCard: "summary" as const } : {};
+const share = lang === "zh" && !largeCard ? { ogTitle: "okbot｜你的 AI 搭子，住在你的电脑里", ogDescription: "整理文件、跑命令、记住你的习惯，一个 Key 用上主流模型。", ogImage: { url: `${ORIGIN}/og/okbot.png`, width: 1200, height: 630 }, twitterCard: "summary" as const } : {};
 ---
 <Base lang={lang} path="/" jsonLd={homeJsonLd(lang)} {...share}>
   <Hero lang={lang} />

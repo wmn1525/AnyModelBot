@@ -4,7 +4,7 @@ import { brandCopy } from "../data/brand-copy";
 import { CONTACT_URL, MF } from "../lib/site";
 import type { Lang } from "../i18n";
 import "../styles/pages.css";
-interface Props { lang: Lang }
+interface Props { lang: Lang; largeCard?: boolean }
 const { lang } = Astro.props;
 const c = brandCopy[lang];
 ---
