@@ -445,7 +445,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       managed && acct && { tab: "modelflare", searchOnly: true, id: "account", name: t("settings.rows.account.name"),
         sub: signedIn ? (acct.billedToEnterprise ? t("settings.rows.account.enterprise", { name: acctName }) : acctName) : acct.state === "unavailable" ? acct.error : t(acct.loginMethod === "newapi-playground" ? "settings.rows.account.signedOut" : "settings.rows.account.apiKey"), keys: t("settings.rows.account.keys"),
         ctl: signedIn
-          ? html`<button type="button" class="text danger" onClick=${logout}>${t("settings.rows.account.logout")}</button>`
+          ? html`<span class="badge ok">${t("settings.rows.account.signedIn")}</span>`
           : acct.loginAvailable === false
             ? html`<span class="val">${t("settings.rows.account.noBrowserLogin")}</span>`
             : html`<button type="button" class="text accent" onClick=${() => setSheet("login")}>${t("settings.rows.account.login")}</button>` },
