@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { APP_LANGUAGES, assertLocaleBranding } from "./lib/brand-copy.mjs";
+import { APP_LANGUAGES, assertLocaleBranding, legacyBrandValues } from "./lib/brand-copy.mjs";
 import { extractFile } from "@electron/asar";
 
 const executable = process.argv[2];
@@ -34,6 +34,7 @@ for (const lang of APP_LANGUAGES) {
   }
   assert.ok(read(`ui/locales/${lang}/settings.js`).includes("Okinto"), `Okinto settings label missing for ${lang}`);
 }
+assert.deepEqual(legacyBrandValues(JSON.parse(read("dist/catalog/index.json"))), [], "Built-in bot display catalog must not contain legacy branding");
 for (const file of ["ui/components/whats-new.js", "ui/screens/sidebar.js"]) {
   assert.ok(read(file).includes("https://github.com/wmn1525/AnyModelBot/releases"), `Fork release link missing: ${file}`);
   assert.ok(!read(file).includes("https://github.com/modelflare-ai/AnyModelBot"), `Upstream release link leaked: ${file}`);

@@ -218,37 +218,37 @@
     "about": {
       "zh-CN": [
         "移植 PRINTFILM 的编剧、分镜、资产设定与 FFmpeg 合成能力",
-        "模型调用使用 Modelflare，项目与素材保存在你的设备",
+        "模型调用使用 Okinto，项目与素材保存在你的设备",
         "支持逐镜修改、素材版本、共享资产库和中断恢复"
       ],
       "en": [
         "Ports PRINTFILM scriptwriting, storyboards, asset design and FFmpeg composition",
-        "Models run through Modelflare; projects and media stay on your device",
+        "Models run through Okinto; projects and media stay on your device",
         "Edit individual shots, keep takes, reuse assets and resume interrupted work"
       ],
       "ja": [
         "PRINTFILM の脚本・絵コンテ・素材設計・FFmpeg 合成を移植",
-        "モデルは Modelflare を利用し、プロジェクトと素材は端末に保存",
+        "モデルは Okinto を利用し、プロジェクトと素材は端末に保存",
         "ショット編集、テイク履歴、共有素材、制作再開に対応"
       ],
       "ko": [
         "PRINTFILM의 대본, 스토리보드, 자산 설계, FFmpeg 합성 기능 이식",
-        "모델은 Modelflare로 호출하며 프로젝트와 미디어는 내 기기에 저장",
+        "모델은 Okinto로 호출하며 프로젝트와 미디어는 내 기기에 저장",
         "샷별 편집, 테이크 기록, 공유 자산, 중단 작업 복구 지원"
       ],
       "ru": [
         "Перенос сценариев, раскадровки, дизайна материалов и сборки FFmpeg из PRINTFILM",
-        "Модели через Modelflare; проекты и медиа хранятся на вашем устройстве",
+        "Модели через Okinto; проекты и медиа хранятся на вашем устройстве",
         "Редактирование кадров, версии, общая библиотека и продолжение работы"
       ],
       "es": [
         "Adapta de PRINTFILM la escritura de guiones, los guiones gráficos, el diseño de recursos y la composición con FFmpeg",
-        "Los modelos funcionan a través de Modelflare; los proyectos y los archivos multimedia se quedan en tu dispositivo",
+        "Los modelos funcionan a través de Okinto; los proyectos y los archivos multimedia se quedan en tu dispositivo",
         "Edita planos individuales, conserva tomas, reutiliza recursos y retoma trabajos interrumpidos"
       ],
       "pt": [
         "Traz do PRINTFILM a escrita de roteiros, os storyboards, o design de elementos e a composição com FFmpeg",
-        "Os modelos rodam pelo Modelflare; os projetos e a mídia ficam no seu dispositivo",
+        "Os modelos rodam pelo Okinto; os projetos e a mídia ficam no seu dispositivo",
         "Edite planos individuais, guarde tomadas, reutilize elementos e retome trabalhos interrompidos"
       ]
     },

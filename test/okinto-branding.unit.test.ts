@@ -34,6 +34,12 @@ describe("Okinto display branding", () => {
     }
     expect(fs.readFileSync(path.join(root, "dsh-runtime/plugins/amb-media.mjs"), "utf8")).not.toMatch(/modelflare/i);
   });
+  it("checks every official bot manifest shipped in the built-in catalog", () => {
+    for (const dir of fs.readdirSync(path.join(root, "bots"), { withFileTypes: true }).filter((entry) => entry.isDirectory())) {
+      const file = path.join(root, "bots", dir.name, "bot.json");
+      if (fs.existsSync(file)) expect(legacyBrandValues(JSON.parse(fs.readFileSync(file, "utf8"))), dir.name).toEqual([]);
+    }
+  });
   it("keeps stored credentials, provider IDs and API routes compatible", () => {
     expect(fs.readFileSync(path.join(root, "src/account/vault.ts"), "utf8")).toContain('"modelflare-account.json"');
     expect(fs.readFileSync(path.join(root, "src/providers/modelflare.ts"), "utf8")).toContain('"modelflare"');
