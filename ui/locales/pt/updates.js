@@ -1,4 +1,7 @@
 export default {
+  "downloadVersion": "Baixar a versão {version}",
+  "browserVersion": "Versão {version} disponível — baixar ↗",
+  "restartVersion": "Reiniciar para atualizar para {version}",
   "autoDownload": "Baixar atualizações automaticamente",
   "autoDownloadHint": "Baixa as novas versões em segundo plano e depois lembra você de reiniciar para instalar.",
   "manualOnly": "Nesta instalação, é preciso baixar o instalador manualmente.",
@@ -10,7 +13,7 @@ export default {
   "restart": "Reiniciar e atualizar",
   "installing": "Reiniciando para atualizar…",
   "check": "Verificar atualizações",
-  "busy": "Há tarefas em andamento. Reinicie para atualizar depois que elas terminarem.",
+  "busy": "Há tarefas em andamento. Você poderá reiniciar para atualizar quando terminarem.",
   "errors": {
     "failed": "A operação de atualização falhou. Tente de novo.",
     "check_failed": "Não foi possível verificar se há atualizações. Tente de novo mais tarde.",

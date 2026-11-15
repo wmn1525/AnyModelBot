@@ -1,35 +1,44 @@
 @layer app {
 .templates { container-type: inline-size; }
-.template-categories { display: flex; flex-wrap: wrap; gap: var(--ctl-gap); margin: 0; }
-.template-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--stack-gap); padding: 0; }
-.template-card { display: flex; flex-direction: column; min-width: 0; background: var(--card); border-radius: var(--r-card-lg); transition: background var(--t-fast); }
+.template-categories { display: flex; min-width: 0; margin: 0; }
+/* 分类用 Seg；窄窗口里俄文、西文放不下时让 Seg 自己横向滚动（滑块不能折行）。滚动放在 Seg 上而不是外层：外层是 .discover 网格的一项，网格里的滚动容器高度会被压成 0 */
+.template-categories > .seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.template-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); padding: 0; }
+.template-card { position: relative; display: flex; flex-direction: column; min-width: 0; gap: var(--stack-gap); padding: var(--card-pad); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card-lg); transition: background var(--t-feedback); } /* 描边：PRD 二第 7 项用细边区分模板卡片 */
 .template-card:hover { background: var(--well); }
 .template-card:active { background: var(--side-press); }
-.template-card-main { display: flex; flex-direction: column; flex: 1; width: 100%; gap: var(--stack-gap); padding: var(--card-pad) var(--card-pad) var(--stack-gap); color: var(--fg); text-align: left; border-radius: inherit; }
-.template-card-heading { display: flex; align-items: center; gap: var(--space-2-5); min-height: var(--ctl-2xl); }
-.template-card-heading > span { min-width: 0; }
-.template-card-heading b { display: block; font-size: var(--fs-md); font-weight: var(--fw-medium); overflow-wrap: anywhere; }
+.template-card-open { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; }
+.template-card-heading { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); min-height: var(--ctl-2xl); pointer-events: none; }
+/* 名称最窄到最长的一个词：中文照常逐字折行；俄文、西文放不下「头像 + 一个词 + 添加」时，「添加」换到下一行靠右，不把词从中间断开 */
+.template-card-name { flex: 1; max-width: 100%; }
+.template-card-heading b { display: block; font-size: var(--fs-lg); color: var(--fg); font-weight: var(--fw-medium); overflow-wrap: break-word; }
 .template-card-heading small { display: block; color: var(--muted); font-size: var(--fs-2xs); margin-top: var(--space-1); }
-.template-add { align-self: flex-end; max-width: calc(100% - 2 * var(--card-pad)); margin: 0 var(--card-pad) var(--card-pad); }
-.template-description, .template-sample { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: var(--fs-xs); line-height: var(--lh-normal); color: var(--fg-2); }
-.template-sample { color: var(--muted); }
-.template-meta { display: grid; width: 100%; gap: var(--space-1); margin-top: auto; color: var(--muted); font-size: var(--fs-2xs); }
-.template-meta > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.template-add { position: relative; align-self: flex-start; flex: none; margin-left: auto; pointer-events: auto; }
+.template-description, .template-sample { font-size: var(--fs-xs); line-height: var(--lh-normal); color: var(--fg-2); margin: 0; pointer-events: none; }
+.template-description, .template-sample > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.template-sample { color: var(--muted); padding: var(--space-2) var(--space-3); background: var(--well); border-radius: var(--r-tile); }
+.template-meta { display: grid; gap: var(--space-1); margin-top: auto; padding-top: var(--space-3); border-top: 1px solid var(--line-2); color: var(--muted); font-size: var(--fs-2xs); }
+.template-meta > span { position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .template-entry { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); width: 100%; padding: var(--card-pad); border-radius: var(--r-card); text-align: left; background: var(--well); color: var(--fg); }
-.template-entry:hover { background: var(--side-hover); }
-.template-entry:active { background: var(--side-press); }
+.template-entry:hover { background: var(--well); }
+.template-entry:active { background: var(--well); }
 .template-entry b { display: block; font-size: var(--fs-md); font-weight: var(--fw-medium); }
 .template-entry small { display: block; margin-top: var(--space-1); color: var(--muted); font-size: var(--fs-xs); }
-.template-entry > span:last-child { flex: none; color: var(--fg-2); font-size: var(--fs-sm); }
+.template-entry > span:last-child { flex: none; display: inline-flex; align-items: center; min-height: var(--ctl-sm); padding: 0 var(--ctl-px-sm); border-radius: var(--r-ctl); color: var(--ctl-fg); font-size: var(--fs-sm); transition: background var(--t-fast), color var(--t-fast); }
+.template-entry:hover > span:last-child { background: var(--pill); color: var(--fg); }
+.template-entry:active > span:last-child { background: var(--pill-hover); color: var(--fg); }
+.template-entry:focus-visible { outline: none; box-shadow: none; }
+.template-entry:focus-visible > span:last-child { outline: 2px solid var(--accent); outline-offset: 2px; }
 .discover > .template-entry { width: 100%; margin: 0; }
 .new-body > .template-entry { max-width: var(--col-w); margin: var(--space-6) auto; }
 .template-preview { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; animation: fade-in var(--dur-slow) var(--ease-out); }
+.template-preview > .chat-head > span { padding-inline-start: var(--ib-inset); font-size: var(--fs-lg); font-weight: var(--fw-semibold); }   /* 和其他顶栏的标题同一条 20 的竖线、同一档字 */
 .template-preview-body { flex: 1; overflow-y: auto; min-height: 0; padding: var(--sheet-pad); }
 .template-back { display: flex; align-items: center; justify-content: flex-start; gap: var(--space-2); margin: 0 auto var(--space-4); width: min(100%, calc(var(--col-w) + var(--space-6))); text-align: left; }
 .template-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-6); max-width: calc(var(--col-w) + var(--space-6)); min-width: 0; padding: 0; margin: auto; border: 0; }
 .template-identity, .template-details { display: grid; align-content: start; gap: var(--space-4); min-width: 0; }
 .template-details { gap: var(--section-gap-sm); }
-.template-identity > .bot-avatar { justify-self: center; }
+.template-identity > .bot-face { justify-self: center; }   /* BotAvatar 的根元素是 .bot-face */
 .template-identity textarea { min-height: 220px; }
 .template-details .list-head { margin-bottom: var(--space-2); }
 .template-details .row { flex-wrap: wrap; gap: var(--space-2); justify-content: space-between; }
@@ -40,7 +49,7 @@
 .template-note p { margin: var(--space-2) 0 0; }
 .template-footer { position: sticky; bottom: calc(-1 * var(--space-6)); max-width: calc(var(--col-w) + var(--space-6)); margin: var(--space-6) auto 0; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--ctl-gap); padding: var(--space-4) 0; border-top: var(--hairline) solid var(--line); background: var(--surface); }
 .template-footer .btn { max-width: 100%; white-space: normal; min-height: var(--ctl-xl); height: auto; }
-.menu-shortcut { color: var(--muted); font-size: var(--fs-2xs); font-family: inherit; margin-left: auto; }
+.menu-shortcut { margin-left: auto; }   /* 外观见 base/reset.css 的 kbd */
 @container (max-width: 900px) { .template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @container (max-width: 560px) { .template-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 1050px) { .template-columns { grid-template-columns: minmax(0, 1fr); } }

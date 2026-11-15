@@ -18,8 +18,8 @@ export default {
         "body": "Veja arquivos e sites no painel direito, mantendo a largura ao trocar de aba. Suporta Markdown, texto, PDF, imagens e HTML, com download e abertura externa."
       },
       {
-        "title": "Importe suas próprias habilidades",
-        "body": "Importe um ZIP nas configurações do bot para adicionar fluxos de trabalho, como relatórios ou processamento de documentos. Você pode ativar, desativar ou substituir cada habilidade."
+        "title": "Habilidades: instale ou salve as suas",
+        "body": "Escolha uma habilidade na biblioteca, envie ao bot um link do GitHub ou importe um ZIP. Quando um bot faz algo do jeito certo, diga “salvar como habilidade” para reutilizar ou agendar."
       },
       {
         "title": "Pesquise no histórico de conversas",

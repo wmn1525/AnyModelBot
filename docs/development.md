@@ -1,8 +1,8 @@
 # 开发文档
 
 
-> 0.1.35 · 定时规则总览、十种机器人模板、资源预览、启动诊断及界面交互优化；保留 OKINTO 登录、余额、模型分组和生图适配。
-> 连接应用与自定义 MCP、侧栏分组、右侧标签面板，以及西班牙语和葡萄牙语（巴西）；保留 OKINTO 登录、余额、模型分组及生图适配。
+> 0.1.36 · 技能库、把工作存成技能及聊天中安装技能；软件界面、七语言提示和工具说明统一使用 Okinto，修正更新链接，保留原有接入配置兼容性。
+> 连接应用与自定义 MCP、侧栏分组、右侧标签面板，以及西班牙语和葡萄牙语（巴西）；保留 Okinto 登录、余额、模型分组及生图适配。
 > 新增“更新了什么”弹窗与关于页更新日志，版本检测、更新下载和更新说明统一指向本仓库。
 
 简体中文 | [English](./development_en.md) | [日本語](./development_ja.md) | [한국어](./development_ko.md) | [Русский](./development_ru.md) | [Español](./development_es.md) | [Português (Brasil)](./development_pt.md)
@@ -10,7 +10,7 @@
 这份文档给想从源码运行、打包或参与开发的人看。普通用户直接从 [Releases](https://github.com/modelflare-ai/AnyModelBot/releases) 下载安装包即可，见 [README](../README.md#-下载与运行)。
 
 - 一个机器人 = 人设 + 默认模型 + 记忆。账号是全局的（设置 › 连接），所有机器人共用，同一个服务可以加多个。定位：自用、单用户。
-- 默认网关是 **OKINTO New API**。桌面版在隔离的 Electron session 分区登录 OKINTO；复用 New API 游乐场的短期 Dashboard access token 自动刷新，并按所选分组经 `/pg/chat/completions` 调用。账户余额读取登录用户钱包，各可用分组的模型清单分别读取 `/api/user/models?group=…`；工具、多模态消息和分组字段透传。登录 cookie 留在 Chromium session，不保存账户密码、refresh cookie 或 access token 到 AnyModelBot 数据库。
+- 默认网关是 **Okinto New API**。桌面版在隔离的 Electron session 分区登录 Okinto；复用 New API 游乐场的短期 Dashboard access token 自动刷新，并按所选分组经 `/pg/chat/completions` 调用。账户余额读取登录用户钱包，各可用分组的模型清单分别读取 `/api/user/models?group=…`；工具、多模态消息和分组字段透传。登录 cookie 留在 Chromium session，不保存账户密码、refresh cookie 或 access token 到 AnyModelBot 数据库。
 - 模型内部 ID 保留分组，避免同名模型串组；筛选器按分组展示，同一模型的价格按各分组倍率计算。New API 登录模式支持生图：聊天格式的图片模型经 `/pg/chat/completions` 调用；Images API 与 Gemini 原生接口按需创建仅限所选分组和模型的临时令牌，调用完成或失败后撤销，最长 15 分钟过期，密钥只留在宿主内存。图片模型与价格取自当前账户可用分组及 `/api/pricing`，结果保存在机器人工作区 `media/`，通过 `present` 交付。站点须允许创建及读取令牌；机器人独立额度、通知、邀请和视频生成暂不可用。也可改用 API Key 直连模式。
 - New API 的 API Key 直连仍支持 OpenAI 兼容调用及站点余额接口。可用 `AMB_NEWAPI_BASE_URL` 覆盖站点地址（根地址或带 `/v1` 均可）；桌面开发版运行 `npm run electron:dev`。
 - 三种运行方式，同一套代码：**桌面版（Electron）**、**命令行 `npm start`**、**Docker**。
@@ -32,7 +32,7 @@ src/
   skills/        用户自己装的技能（ZIP 包）
   store/         SQLite（node:sqlite，无需原生编译）
   domain/        纯数据形状和规则：机器人设置、免打扰时段、时间表、目录 Bot 记录、代理步骤；不做 I/O，只依赖 i18n。store 只依赖它（依赖方向由 test/architecture.unit.test.ts 检查）
-  account/       Modelflare 账户：PKCE 回环登录、令牌轮换、余额与提醒、机器人预算 Key、模型能力与参考价
+  account/       Okinto 账户：PKCE 回环登录、令牌轮换、余额与提醒、机器人预算 Key、模型能力与参考价
   web/           管理界面服务：server.ts 启动、鉴权、分发；routes/ 按领域放接口（JSON API + 流式对话 SSE）；http.ts 是共用的小函数
   cli/           init 首次设置向导、weixin-login
   providers/     模型从哪来：modelflare.ts（线路、密钥校验 GET /v1/models、模型路由与归因）、modelflare-domains.ts（线路测速）、official.ts（官方 API 厂商表，地址写死）
@@ -61,7 +61,7 @@ docs/            开发文档、隐私说明、README 素材（docs/assets/）
 ```bash
 npm install
 npm run setup        # 拉取 vendor/magpie 子模块并编译到 build/bin/
-npm run init         # 可选：终端里的首次设置（登录 Modelflare 账户、飞书凭据）
+npm run init         # 可选：终端里的首次设置（登录 Okinto 账户、飞书凭据）
 npm start            # 启动全部：内置网关 + 机器人 + 管理界面 http://127.0.0.1:3600/
 ```
 
@@ -107,20 +107,20 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 
 容器内界面监听 0.0.0.0，因此强制令牌访问。不要把 3600 端口直接暴露到公网。微信扫码在 设置 › 聊天渠道 里完成。
 
-## 模型（Modelflare）
+## 模型（Okinto）
 
-- 首次启动只有一个按钮「登录 / 注册 Modelflare」：在系统浏览器里登录（没有账户可当场注册）并点「继续」授权，回到本程序后自动为这台电脑签发一把专用 API Key 并连接 → 选默认模型 → 开始对话。Docker 或远程部署收不到浏览器登录的回调：登录后浏览器会跳到打不开的 `127.0.0.1` 地址，把地址栏里的链接贴回首次启动页即可（`POST /amb/api/account/login/complete`，state 和 PKCE 校验不变）。旧版本填过 API Key、没有登录的，升级后 Key 会从本机移除，需要重新登录。 浏览器里的回调页先显示「正在完成登录」，换令牌、读账户、签发本机 Key、接入网关全部成功后才显示「登录成功」（失败时显示原因）；桌面版注册了 `anymodelbot://` 链接，成功页加载后自动尝试打开一次应用，「打开 AnyModelBot」按钮可以重试，只有应用确实收到这次的链接才显示「已返回」。用自己的 API Key 的页面下方也能直接用 Modelflare 账号登录。第一次接入、全局默认模型还空着时，按 `src/account/first-model.ts` 的规则选一次首用模型（支持工具调用，单轮预占和一个代表性任务的花费都在体验额度内，优先 DeepSeek）；没有合适的就不预选，让用户自己选。
-- 登录方式：OIDC 授权码 + PKCE（RFC 7636），按 RFC 8252 作为原生应用——本程序是公共客户端（`client_id` 为 `anymodel-bot`，没有也不需要客户端密钥），授权结果回调到本机 `127.0.0.1` 的临时端口。在 Modelflare 网页个人资料页的「已授权的应用」里可以随时撤销；撤销后本程序会发现并回到登录页。
-- 账户凭据（refresh token）存在数据目录的 `modelflare-account.json`（权限 600），和内置网关的 API Key 一样只靠文件权限保护，不用系统钥匙串（0.1.30 及以前桌面版加密过的文件，第一次读到时改写成明文）；界面只拿到账户名称。「退出登录」会撤销这台电脑的授权，Modelflare 同时删除登录时为它和各机器人签发的 Key。
-- 余额：在设置 → 模型 顶部直接显示账户余额、Bot 额度和剩余百分比；侧栏不再显示余额圆环或悬停卡片。「充值」打开 Modelflare 网页，进入设置页和回到窗口时会刷新，也可手动刷新。余额低于提醒线（默认 1 美元，可改或关闭）时在应用里提醒一次，也可以设置让机器人发到你的微信 / 飞书。
-- 登录后还能在 设置 → 模型 查看按天、按模型的用量，Modelflare 发来的通知，以及复制邀请链接。
+- 首次启动只有一个按钮「登录 / 注册 Okinto」：在系统浏览器里登录（没有账户可当场注册）并点「继续」授权，回到本程序后自动为这台电脑签发一把专用 API Key 并连接 → 选默认模型 → 开始对话。Docker 或远程部署收不到浏览器登录的回调：登录后浏览器会跳到打不开的 `127.0.0.1` 地址，把地址栏里的链接贴回首次启动页即可（`POST /amb/api/account/login/complete`，state 和 PKCE 校验不变）。旧版本填过 API Key、没有登录的，升级后 Key 会从本机移除，需要重新登录。 浏览器里的回调页先显示「正在完成登录」，换令牌、读账户、签发本机 Key、接入网关全部成功后才显示「登录成功」（失败时显示原因）；桌面版注册了 `anymodelbot://` 链接，成功页加载后自动尝试打开一次应用，「打开 AnyModelBot」按钮可以重试，只有应用确实收到这次的链接才显示「已返回」。用自己的 API Key 的页面下方也能直接用 Okinto 账号登录。第一次接入、全局默认模型还空着时，按 `src/account/first-model.ts` 的规则选一次首用模型（支持工具调用，单轮预占和一个代表性任务的花费都在体验额度内，优先 DeepSeek）；没有合适的就不预选，让用户自己选。
+- 登录方式：OIDC 授权码 + PKCE（RFC 7636），按 RFC 8252 作为原生应用——本程序是公共客户端（`client_id` 为 `anymodel-bot`，没有也不需要客户端密钥），授权结果回调到本机 `127.0.0.1` 的临时端口。在 Okinto 网页个人资料页的「已授权的应用」里可以随时撤销；撤销后本程序会发现并回到登录页。
+- 账户凭据（refresh token）存在数据目录的 `modelflare-account.json`（权限 600），和内置网关的 API Key 一样只靠文件权限保护，不用系统钥匙串（0.1.30 及以前桌面版加密过的文件，第一次读到时改写成明文）；界面只拿到账户名称。「退出登录」会撤销这台电脑的授权，Okinto 同时删除登录时为它和各机器人签发的 Key。
+- 余额：在设置 → 模型 顶部直接显示账户余额、Bot 额度和剩余百分比；侧栏不再显示余额圆环或悬停卡片。「充值」打开 Okinto 网页，进入设置页和回到窗口时会刷新，也可手动刷新。余额低于提醒线（默认 1 美元，可改或关闭）时在应用里提醒一次，也可以设置让机器人发到你的微信 / 飞书。
+- 登录后还能在 设置 → 模型 查看按天、按模型的用量，Okinto 发来的通知，以及复制邀请链接。
 - 机器人预算（需要登录）：机器人设置 → 预算，开启后这个机器人用自己的 Key（内置网关里单独的 provider），最多花设定的美元数；关闭后回到共用的 Key。
 - 推理强度：在模型选择面板或 设置 → 模型 里选（自动 / 低 / 中 / 高），全局一个，下一轮生效。自动时不发任何参数，用模型默认。只对支持的模型生效：Responses 接口的推理模型、模型资料标了推理的 Chat 和 Claude（Claude 4.6 起用 adaptive + `output_config.effort`，更早的用 `budget_tokens`）。
-- 生图 / 生视频：代理模式下机器人有 `media_models`（可用模型、默认模型、参数范围、参考价）、`media_docs`（从 docs.modelflare.dev 实时读该模型的请求格式）、`generate_image`、`generate_video` 四个工具，并自带一份 media 技能说明。各模型的参数格式不同，机器人按文档写请求体，工作区里的参考图写成 `workspace:路径` 即可；Key 始终只在本程序里，由本程序带着该机器人用的 Key 调 Modelflare，结果存进机器人工作区的 `media/`，再交付到聊天。
+- 生图 / 生视频：代理模式下机器人有 `media_models`（可用模型、默认模型、参数范围、参考价）、`media_docs`（从 docs.api.okinto.com 实时读该模型的请求格式）、`generate_image`、`generate_video` 四个工具，并自带一份 media 技能说明。各模型的参数格式不同，机器人按文档写请求体，工作区里的参考图写成 `workspace:路径` 即可；Key 始终只在本程序里，由本程序带着该机器人用的 Key 调 Okinto，结果存进机器人工作区的 `media/`，再交付到聊天。
 - 生成前确认：直接生成，不打扰你。机器人选了不是默认的模型、要求没说清，都不问：它按最合理的理解生成，再说一句用了什么。只在预计花费超过 $0.5 时（按参考价、张数、视频时长和分辨率估算；视频估不出来也算）先在聊天里问你这次用哪个模型（附提示词、参数、参考价和为什么问）。可以确认、换成别的模型或取消；微信回复编号或模型名，飞书 / 网页点选。10 分钟内没回答就不生成。想每次都确认：机器人设置 → 生图 / 生视频 → 生成前确认 →「每次都问」。
 - 联网搜索：代理的 `web_search` 不用 DeepSeek 自带的搜索（它要 DeepSeek 的 Key），经 `amb-web-search` 插件交给本程序搜。默认免费、不用设置：依次试 Exa 的公开 MCP、必应、DuckDuckGo，上次成功的先试，出错的（限流、验证页、必应给出不相干的结果）跳过 10 分钟。设置 → 网络与访问 → 联网搜索 可以换成 Tavily、Exa、博查、智谱（填 Key）或自己的 SearXNG，填了就先用它，出错时退回免费的。Key 和渠道令牌一样存在本机数据库里，代理进程拿不到。桌面版搜索走系统代理；命令行版用 Node 的 fetch（设 `NODE_USE_ENV_PROXY=1` 后认 `HTTPS_PROXY`）。
 - 聊天渠道账号（`src/core/routes.ts`）：微信、飞书、Telegram、Slack、Discord 的账号也是全局的，在设置 › 聊天渠道里添加，可以起别名。消息交给哪个机器人：这个人用 `/bot` 选过的 → 账号的默认机器人 → 第一个机器人。`/bot` 列出机器人，发一次 `/bot 名字` 就切换并记住，之后这个会话一直和它聊。每个机器人的系统提示词里都有其他机器人的名单和切换方法，用户问起时答得上来。名单和主人跟着账号走，能用这个账号的人可以和任何机器人聊。账号的 key 是命名空间：升级前的渠道 key 就是原来的机器人 id，登录态、配额、名单、队列都不用搬，默认机器人也是原来那个。删除机器人不影响账号。
-- 连接应用（`src/tools/apps/service.ts`）：全局一份（头像菜单 › 连接应用），默认所有机器人都能用，可以按机器人、按工具收窄（机器人设置 › 应用）。一个应用在应用页只有一张卡片，下面可以有多个账号，比如对任何机器人说「看我第一个飞书和第二个飞书的消息」，账号用工具的 `account` 参数选（序号或名字）。
+- 连接应用（`src/tools/apps/service.ts`）：全局一份（头像菜单 › 应用与技能），默认所有机器人都能用，可以按机器人、按工具收窄（机器人设置 › 应用）。一个应用在应用页只有一张卡片，下面可以有多个账号，比如对任何机器人说「看我第一个飞书和第二个飞书的消息」，账号用工具的 `account` 参数选（序号或名字）。
   - **内置应用**（`catalog.ts`）：飞书、腾讯文档、钉钉、高德地图、语雀、Notion、GitHub、Linear、Atlassian、Canva。认证方式和自定义连接器是同一套：授权登录（OAuth，动态注册，`oauth.ts`）、请求头、查询参数、专属链接；语雀是随安装包带的本地程序（`vendor/yuque-mcp`，`scripts/vendor-yuque-mcp.mjs` 生成），用户只粘贴 Token。
   - **自定义连接器**：远程 Streamable HTTP（连不上再试旧式 SSE）或本地命令，最多 20 个。粘贴识别和表单 ⇄ JSON 在 `ui/lib/connector-config.js`。本地命令用登录 shell 的 PATH（`shell-path.ts`），第一次要下载软件包的（npx、uvx）等得久一些。
   - **由主程序来连**（`mcp-client.ts`，官方 `@modelcontextprotocol/client`）：凭证只在主程序里，存在 `app-secrets.json`（权限 600，不进数据库，`secrets.ts`）；`amb-connections` 插件把每次工具调用经 bridge 交给本程序。MCP 连接的工具不一个个塞给模型，而是三个固定的工具：`app_tools` 找工具、`app_tool_schema` 看参数、`app_call` 执行，另有 `app_connect` 请用户去连接（对话里出卡片，连上后接着做）。
@@ -128,11 +128,11 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
   - **现有的 Notion、飞书账号**（`src/tools/accounts/`）：升级前连好的照旧能用，不用重新授权，令牌在第一次启动时从数据库搬到 `app-secrets.json`。Notion（`notion.ts`）选一键授权或令牌：令牌走 REST API，一键授权用 OAuth + PKCE + 动态注册、回调到本机 `/oauth/notion/callback`，再调官方远程 MCP（`mcp.notion.com`）；模型看到的仍是 `notion_search`、`notion_read_page`、`notion_query_database`、`notion_create_page`、`notion_update_page`，没有删除。飞书（`feishu.ts`）的现有账号用用户身份只读消息（`feishu_list_chats`、`feishu_read_chat`、`feishu_search_messages`）；新连的飞书账号走官方远程 MCP（云文档读写 + 只读消息），现有账号重新授权后换成它。
 - 默认图片 / 视频模型：首次设置时和默认文本模型一起选，之后在 设置 → 模型 修改；选「自动」时用推荐顺序里第一个不需要参考素材的模型。
 - 模型选择器里显示上下文长度、视觉 / 工具 / 推理能力，以及每百万 tokens 输入 / 输出的起步参考价（来自公开价格目录，以账单为准）。
-- 性价比（需要登录）：应用签发的 Key（本机 Key 和各机器人的预算 Key）都带 Modelflare Smart Key 的路由策略 `routing_strategy`——省钱 `low_cost`（倍率最低的分组先试）、均衡 `balanced`（默认，从价格居中的分组开始）、质量 `stable`（倍率最高的先试）。在 设置 → 模型 → 性价比 或模型选择器的第一个滑块里改，改的时候连同已有的 Key 一起改（`PATCH /api/connected-app/api-keys/<id>`），选择存在本机数据库（`account.routing`）。没选过的老用户第一次核对 Key 时把均衡应用到已有的 Key 上，只这一次（日志 `applied the default key routing strategy`）。Modelflare 回显了 `routing_strategy` 才算支持；拒绝（400 / 422）时不带这个字段再签一次，签发、核对、预算都不会因此失败，忽略（不回显）也一样记为不支持，这时界面不显示这个设置，一天后再试一次。
+- 性价比（需要登录）：应用签发的 Key（本机 Key 和各机器人的预算 Key）都带 Okinto Smart Key 的路由策略 `routing_strategy`——省钱 `low_cost`（倍率最低的分组先试）、均衡 `balanced`（默认，从价格居中的分组开始）、质量 `stable`（倍率最高的先试）。在 设置 → 模型 → 性价比 或模型选择器的第一个滑块里改，改的时候连同已有的 Key 一起改（`PATCH /api/connected-app/api-keys/<id>`），选择存在本机数据库（`account.routing`）。没选过的老用户第一次核对 Key 时把均衡应用到已有的 Key 上，只这一次（日志 `applied the default key routing strategy`）。Okinto 回显了 `routing_strategy` 才算支持；拒绝（400 / 422）时不带这个字段再签一次，签发、核对、预算都不会因此失败，忽略（不回显）也一样记为不支持，这时界面不显示这个设置，一天后再试一次。
 - 模型智能（模型选择器的第二个滑块）：在这个账户能用、又有 Artificial Analysis 数据的模型里，按智能指数（越高越好）和每次任务的花费（越低越好）取帕累托前沿，最多 5 档，最便宜的和最强的总在。智能取应用实际用的那一档：走 Responses 接口的推理模型默认发 medium，就用 AA 的 medium 那一行，其余用 AA 的默认那一行（`src/account/model-quality.ts`）。花费 = AA 的每次任务花费（官方定价）× 这个模型在当前性价比下的价格比例（可用公开分组的倍率 × 售价倍率：省钱取最低，质量取最高，均衡取居中；企业专用分组不算；没登录或不支持时按均衡估）。拖到哪一档就把模型换成那个；点模型名进完整列表，照样手动选，选了不在档上的模型时滑块显示「自定义」。前沿不到两档时选择器直接是列表。算法在 `ui/lib/frontier.js`。
-- AA 数据在仓库里：`assets/model-quality.json`（`updatedAt`、`source`、只留用得到的字段，已经按 Modelflare 的模型 ID 对应好）。刷新：`node scripts/update-model-quality.mjs`，默认抓公开排行榜页面 https://artificialanalysis.ai/leaderboards/models 和 Modelflare 的公开价格目录；设了 `AA_API_KEY` 时改用官方 API（字段还没有拿 Key 核对过）。`--html <文件>`、`--pricing <文件>` 用保存下来的页面和目录，`--dry-run` 只打印。页面结构变了（找不到列、行的形状不对、数字解析不出来、行数太少、对上的模型太少）时退出码为 1 并说明是哪一项，原来的快照不动。名字按规则对不上的模型写在脚本的 `OVERRIDES` 里。数据来自 Artificial Analysis，选择器底部注明出处。
-- 调用归因：经 Modelflare 的请求都带 `X-Modelflare-Skill: anymodel-bot/<版本>`，链接都带 `utm_source=anymodelbot&utm_campaign=amb_<位置>`（应用内 `amb_signup`、`amb_topup`、`amb_console` 等，README 与仓库文档 `amb_readme`，官网 `amb_homepage`；格式由 `test/utm.unit.test.ts` 固定）。
-- API 域名：`https://modelflare.dev/v1`、`https://origin.modelflare.dev/v1` 和 `https://cf.modelflare.dev/v1` 均可选择。在 设置 → 模型 → API 域名 中选择，也可手动测速。测速从运行 AnyModelBot 的设备发起，不带密钥访问三个域名的 `/v1/models`，显示三次探测的响应时间中位数和成功次数；401 表示已收到 API 响应，不代表密钥有效或模型生成速度。域名不会自动切换；历史配置 `auto` / `global` 仍指向主域名，`cn` 指向 origin，`cf` 指向 cf，兼容值不代表地域或质量差异。
+- AA 数据在仓库里：`assets/model-quality.json`（`updatedAt`、`source`、只留用得到的字段，已经按 Okinto 的模型 ID 对应好）。刷新：`node scripts/update-model-quality.mjs`，默认抓公开排行榜页面 https://artificialanalysis.ai/leaderboards/models 和 Okinto 的公开价格目录；设了 `AA_API_KEY` 时改用官方 API（字段还没有拿 Key 核对过）。`--html <文件>`、`--pricing <文件>` 用保存下来的页面和目录，`--dry-run` 只打印。页面结构变了（找不到列、行的形状不对、数字解析不出来、行数太少、对上的模型太少）时退出码为 1 并说明是哪一项，原来的快照不动。名字按规则对不上的模型写在脚本的 `OVERRIDES` 里。数据来自 Artificial Analysis，选择器底部注明出处。
+- 调用归因：经 Okinto 的请求都带 `X-Okinto-Skill: anymodel-bot/<版本>`，链接都带 `utm_source=anymodelbot&utm_campaign=amb_<位置>`（应用内 `amb_signup`、`amb_topup`、`amb_console` 等，README 与仓库文档 `amb_readme`，官网 `amb_homepage`；格式由 `test/utm.unit.test.ts` 固定）。
+- API 域名：`https://api.okinto.com/v1`、`https://origin.api.okinto.com/v1` 和 `https://cf.api.okinto.com/v1` 均可选择。在 设置 → 模型 → API 域名 中选择，也可手动测速。测速从运行 AnyModelBot 的设备发起，不带密钥访问三个域名的 `/v1/models`，显示三次探测的响应时间中位数和成功次数；401 表示已收到 API 响应，不代表密钥有效或模型生成速度。域名不会自动切换；历史配置 `auto` / `global` 仍指向主域名，`cn` 指向 origin，`cf` 指向 cf，兼容值不代表地域或质量差异。
 - 设置 → 模型：账户、余额与充值、余额提醒、用量、通知、邀请；性价比、推理强度；默认模型、刷新模型列表。
 - 对话中输入框右侧的模型按钮可为当前会话切换模型（也可设为机器人默认）；`/model`、`/reset`、`/new`、`/status`、`/stop`、`/help` 照常可用。
 - 处理过程：代理回合的每一步（模型请求及用时与 tokens、工具调用及参数与输出、重试、子代理）折叠在回复上方的"用时"一行里，点开查看；微信 / 飞书会话在信息面板 → 最近会话里看，正在处理的那一轮实时显示并可中止。
@@ -142,18 +142,18 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 - 每个会话用自己的模型：同一个代理进程里各会话各走各的模型和接口（每种接口一个 provider，上下文窗口、最大输出按模型），换模型不重启代理进程；补丁里没列出的模型在运行中补上。
 - 换新的代理进程：DSH 的 SDK 关不掉会话，后台任务和每次规则运行的会话都留在代理进程里，直到它重启（实测一个跑完、空闲的会话多占约 0.25–0.45 MB）。一个代理进程开过 100 个以上这样的会话后，等它完全空闲（没有聊天回合、没有在跑或收尾的任务和规则、没有等批准的、没有在压缩的会话、进程里没有后台命令）就在后台换一个新的；会话照常接着用，不中断任何东西，用户看不到。故障排查的代理状态里有 `taskSessions` 和 `recycles`；`AMB_DSH_RECYCLE_SESSIONS` 可改门槛。
 - 重启后的提醒：应用退出或崩溃时还没处理完的消息（每个会话在数据库里留一个处理中的标记，处理完就删），下次启动时在原会话里说一次「上次的消息「…」因为应用重启没有处理完，请重新发送」，不会自动重发。网页对话记进会话历史；微信用存下的 context_token 发送、占用同一份回复配额，超过 24 小时窗口或配额用完时等你在那个会话里发下一条消息时先说；飞书发到原单聊。
-- 代理的对话接口：代理按 Modelflare 公开目录里该模型支持的接口选——有 Responses API 的（GPT-5.4 及以后、Grok 4.5 及以后、DeepSeek V4、GLM-5、Kimi K3 等）走 `/v1/responses`（推理模型默认推理强度 medium，加密推理随历史回放）；没有 Responses、有 Anthropic Messages 的（Claude）走 `/v1/messages`；其余模型、拿不到目录时（例如离线）以及外部端点走 Chat Completions。接口按模型在代理进程里第一次用到它时选定（故障排查的代理状态里显示最近一轮的 `api` 和进程里的模型）；`AMB_AGENT_API=chat` 强制全部走 Chat Completions（排查用）。纯对话（非代理）仍走 Chat Completions。安全网：某个模型在 Responses / Messages 上的请求被上游拒绝（HTTP 400/404/405/415/422 或“不支持的参数 / 接口”，限流、余额、权限、上游故障、上下文过长不算）时，这个模型 24 小时内改走 Chat Completions（记在数据目录的 `dsh/api-fallback.json`，日志有警告，代理状态显示 `openai-completions (fallback: 原因)`）；这一轮如果还没调用过工具，这个会话换到 Chat 上自动重做一遍（不重启代理进程），用户照常收到回复，已经调用过工具的则照常报错、下一轮起走 Chat。
+- 代理的对话接口：代理按 Okinto 公开目录里该模型支持的接口选——有 Responses API 的（GPT-5.4 及以后、Grok 4.5 及以后、DeepSeek V4、GLM-5、Kimi K3 等）走 `/v1/responses`（推理模型默认推理强度 medium，加密推理随历史回放）；没有 Responses、有 Anthropic Messages 的（Claude）走 `/v1/messages`；其余模型、拿不到目录时（例如离线）以及外部端点走 Chat Completions。接口按模型在代理进程里第一次用到它时选定（故障排查的代理状态里显示最近一轮的 `api` 和进程里的模型）；`AMB_AGENT_API=chat` 强制全部走 Chat Completions（排查用）。纯对话（非代理）仍走 Chat Completions。安全网：某个模型在 Responses / Messages 上的请求被上游拒绝（HTTP 400/404/405/415/422 或“不支持的参数 / 接口”，限流、余额、权限、上游故障、上下文过长不算）时，这个模型 24 小时内改走 Chat Completions（记在数据目录的 `dsh/api-fallback.json`，日志有警告，代理状态显示 `openai-completions (fallback: 原因)`）；这一轮如果还没调用过工具，这个会话换到 Chat 上自动重做一遍（不重启代理进程），用户照常收到回复，已经调用过工具的则照常报错、下一轮起走 Chat。
 - 内置网关：magpie 以 `--gateway` 模式运行，使用本程序数据目录内独立的 HOME/配置目录；**不读取**你电脑上已有的 Claude/Codex 等订阅凭据，**不改写**任何 agent 配置，关闭自动更新与账户发现。它只供本进程内部调用，界面不再反代它的页面或 `/v1`。
 - API Key 只保存在内置网关的隔离配置中，不经过命令行参数、不写日志，前端只拿到尾号。
-- 开发/测试：设置 `AMB_MAGPIE_BASE_URL` 可直接使用一个 OpenAI 兼容端点（不启动内置网关，界面视为已连接，账户功能不可用）；`AMB_MODELFLARE_BASE_URL` 可把 Modelflare 基址指向本地 mock，`AMB_MODELFLARE_ISSUER` 把登录与账户接口指向本地 mock。
+- 开发/测试：设置 `AMB_MAGPIE_BASE_URL` 可直接使用一个 OpenAI 兼容端点（不启动内置网关，界面视为已连接，账户功能不可用）；`AMB_MODELFLARE_BASE_URL` 可把 Okinto 基址指向本地 mock，`AMB_MODELFLARE_ISSUER` 把登录与账户接口指向本地 mock。
 
 ## 官方 API Key
 
 - 引导页的「使用自己的 API Key」和 设置 → 模型 都能填。支持的厂商和地址写死在 `src/providers/official.ts`，接口（`GET /amb/api/official`、`PUT`/`DELETE /amb/api/official/<id>`）只认表里的 id，不能填地址。
-- 每家是内置网关里的一个 provider，id 为 `official-<厂商>`，模型 id 为 `official-<厂商>/<模型>`，和 Modelflare 的同名模型分得开。Key 不经命令行参数：经网关本机接口的请求体写入隔离配置。
+- 每家是内置网关里的一个 provider，id 为 `official-<厂商>`，模型 id 为 `official-<厂商>/<模型>`，和 Okinto 的同名模型分得开。Key 不经命令行参数：经网关本机接口的请求体写入隔离配置。
 - 校验走网关的模型列表接口（代理、各家的鉴权写法都在网关里），通过才保存。模型每小时和厂商的列表核对一次，不能对话的（语音、图片、向量……）不进选择器。
-- 代理的接口按厂商定：OpenAI 走 Responses，Anthropic 走 Messages，其余走 Chat Completions；上下文、价格、推理能力来自网关的模型目录（`/v1/models`）。只有官方 Key 时不读 Modelflare 的目录和账户。
-- 走官方 API 的模型不带 `X-Modelflare-Skill`，不做服务端压缩（压缩端点来自 Modelflare 的目录），也不受机器人预算限制（预算是 Modelflare Key 的额度）。生图、生视频只有连着 Modelflare 时才有。
+- 代理的接口按厂商定：OpenAI 走 Responses，Anthropic 走 Messages，其余走 Chat Completions；上下文、价格、推理能力来自网关的模型目录（`/v1/models`）。只有官方 Key 时不读 Okinto 的目录和账户。
+- 走官方 API 的模型不带 `X-Okinto-Skill`，不做服务端压缩（压缩端点来自 Okinto 的目录），也不受机器人预算限制（预算是 Okinto Key 的额度）。生图、生视频只有连着 Okinto 时才有。
 - 测试：`AMB_OFFICIAL_BASE_URL` 把所有厂商指向本地 mock（`test/official-providers.integration.test.ts`）。
 
 ## 界面
@@ -165,8 +165,8 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 - 语言：简体中文 / English / 日本語 / 한국어 / Русский / Español / Português (Brasil)，设置 → 常规 → 语言（引导页右上角、命令面板里也能切），默认跟随系统（系统语言不在已支持语言中时用英文）。偏好存在 config.json 的 `ui.lang`，托盘菜单、服务端报错和状态文字、机器人发到微信 / 飞书的系统消息（`/help`、审批提示等）都跟着它；命令行 / Docker 下"跟随系统"看 `AMB_LANG`，再看 `LC_ALL` / `LC_MESSAGES` / `LANG`，都没有时用简体中文。日志、发给模型的提示词和用户自己起的机器人名不翻译。
   - 界面文案在 `ui/locales/<语言>/<命名空间>.js`，代码里写 `t("命名空间.键", { 参数 })`（`ui/lib/i18n.js`）；服务端在 `src/i18n/messages/<命名空间>.ts`，键有类型检查。每个界面请求带 `x-amb-lang`，服务端在这个请求里用同一种语言回话。
   - 新增文案须补齐本次发布的所有目标语言；`node scripts/i18n-check.mjs [文件…]` 检查界面代码里有没有漏掉的中文、用到的键在不在、全部语言词典是否对齐（`npm test` 里的 `test/i18n.unit.test.ts` 也会查）。确需留在代码里的中文（字体名、匹配中文输入的正则）在那一行写 `// i18n-ignore`。
-- 上手清单（新手引导）：对话空状态里是 6 步清单——打招呼、换模型、接到微信、让它动手、让它记住你、生成一张图。最后一步在引导里只放预置演示，不管账户有没有图片 / 视频模型都一样：和真的默认流程一样直接生成、图片显示在对话里，但不发给机器人、不调用模型、不扣费，图是客户端自带的 `ui/assets/guide-demo.svg`。目的是教会怎么操作，不替用户花钱；之后真的让它画图、收到图片也会算完成这一步。点「发送这句」直接试，点「带我去」或侧栏左下角的清单入口，会有一张引导卡片指着要点的地方（那里亮一圈）。做完自动打勾：对话里有了回复、换了模型、收到文件 / 图片、渠道连上、记忆写入；进度存在 config.json 的 `ui.guide`（接口 `/amb/api/guide`），老用户已经做过的步骤会自动算完成。清单可以收起到左下角或「不再显示」，设置 → 常规 → 上手清单 可以重新开始。 打招呼要有一条真正的回复（出错提示不算），渠道要真的连上（只填了配置不算）；「连接常用聊天工具」这一步可以选微信、飞书、Telegram、Slack、Discord，界面语言只决定推荐哪个。明确说「记住……」时回合后的记忆整理会马上做，不用等 90 秒。进度按用户分开存（登录了 Modelflare 按账户，存在 KV 的 `guide.owner.*`；没登录时仍写 config.json 的 `ui.guide`），全部做完是一个里程碑，之后自动收起、不再出现；自动弹出的引导卡片在输入框有草稿或任务运行时先不出来。
-- 视觉：中性色与组件改编自 magpie 的界面（MIT），强调色为 Modelflare 荧光黄绿 `#d7ff00`。设计系统说明见 `ui/design/README.md`。
+- 上手清单（新手引导）：对话空状态里是 6 步清单——打招呼、换模型、接到微信、让它动手、让它记住你、生成一张图。最后一步在引导里只放预置演示，不管账户有没有图片 / 视频模型都一样：和真的默认流程一样直接生成、图片显示在对话里，但不发给机器人、不调用模型、不扣费，图是客户端自带的 `ui/assets/guide-demo.svg`。目的是教会怎么操作，不替用户花钱；之后真的让它画图、收到图片也会算完成这一步。点「发送这句」直接试，点「带我去」或侧栏左下角的清单入口，会有一张引导卡片指着要点的地方（那里亮一圈）。做完自动打勾：对话里有了回复、换了模型、收到文件 / 图片、渠道连上、记忆写入；进度存在 config.json 的 `ui.guide`（接口 `/amb/api/guide`），老用户已经做过的步骤会自动算完成。清单可以收起到左下角或「不再显示」，设置 → 常规 → 上手清单 可以重新开始。 打招呼要有一条真正的回复（出错提示不算），渠道要真的连上（只填了配置不算）；「连接常用聊天工具」这一步可以选微信、飞书、Telegram、Slack、Discord，界面语言只决定推荐哪个。明确说「记住……」时回合后的记忆整理会马上做，不用等 90 秒。进度按用户分开存（登录了 Okinto 按账户，存在 KV 的 `guide.owner.*`；没登录时仍写 config.json 的 `ui.guide`），全部做完是一个里程碑，之后自动收起、不再出现；自动弹出的引导卡片在输入框有草稿或任务运行时先不出来。
+- 视觉：中性色与组件改编自 magpie 的界面（MIT），强调色为 Okinto 荧光黄绿 `#d7ff00`。设计系统说明见 `ui/design/README.md`。
 
 ### 文档与网站预览
 
@@ -242,7 +242,7 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 - **后台任务**：聊天代理用 `task_start` 开一个任务（自己的 DSH 会话 `task-<id>` 和工作区里的文件夹 `tasks/<名字>-<id6>/`），一句话说清在后台做什么；做完把结果发回原会话（微信引用、飞书回复那条消息可以接着问）。中途要问你的，一个会话一次只推一个问题。应用重启后接着做，已经做过的外部动作先查再做。`/tasks` 列出任务和规则，`/stop 编号` 停一个。
 - **规则**：`rule_create` 或 机器人设置 › 主动消息 › 规则 建好，直接执行：你的原话就是授权，到点去查，有值得说的才发一句；改了原话也照样执行。观察要自己选（跟机器人说「先观察」，或在规则编辑器里选观察）：只读，不发消息，只记「本会发送」，好好观察 3 次后在「需要你」里问要不要改为执行。每次运行一个新会话，运行记录可以导出成 Markdown。
 - **看得到、不打扰**：信息面板的「任务」组列着这个机器人的任务和规则（结束了的收在「已结束」里），点开看来自哪、最新进展、预算、文件夹和每次运行的处理过程；所有在等你的事在侧栏的「需要你」里。只推结果、要你决定的事和失败；免打扰（默认 22:00–08:00）、每天上限（微信 3 条、飞书 5 条）、合并成摘要都在 机器人设置 › 主动消息。
-- **预算**：任务默认 $1，规则每次 $0.10、每月 $3（估算，按 Modelflare 的参考价）。用完时停下问你；任务详情里能改任务的预算，规则编辑器里能改规则的。机器人的预算 Key 剩不到 20% 时停后台工作，留给聊天。
+- **预算**：任务默认 $1，规则每次 $0.10、每月 $3（估算，按 Okinto 的参考价）。用完时停下问你；任务详情里能改任务的预算，规则编辑器里能改规则的。机器人的预算 Key 剩不到 20% 时停后台工作，留给聊天。
 - **暂停**：机器人设置 › 主动消息 › 暂停后台工作（或跟机器人说），任务和规则先停、主动消息排着，聊天照常。
 - **保留与清理**：任务和运行记录留 30 天，30 天没动过的任务归档。任务文件夹 30 天没动过就删除，连同 DSH 里它的会话记录（`dsh/<机器人>/sessions/` 下；SDK 没有删会话的接口，由应用直接删，会话还开在代理进程里的等进程换过再删）；不问你、不发通知：第 27 天定下删除的日期，任务详情里写着，可以保留（至少 3 天后才删）。任务详情里能看到文件夹多大，也能直接删掉任务（连同文件夹）。
 
@@ -291,7 +291,7 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 
 ```bash
 npm run typecheck
-npm test            # 单元测试 + 离线端到端（模拟飞书/iLink/Modelflare，含流式对话与停止）+ 内置网关集成测试（需已编译 magpie）
+npm test            # 单元测试 + 离线端到端（模拟飞书/iLink/Okinto，含流式对话与停止）+ 内置网关集成测试（需已编译 magpie）
 npm run docs:check  # README 自检：素材是否存在与体积、中英文结构一致、相对链接与锚点、禁用词、alt
 ```
 

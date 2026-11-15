@@ -22,7 +22,9 @@ import tasks from "./tasks.js";
 import web from "./web.js";
 import connections from "./connections.js";
 import apps from "./apps.js";
-export default { connections, apps,
+import skills from "./skills.js";
+import mySkills from "./mySkills.js";
+export default { connections, apps, skills, mySkills,
   access,
   account,
   activity,

@@ -1,9 +1,20 @@
 export default {
-  skills: {
+  "skills": {
     "head": "スキル",
     "note": "このボットに作業手順を追加します。変更は実行中の作業が終了してから反映されます。",
     "import": "ZIP をインポート",
-    "importSub": "ZIP ごとにスキル 1 つ、最大 20 MB",
+    "importSub": "ZIP ごとにスキル 1 つ、最大 20 MB。スキルの GitHub リンクをボットに送ってインストールすることもできます",
+    "browse": "スキルライブラリを見る",
+    "sourceGithub": "提供元：GitHub · {repo}",
+    "sourceZip": "提供元：ローカル ZIP",
+    "source": "提供元",
+    "zip": "ローカル ZIP",
+    "repo": "リポジトリ",
+    "path": "パス",
+    "root": "リポジトリのルート",
+    "branch": "ブランチ",
+    "commit": "コミット",
+    "installedAt": "インストール日時",
     "empty": "インポートしたスキルはありません",
     "enable": "{name} を有効にする",
     "files": "{count} ファイル · {size} KB",
@@ -25,7 +36,13 @@ export default {
       "conflict": "インストール済みのスキルが変更されました。ZIP を選び直して置き換えを確認してください。",
       "not_found": "スキルが見つかりません。一覧を更新してください。",
       "too_many": "インポートできるスキルはボットごとに 100 個までです。不要なスキルを削除してください。"
-    }
+    },
+    "imported": {
+      "active": "{name} をインポートしました。次のメッセージから使えます。",
+      "waiting": "{name} をインポートしました。現在のタスクが終わったあと、次のメッセージから使えます。",
+      "loading": "{name} をインポートしました。読み込み中です。次のメッセージから使えます。"
+    },
+    "manualOnly": "このスキルは、ボットが自分からは使わない設定です。メッセージに /{name} と書くと使われます。"
   },
   "back": "チャットに戻る",
   "backTitle": "チャットに戻る（Esc）",
@@ -49,7 +66,7 @@ export default {
   },
   "budget": {
     "name": "予算",
-    "signedOut": "OKINTO New API にログインすると、このボット専用の利用上限を設定できます",
+    "signedOut": "Okinto New API にログインすると、このボット専用の利用上限を設定できます",
     "signIn": "ログイン",
     "off": "他のボットとアカウント残高を共有し、個別の上限は設けません",
     "on": "このボットの費用を個別に計算し、上限に達すると停止します",
@@ -57,10 +74,9 @@ export default {
     "exhausted": "{used} を使用し、残額がないためモデルの呼び出しを一時停止しました",
     "limit": "上限（USD）",
     "limitSub": "使用済みの金額を含みます。上限を引き上げると自動的に再開されます。",
-    "limitLabel": "予算上限（USD）"
-  ,
-  "playground": "OKINTO アカウントの残高を使用します。Bot ごとの利用枠は設定できません。"
-},
+    "limitLabel": "予算上限（USD）",
+    "playground": "Okinto アカウントの残高を使用します。Bot ごとの利用枠は設定できません。"
+  },
   "perm": {
     "head": "権限",
     "name": "ファイルへのアクセス",

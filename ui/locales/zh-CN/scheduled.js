@@ -1,4 +1,22 @@
 export default {
+  "emptyTitle": "还没有规则",
+  "emptyNeedsTitle": "没有需要处理的规则",
+  "emptyNeedsHint": "需要你处理的规则会出现在这里。",
+  "searchBots": "搜索机器人",
+  "noBotsMatch": "没有找到「{query}」",
+  "details": {
+    "prompt": "提示词",
+    "reminder": "提醒内容",
+    "schedule": "频率",
+    "next": "下次运行",
+    "destination": "发到",
+    "month": "本月花费",
+    "spent": "约 {spent} / {budget}"
+  },
+  "kindHint": {
+    "remind": "到点我提醒你一句，不做别的事。",
+    "check": "到点我自己动手做完，把结果发给你。"
+  },
   "rule": "规则",
   "title": "定时",
   "attention": "定时 · {count} 条需要处理",

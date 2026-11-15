@@ -76,6 +76,31 @@ export function botTeam(others: Array<{ name: string; persona: string }>): strin
   ].join("\n");
 }
 
+/**
+ * 用户给这个机器人装的技能（已在当前进程里生效、模型可以自己用的）和问起技能、应用时怎么答。
+ * 界面上技能的名字可能是技能库里的标题（「小红书爆款标题」），和技能目录里的技能名（xhs-title）对不上：加号菜单填进输入框的是
+ * 「用{显示的名字}帮我……」，所以这里给出对照。示例和界面上「试试这样说」是同一句（skills/display.ts）。
+ * apps：提示词里有「Connected apps」那一段（tools/apps/service.ts promptText）。
+ */
+export function botSkills(skills: Array<{ name: string; title: string; example: string }>, apps: boolean): string {
+  const lines = ["# 技能和应用"];
+  if (skills.length) {
+    lines.push("用户给你装的技能（界面上的名字 → 技能名：用户可以照着说的一句话）：");
+    for (const s of skills.slice(0, 100)) {
+      const example = s.example.replace(/\s+/g, " ").trim().slice(0, 80);
+      lines.push(`- ${s.title === s.name ? s.name : `${s.title.slice(0, 40)} → ${s.name}`}：${example}`);
+    }
+    lines.push("用户点名用其中一个（比如「用某某帮我……」）时，先用 skill 工具加载它再做。");
+  }
+  const what = [skills.length && "上面这些技能", apps && "Connected apps 里的应用"].filter(Boolean).join("和");
+  lines.push(
+    what
+      ? `用户问你装了什么技能、连了什么应用、能怎么用时，只列${what}，每项一行，附一句用户可以照着说的话（技能用上面那句；应用写成「用某某帮我」加它能做的一件事）。没装的、关掉的、没分给你的不要列。`
+      : "用户还没给你装技能，也没有可用的应用。问起时直说，并告诉用户可以在输入框左边的加号 ›「技能与应用」里导入技能、连接应用。",
+  );
+  return lines.join("\n");
+}
+
 /** 机器人名字与用户写的人设：放在最后，和前面的聊天规则冲突时以人设为准 */
 export function botIdentity(name: string, persona: string): string {
   const lines = ["# 机器人设定"];

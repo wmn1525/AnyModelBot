@@ -12,6 +12,10 @@ Os ícones da interface são selecionados do Heroicons 2.2.0 Outline e distribu�
 
 https://github.com/tailwindlabs/heroicons/releases/tag/v2.2.0
 
+## Lucide (panel-left / panel-right)
+
+Os controles dos painéis esquerdo e direito usam `panel-left` / `panel-right` do Lucide 1.73.0, mantendo o retângulo arredondado com uma linha vertical da versão anterior. Código e origem: `ui/icons/lucide.js` e `ui/icons/lucide-source.json`. Licenças ISC / MIT completas: [ui/icons/lucide-LICENSE](./ui/icons/lucide-LICENSE).
+
 ## magpie (gateway de modelos integrado, distribuído como binário; parte dos estilos da interface foi adaptada dele)
 
 Fonte: https://github.com/yetone/magpie (submódulo vendor/magpie, v0.1.1720)

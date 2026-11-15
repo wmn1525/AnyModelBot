@@ -1253,6 +1253,22 @@ export class AppService {
     return { apps: true, tools };
   }
 
+  /**
+   * 模型写的应用 → 应用的 key（过程区按它显示应用名）：内置应用的 id、中英文名，自定义连接器的 key 或名称。
+   * 不看机器人能不能用（没分给它的调用也要显示成没用成）；认不出时 undefined。
+   */
+  keyOf(selector: string): string | undefined {
+    const raw = selector.trim();
+    const lower = raw.toLowerCase();
+    if (!lower) return undefined;
+    const b = BUILTIN_APPS.find((x) => x.id === lower || x.name.en.toLowerCase() === lower || x.name.zh === raw);
+    if (b) return b.id;
+    const custom = this.store.list(CUSTOM_APP);
+    if (isCustomKey(raw) && custom.some((c) => customKey(c.id) === raw)) return raw;
+    const hit = custom.find((c) => c.label.toLowerCase() === lower) ?? (lower.length >= 2 ? custom.find((c) => c.label.toLowerCase().includes(lower)) : undefined);
+    return hit ? customKey(hit.id) : undefined;
+  }
+
   /** 模型用 app 参数指一个应用：内置应用的 id 或名字，自定义连接器的名称 */
   private findApp(botId: string, input: Pick<GateInput, "apps" | "allowed">, selector: unknown): { key: string; app: string; name: string; accounts: AppAccount[]; tools: ToolInfo[]; legacyTools: string[] } {
     const raw = String(selector ?? "").trim();

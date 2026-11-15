@@ -5,6 +5,7 @@ export default {
     "/model — lista os modelos disponíveis (numerados)",
     "/model <número ou nome> — troca o modelo desta conversa",
     "/reset — limpa o contexto desta conversa (no modo agente, também inicia uma nova sessão do agente; a memória de longo prazo é mantida)",
+    "/skill — salva o que acabamos de fazer como habilidade (acrescente uma nota para salvar só uma parte)",
     "/new — inicia uma nova conversa: a anterior é arquivada com uma nota de transição; a memória de longo prazo é mantida",
     "/bot — lista os bots; /bot <número ou nome> — fala com outro bot (só em apps de chat)",
     "/status — mostra o modelo atual, o estado do agente e o andamento da mensagem em processamento",
@@ -18,7 +19,7 @@ export default {
   botMissing: "Não existe o bot “{name}”. Envie /bot para ver a lista.",
   botSwitched: "Ok, agora você está falando com {name}.",
   noModels:
-    "Nenhum modelo disponível: entre no OKINTO ou adicione uma chave de API oficial primeiro (Configurações → Modelos)",
+    "Nenhum modelo disponível: entre no Okinto ou adicione uma chave de API oficial primeiro (Configurações → Modelos)",
   startingNote:
     "(O agente ainda está iniciando, então o modelo respondeu esta mensagem diretamente; o agente assume automaticamente quando estiver pronto.)",
   emptyReply: "(O modelo não retornou nada)",
@@ -72,7 +73,7 @@ export default {
     "✅ Nova conversa iniciada (a anterior foi arquivada com uma nota de transição; a memória de longo prazo é mantida)",
   modelListFailed: "⚠️ Não foi possível obter a lista de modelos: {error}",
   modelListEmpty:
-    "Nenhum modelo disponível: entre no OKINTO ou adicione uma chave de API oficial primeiro (Configurações → Modelos).",
+    "Nenhum modelo disponível: entre no Okinto ou adicione uma chave de API oficial primeiro (Configurações → Modelos).",
   modelListHead: "Modelos disponíveis (responda /model <número> para trocar):",
   modelCurrent: "  ← atual",
   modelReset: "✅ De volta ao modelo padrão do bot",

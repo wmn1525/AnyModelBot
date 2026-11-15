@@ -25,9 +25,16 @@ Organiza el trabajo terminado, los problemas y los planes para la próxima seman
 
 Los nombres usan letras minúsculas del alfabeto inglés, dígitos y guiones simples, con un máximo de 64 caracteres. Los archivos ZIP pueden pesar hasta 20 MB, con un máximo de 64 MB y 2000 entradas una vez descomprimidos. `SKILL.md` puede pesar hasta 256 KB, y cada bot puede tener hasta 100 habilidades importadas. Si un ZIP contiene varios archivos `SKILL.md`, empaqueta cada habilidad por separado.
 
+## Instalar desde la biblioteca de habilidades o GitHub
+
+- En la pestaña Habilidades de Apps y habilidades puedes explorar la biblioteca por categoría o por autor; la sección de habilidades de la configuración del bot también tiene «Ver habilidades». Haz clic en «Copiar instrucción de instalación» y envíasela a cualquier bot.
+- También puedes enviarle al bot el enlace de GitHub de una habilidad (un repositorio, una carpeta `/tree/<rama>/<ruta>` o un archivo `SKILL.md`) y decirle «instala esto».
+- El bot lee el nombre, la descripción, el origen, la licencia y la cantidad de archivos de la habilidad y muestra una tarjeta de confirmación. No se escribe nada hasta que haces clic en Instalar, y la habilidad se instala solo en ese bot. En los canales de chat, responde con el código de la tarjeta; las tarjetas de Feishu tienen botones. Solo el dueño puede instalar habilidades.
+- Las habilidades instaladas muestran el origen «GitHub · repositorio» en la lista; en Ver aparecen el repositorio, la ruta, la rama, el commit instalado y la hora de instalación.
+
 ## Usar, reemplazar y eliminar
 
-- Una habilidad solo se aplica al bot al que la agregas. Ese bot usa las mismas habilidades en la app y en los canales de chat.
+- Una habilidad solo se aplica al bot al que la agregas (sobre Mis habilidades, ver abajo). Ese bot usa las mismas habilidades en la app y en los canales de chat.
 - Desde la lista, puedes ver las instrucciones y activar, desactivar o eliminar habilidades. Los cambios esperan a que el bot esté inactivo.
 - Para reemplazar una habilidad, vuelve a importar una con el mismo nombre, revísala y haz clic en Reemplazar habilidad. El reemplazo conserva su estado activado o desactivado.
 - Al eliminar una habilidad se borran sus archivos, pero se conserva lo que ya se generó en el espacio de trabajo.
@@ -35,6 +42,30 @@ Los nombres usan letras minúsculas del alfabeto inglés, dígitos y guiones sim
 
 Las habilidades se ejecutan con los permisos que ya tiene el bot. Una habilidad que necesita Python, otro software o la conexión de una cuenta requiere ese entorno. Las habilidades que dependen de herramientas propias de otro cliente pueden necesitar cambios. Que el formato sea compatible no significa que todas las herramientas de apoyo estén instaladas.
 
+## Usar en un chat
+
+- Haz clic en **+** › **Habilidades y apps**, a la izquierda del cuadro de mensaje, para ver las habilidades y apps que este bot puede usar ahora. Al elegir una, se escribe "Usa {nombre} para ayudarme a…" en el cuadro; completa la frase y envíala. El bot decide si la usa.
+- En la configuración, cada habilidad muestra **Activa**, **Activa cuando termine la tarea actual** o **Cargando** junto a su nombre, y debajo una línea **Prueba decir**. Haz clic en esa línea para ponerla en el cuadro de mensaje de este bot.
+- Mientras el bot usa una habilidad o una app, el proceso sobre su respuesta muestra "Usando la habilidad · {nombre}" o "Usando {app}". Al terminar la respuesta, se resume en una línea, "Usado: …", que puedes expandir para ver todos los pasos.
+- Pregúntale al bot "¿Qué habilidades tienes?" o "¿Qué apps tienes?" y te dirá cuáles puede usar ahora, cada una con un ejemplo que puedes enviar.
+- Una habilidad cuyo `SKILL.md` indica `disable-model-invocation: true` nunca la usa el bot por su cuenta y no aparece en **Habilidades y apps**. Escribe `/nombre-de-la-habilidad` en un mensaje para usarla.
+
+## Guardar lo que hiciste como habilidad
+
+Cuando un bot hace algo bien, puedes guardar cómo lo hizo en Mis habilidades, usarlo la próxima vez o programarlo.
+
+- Para empezar: en el menú + del cuadro de texto elige «Guardar como habilidad…», envía `/skill` o simplemente di «guardar como habilidad». Para guardar solo una parte, di «guarda el paso 3 como habilidad». Si el bot todavía está respondiendo, espera a que termine este turno.
+- El bot muestra «Armando la habilidad…» y luego una tarjeta de borrador: título y nombre de archivo, cuándo usarla, pasos, lo que corregiste (puedes desmarcarlo), las apps y habilidades que usa, y «Prueba a decir». «Editar» abre el archivo de la habilidad y se revisa de nuevo al terminar. No se escribe nada hasta que haces clic en Guardar; la tarjeta vence a los 30 minutos.
+- Los secretos (claves de API, tokens, contraseñas, códigos de verificación, cookies, números de identificación) nunca se escriben en la habilidad y no se puede guardar si los agregas al editar. Los teléfonos, correos, nombres, nombres de grupos y rutas de archivos fuera del espacio de trabajo se resaltan y por defecto quedan en «Preguntar cada vez»: se guardan como marcadores y el bot te los pregunta antes de cada uso. Elige «Conservar» para escribir el original en la habilidad.
+- También puedes guardar una tarea sin terminar: el borrador dice dónde se detuvo y la habilidad queda «No verificada» hasta que se complete con éxito una vez.
+- Si el título coincide, o el bot ve que es la misma tarea, la tarjeta muestra cuántos cambios hay y ofrece «Actualizar» o «Guardar como nueva». Al actualizar se conserva la versión anterior, que puedes restaurar en Administrar.
+- Mis habilidades es una sola lista que se guarda solo en esta computadora, con hasta 100 habilidades, contadas aparte de las que importa cada bot. Al principio solo está activada para el bot que la guardó; para usarla en otro bot, activa su interruptor en la lista de habilidades de ese bot. Solo el dueño puede guardar habilidades, y no desde un grupo de WeChat o Feishu.
+- En la lista de habilidades, las filas de Mis habilidades tienen «Ver» y «Administrar». Administrar permite exportar un ZIP (solo los archivos de esta habilidad, con un aviso si conserva datos personales), restaurar la versión anterior o eliminarla. Un ZIP exportado se puede importar en otra computadora como habilidad de ZIP local.
+- Después de guardar, «Programarla» hace que el bot pregunte la hora y cree una rutina «Hacer una tarea» que siempre usa la versión más reciente. Las habilidades que necesitan controlar la computadora, generar imágenes o videos o iniciar tareas en segundo plano, y las no verificadas, no se pueden programar. Si la habilidad se elimina, se desactiva para ese bot o, tras actualizarla o restaurarla, necesita nuevas respuestas, suma pasos que las ejecuciones programadas no pueden hacer o queda sin verificar, la rutina se pausa y aparece en Requiere atención dentro de Programado.
+- Con más de 10 habilidades, la lista muestra un cuadro de búsqueda y los filtros «Todas / Mis habilidades / GitHub / ZIP local / Desactivadas». Los nombres de habilidades en la actividad abren sus detalles.
+
 ## Almacenamiento
 
 Los paquetes descomprimidos se guardan en `skills/<bot ID>/`, dentro de la carpeta de datos. Las habilidades activadas se copian en `dsh/<bot ID>/skills/` para el entorno de ejecución. La importación solo sube los archivos a la instancia de AnyModelBot que estás usando; en una instalación en servidor, los archivos se guardan en ese servidor. Los nombres y las descripciones de las habilidades activadas, y las instrucciones o referencias que se cargan durante el uso, pasan a formar parte del contexto que se envía al modelo que hayas seleccionado. Consulta [Datos y privacidad](./privacy_es.md).
+
+Mis habilidades se guardan en `my-skills/` dentro del directorio de datos y, al ejecutarse, se copian a `dsh/<ID del bot>/skills/` de cada bot donde están activadas.

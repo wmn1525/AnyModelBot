@@ -1,4 +1,10 @@
 export default {
+  "profile": {
+    "connecting": "Conectando…",
+    "retryHint": "Não foi possível carregar os dados da conta. Clique para tentar novamente.",
+    "retry": "Tentar carregar os dados da conta novamente",
+    "reload": "Recarregar os dados da conta"
+  },
   "usage": {
     "title": "Uso",
     "days": "{n} dias",
@@ -19,12 +25,12 @@ export default {
     "empty": "Nenhum uso neste período"
   },
   "notifications": {
-    "title": "Notificações do OKINTO",
+    "title": "Notificações do Okinto",
     "empty": "Nenhuma notificação",
     "details": "Ver detalhes ↗"
   },
   "login": {
-    "title": "Entrar na OKINTO New API",
+    "title": "Entrar na Okinto New API",
     "hint": "Ao entrar, a chave de API informada será substituída."
   }
 };

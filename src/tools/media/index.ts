@@ -295,7 +295,7 @@ export class MediaService {
 
   private key(botId: string): string {
     const key = this.o.keyFor(botId);
-    if (!key) throw new MediaError("还没有连接 OKINTO New API，无法生成图片或视频");
+    if (!key) throw new MediaError("还没有连接 Okinto New API，无法生成图片或视频");
     return key;
   }
 
@@ -309,7 +309,7 @@ export class MediaService {
     if (!res.ok) {
       const detail = (await res.json().catch(() => ({}))) as { error?: { message?: string; code?: string } };
       const msg = detail.error?.message || `HTTP ${res.status}`;
-      throw new MediaError(detail.error?.code === "model_not_found" ? `这把 Key 不能用这个模型：${msg}` : `OKINTO New API 返回错误：${msg}`);
+      throw new MediaError(detail.error?.code === "model_not_found" ? `这把 Key 不能用这个模型：${msg}` : `Okinto New API 返回错误：${msg}`);
     }
     return res;
   }
@@ -609,7 +609,7 @@ export class MediaService {
       : { model: model.id, prompt, ...(Number.isFinite(seconds) && seconds > 0 ? { seconds: String(Math.round(seconds)) } : {}), ...(size ? { size } : {}) };
     const created = (await (await this.call(key, "POST", "/videos", req)).json()) as { id?: string; task_id?: string };
     const id = created.id || created.task_id;
-    if (!id) throw new MediaError("OKINTO 没有返回视频任务编号");
+    if (!id) throw new MediaError("Okinto 没有返回视频任务编号");
     if (journal && receipt) {
       Object.assign(receipt, { taskId: id, status: "pending" });
       journal.write(receipt);

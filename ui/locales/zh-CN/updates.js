@@ -1,4 +1,7 @@
 export default {
+  "downloadVersion": "下载新版本 {version}",
+  "browserVersion": "发现新版本 {version}，去下载 ↗",
+  "restartVersion": "重启并更新到 {version}",
   "autoDownload": "自动下载更新",
   "autoDownloadHint": "发现新版本后在后台下载，完成后提醒你重启安装。",
   "manualOnly": "此运行方式需要手动下载安装包。",
@@ -10,7 +13,7 @@ export default {
   "restart": "重启并更新",
   "installing": "正在重启并更新…",
   "check": "检查更新",
-  "busy": "有任务正在运行，完成后即可重启更新。",
+  "busy": "有任务在运行，完成后可以重启更新",
   "errors": {
     "failed": "更新操作失败，请稍后重试。",
     "check_failed": "暂时无法检查更新，请稍后重试。",

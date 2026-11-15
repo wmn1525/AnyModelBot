@@ -1,4 +1,22 @@
 export default {
+  "emptyTitle": "No rules yet",
+  "emptyNeedsTitle": "Nothing needs attention",
+  "emptyNeedsHint": "Rules that need you will show up here.",
+  "searchBots": "Search bots",
+  "noBotsMatch": "No bots match \"{query}\"",
+  "details": {
+    "prompt": "Prompt",
+    "reminder": "Reminder",
+    "schedule": "Schedule",
+    "next": "Next run",
+    "destination": "Sends to",
+    "month": "This month",
+    "spent": "About {spent} of {budget}"
+  },
+  "kindHint": {
+    "remind": "When it’s time, I’ll just remind you—nothing else.",
+    "check": "When it’s time, I’ll do the task myself and send you the result."
+  },
   "rule": "Rule",
   "title": "Scheduled",
   "attention": "Scheduled · {count} need attention",
@@ -40,7 +58,7 @@ export default {
   "offNoDestination": "Off · No destination yet",
   "offNoGroup": "Off · No group chosen yet",
   "observing": "Trying it out: records results, sends nothing",
-  "zoneMismatch": "Runs in {zone}, which differs from this computer’s time zone",
+  "zoneMismatch": "Runs in {zone}, not this computer's current time zone",
   "useCurrentZone": "Use current time zone",
   "fromRule": "From rule “{name}” · {time}",
   "late": "Sent late (due {time})",

@@ -1,6 +1,6 @@
 <h1 align="center">okbot</h1>
 
-> 0.1.35 · Regras agendadas, dez modelos de bots, prévias de recursos, diagnóstico de inicialização e melhorias na interface. Login, saldos, grupos e imagens da OKINTO preservados.
+> 0.1.36 · Biblioteca de habilidades, salvar trabalhos como habilidades e instalar pelo chat. Interface, mensagens em sete idiomas e ferramentas usam Okinto; conexões existentes preservadas e links de atualização corrigidos.
 
 <p align="center"><b>Uma equipe de bots de IA no seu próprio computador. Qualquer modelo, pagamento por uso.</b></p>
 
@@ -14,7 +14,7 @@
   <a href="./README_ru.md">Русский</a> |
   <a href="./README_es.md">Español</a> |
   Português (Brasil) |
-  <a href="https://api.okinto.com">OKINTO</a> |
+  <a href="https://api.okinto.com">Okinto</a> |
   <a href="https://api.okinto.com">Preços</a> |
   <a href="./docs/development_pt.md">Desenvolvimento</a> |
   <a href="https://github.com/wmn1525/AnyModelBot/issues">Feedback</a>
@@ -30,7 +30,7 @@
 
 [![Plataformas][platform-shield]][releases-link]
 [![Preços][pricing-shield]][pricing-link]
-[![OKINTO][okinto-shield]][okinto-link]
+[![Okinto][okinto-shield]][okinto-link]
 
 </div>
 
@@ -40,7 +40,7 @@
 
 O okbot é uma equipe de bots de IA para Windows, macOS e Linux que roda no seu computador. Cada bot tem sua própria persona, modelo padrão, espaço de trabalho e memória. Você pode conversar no app ou conectar WeChat, Feishu, Telegram, Slack ou Discord. Ele pode ler e gravar arquivos, executar comandos e operar a área de trabalho depois que você der permissão; antes de gravar fora do espaço de trabalho, ele pergunta.
 
-Conversas, memória, arquivos e chaves de API ficam no seu dispositivo. Os modelos podem vir do [OKINTO](https://api.okinto.com) (entre e pague pelo uso) ou das suas próprias chaves de API oficiais, enviadas diretamente ao provedor. O okbot em si não cobra assinatura.
+Conversas, memória, arquivos e chaves de API ficam no seu dispositivo. Os modelos podem vir do [Okinto](https://api.okinto.com) (entre e pague pelo uso) ou das suas próprias chaves de API oficiais, enviadas diretamente ao provedor. O okbot em si não cobra assinatura.
 
 Pronto para usar logo após a instalação: tarefas em segundo plano, regras agendadas e os itens que aguardam o seu OK já vêm integrados.
 
@@ -50,7 +50,7 @@ Pronto para usar logo após a instalação: tarefas em segundo plano, regras age
 
 ---
 
-O serviço de modelos é fornecido pela **[okinto](https://api.okinto.com)**. No aplicativo para desktop, entre na janela isolada da OKINTO para carregar o saldo, os grupos e os modelos da conta. Você também pode usar uma chave de API do site. Docker e o código-fonte usam uma chave de API. Consulte preços e regras de uso [no console](https://api.okinto.com/pricing).
+O serviço de modelos é fornecido pela **[okinto](https://api.okinto.com)**. No aplicativo para desktop, entre na janela isolada da Okinto para carregar o saldo, os grupos e os modelos da conta. Você também pode usar uma chave de API do site. Docker e o código-fonte usam uma chave de API. Consulte preços e regras de uso [no console](https://api.okinto.com/pricing).
 
 O modo Playground usa o saldo da conta; não oferece cotas separadas por bot, notificações, convites nem geração de vídeo. A geração de imagens depende dos modelos e das permissões disponíveis. Suas chaves oficiais continuam compatíveis.
 
@@ -118,7 +118,7 @@ Estas capturas mostram a interface em chinês simplificado. O app também está 
 
 
 
-<p align="center"><i>Escolha qualquer modelo do OKINTO para cada conversa. Tamanho do contexto, capacidades e preços de referência aparecem ao lado de cada um.</i></p>
+<p align="center"><i>Escolha qualquer modelo do Okinto para cada conversa. Tamanho do contexto, capacidades e preços de referência aparecem ao lado de cada um.</i></p>
 
 
 
@@ -126,7 +126,7 @@ Estas capturas mostram a interface em chinês simplificado. O app também está 
 
 
 
-<p align="center"><i>Sua conta OKINTO dentro do app: saldo, uso e padrões.</i></p>
+<p align="center"><i>Sua conta Okinto dentro do app: saldo, uso e padrões.</i></p>
 
 
 
@@ -142,7 +142,7 @@ Um bot é mais do que uma janela de chat: ele tem uma persona, um modelo padrão
 - **Você define cada bot.** Uma persona é só um texto, e os templates são apenas um ponto de partida. Os seis avatares mudam a aparência do bot, não o que ele consegue fazer.
 - **Trabalho real com arquivos.** Os bots leem e gravam arquivos, executam comandos em um sandbox e enviam os resultados de volta ao chat como arquivos.
 - **Três predefinições de permissão por bot.** *Somente leitura*, *Gravação no espaço de trabalho* (o padrão: grava dentro da pasta do próprio bot e pergunta antes de gravar fora do espaço de trabalho) e *Acesso total* (sem sandbox; mesmo com acesso total, pergunta antes de excluir uma pasta inteira).
-- **Importe habilidades.** Em **Configurações do bot → Habilidades**, importe um ZIP que contenha `SKILL.md` (uma habilidade por ZIP, até 20 MB), depois visualize e adicione. Veja, ative, desative ou exclua habilidades; importe de novo o mesmo nome para confirmar a substituição. As alterações passam a valer depois que o trabalho em andamento terminar. [Guia de habilidades](./docs/skills_pt.md).
+- **Habilidades: instale, importe ou salve as suas.** Escolha uma habilidade na biblioteca em **Apps e habilidades**, envie ao bot a instrução de instalação ou o link do GitHub e confirme o cartão; ou importe um ZIP que contenha `SKILL.md` em **Configurações do bot → Habilidades** (uma habilidade por ZIP, até 20 MB). Quando um bot faz algo do jeito certo, diga “salvar como habilidade” ou envie `/skill` e confirme o rascunho para guardar em Minhas habilidades, usar em vários bots, exportar como ZIP ou agendar. As mudanças valem depois que o trabalho atual termina. [Guia de habilidades](./docs/skills_pt.md).
 - **Cartões de aprovação, sem surpresas.** Ações que gravam fora do espaço de trabalho param e aguardam a sua resposta.
 - **Aviso após reiniciar.** Uma mensagem que ainda estava em andamento quando o app foi fechado ou travou é sinalizada na conversa na próxima inicialização, para que você possa enviá-la de novo; nada é refeito por conta própria.
 - **Conversas em grupo.** Crie um grupo e adicione alguns bots. Responde quem você mencionar com @; sem @, continua o bot que respondeu por último. Os bots também podem mencionar outro membro com @ para passar a vez. Cada bot mantém seu próprio modelo, espaço de trabalho e memória, e os custos são contabilizados por bot.
@@ -162,7 +162,7 @@ Os bots oficiais incluem no instalador suas interfaces, exemplos, personas e hab
 - **Estúdio de cinema:** Vídeos curtos e séries: roteiro, storyboard, narração, edição e versão final.
 - **Ações dos EUA:** Pesquise empresas listadas nos EUA a partir dos documentos protocolados na SEC, com cada número rastreável.
 
-O Estúdio de cinema exige o okbot 0.1.23 ou posterior, Python 3.10+ e FFmpeg (incluindo o ffprobe) no seu dispositivo. As imagens e os vídeos de IA usam o OKINTO e são cobrados pelo uso; projetos e mídias ficam no seu dispositivo.
+O Estúdio de cinema exige o okbot 0.1.23 ou posterior, Python 3.10+ e FFmpeg (incluindo o ffprobe) no seu dispositivo. As imagens e os vídeos de IA usam o Okinto e são cobrados pelo uso; projetos e mídias ficam no seu dispositivo.
 
 Veja os detalhes na [página de bots do nosso site](https://github.com/wmn1525/AnyModelBot).
 
@@ -188,13 +188,13 @@ O runtime é construído sobre o [DeepSeek Harness](https://github.com/deepseek-
 
 
 
-## 🌐 Qualquer modelo, via OKINTO ou APIs oficiais
+## 🌐 Qualquer modelo, via Okinto ou APIs oficiais
 
-- **Entre uma vez** e seus modelos do OKINTO aparecem automaticamente.
-- **Ou use suas próprias chaves de API oficiais.** OpenAI, Anthropic, Google Gemini, xAI, DeepSeek, Kimi, GLM, Qwen, MiniMax e Mistral são suportados. As chaves ficam no seu dispositivo, as requisições vão direto ao provedor sem passar pelo OKINTO, e quem cobra é o provedor. Por enquanto, a geração de imagens e vídeos só está disponível pelo OKINTO.
+- **Entre uma vez** e seus modelos do Okinto aparecem automaticamente.
+- **Ou use suas próprias chaves de API oficiais.** OpenAI, Anthropic, Google Gemini, xAI, DeepSeek, Kimi, GLM, Qwen, MiniMax e Mistral são suportados. As chaves ficam no seu dispositivo, as requisições vão direto ao provedor sem passar pelo Okinto, e quem cobra é o provedor. Por enquanto, a geração de imagens e vídeos só está disponível pelo Okinto.
 - **Um seletor para tudo.** GPT, Claude, Gemini, Grok, DeepSeek, Kimi, GLM e outros, cada um com tamanho do contexto, etiquetas de capacidades e preço de referência.
 - **Troque por conversa** ou defina um padrão por bot. Trabalhos internos, como organizar a memória e as transições de contexto, podem usar um modelo próprio, separado.
-- **Três domínios de API.** Escolha `modelflare.dev`, `origin.modelflare.dev` ou `cf.modelflare.dev` e compare os tempos de resposta nas Configurações; o okbot nunca troca de domínio automaticamente.
+- **Três domínios de API.** Escolha `api.okinto.com`, `origin.api.okinto.com` ou `cf.api.okinto.com` e compare os tempos de resposta nas Configurações; o okbot nunca troca de domínio automaticamente.
 - **Pagamento por uso.** Saldo da carteira, lembretes de saldo baixo, uso diário e chaves com orçamento por bot já vêm integrados. O okbot em si não cobra assinatura.
 
 
@@ -206,7 +206,7 @@ O runtime é construído sobre o [DeepSeek Harness](https://github.com/deepseek-
 - **Memória que permanece.** Cada bot, grupo e equipe tem sua própria memória, guardada em Markdown e mantida separada. Conteúdo que pareça senha ou chave não é salvo.
 - **Chats longos continuam utilizáveis.** Um gestor de contexto compacta a conversa ou começa um novo trecho com um resumo de transição antes que a janela de contexto fique cheia.
 - **Contas compartilhadas por todos os bots.** Adicione as contas de chat do WeChat, Feishu, Telegram, Slack e Discord uma única vez em Configurações › Canais de chat. Todos os bots as compartilham, e cada canal pode ter várias contas com apelidos. Envie `/bot name` uma vez em um app de chat para falar com outro bot.
-- **Conectar apps.** O item Conectar apps no menu do avatar traz conectores para Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian e Canva, e você pode adicionar conectores MCP personalizados (servidores remotos ou comandos locais). Conecte uma vez e todos os bots podem usar por padrão; restrinja por bot e por ferramenta. Ferramentas somente leitura rodam na hora, gravações perguntam antes, e exclusões ou qualquer envio para outras pessoas sempre perguntam.
+- **Conectar apps.** O item Apps e habilidades no menu do avatar traz conectores para Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian e Canva, e você pode adicionar conectores MCP personalizados (servidores remotos ou comandos locais). Conecte uma vez e todos os bots podem usar por padrão; restrinja por bot e por ferramenta. Ferramentas somente leitura rodam na hora, gravações perguntam antes, e exclusões ou qualquer envio para outras pessoas sempre perguntam.
 - **WeChat e Feishu.** Escaneie um QR code para conectar o WeChat ou conecte um bot do Feishu com cartões de resposta em streaming. O WeChat também transmite imagens e arquivos.
 - **Telegram, Slack e Discord.** Cole um token em Configurações › Canais de chat. Não é preciso endereço público. As respostas aparecem enquanto são escritas, e imagens e arquivos funcionam nos dois sentidos. Por enquanto, só mensagens diretas, e aprovações e perguntas são respondidas por texto.
 - **Quatro formas de executar.** App de desktop, linha de comando, Docker ou o console web local em `127.0.0.1:3600`.
@@ -228,7 +228,7 @@ O runtime é construído sobre o [DeepSeek Harness](https://github.com/deepseek-
 
 
 > [!NOTE]
-> Os recursos dependem do modelo que você escolher, do seu sistema operacional e das permissões que você conceder. O uso do computador exige uma sessão de desktop, e no macOS ele está em Beta. As requisições aos modelos vão para o provedor que você escolher (diretamente com sua própria chave de API oficial; caso contrário, pelo OKINTO); veja [Como funciona e privacidade](#-como-funciona-e-privacidade).
+> Os recursos dependem do modelo que você escolher, do seu sistema operacional e das permissões que você conceder. O uso do computador exige uma sessão de desktop, e no macOS ele está em Beta. As requisições aos modelos vão para o provedor que você escolher (diretamente com sua própria chave de API oficial; caso contrário, pelo Okinto); veja [Como funciona e privacidade](#-como-funciona-e-privacidade).
 
 # 🆚 okbot vs. Grok Bot, OpenAI dots e Claude Duet
 
@@ -238,7 +238,7 @@ No segundo semestre de 2026, o [Grok Bot](https://x.ai/bot) da xAI, o [dots](htt
 | :--- | :--- | :--- | :--- | :--- |
 | Código aberto | ✅ MIT | — | — | — |
 | Onde roda | No seu próprio computador ou servidor | Computador na nuvem da xAI | Computador na nuvem da OpenAI | Nuvem da Anthropic |
-| Modelos | GPT, Claude, Gemini, Grok e outros (via OKINTO ou APIs oficiais) | Principalmente os modelos Grok da xAI | Modelos da OpenAI | Claude (Opus 5.5) |
+| Modelos | GPT, Claude, Gemini, Grok e outros (via Okinto ou APIs oficiais) | Principalmente os modelos Grok da xAI | Modelos da OpenAI | Claude (Opus 5.5) |
 | Custo | App grátis, modelos cobrados por token | Assinatura | Assinatura ChatGPT Pro / Business Premium | Assinatura Claude Pro / Max |
 | Onde você acessa | App de desktop (Windows, macOS, Linux), Docker, WeChat, Feishu, Telegram, Slack, Discord | App de desktop, iPhone | ChatGPT, Slack, Teams | iOS, Android, claude.ai |
 | Disponibilidade | Pode ser baixado agora | Beta | Mercados selecionados | Prévia de pesquisa, lista de espera nos EUA |
@@ -254,13 +254,13 @@ O okbot também trabalha em segundo plano: uma tarefa que você delegar pode ter
 
 | Fica no seu dispositivo | Sai do seu dispositivo |
 | :--- | :--- |
-| Conversas e sessões (banco de dados SQLite local) | Os prompts, arquivos e resultados de ferramentas de que um modelo precisa para responder, enviados ao provedor que você escolheu (diretamente com sua própria chave de API oficial; caso contrário, pelo OKINTO) |
+| Conversas e sessões (banco de dados SQLite local) | Os prompts, arquivos e resultados de ferramentas de que um modelo precisa para responder, enviados ao provedor que você escolheu (diretamente com sua própria chave de API oficial; caso contrário, pelo Okinto) |
 | Memória (arquivos Markdown) | Capturas de tela, quando você pede a um bot que olhe a sua tela (uso do computador) |
 | Arquivos no espaço de trabalho de cada bot | Mensagens que você troca pelos canais de chat, que passam por essas plataformas |
-| Sua chave de API e seus tokens de login | Seu login no OKINTO, que acontece em modelflare.dev |
+| Sua chave de API e seus tokens de login | Seu login no Okinto, que acontece em api.okinto.com |
 | Conectar apps | Depois que você conecta apps (Feishu, Notion, GitHub etc.) ou adiciona um conector MCP personalizado, os bots leem e gravam o conteúdo deles, e o que leem também entra nas requisições aos modelos |
 
-O OKINTO mantém logs das requisições; a [Central de Confiança](https://api.okinto.com) dele explica o que é guardado e por quanto tempo. Não afirmamos que seus dados estão livres de qualquer risco: tudo o que você envia a um modelo sai do seu dispositivo. O inventário completo está em [docs/privacy_pt.md](./docs/privacy_pt.md).
+O Okinto mantém logs das requisições; a [Central de Confiança](https://api.okinto.com) dele explica o que é guardado e por quanto tempo. Não afirmamos que seus dados estão livres de qualquer risco: tudo o que você envia a um modelo sai do seu dispositivo. O inventário completo está em [docs/privacy_pt.md](./docs/privacy_pt.md).
 
 
 
@@ -315,7 +315,7 @@ Leia o [guia de contribuição](./CONTRIBUTING_pt.md) completo. Para relatar um 
 
 # 🔗 Projetos relacionados
 
-- [OKINTO](https://api.okinto.com): o gateway de APIs de IA por trás dos modelos do okbot.
+- [Okinto](https://api.okinto.com): o gateway de APIs de IA por trás dos modelos do okbot.
 - [magpie](https://github.com/yetone/magpie): o gateway em Go incluído no app (MIT).
 - [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): o runtime de agentes (MIT).
 - [Cua](https://github.com/trycua/cua): o driver de uso do computador.
@@ -330,7 +330,7 @@ Licenças e avisos completos: [THIRD_PARTY_NOTICES_pt.md](./THIRD_PARTY_NOTICES_
 - **Perguntas e ideias:** [GitHub Discussions](https://github.com/wmn1525/AnyModelBot/discussions)
 - **Bugs e pedidos de recursos:** [GitHub Issues](https://github.com/wmn1525/AnyModelBot/issues)
 - **E-mail:** [support@anymodel.bot](mailto:support@anymodel.bot)
-- **Novidades do OKINTO:** [@modelflare_dev no X](https://x.com/modelflare_dev)
+- **Novidades do Okinto:** [@modelflare_dev no X](https://x.com/modelflare_dev)
 
 # 🚀 Colaboradores
 

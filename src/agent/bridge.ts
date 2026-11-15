@@ -22,6 +22,8 @@ export interface BridgeHandlers {
   steward?(body: any): Promise<unknown>;
   /** amb-media 插件：生图 / 生视频 */
   media?(body: any): Promise<unknown>;
+  /** amb-skills 插件：install_skill（出技能安装卡片、等读取结束，最多半分钟） */
+  skills?(body: any): Promise<unknown>;
   /** amb-web-search 插件：web_search 的一次搜索（signal = 连接断了：工具超时或回合被中止） */
   search?(body: any, signal: AbortSignal): Promise<unknown>;
   /** amb-connections 插件：连接应用的一次工具调用（signal = 连接断了：工具超时或回合被中止）。可能要等用户审批或去连接，很久才回 */
@@ -279,6 +281,7 @@ export class AgentBridge {
     else if (url === "/dsh/steward" && this.h.steward) out = await this.h.steward(body);
     else if (url === "/dsh/cu-permission" && this.h.cuPermission) out = await this.h.cuPermission(body);
     else if (url === "/dsh/media" && this.h.media) return this.longCall(res, this.h.media(body));
+    else if (url === "/dsh/skills" && this.h.skills) return this.longCall(res, this.h.skills(body));
     else if (url === "/dsh/search" && this.h.search) {
       const ac = new AbortController();
       res.on("close", () => ac.abort());

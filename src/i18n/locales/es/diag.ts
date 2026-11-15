@@ -2,7 +2,7 @@ import type { TranslatedCatalog } from "../../index.js";
 export default {
   fetch_timeout: "Se agotó el tiempo de espera (sin respuesta en {s} s)",
   no_endpoint: "No hay ninguna dirección de endpoint configurada",
-  no_model: "No hay ningún modelo disponible: primero elige un modelo predeterminado en OKINTO",
+  no_model: "No hay ningún modelo disponible: primero elige un modelo predeterminado en Okinto",
   no_content: "La respuesta no tiene choices[0].message.content: {body}",
   verdict_endpoint_ok: "El endpoint funciona correctamente",
   verdict_endpoint_error: "Error del endpoint: {error}",
@@ -28,7 +28,7 @@ export default {
   timeout_reply: "El modelo respondió, pero el agente no terminó el turno en {s} s",
   agent_off: "El modo agente está desactivado (AMB_AGENT=off); los bots solo chatean",
   no_runtime: "No se encontró el entorno de ejecución del agente (DSH); los bots solo pueden chatear",
-  agent_no_model: "No hay ningún modelo disponible: primero conecta OKINTO y elige un modelo predeterminado",
+  agent_no_model: "No hay ningún modelo disponible: primero conecta Okinto y elige un modelo predeterminado",
   queue_idle: "No hay turnos en curso",
   queue_busy: {
     one: "{count} turno en curso (lleva {s} s); los mensajes nuevos de la misma conversación se suman a él (o esperan detrás hasta que el agente lo tome). Si está atascado, usa /stop o “Reiniciar proceso del agente” más abajo",

@@ -3,9 +3,9 @@ export default {
   "needJson": "application/json이 필요합니다",
   "bodyTooLarge": "요청 본문이 너무 큽니다",
   "needToken": "접근 토큰이 필요합니다: /?token=<token>을 여세요",
-  "externalNoConnection": "외부 엔드포인트 모드에서는 OKINTO New API 연결을 관리하지 않습니다",
+  "externalNoConnection": "외부 엔드포인트 모드에서는 Okinto New API 연결을 관리하지 않습니다",
   "officialBadKey": "키는 비워 둘 수 없으며 공백을 포함할 수 없습니다",
-  "externalNoAccount": "외부 엔드포인트 모드에서는 OKINTO New API 계정을 관리하지 않습니다",
+  "externalNoAccount": "외부 엔드포인트 모드에서는 Okinto New API 계정을 관리하지 않습니다",
   "lowBalanceRange": "알림 기준은 $0~$1,000 사이여야 합니다",
   "badZoom": "지원하지 않는 배율입니다",
   "badReasoningEffort": "알 수 없는 추론 강도입니다",
@@ -53,5 +53,5 @@ export default {
   "weixinOwnerRescan": "WeChat 소유자를 변경하려면 QR 코드를 다시 스캔하세요"
 ,
   "missingApiKey": "API 키를 입력하세요",
-  "noBrowserLogin": "OKINTO New API의 API 키를 사용하세요"
+  "noBrowserLogin": "Okinto New API의 API 키를 사용하세요"
 } satisfies TranslatedCatalog["web"];

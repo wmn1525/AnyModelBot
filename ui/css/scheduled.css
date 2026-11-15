@@ -52,3 +52,107 @@
   .cu-permission-collapsed { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ctl-gap); padding: var(--space-3) 0; font-size: var(--fs-xs); color: var(--muted); }
   @media (max-width: 760px) { .rule-full { flex-wrap: wrap; } .rule-destination { order: 4; flex-basis: 100%; padding-left: calc(var(--space-4) + var(--space-0-5)); } .scheduled-head { flex-wrap: wrap; } }
 }
+
+@layer app {
+  .scheduled-page { display: flex; flex-direction: column; }
+  .scheduled-page > .seg { align-self: flex-start; flex: none; }
+  .rule-card { min-width: 0; background: var(--well); border-radius: var(--r-card-lg); }
+  .rule-card + .rule-card { margin-top: var(--space-2); }
+  .rule-full-head { position: relative; display: flex; align-items: center; gap: var(--space-3); min-height: 52px; padding: var(--space-1) var(--group-pad); border-radius: inherit; cursor: pointer; }
+  .rule-full-head:hover { background: var(--pill); }
+  .rule-full-head:active { background: var(--pill-hover); }
+  .rule-card-toggle { display: flex; align-items: center; gap: var(--space-3); flex: 1; min-width: 0; text-align: start; }
+  .rule-card-toggle::after { content: ""; position: absolute; inset: 0; border-radius: var(--r-card-lg); }
+  .rule-card-toggle:focus-visible { outline: none; }
+  .rule-card-toggle:focus-visible::after { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .rule-full-head > :is(.btn, .switch) { position: relative; }
+  .rule-card-toggle > .dot { width: 7px; height: 7px; }
+  .rule-card-heading { display: grid; min-width: 0; gap: var(--space-0-5); }
+  .rule-card-heading .name { font-size: var(--fs-lg); font-weight: var(--fw-medium); color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rule-card-heading .sub { font-size: var(--fs-xs); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rule-card.off .rule-card-heading :is(.name, .sub) { color: var(--muted); }
+  .rule-card-heading .sub.tone-warning { color: var(--amber); }
+  .rule-card .rule-destination { font-size: var(--fs-xs); max-width: 28%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+  .rule-card .rule-destination.tone-warning { color: var(--amber); }
+  .rule-chevron { color: var(--muted); flex: none; transition: transform var(--t-feedback); pointer-events: none; }
+  .rule-card.open .rule-chevron { transform: rotate(90deg); }
+  .rule-card-detail { gap: var(--space-4); padding: var(--space-4) var(--group-pad) var(--group-pad); }
+  .rule-prompt .t-label, .rule-history .t-label { display: block; margin: 0 0 var(--space-1-5); }
+  .rule-prompt p { margin: 0; padding: var(--space-3) var(--space-4); background: var(--surface); border-radius: var(--r-card); font-size: var(--fs-md); line-height: var(--lh-normal); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .rule-attributes { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-4); margin: 0; }
+  .rule-attributes > div { display: contents; }
+  .rule-attributes dt { color: var(--muted); font-size: var(--fs-xs); align-self: baseline; }
+  .rule-attributes dd { margin: 0; color: var(--fg); font-size: var(--fs-md); line-height: var(--lh-normal); overflow-wrap: anywhere; }
+  .rule-zone-warning { display: block; color: var(--amber); font-size: var(--fs-xs); }
+  .rule-zone-warning .text { color: inherit; white-space: normal; }
+  .rule-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ctl-gap); justify-content: space-between; }
+  .rule-card-actions > .btn { margin-left: auto; }
+  .rule-mode-hints { margin-top: var(--space-1-5); display: grid; gap: var(--space-1); font-size: var(--fs-xs); line-height: var(--lh-normal); color: var(--muted); }
+  .rule-mode-hints p { margin: 0; }
+  .rule-history, .rule-secondary-actions { border-top: 1px solid var(--line-2); padding-top: var(--space-3); }
+  .rule-secondary-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .rule-secondary-actions > :first-child { margin-left: calc(-1 * var(--ctl-px-sm)); }
+  .rule-history .hint { font-size: var(--fs-xs); }
+  .rule-picker-sheet { --sheet-w: 420px; }
+  .rule-picker-sheet > .actions { margin-top: 0; }   /* 列表到「取消」只留对话框的 16 */
+  .rule-card.open .rule-full-head, .rule-card.open .rule-card-toggle::after { border-end-start-radius: 0; border-end-end-radius: 0; }   /* 展开后头部是卡片的上半截，悬停底色和焦点框只圆上面两个角 */
+  .rule-bot-picker { max-height: min(360px, 55dvh); gap: var(--space-0-5); margin-inline: calc(-1 * var(--item-px)); }
+  .rule-bot-option { --focus-offset: -2px; display: flex; align-items: center; gap: var(--space-3); height: 52px; padding: var(--space-2) var(--item-px); border-radius: var(--r-item); text-align: start; }
+  .rule-bot-option:hover { background: var(--sel); }
+  .rule-bot-option:active { background: var(--pill-hover); }
+  .rule-bot-option > span { display: grid; min-width: 0; gap: var(--space-0-5); }
+  .rule-bot-option b { font-size: var(--fs-md); font-weight: var(--fw-medium); }
+  .rule-bot-option small { font-size: var(--fs-2xs); color: var(--muted); }
+  .rule-bot-option :is(b, small) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rule-bot-search { position: relative; margin-top: calc(-1 * var(--space-1)); }
+  .rule-bot-search > .ic { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .rule-bot-search .field { width: 100%; padding-left: var(--space-10); }
+  .rule-editor > .sheet-body > .rule-form { gap: var(--space-6); }
+  .rule-content-group, .rule-delivery-group { display: grid; min-width: 0; gap: var(--space-3); }
+  .rule-editor .rule-group-title { font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--fg); margin: 0; }
+  .rule-editor .rule-delivery-group { gap: var(--space-2); }
+  .rule-editor .rule-when { gap: var(--space-2); }
+  .rule-editor .rule-content-group .field { width: 100%; }
+  .rule-editor .rule-form > section > label { font-size: var(--fs-xs); font-weight: var(--fw-medium); }
+  .rule-types { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+  .rule-types .rule-type { position: relative; display: flex; align-items: center; gap: var(--space-3); min-height: 76px; padding: var(--space-3-5) var(--space-4); border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--line); cursor: pointer; } /* 描边：PRD 二类型单选卡片 */
+  .rule-type:hover { background: var(--well); }
+  .rule-type:active { background: var(--pill-hover); }
+  .rule-type.selected { background: var(--sel); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); } /* 描边：选中状态增加内描边，尺寸不变 */
+  .rule-type:has(:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .rule-type-icon { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: var(--r-tile); background: var(--well); color: var(--fg-2); }
+  .rule-type.selected .rule-type-icon { background: var(--surface); color: var(--fg); }
+  .rule-type b { display: block; font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--fg); }
+  .rule-type small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: var(--space-0-5); font-size: var(--fs-xs); font-weight: var(--fw-regular); color: var(--muted); line-height: var(--lh-normal); }
+  .rule-frequency .flipped { transform: rotate(180deg); }
+  .rule-frequency { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; max-width: 100%; }
+  .rule-time-summary { display: grid; gap: var(--space-0-5); width: 100%; background: var(--well); border-radius: var(--r-tile); padding: var(--space-2-5) var(--space-3); font-size: var(--fs-xs); line-height: var(--lh-normal); color: var(--muted); }
+  .rule-editor .rule-destinations { max-height: 240px; background: var(--well); border-radius: var(--r-card); padding: var(--space-1-5); gap: 0; }
+  .rule-editor .rule-destinations > .t-label { padding: var(--space-2) var(--space-2-5) var(--space-1); }
+  .rule-editor .rule-destination-option { border-radius: var(--r-item-sm); font-size: var(--fs-md); color: var(--fg); padding-inline: var(--space-2-5); }
+  .rule-editor .rule-destination-option:has(:checked) { background: var(--sel); font-weight: var(--fw-medium); }
+  .rule-editor .rule-destination-option input { accent-color: var(--accent); }
+  .rule-editor .rule-destination-option > .hint { font-size: var(--fs-2xs); font-weight: var(--fw-regular); }
+  .rule-editor .rule-destination-hint { margin-top: calc(-1 * var(--space-0-5)); }
+  .rule-advanced > summary { display: flex; align-items: center; gap: var(--space-1-5); width: fit-content; cursor: pointer; min-height: var(--ctl-sm); color: var(--ctl-fg); font-size: var(--fs-sm); border-radius: var(--r-ctl); }
+  .rule-advanced > summary::-webkit-details-marker { display: none; }
+  .rule-advanced > summary > .ic { transition: transform var(--t-feedback); }
+  .rule-advanced[open] > summary > .ic { transform: rotate(90deg); }
+  .rule-advanced > .rule-form { padding: var(--space-4); border-radius: var(--r-card); background: var(--well); gap: var(--space-3); }
+  @media (max-width: 760px) {
+    .rule-full-head { flex-wrap: wrap; }
+    .rule-card .rule-destination { order: 5; max-width: 100%; flex-basis: 100%; margin-left: calc(var(--space-3) + 7px); padding: 0; } /* 微调：与 7px 状态点右侧的标题对齐 */
+    .rule-attributes { grid-template-columns: minmax(0, 1fr); gap: var(--space-2-5); }
+    .rule-attributes > div { display: grid; gap: var(--space-0-5); }
+    .rule-card-actions > .seg { width: 100%; }
+  }
+  @media (max-width: 519px) { .rule-types { grid-template-columns: minmax(0, 1fr); } }
+}
+
+@layer app {
+  .scheduled-page > .seg, .rule-card-actions > .seg { max-width: 100%; }
+  .scheduled-page > .seg button, .rule-card-actions > .seg button { min-width: 0; white-space: normal; height: auto; min-height: var(--ctl-sm); }
+  .rule-card-detail > section { min-width: 0; }
+  .rule-full-head .rule-card-toggle { min-width: 0; }
+  @media (max-width: 760px) { .rule-card-toggle { flex-basis: 50%; } }
+}

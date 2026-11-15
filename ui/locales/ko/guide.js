@@ -20,10 +20,15 @@ export default {
   "closeCoach": "안내 닫기",
   "doneTitle": "잘하셨어요!",
   "fill": "입력하기",
-  "openConsole": "OKINTO New API 콘솔에서 이미지 모델 활성화 ↗",
+  "openConsole": "Okinto New API 콘솔에서 이미지 모델 활성화 ↗",
   "later": "나중에",
   "stopHere": "여기까지 하기",
   "next": "다음: {title}",
+  "blocked": {
+    "permission": "대기 중인 권한 요청을 먼저 처리한 뒤 체크리스트를 이어 가세요.",
+    "needs": "‘내 확인 필요’ 항목을 먼저 처리한 뒤 체크리스트를 이어 가세요.",
+    "replying": "답장이 끝날 때까지 기다린 뒤 체크리스트를 이어 가세요."
+  },
   "demo": {
     "label": "데모",
     "generating": "예제 이미지 생성 중",

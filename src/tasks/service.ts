@@ -46,6 +46,7 @@ import { NUDGE, RULE_NUDGE, RULE_RERUN, RULE_RESULT_SYSTEM, attachmentsOf, rebri
 import type { BotSettings } from "../domain/bot-settings.js";
 import type { ApprovalRow, Conversation, InputKind, RuleKind, RuleMode, RuleRow, RuleTrigger, RunCause, RunInputRow, RunOutcome, RunRow, Store, TaskReport, TaskRow } from "../store/db.js";
 import type { AttentionItem } from "./attention.js";
+import type { MySkill, MySkillEvent, MySkills } from "../skills/mine.js";
 import { logger } from "../log.js";
 import { localParts, systemTimeZone } from "../domain/quiet.js";
 import { addTaskNote } from "../core/task-notes.js";
@@ -186,6 +187,20 @@ export interface TaskServiceOptions {
   rates?: (model: string) => Rates | undefined;
   /** 机器人的 OKINTO 预算 Key（总额、还剩多少、什么时候读的）；没开预算就是 undefined */
   botBudget?: (botId: string) => { limitUsd: number; remainUsd: number; at: number } | undefined;
+  /** 「我的技能」：「让它做件事」可以用技能；技能删掉、关掉、改动后用它的规则自动暂停（skills/mine.ts） */
+  mySkills?: MySkills;
+}
+
+/** 规则用的技能出了什么问题（暂停的原因，存进 rules.paused_reason） */
+export type RuleSkillProblem = { code: "skill_deleted" | "skill_off" | "skill_ask" | "skill_blocked" | "skill_unverified"; item?: string };
+const SKILL_PAUSES = new Set(["skill_deleted", "skill_off", "skill_ask", "skill_blocked", "skill_unverified"]);
+
+/** 这个「我的技能」能不能设成定时：不能时是原因的词条（含电脑操作、生图生视频、后台任务的步骤；未验证） */
+export function skillUnschedulable(s: Pick<MySkill, "blocked" | "unverified">): "mySkills.cantMedia" | "mySkills.cantBackground" | "mySkills.cantUnverified" | undefined {
+  if (s.blocked.includes("computer") || s.blocked.includes("media")) return "mySkills.cantMedia";
+  if (s.blocked.includes("background")) return "mySkills.cantBackground";
+  if (s.unverified) return "mySkills.cantUnverified";
+  return undefined;
 }
 
 /** 界面、/tasks 和 task_list 看到的任务 */
@@ -1309,7 +1324,7 @@ export class TaskService {
         const low = this.reserve(botId);
         if (low)
           return {
-            error: `This bot's OKINTO budget is almost used up (about ${usdText(low.remainUsd)} of ${stepText(low.limitUsd)} left) and the rest is kept for chat, so no background task can start. Tell the user in one sentence; they can raise the bot's budget in its settings.`,
+            error: `This bot's Okinto budget is almost used up (about ${usdText(low.remainUsd)} of ${stepText(low.limitUsd)} left) and the rest is kept for chat, so no background task can start. Tell the user in one sentence; they can raise the bot's budget in its settings.`,
           };
         const r = this.create({ botId, conversationId: conv.id, title: String(a.title ?? ""), brief: String(a.brief ?? ""), budgetUsd: Number(a.budget_usd) || undefined, anytime: a.anytime === true });
         if (!r.task) return { error: r.error };
@@ -2138,8 +2153,21 @@ export class TaskService {
     /** 3f：规则编辑器里填的每次、每月预算（不填用默认的 $0.10、$3） */
     runBudgetUsd?: number;
     monthBudgetUsd?: number;
+    /** 用「我的技能」做：技能名；原话可以不填（写成「按技能「{标题}」做」） */
+    skill?: string;
   }): { rule?: RuleRow; error?: string } {
     if (!this.store.getBot(o.botId)) return { error: "bot not found" };
+    let skill: RuleRow["skill"];
+    if (o.skill) {
+      const s = this.o.mySkills?.get(o.skill);
+      if (!s) return { error: tr("mySkills.pauseDeleted") };
+      if (!s.bots.includes(o.botId)) return { error: tr("mySkills.pauseOff", { title: s.title, bot: this.store.getBot(o.botId)?.name ?? o.botId }) };
+      const why = skillUnschedulable(s);
+      if (why) return { error: tr(why) };
+      // 建规则前「运行时再问」的已经问清写进原话（聊天里由机器人问，界面里由用户写）
+      skill = { name: s.name, title: s.title, asks: [...s.asks] };
+      if (!o.instruction.trim()) o = { ...o, instruction: tr("mySkills.ruleInstruction", { title: s.title }) };
+    }
     const empty = o.mode === "off" && o.allowEmptyDestination && !o.conversationId;
     const conv = empty ? undefined : this.destination(o.botId, o.conversationId || `${o.botId}:web:console`);
     if (!empty && !conv) return { error: tr("rules.noConversation") };
@@ -2182,10 +2210,11 @@ export class TaskService {
       nextRunAt: this.nextFor({ trigger, mode, pausedReason: "" }, now),
       anytime: kind === "remind",
       ...budgets,
+      ...(skill && kind === "check" ? { skill } : {}),
       createdAt: now,
       updatedAt: now,
     });
-    log.info("rule created", { bot: o.botId, rule: id, kind, mode, trigger: trigger.kind, conversationId: conv?.id });
+    log.info("rule created", { bot: o.botId, rule: id, kind, mode, trigger: trigger.kind, conversationId: conv?.id, ...(skill ? { skill: skill.name } : {}) });
     this.ruleChanged(id);
     return { rule };
   }
@@ -2196,10 +2225,11 @@ export class TaskService {
    */
   updateRule(
     id: string,
-    patch: { title?: string; instruction?: string; message?: string; schedule?: Schedule; mode?: RuleMode; conversationId?: string; runBudgetUsd?: number; monthBudgetUsd?: number; missedPolicy?: "catchup" | "skip"; sourceGroupId?: string },
+    patch: { title?: string; instruction?: string; message?: string; schedule?: Schedule; mode?: RuleMode; conversationId?: string; runBudgetUsd?: number; monthBudgetUsd?: number; missedPolicy?: "catchup" | "skip"; sourceGroupId?: string; skill?: string | null },
   ): { rule?: RuleRow; error?: string } {
-    const rule = this.store.getRule(id);
-    if (!rule || rule.undoneUntil) return { error: "rule not found" };
+    const found = this.store.getRule(id);
+    if (!found || found.undoneUntil) return { error: "rule not found" };
+    let rule = found;
     const now = this.now();
     const next: Partial<RuleRow> = { updatedAt: now, revision: (rule.revision ?? 1) + 1 };
     if (patch.missedPolicy !== undefined) next.missedPolicy = patch.missedPolicy;
@@ -2220,10 +2250,28 @@ export class TaskService {
       next.title = t;
     }
     let reworded = false;
+    // 换用、不用「我的技能」（界面的「用技能（可选）」；空 = 不用）
+    if (patch.skill !== undefined && (patch.skill || "") !== (rule.skill?.name ?? "") && rule.kind === "check") {
+      if (patch.skill) {
+        const s = this.o.mySkills?.get(patch.skill);
+        if (!s) return { error: tr("mySkills.pauseDeleted") };
+        if (!s.bots.includes(rule.botId)) return { error: tr("mySkills.pauseOff", { title: s.title, bot: this.store.getBot(rule.botId)?.name ?? rule.botId }) };
+        const why = skillUnschedulable(s);
+        if (why) return { error: tr(why) };
+        next.skill = { name: s.name, title: s.title, asks: [...s.asks] };
+      } else next.skill = "" as unknown as RuleRow["skill"]; // 空串 = 不用（列是 TEXT NOT NULL）
+      rule = { ...rule, skill: next.skill || undefined };
+      reworded = true;
+    }
     if (patch.instruction !== undefined) {
       const t = patch.instruction.trim().slice(0, 2000);
       if (!t) return { error: tr("rules.wordsEmpty") };
       if (t !== rule.instruction) (next.instruction = t), (reworded = true);
+      // 改了原话：技能里「运行时再问」的现在都算回答过了（用户或机器人把答案写进了原话）
+      if (t !== rule.instruction && rule.skill && !next.skill) {
+        const s = this.o.mySkills?.get(rule.skill.name);
+        if (s) rule = { ...rule, skill: (next.skill = { ...rule.skill, asks: [...new Set([...rule.skill.asks, ...s.asks])] }) };
+      }
     }
     if (patch.message !== undefined && rule.kind === "remind") {
       const m = clip(oneLine(patch.message), MESSAGE_MAX);
@@ -2254,6 +2302,9 @@ export class TaskService {
       if (rule.requiresGroup && !(next.sourceGroupId ?? rule.sourceGroupId)) return { error: tr("rules.noSourceGroup") };
       if (rule.requiresGroup && !this.store.getGroup(next.sourceGroupId ?? rule.sourceGroupId ?? "")?.members.includes(rule.botId)) return { error: tr("rules.groupMissing") };
       if (reopened && rule.pausedReason === "budget" && this.monthSpent(rule) >= (next.monthBudgetUsd ?? rule.monthBudgetUsd)) return { error: tr("rules.monthUsed", { spent: usdText(this.monthSpent(rule)) }) };
+      // 用的技能还有问题（删了、关了、要先回答、做不了、未验证）：不能重新开，说清原因
+      const problem = reopened || SKILL_PAUSES.has(rule.pausedReason) ? this.ruleSkillProblem(rule) : undefined;
+      if (problem && reopened) return { error: this.skillProblemText(rule, problem) };
     }
     if (reopened) (next.failures = 0), (next.pausedReason = "");
     if (mode === "off") next.pausedReason = "";
@@ -2295,6 +2346,8 @@ export class TaskService {
     const rule = this.store.getRule(id);
     if (!rule) return { error: "rule not found" };
     if (rule.pausedReason === "budget" && this.monthSpent(rule) >= rule.monthBudgetUsd) return { error: tr("rules.monthUsed", { spent: usdText(this.monthSpent(rule)) }) };
+    const problem = this.ruleSkillProblem(rule);
+    if (problem) return { error: this.skillProblemText(rule, problem) };
     if (rule.pausedReason || rule.failures) {
       const mode = rule.mode === "off" ? "act" : rule.mode;
       this.store.updateRule(id, { failures: 0, pausedReason: "", mode, nextRunAt: this.nextFor({ trigger: rule.trigger, mode, pausedReason: "" }, this.now()), updatedAt: this.now() });
@@ -2308,6 +2361,8 @@ export class TaskService {
     if (!rule) return { error: "rule not found" };
     if (rule.mode === "off") return { error: tr("rules.isOff") };
     if (this.paused(rule.botId)) return { error: tr("rules.isPaused") };
+    const problem = this.ruleSkillProblem(rule);
+    if (problem) return { error: this.skillProblemText(rule, problem) };
     if (this.ruleBusy(id)) return { error: tr("rules.isRunning") };
     if (rule.kind === "check" && this.reserve(rule.botId)) return { error: tr("rules.whyReserve") };
     if (rule.kind === "check" && this.monthSpent(rule) >= rule.monthBudgetUsd) return { error: tr("rules.monthUsed", { spent: usdText(this.monthSpent(rule)) }) };
@@ -2332,6 +2387,69 @@ export class TaskService {
     this.ruleChanged(id);
     this.pump();
     return true;
+  }
+
+  /**
+   * 规则用的「我的技能」现在有什么问题：删了、在规则所属机器人上关了、多了还没回答的「运行时再问」、
+   * 有定时运行做不了的步骤（电脑操作、生图生视频、后台任务）、变成了未验证。没用技能、没问题时 undefined
+   */
+  ruleSkillProblem(rule: Pick<RuleRow, "botId" | "skill">): RuleSkillProblem | undefined {
+    if (!rule.skill?.name) return undefined;
+    const s = this.o.mySkills?.get(rule.skill.name);
+    if (!s) return { code: "skill_deleted" };
+    if (!s.bots.includes(rule.botId)) return { code: "skill_off" };
+    const missing = s.asks.filter((a) => !rule.skill!.asks.includes(a));
+    if (missing.length) return { code: "skill_ask", item: missing.join(tr("runtime.listSep")) };
+    if (s.blocked.length) return { code: "skill_blocked" };
+    if (s.unverified) return { code: "skill_unverified" };
+    return undefined;
+  }
+
+  /** 「需要处理」里的那句原因（和暂停原因一一对应） */
+  skillProblemText(rule: Pick<RuleRow, "botId" | "skill">, p: RuleSkillProblem): string {
+    const title = this.o.mySkills?.get(rule.skill?.name ?? "")?.title ?? rule.skill?.title ?? "";
+    switch (p.code) {
+      case "skill_deleted":
+        return tr("mySkills.pauseDeleted");
+      case "skill_off":
+        return tr("mySkills.pauseOff", { title, bot: this.store.getBot(rule.botId)?.name ?? rule.botId });
+      case "skill_ask":
+        return tr("mySkills.pauseAsk", { item: p.item ?? "" });
+      case "skill_blocked":
+        return tr("mySkills.pauseBlocked");
+      case "skill_unverified":
+        return tr("mySkills.pauseUnverified");
+    }
+  }
+
+  /** 技能有问题就把规则暂停（原因存进 paused_reason）；返回暂停了没有 */
+  private pauseForSkill(rule: RuleRow): boolean {
+    const p = this.ruleSkillProblem(rule);
+    if (!p) return false;
+    if (rule.pausedReason !== p.code) {
+      this.store.updateRule(rule.id, { pausedReason: p.code, nextRunAt: 0, updatedAt: this.now() });
+      log.info("rule paused: its skill can't be used", { rule: rule.id, skill: rule.skill?.name, reason: p.code });
+      this.ruleChanged(rule.id);
+    }
+    return true;
+  }
+
+  /**
+   * 「我的技能」变了（skills/mine.ts onChange）：用它的规则按情况自动暂停并进「需要处理」——
+   * 删除；在规则所属机器人上关掉；更新或恢复上一版后多了「运行时再问」、多了做不了的步骤、变成未验证。
+   */
+  skillChanged(e: MySkillEvent): void {
+    if (e.type === "created" || e.type === "enabled") return;
+    for (const rule of this.store.listRules()) {
+      if (rule.skill?.name !== e.skill.name || rule.mode === "off" || (rule.pausedReason && !SKILL_PAUSES.has(rule.pausedReason))) continue;
+      if (e.type === "disabled" && rule.botId !== e.botId) continue;
+      this.pauseForSkill(rule);
+    }
+  }
+
+  /** 用这个「我的技能」的规则有几条（删除确认里说会暂停几条） */
+  rulesUsingSkill(name: string): number {
+    return this.store.listRules().filter((r) => r.skill?.name === name && r.mode !== "off").length;
   }
 
   private ruleChanged(id: string): void {
@@ -2415,6 +2533,8 @@ export class TaskService {
       return undefined;
     }
     if (rule.kind === "remind") return this.remind(rule, cause, at);
+    // 用的技能删了、关了、改动后跑不了：不跑，暂停到用户处理（进「需要处理」）
+    if (this.pauseForSkill(rule)) return undefined;
     // 本月的预算已经用完（预算调低了、这个月里又改回开着）：不跑，暂停到下个月
     if (this.monthSpent(rule) >= rule.monthBudgetUsd) {
       this.pauseForMonth(rule);
@@ -2502,6 +2622,7 @@ export class TaskService {
       instruction: rule.instruction,
       mode,
       recent,
+      ...(rule.skill ? { skill: { name: rule.skill.name, title: this.o.mySkills?.get(rule.skill.name)?.title ?? rule.skill.title } } : {}),
       ...(event ? { event: { source: event.source, payload } } : {}),
       memory: st.memory.enabled ? this.o.host.memoryPrefix(rule.botId, rule.conversationId) : undefined,
     });
@@ -2969,7 +3090,10 @@ export class TaskService {
     if (!s.schedule) return { error: s.error };
     const kind: RuleKind = a.kind === "remind" ? "remind" : "check";
     const mode = a.mode === "observe" ? "observe" : "act";
-    const r = this.createRule({ botId: conv.botId, conversationId: conv.id, title: String(a.title ?? ""), instruction: String(a.instruction ?? ""), kind, mode, message: String(a.message ?? ""), schedule: s.schedule });
+    // 用「我的技能」：按技能名，模型写成标题时也认
+    const wanted = typeof a.skill === "string" ? a.skill.trim() : "";
+    const skill = wanted ? (this.o.mySkills?.get(wanted) ?? this.o.mySkills?.byTitle(wanted))?.name ?? wanted : undefined;
+    const r = this.createRule({ botId: conv.botId, conversationId: conv.id, title: String(a.title ?? ""), instruction: String(a.instruction ?? ""), kind, mode, message: String(a.message ?? ""), schedule: s.schedule, ...(skill && kind === "check" ? { skill } : {}) });
     if (!r.rule) return { error: r.error };
     this.recordRuleAction(conv, r.rule);
     // 建议给用户的那几句按应用的语言（模型照着说，聊天的语言不同时它会自己换）；其余是给模型的指示
@@ -3059,6 +3183,8 @@ export class TaskService {
       createdAt: rule.createdAt,
       updatedAt: rule.updatedAt,
       ...(live ? { live: { runId: live.id, state: live.state, since: live.startedAt || live.queuedAt } } : {}),
+      ...(rule.skill ? { skill: { name: rule.skill.name, title: this.o.mySkills?.get(rule.skill.name)?.title ?? rule.skill.title, exists: !!this.o.mySkills?.get(rule.skill.name) } } : {}),
+      ...(SKILL_PAUSES.has(rule.pausedReason) ? { pausedLine: this.skillProblemText(rule, this.ruleSkillProblem(rule) ?? { code: rule.pausedReason as RuleSkillProblem["code"] }) } : {}),
     };
   }
 
@@ -3122,6 +3248,27 @@ export class TaskService {
       const paused = !!rule.pausedReason;
       if (!paused && rule.failures < RULE_FAILS_TO_SHOW) continue;
       const conv = this.store.getConversation(rule.conversationId);
+      // 用的「我的技能」删了、关了、改动后跑不了：原因写清楚，去规则那里处理
+      if (SKILL_PAUSES.has(rule.pausedReason)) {
+        out.push({
+          id: `rule:${rule.id}`,
+          kind: "rule",
+          botId: rule.botId,
+          botName: this.store.getBot(rule.botId)?.name ?? rule.botId,
+          subject: tr("rules.subject", { title: rule.title }),
+          status: tr("rules.statePaused"),
+          head: tr("rules.subject", { title: rule.title }),
+          line: this.skillProblemText(rule, this.ruleSkillProblem(rule) ?? { code: rule.pausedReason as RuleSkillProblem["code"] }),
+          since: rule.updatedAt,
+          severity: "warn",
+          // 重试 = 重新开：技能的问题还在时说原因（resumeRule）
+          actions: ["retry"],
+          conversationId: rule.conversationId,
+          channel: conv?.channel ?? "",
+          ruleId: rule.id,
+        });
+        continue;
+      }
       if (rule.pausedReason === "budget") {
         out.push({
           id: `rule:${rule.id}`,

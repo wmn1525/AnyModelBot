@@ -493,13 +493,13 @@ export class MagpieSupervisor {
    * headers 是每个请求额外带给 OKINTO 的请求头（调用归因）。
    */
   async connectModelflare(apiKey: string, baseUrl: string, allowed: string[], headers: Record<string, string> = {}, picks: string[] = []): Promise<void> {
-    await this.upsertProvider(this.modelflareId(), MODELFLARE_PROVIDER, "OKINTO", apiKey, baseUrl, allowed, headers, picks);
+    await this.upsertProvider(this.modelflareId(), MODELFLARE_PROVIDER, "Okinto", apiKey, baseUrl, allowed, headers, picks);
   }
 
   /** 机器人自己的 provider（预算 Key）：id 固定为 mfb-<botId>，机器人的请求都显式发到这个 provider */
   async setBotProvider(botId: string, apiKey: string, baseUrl: string, allowed: string[], headers: Record<string, string> = {}, picks: string[] = []): Promise<void> {
     const id = botProviderId(botId);
-    await this.upsertProvider(this.hasProvider(id) ? id : undefined, id, `OKINTO ${botId}`, apiKey, baseUrl, allowed, headers, picks);
+    await this.upsertProvider(this.hasProvider(id) ? id : undefined, id, `Okinto ${botId}`, apiKey, baseUrl, allowed, headers, picks);
   }
 
   /**

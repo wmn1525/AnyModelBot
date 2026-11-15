@@ -17,8 +17,10 @@ import { hasEnvProxy, networkEnv, systemProxyEnv } from "./proxy-env.js";
 import { DEFAULT_SETTINGS, permissionMode, type BotSettings } from "./settings.js";
 import type { BotPermission } from "../domain/app-ref.js";
 import { acceptsImages } from "../llm/client.js";
-import { CUA_SKILL, MEDIA_SKILL, TASK_RULES, agentPersona, botPrompt } from "./prompts/index.js";
+import { CUA_SKILL, MEDIA_SKILL, TASK_RULES, agentPersona, botPrompt, botSkills } from "./prompts/index.js";
+import { mySkillsPrompt } from "./prompts/my-skills.js";
 import { UserSkills } from "../skills/service.js";
+import { skillDisplay, skillState, type SkillRuntime } from "../skills/display.js";
 import { t, t as tr } from "../i18n/index.js";
 import { dirBytes, taskSessionDirs } from "./session-dirs.js";
 
@@ -797,6 +799,12 @@ export class AgentHost {
       // 生图 / 生视频：宿主带着本机器人的 Key 调 OKINTO，文件存进工作区 media/；技能说明在 skills/media
       "    - id: amb-media",
       `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-media.mjs"))}`,
+      // 按 GitHub 链接安装技能：install_skill 让宿主读取、预检并在对话里出确认卡片，用户点「安装」才写入（skills/installs.ts）
+      "    - id: amb-skills",
+      `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-skills.mjs"))}`,
+      // 存成技能：save_skill 把这段对话做成的事交给宿主，出草稿卡，用户点「保存」才写进「我的技能」（skills/drafts.ts）
+      "    - id: amb-my-skills",
+      `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-my-skills.mjs"))}`,
       // 联网搜索：默认免费（Exa MCP、必应、DuckDuckGo），设置里可换成带 Key 的接口（tools/search.ts）
       ...(this.allows("network") ? ["    - id: amb-web-search", `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-web-search.mjs"))}`] : []),
       // 连接应用（内置应用连接器、自定义 MCP、现有的 Notion / 飞书账号）：注册什么看 AMB_CONNECTIONS，凭证只在宿主这边（tools/apps/service.ts）
@@ -1062,11 +1070,36 @@ exec "$REAL" "$@"
 
   /** 技能变更不能中断后台命令或子代理，也不使用设置变更的超时强制重启。 */
   private async skillsAllowRestart(): Promise<boolean> {
-    if (this.appliedSkills === this.userSkills.revision(this.o.botId)) return true;
+    if (this.appliedSkills === this.userSkills.revision(this.o.botId)) {
+      this.skillsWaiting = false;
+      return true;
+    }
     const idle = () => this.active === 0 && this.taskBusy.size === 0 && this.turns.size === 0 && this.wakes.size === 0;
     if (!idle()) return false;
     const state = await this.control.send<{ busy?: number; jobs?: number }>("idle", {}, 5_000).catch(() => undefined);
-    return state?.busy === 0 && state?.jobs === 0 && idle();
+    const ok = state?.busy === 0 && state?.jobs === 0 && idle();
+    // 代理里还有后台命令或子代理：新技能要等它们结束（它们结束时代理会醒来跑一轮，结束后再来看）
+    this.skillsWaiting = !ok;
+    return ok;
+  }
+  /** 上次想换上新技能时，代理进程里还有后台命令或子代理在跑 */
+  private skillsWaiting = false;
+  /** 正在为换设置或技能关掉旧进程、启动新进程（关掉之后、新进程起来之前 harness 是空的，不能当成「没在跑」） */
+  private restarting = false;
+
+  /** 技能在这个机器人进程里的现状（设置列表、加号菜单、安装卡片的生效状态，见 skills/display.ts skillState） */
+  skillRuntime(): SkillRuntime {
+    const busy = this.active > 0 || this.taskBusy.size > 0 || this.turns.size > 0 || this.wakes.size > 0 || this.skillsWaiting;
+    return { running: !!this.harness, starting: !!this.starting || this.restarting, busy, applied: this.userSkills.applied(this.o.botId) };
+  }
+
+  /** 这个技能装了、开着，但还没进当前的进程（模型叫它时说「技能还在加载」） */
+  skillPending(name: string): boolean {
+    const mine = this.userSkills.mine.forBot(this.o.botId).find((s) => s.name === name);
+    const skill = this.userSkills.list(this.o.botId).find((s) => s.name === name) ?? (mine ? { name: mine.name, digest: mine.digest, enabled: true } : undefined);
+    if (!skill) return false;
+    const state = skillState(skill, this.skillRuntime());
+    return state === "waiting" || state === "loading";
   }
 
   private reapStale(): void {
@@ -1099,6 +1132,25 @@ exec "$REAL" "$@"
     }
   }
 
+  /** 已经部署进当前进程、模型可以自己用的用户技能，带界面上的名字和示例（写进提示词，见 botSkills） */
+  private liveSkills(): Array<{ name: string; title: string; example: string }> {
+    const deployed = this.userSkills.applied(this.o.botId);
+    if (!deployed?.size) return [];
+    const own = this.userSkills
+      .list(this.o.botId)
+      .filter((s) => deployed.get(s.name) === s.digest && this.userSkills.modelInvocable(this.o.botId, s))
+      .map((s) => {
+        const d = skillDisplay(s);
+        return { name: s.name, title: d.title, example: d.example };
+      });
+    // 在这个机器人上打开、已经部署进来的「我的技能」：标题和「试试这样说」是保存时写下的
+    const mine = this.userSkills.mine
+      .forBot(this.o.botId)
+      .filter((s) => deployed.get(s.name) === s.digest)
+      .map((s) => ({ name: s.name, title: s.title, example: s.example }));
+    return [...own, ...mine];
+  }
+
   /** 上次写进 promptFile 的内容（没变就不写） */
   private promptText: string | undefined;
 
@@ -1112,7 +1164,9 @@ exec "$REAL" "$@"
     const others = this.o.store.listBots().filter((b) => b.id !== this.o.botId && b.origin !== "catalog").map((b) => ({ name: b.name, persona: b.systemPrompt }));
     // 连了哪些应用（tools/apps）：接在机器人段后面；没有连接、也没有可连的应用时不加
     const apps = this.allows("accounts") ? (this.o.apps?.().prompt ?? "") : "";
-    const text = botPrompt({ name: bot?.name ?? "", persona: bot?.systemPrompt ?? "", memory: this.settings().memory.enabled, others }) + (apps ? `\n\n${apps}` : "");
+    // 「我的技能」：全部列出（标同一件事时要用名字），没在这里打开的注明
+    const mine = mySkillsPrompt({ bot: bot?.name ?? "", skills: this.userSkills.mine.list().map((s) => ({ name: s.name, title: s.title, on: s.bots.includes(this.o.botId) })) });
+    const text = [botPrompt({ name: bot?.name ?? "", persona: bot?.systemPrompt ?? "", memory: this.settings().memory.enabled, others }), apps, botSkills(this.liveSkills(), !!apps), mine].filter(Boolean).join("\n\n");
     if (!force && text === this.promptText) return;
     try {
       fs.mkdirSync(path.dirname(this.promptFile), { recursive: true, mode: 0o700 });
@@ -1142,7 +1196,12 @@ exec "$REAL" "$@"
     }
     if (this.harness && this.sig !== this.settingsSig() && this.active === 0 && await this.skillsAllowRestart() && this.tasksAllowRestart()) {
       log.info("bot settings or PowerShell changed, restarting dsh", { bot: this.o.botId, backgroundTasks: this.taskBusy.size });
-      await this.closeHarness();
+      this.restarting = true;
+      try {
+        await this.closeHarness();
+      } finally {
+        this.restarting = false;
+      }
     }
     if (this.harness) return this.harness;
     this.starting ??= this.spawn(model).finally(() => (this.starting = undefined));
@@ -1216,9 +1275,14 @@ exec "$REAL" "$@"
       this.recycles++;
     } else return;
     const model = this.model;
-    await this.closeHarness();
-    this.state = "stopped";
-    await this.ensure(model).catch(() => undefined);
+    this.restarting = true;
+    try {
+      await this.closeHarness();
+      this.state = "stopped";
+      await this.ensure(model).catch(() => undefined);
+    } finally {
+      this.restarting = false;
+    }
   }
 
   /** 这个子进程开过的任务、规则会话（含 resume 的）比 RECYCLE_AFTER_SESSIONS 多 */
@@ -1299,6 +1363,7 @@ exec "$REAL" "$@"
       fs.mkdirSync(this.home, { recursive: true, mode: 0o700 });
       const skillsRevision = this.userSkills.sync(this.o.botId);
       this.appliedSkills = skillsRevision;
+      this.skillsWaiting = false;
       fs.mkdirSync(this.workspace, { recursive: true });
       this.reapStale();
       await this.o.bridge.start();

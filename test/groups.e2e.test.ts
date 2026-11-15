@@ -107,4 +107,27 @@ describe("群聊接口", () => {
     const stream = await (await fetch(`${base}/amb/api/groups/${id}/live`)).text();
     expect(stream).toContain("event: done");
   });
+
+  it("失败轮次记录来源；切换模型和确认重试只影响出错成员", async () => {
+    const a = await bot("失败成员");
+    const b = await bot("其他成员");
+    const id = (await api("/groups", { method: "POST", body: { members: [a, b] } })).json.group.id;
+    const conv = app.store.ensureConversation(a, "web", `group:${id}`, "", "group");
+    const messageId = app.store.addMessage(conv.id, "assistant", "⚠️ 402 quota request_id: original", [{ tool: "write_file" }], {
+      errorContext: { model: "official-deepseek/old", groupId: id, input: "只回答原始请求" },
+    });
+    const messages = (await api(`/groups/${id}`)).json.messages;
+    expect(messages[0].errorContext).toEqual({ model: "official-deepseek/old", groupId: id });
+    expect(JSON.stringify(messages)).not.toContain("只回答原始请求");
+    expect((await api(`/groups/${id}/model/${a}`, { method: "PUT", body: { model: "test-model" } })).status).toBe(200);
+    expect(app.store.getConversation(conv.id)?.model).toBe("test-model");
+    expect((await api(`/bots/${a}/chat/model`)).json.model).toBe("");
+    expect(app.store.getBot(b)?.defaultModel).toBe("");
+    expect((await api(`/groups/${id}/retry`, { method: "POST", body: { messageId } })).json.code).toBe("confirm");
+    expect((await api(`/groups/${id}/retry`, { method: "POST", body: { messageId, allowRepeatedActions: true } })).status).toBe(200);
+    await until(async () => !(await api(`/groups/${id}`)).json.group.running);
+    const after = (await api(`/groups/${id}`)).json.messages;
+    expect(after.at(-1)).toMatchObject({ botId: a, content: "收到" });
+    expect(after.some((m: any) => m.botId === b)).toBe(false);
+  });
 });

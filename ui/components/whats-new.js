@@ -12,7 +12,7 @@ import { createStore, toast, useStore } from "../lib/store.js";
 import { getLang, t } from "../lib/i18n.js";
 import { usePresence } from "../design/motion.js";
 
-const RELEASES = "https://github.com/modelflare-ai/AnyModelBot/releases";
+const RELEASES = "https://github.com/wmn1525/AnyModelBot/releases";
 
 /** 开着的弹窗：{ mode: "installed" | "available" | "history", version, since }；null = 没开 */
 export const whatsNew = createStore(null);

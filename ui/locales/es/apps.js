@@ -1,14 +1,20 @@
 export default {
-  "menu": "Conectar apps",
-  "commandKeys": "conectar apps aplicaciones conector conectores mcp feishu lark notion github connect apps app connector",
+  "menu": "Apps y habilidades",
+  "commandKeys": "apps y habilidades habilidades skills biblioteca de habilidades conectar apps aplicaciones conector conectores mcp feishu lark notion github connect apps app connector",
   "attention": "Una app requiere tu atención",
-  "title": "Apps",
-  "lead": "Conecta tus apps para que tus bots puedan leer y escribir su contenido.",
+  "title": "Apps y habilidades",
+  "lead": "Conecta tus apps y encuentra habilidades útiles para que tus bots hagan más por ti.",
   "tab": {
     "all": "Todas",
     "connected": "Conectadas"
   },
-  "search": "Buscar apps, usos o cuentas",
+  "search": "Buscar apps y habilidades",
+  "tabs": {
+    "apps": "Apps {n}",
+    "skills": "Habilidades {n}"
+  },
+  "addMine": "Mis MCP · Agregar personalizado",
+  "filterLabel": "Filtrar apps",
   "suggested": "Apps sugeridas",
   "mine": "Mis MCP",
   "addCustom": "Agregar conector personalizado",
@@ -120,10 +126,8 @@ export default {
     "terms": "Abrir los términos de la API",
     "docs": "Documentación oficial",
     "done": "Conectada",
-    "next": "Ahora puedes decirle a tu bot:",
-    "sendToBot": "Enviar al bot actual",
-    "copyExample": "Copiar ejemplo",
-    "finish": "Listo"
+    "finish": "Listo",
+    "readyNow": "Ya se puede usar."
   },
   "manage": {
     "alias": "Apodo",

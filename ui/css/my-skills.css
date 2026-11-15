@@ -1,0 +1,69 @@
+/* 「我的技能」：对话里的草稿卡、机器人设置技能列表（搜索、筛选胶囊、折叠、我的技能的行）、技能详情、
+   过程区里可点的技能名、规则上的「用技能」。只用设计令牌（ui/design/tokens），不写死颜色和尺寸。 */
+
+/* —— 技能列表 —— */
+.skill-file { font: var(--fs-xs) var(--code); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.skill-name { display: flex; align-items: center; gap: var(--space-2); min-width: 0; flex-wrap: wrap; }
+.badge.skill-unverified { --badge-fg: var(--faint); color: var(--muted); }
+/* 描述只显示一行 */
+.skill-list .skill-desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 关着的行：「试试这样说」置灰不可点（所有来源） */
+.skill-list .skill-try:disabled { color: var(--muted); cursor: default; }
+.skill-switch { display: inline-flex; }
+.skill-filter { display: grid; gap: var(--space-2); margin-bottom: var(--space-2); }
+.skill-search { display: flex; align-items: center; gap: var(--space-2); height: var(--ctl-lg); padding: 0 var(--space-3); border-radius: var(--r-ctl); background: var(--well); color: var(--muted); }
+.skill-search input { flex: 1; min-width: 0; height: 100%; background: none; border: 0; outline: none; font-size: var(--fs-md); color: var(--fg); }
+.skill-search input::placeholder { color: var(--placeholder); }
+.skill-search input::-webkit-search-cancel-button { display: none; }
+.skill-chips { display: flex; flex-wrap: wrap; gap: var(--space-1-5); }
+.skill-chips .chip { height: var(--ctl-sm); padding: 0 var(--ctl-px-sm); font-variant-numeric: tabular-nums; }
+.skill-chips .chip.on { background: var(--pill-press); color: var(--fg); font-weight: var(--fw-medium); }
+.skill-list .skill-more, .skill-list .skill-none { justify-content: center; }
+.skill-list .skill-none { gap: var(--space-2); }
+
+/* —— 技能详情（查看 / 管理） —— */
+.skill-detail-title { display: inline-flex; align-items: baseline; gap: var(--space-2); min-width: 0; flex-wrap: wrap; }
+.skill-detail .actions { flex-wrap: wrap; }
+.skill-detail .actions .grow { flex: 1; }
+.skill-export-note { margin: 0; }
+
+/* —— 草稿卡 —— */
+.draft-card { gap: var(--space-3); }
+.draft-name { display: flex; align-items: baseline; gap: var(--space-2); flex-wrap: wrap; min-width: 0; }
+.draft-title { font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--fg); overflow-wrap: anywhere; }
+.draft-sec { display: grid; gap: var(--space-1); min-width: 0; }
+.draft-steps, .draft-fixes, .draft-personal ul { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-1); font-size: var(--fs-md); color: var(--fg-2); line-height: var(--lh-snug); overflow-wrap: anywhere; }
+.draft-fixes, .draft-personal ul { list-style: none; padding-left: 0; }
+.draft-fix { display: flex; align-items: flex-start; gap: var(--space-2); cursor: pointer; }
+.draft-fix input { margin-top: var(--space-0-5); flex: none; }
+.draft-fix > span { display: grid; gap: var(--space-0-5); min-width: 0; }
+.draft-quote { font-size: var(--fs-sm); color: var(--muted); }
+.draft-fix .off { color: var(--muted); text-decoration: line-through; }
+.draft-secrets { margin: 0; }
+.draft-personal-item { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; min-width: 0; }
+.draft-personal-item mark { padding: 0 var(--space-1); border-radius: var(--r-item); background: var(--amber-soft); color: var(--fg); overflow-wrap: anywhere; min-width: 0; }
+.draft-personal-seg { display: inline-flex; border-radius: var(--r-ctl); background: var(--seg-track); padding: var(--space-0-5); gap: var(--space-0-5); flex: none; }
+.draft-personal-seg button { padding: var(--space-0-5) var(--space-2); border-radius: var(--r-ctl); font-size: var(--fs-sm); line-height: var(--lh-snug); color: var(--fg-2); }
+.draft-personal-seg button.on { background: var(--seg-thumb-bg); color: var(--fg); font-weight: var(--fw-medium); }
+.draft-warn, .skill-card-hint.warn { color: var(--fg); background: var(--amber-soft); }
+.draft-same { display: grid; gap: var(--space-1); padding: var(--space-2-5) var(--space-3); border-radius: var(--r-item); background: var(--well); font-size: var(--fs-md); }
+.draft-diff { display: grid; gap: var(--space-1-5); max-height: 200px; overflow: auto; font: var(--fs-xs)/var(--lh-normal) var(--code); }
+.draft-hunk { display: grid; }
+.draft-hunk .del { color: var(--muted); text-decoration: line-through; }
+.draft-hunk .add { color: var(--fg); background: var(--green-soft); border-radius: var(--r-item); padding: 0 var(--space-1); }
+.draft-edit { display: grid; gap: var(--space-1-5); }
+.draft-edit textarea { min-height: 240px; font: var(--fs-xs)/var(--lh-normal) var(--code); resize: vertical; }
+.draft-sends, .draft-cant { margin: 0; }
+.draft-card .actions .grow { flex: 1; }
+
+/* —— 过程区：技能名可点（悬停、键盘聚焦时加下划线），整行仍可点开 —— */
+.work-line.toggle { cursor: pointer; }
+.work-line .skill-link, .use-list .skill-link { display: inline; min-height: 0; padding: 0; background: none; font: inherit; color: inherit; white-space: normal; border-radius: var(--r-item); }
+.work-line .skill-link:hover, .use-list .skill-link:hover, .work-line .skill-link:focus-visible, .use-list .skill-link:focus-visible { background: none; text-decoration: underline; text-underline-offset: 2px; color: var(--fg); }
+.work-line .wl-chev { display: inline-flex; align-items: center; justify-content: center; flex: none; margin-left: auto; padding: 0; background: none; color: inherit; border-radius: var(--r-item); }
+
+/* —— 规则：用技能 —— */
+.rule-skill { color: var(--muted); }
+/* 「查看技能说明 ›」本身带箭头，不要原生的三角 */
+.skill-detail .skill-instructions > summary { list-style: none; cursor: pointer; }
+.skill-detail .skill-instructions > summary::-webkit-details-marker { display: none; }

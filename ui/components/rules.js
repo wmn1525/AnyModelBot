@@ -11,6 +11,9 @@ import { confirmSheet, failed, toast } from "../lib/store.js";
 import { t, locale } from "../lib/i18n.js";
 import { exportUrl, hasCost, money } from "./tasks.js";
 import { openRule, rulesChanged, RULES_CHANGED } from "../lib/scheduled.js";
+import { useBotSkills } from "../lib/usage.js";
+import { kindOf } from "../lib/my-skills.js";
+import { unschedulable } from "./skill-draft-card.js";
 
 const pad = (n) => String(n).padStart(2, "0");
 const hm = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -45,7 +48,8 @@ export function fmtNext(at, now = Date.now(), zone) {
 export function ruleSub(rule, now = Date.now()) {
   if (rule.mode === "off" || rule.state.key === "off") return t(!rule.conversationId ? "scheduled.offNoDestination" : rule.requiresGroup && !rule.sourceGroupId ? "scheduled.offNoGroup" : "scheduled.offReady");
   if (rule.live) return t(rule.live.state === "queued" ? "rules.queued" : "rules.running");
-  if (rule.state.key === "paused") return rule.pausedReason === "budget" ? t("rules.pausedBudget") : t("rules.paused", { count: rule.failures });
+  // 用的「我的技能」删了、关了、改动后跑不了：服务端写好的原因（rule.pausedLine）
+  if (rule.state.key === "paused") return rule.pausedLine || (rule.pausedReason === "budget" ? t("rules.pausedBudget") : t("rules.paused", { count: rule.failures }));
   if (rule.needsAttention && rule.last) return `${fmtRunAt(rule.last.at, now, rule.trigger?.schedule?.tz)} · ${rule.last.line}`;
   if (rule.mode === "observe" || rule.state.key === "observe") return t("scheduled.observing");
   return rule.nextRunAt ? t("rules.actNext", { next: fmtNext(rule.nextRunAt, now, rule.trigger?.schedule?.tz) }) : rule.state.label;
@@ -69,11 +73,25 @@ export function RuleRow({ rule, onChanged, open, onToggle, full = false, timeZon
   const mismatch = zone && zone !== (timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone);
   const sub = full && (rule.mode === "off" || !rule.needsAttention) ? `${rule.when} · ${rule.mode === "off" ? t("scheduled.offRow") : rule.nextRunAt ? t("rules.next", { time: fmtNext(rule.nextRunAt, Date.now(), zone) }) : rule.state.label}` : ruleSub(rule);
   const run = async () => { try { await api(`/rules/${rule.id}/run`, { method: "POST", body: {} }); rulesChanged(); onChanged?.(); } catch (e) { failed(e); } };
+  if (full) return html`<article class=${`rule-card${rule.mode === "off" ? " off" : ""}${open ? " open" : ""}`} data-rule-id=${rule.id}>
+    <div class="rule-full-head" onClick=${(e) => { if (!e.target.closest("button, input, label")) onToggle(); }}>
+      <button type="button" class="rule-card-toggle" aria-expanded=${open} onClick=${onToggle}>
+        <span class=${`dot ${rule.mode === "off" ? "" : rule.needsAttention && !rule.pausedReason ? "warn" : rule.state.dot}`} aria-hidden="true"></span>
+        <span class="rule-card-heading"><span class="name">${rule.title}</span>${rule.skill && html`<span class="sub rule-skill">${t("mySkills.rules.uses", { title: rule.skill.title })}</span>`}${!open && html`<span class=${`sub${rule.needsAttention ? " tone-warning" : ""}`}>${sub}</span>`}</span>
+      </button>
+      ${!open && html`<span class=${`rule-destination${rule.destination ? "" : " tone-warning"}`} title=${rule.destination || t("scheduled.destinationMissing")}>${rule.destination || t("scheduled.destinationMissing")}</span>`}
+      ${rule.needsAttention && !rule.pausedReason && html`<${Button} size="sm" disabled=${!!rule.live} onClick=${run}>${t("rules.runNow")}<//>`}
+      ${rule.state.key !== "done" && html`<${RuleMode} rule=${rule} onChanged=${onChanged} />`}
+      <${Icon} name="chevRight" size="xs" class="rule-chevron" />
+    </div>
+    ${open && html`<${RuleDetail} full rule=${rule} onChanged=${onChanged} />`}
+  </article>`;
   return html`<div class=${`row compact rule-row${open ? " open" : ""}${full ? " rule-full" : ""}`} data-rule-id=${rule.id}>
     <button type="button" class="rule-row-main" aria-expanded=${open} onClick=${onToggle}>
-      <span class=${`dot ${rule.needsAttention && !rule.pausedReason ? "warn" : rule.state.dot}`} aria-hidden="true"></span>
+      <span class=${`dot ${rule.mode === "off" ? "" : rule.needsAttention && !rule.pausedReason ? "warn" : rule.state.dot}`} aria-hidden="true"></span>
       <div class="who">
         <div class="name">${rule.title}</div>
+        ${rule.skill && html`<div class="sub rule-skill">${t("mySkills.rules.uses", { title: rule.skill.title })}</div>`}
         <div class=${`sub${rule.needsAttention ? " tone-warning" : ""}`}>${sub}</div>
         ${mismatch && html`<div class="hint">${t(timeZone ? "scheduled.deliveryZoneMismatch" : "scheduled.zoneMismatch", { zone })}</div>`}
       </div>
@@ -106,7 +124,7 @@ function RunItem({ rule, run }) {
 }
 
 /** 规则的详情：原话、模式、操作、运行记录。runs 给了就不去取（样例页用） */
-export function RuleDetail({ rule, runs: given, onChanged }) {
+export function RuleDetail({ rule, runs: given, onChanged, full = false }) {
   const [runs, setRuns] = useState(given || null);
   const [more, setMore] = useState(false);
   const [busy, setBusy] = useState("");
@@ -144,6 +162,26 @@ export function RuleDetail({ rule, runs: given, onChanged }) {
   // 本月的花费：有了才写（规则详情的 下次 … · 发到 … · 本月 约 $0.41 / $3.00）
   const month = hasCost(rule.monthUsd) ? t("rules.month", { spent: money(rule.monthUsd), budget: money(rule.monthBudgetUsd) }) : "";
   const line = [next, where && t("rules.sendsTo", { where }), month].filter(Boolean).join(" · ");
+  if (full) {
+    const currentZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const attributes = [
+      [t("scheduled.details.schedule"), html`${rule.when}${zone ? ` · ${zone}` : ""}${zone && zone !== currentZone && html`<span class="rule-zone-warning">${t("scheduled.zoneMismatch", { zone })} <button type="button" class="text" disabled=${!!busy} onClick=${() => act("zone", () => put(rule, { schedule: { ...rule.trigger.schedule, tz: currentZone } }))}>${t("scheduled.useCurrentZone")}</button></span>`}`],
+      [t("scheduled.details.next"), rule.mode === "off" ? t("scheduled.offRow") : rule.state.key === "paused" ? ruleSub(rule) : rule.nextRunAt ? fmtNext(rule.nextRunAt, Date.now(), zone) : rule.state.label],
+      [t("scheduled.details.destination"), where || html`<span class="tone-warning">${t("scheduled.destinationMissing")}</span>`],
+      ...(rule.requiresGroup ? [[t("scheduled.groupLabel"), rule.sourceGroupName || t("scheduled.groupMissing")]] : []),
+      ...(hasCost(rule.monthUsd) ? [[t("scheduled.details.month"), t("scheduled.details.spent", { spent: money(rule.monthUsd), budget: money(rule.monthBudgetUsd) })]] : rule.estimatedMonthUsd !== undefined ? [[t("scheduled.details.month"), t("scheduled.estimate", { amount: rule.estimatedMonthUsd.toFixed(2) })]] : []),
+    ];
+    return html`<div class="rule-detail rule-card-detail">
+      <section class="rule-prompt"><h3 class="t-label">${t(rule.kind === "remind" ? "scheduled.details.reminder" : "scheduled.details.prompt")}</h3><p class="selectable">${rule.kind === "remind" ? rule.message : rule.instruction}</p></section>
+      <dl class="rule-attributes">${attributes.map(([label, value]) => html`<div><dt>${label}</dt><dd class="selectable">${value}</dd></div>`)}</dl>
+      <section><div class="rule-card-actions">${rule.kind !== "remind" && html`<${RuleMode} rule=${rule} segments onChanged=${onChanged} />`}<${Button} size="sm" loading=${busy === "run"} disabled=${!!busy || !!rule.live || rule.mode === "off"} onClick=${runNow}>${t("rules.runNow")}<//></div>
+        <div class="rule-mode-hints">${rule.kind === "check" && rule.mode === "observe" && html`<p>${t("rules.observeHelp")}</p>`}<p>${t("scheduled.stopHint")}</p></div></section>
+      <section class="rule-history"><h3 class="t-label">${t("rules.log")}</h3>${!runs ? html`<span class="hint">${t("common.loading")}</span>` : !runs.length ? html`<span class="hint">${t("rules.noRuns")}</span>` : html`<ol class="rule-runs">${runs.map((r) => html`<${RunItem} key=${r.id + r.state} rule=${rule} run=${r} />`)}</ol>`}
+        ${more && html`<button type="button" class="text" onClick=${() => load(runs.at(-1).at)}>${t("rules.earlier")}</button>`}</section>
+      <div class="rule-secondary-actions"><button type="button" class="text" onClick=${() => setEditing(true)}>${t("common.edit")}</button>${!given && html`<a class="text" href=${exportUrl("rules", rule.id)} download>${t("rules.export")}</a>`}<button type="button" class="text danger" disabled=${!!busy} onClick=${del}>${t("common.delete")}</button></div>
+      ${editing && html`<${RuleEditor} botId=${rule.botId} rule=${rule} onClose=${() => setEditing(false)} onSaved=${() => { setEditing(false); onChanged?.(); }} />`}
+    </div>`;
+  }
   return html`<div class="rule-detail">
     <p class="rule-words selectable">${t("rules.words", { text: rule.kind === "remind" ? rule.message : rule.instruction })}</p>
     ${line && html`<span class="hint">${line}</span>`}
@@ -259,6 +297,18 @@ export function RuleEditor({ botId, rule, onClose, onSaved, advanced = false }) 
   const [monthB, setMonthB] = useState(String(rule?.monthBudgetUsd ?? 3));
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
+  // 「用技能（可选）」：在这条规则所属机器人上打开的「我的技能」；选了预填原话
+  const [skill, setSkill] = useState(rule?.skill?.name || "");
+  const botSkillList = useBotSkills(botId);
+  const mineOn = (botSkillList || []).filter((s) => kindOf(s) === "mine" && s.enabled);
+  const pickSkill = (name) => {
+    const prev = mineOn.find((s) => s.name === skill);
+    const next = mineOn.find((s) => s.name === name);
+    setSkill(name);
+    // 原话是空的，或还是上一个技能预填的那句：换成这个技能的
+    if (next && (!words.trim() || (prev && words === t("mySkills.rules.prefill", { title: prev.title })))) setWords(t("mySkills.rules.prefill", { title: next.title }));
+    if (next && !title.trim()) setTitle(next.title.slice(0, 40));
+  };
   const event = rule && rule.trigger.kind !== "schedule";
   const unchanged = !!rule && JSON.stringify(f) === JSON.stringify(orig);
   useEffect(() => {
@@ -287,21 +337,26 @@ export function RuleEditor({ botId, rule, onClose, onSaved, advanced = false }) 
       const body = { title, ...(remind ? { message: words, ...(!rule ? { instruction: words } : {}) } : { instruction: words }), conversationId: conv,
         ...(event || unchanged ? {} : { schedule: preview.schedule }), missedPolicy: missed,
         ...(rule?.requiresGroup ? { sourceGroupId: group } : {}),
-        ...(!remind ? { runBudgetUsd: Number(runB), monthBudgetUsd: Number(monthB) } : {}) };
+        ...(!remind ? { runBudgetUsd: Number(runB), monthBudgetUsd: Number(monthB), skill } : {}) };
       const d = rule ? await api(`/rules/${rule.id}`, { method: "PUT", body }) : await api("/rules", { method: "POST", body: { ...body, botId, kind, mode: !enabled ? "off" : !remind && observe ? "observe" : "act" } });
       rulesChanged(); toast(t("common.saved")); onSaved?.(d.rule);
     } catch (e) { failed(e); }
     setBusy(false);
   };
   const ok = title.trim() && words.trim() && (conv || rule?.mode === "off") && (event || unchanged || preview) && (remind || Number(runB) > 0 && Number(monthB) > 0) && (!rule?.requiresGroup || rule.mode === "off" || group);
-  return html`<${Sheet} title=${rule ? t("rules.editTitle") : t("rules.newTitle")} onClose=${onClose}>
+  return html`<${Sheet} wide framed class="rule-editor" title=${rule ? t("rules.editTitle") : t("rules.newTitle")} onClose=${onClose} footer=${html`<${Button} onClick=${onClose}>${t("common.cancel")}<//><${Button} variant="primary" loading=${busy} disabled=${!ok} onClick=${save}>${rule ? t("common.save") : t("rules.create")}<//>`}>
     <div class="rule-form">
-      ${!rule && html`<${Seg} label=${t("rules.kind")} options=${[["remind", t("rules.kindRemind")], ["check", t("rules.kindCheck")]]} value=${kind} onChange=${setKind} />`}
-      <label>${t("rules.name")}<input class="field" data-autofocus value=${title} maxlength="40" onInput=${(e) => setTitle(e.target.value)} /></label>
-      <label>${remind ? t("rules.wordsRemind") : t("rules.wordsCheck")}<textarea class="field" rows=${remind ? 2 : 3} maxlength=${remind ? 300 : 2000} value=${words} onInput=${(e) => setWords(e.target.value)}></textarea></label>
-      ${!event && html`<div class="rule-when"><span class="t-label">${t("rules.when")}</span>
-        <${Seg} label=${t("rules.when")} options=${COMMON_KINDS.map((k) => [k, t(k === "monthly" ? "scheduled.monthly" : `rules.kinds.${k}`)])} value=${f.kind} onChange=${(kind) => setF({ ...f, kind })} />
-        <button type="button" class="text" aria-expanded=${more} onClick=${() => setMore(!more)}>${t("scheduled.more")}</button>
+      ${!rule && html`<div class="rule-types" role="radiogroup" aria-label=${t("rules.kind")}>${["remind", "check"].map((value) => html`<label class=${`rule-type${kind === value ? " selected" : ""}`}><input class="sr-only" type="radio" name="rule-kind" value=${value} checked=${kind === value} onChange=${() => setKind(value)} onKeyDown=${(e) => { if (e.key === "Enter") { e.preventDefault(); setKind(value); } }} /><span class="rule-type-icon"><${Icon} name=${value === "remind" ? "chat" : "spark"} size="lg" /></span><span><b>${t(value === "remind" ? "rules.kindRemind" : "rules.kindCheck")}</b><small>${t(`scheduled.kindHint.${value}`)}</small></span></label>`)}</div>`}
+      <section class="rule-content-group"><label>${t("rules.name")}<input class="field" data-autofocus value=${title} maxlength="40" onInput=${(e) => setTitle(e.target.value)} /></label>
+      ${!remind && (mineOn.length > 0 || rule?.skill) && html`<label>${t("mySkills.rules.pick")}<select class="field" value=${skill} onChange=${(e) => pickSkill(e.target.value)}>
+        <option value="">${t("mySkills.rules.none")}</option>
+        ${rule?.skill && !mineOn.some((s) => s.name === rule.skill.name) && html`<option value=${rule.skill.name} disabled>${rule.skill.title}</option>`}
+        ${mineOn.map((s) => { const why = unschedulable(s.mine); return html`<option value=${s.name} disabled=${!!why && s.name !== skill}>${why ? `${s.title} — ${why}` : s.title}</option>`; })}
+      </select></label>`}
+      <label>${remind ? t("rules.wordsRemind") : t("rules.wordsCheck")}<textarea class="field" rows=${remind ? 2 : 3} maxlength=${remind ? 300 : 2000} value=${words} onInput=${(e) => setWords(e.target.value)}></textarea></label></section>
+      ${!event && html`<div class="rule-when"><h3 class="rule-group-title">${t("rules.when")}</h3>
+        <div class="rule-frequency"><${Seg} label=${t("rules.when")} options=${COMMON_KINDS.map((k) => [k, t(k === "monthly" ? "scheduled.monthly" : `rules.kinds.${k}`)])} value=${f.kind} onChange=${(kind) => setF({ ...f, kind })} />
+        <button type="button" class="text" aria-expanded=${more} onClick=${() => setMore(!more)}>${t("scheduled.more")}<${Icon} name="chevDown" class=${more ? "flipped" : ""} size="xs" /></button></div>
         ${more && html`<${Seg} label=${t("scheduled.more")} options=${["every", "cron"].map((k) => [k, t(`rules.kinds.${k}`)])} value=${f.kind} onChange=${(kind) => setF({ ...f, kind })} />`}
         <div class="rule-when-row">
           ${f.kind === "monthly" && html`<select class="field" value=${f.day} onChange=${set("day")}>${Array.from({ length: 31 }, (_, i) => html`<option value=${i + 1}>${i + 1}</option>`)}<option value="last">${t("scheduled.lastDay")}</option></select>`}
@@ -311,23 +366,23 @@ export function RuleEditor({ botId, rule, onClose, onSaved, advanced = false }) 
           ${f.kind === "cron" && html`<input class="field mono" aria-label="cron" value=${f.cron} onInput=${set("cron")} />`}
         </div>
         ${f.kind === "weekly" && html`<div class="rule-days">${DAY_PICKS.map((d) => html`<button type="button" class=${`chip${f.days.includes(d) ? " on" : ""}`} aria-pressed=${f.days.includes(d)} onClick=${() => toggleDay(d)}>${dayName(d)}</button>`)}</div>`}
-        <span class="hint">${zone}</span>
-        ${preview && html`<span class="hint">${t("scheduled.next", { times: preview.times.map((at) => fmtNext(at, Date.now(), zone)).join(" · ") })}</span><span class="hint">${t(preview.monthlyRuns === 1 ? "scheduled.frequencyOne" : "scheduled.frequency", { count: preview.monthlyRuns })}</span>${!remind && preview.monthlyRuns > 300 && html`<p class="tone-warning">${t("scheduled.frequent")}</p>`}`}
+        <div class="rule-time-summary"><span>${zone}</span>
+        ${preview && html`<span class="hint">${t("scheduled.next", { times: preview.times.map((at) => fmtNext(at, Date.now(), zone)).join(" · ") })}</span><span class="hint">${t(preview.monthlyRuns === 1 ? "scheduled.frequencyOne" : "scheduled.frequency", { count: preview.monthlyRuns })}</span>`}</div>
+        ${preview && !remind && preview.monthlyRuns > 300 && html`<p class="tone-warning">${t("scheduled.frequent")}</p>`}
         ${error && !unchanged && html`<p class="tone-danger" role="alert">${error}</p>`}
       </div>`}
+      <section class="rule-delivery-group"><h3 class="rule-group-title">${t("rules.to")}</h3>
       ${rule?.requiresGroup && choices && html`<${GroupPicker} groups=${choices.groups} value=${group} onChange=${setGroup} />`}
-      <span class="t-label">${t("rules.to")}</span>
       ${choices ? html`<${DestinationPicker} destinations=${choices.destinations} value=${conv} onChange=${setConv} />` : html`<${Spinner} />`}
-      ${channel === "weixin" && html`<p class="hint">${t("rules.weixinNote")}</p>`}
-      ${!rule && html`<div class="rule-when"><span class="t-label">${t("scheduled.afterCreating")}</span><${Seg} label=${t("scheduled.afterCreating")} options=${[["on", t("scheduled.turnOnNow")], ["off", t("scheduled.keepOff")]]} value=${enabled ? "on" : "off"} onChange=${(v) => setEnabled(v === "on")} />${!enabled && html`<span class="hint">${t("scheduled.offHint")}</span>`}</div>`}
-      <details open=${advanced}><summary>${t("scheduled.advanced")}</summary><div class="rule-form">
+      ${channel === "weixin" && html`<p class="hint">${t("rules.weixinNote")}</p>`}</section>
+      ${!rule && html`<div class="rule-when"><h3 class="rule-group-title">${t("scheduled.afterCreating")}</h3><${Seg} label=${t("scheduled.afterCreating")} options=${[["on", t("scheduled.turnOnNow")], ["off", t("scheduled.keepOff")]]} value=${enabled ? "on" : "off"} onChange=${(v) => setEnabled(v === "on")} />${!enabled && html`<span class="hint">${t("scheduled.offHint")}</span>`}</div>`}
+      <details class="rule-advanced" open=${advanced}><summary><${Icon} name="chevRight" size="xs" />${t("scheduled.advanced")}</summary><div class="rule-form">
         ${!remind && !rule && html`<div class="actions"><span>${t("scheduled.tryFirst")}</span><span class="grow"></span><${Switch} label=${t("scheduled.tryFirst")} value=${observe} onChange=${setObserve} /></div>`}
         ${f.kind !== "every" && html`<span class="t-label">${t("scheduled.missedPolicy")}</span><${Seg} label=${t("scheduled.missedPolicy")} options=${[["catchup", t("scheduled.catchup")], ["skip", t("scheduled.skip")]]} value=${missed} onChange=${setMissed} />`}
         ${!remind && html`<div class="rule-when-row"><label>${t("rules.perRun")} ($)<input class="field num" type="number" min="0.01" step="0.01" value=${runB} onInput=${(e) => setRunB(e.target.value)} /></label><label>${t("rules.perMonth")} ($)<input class="field num" type="number" min="0.01" step="0.5" value=${monthB} onInput=${(e) => setMonthB(e.target.value)} /></label></div>`}
         <p class="hint">${t(!event && ["daily", "weekdays", "weekly", "monthly", "once"].includes(f.kind) && missed === "catchup" ? "scheduled.localCatchup" : "scheduled.localOnly")}</p>
       </div></details>
     </div>
-    <div class="actions"><${Button} onClick=${onClose}>${t("common.cancel")}<//><${Button} variant="primary" loading=${busy} disabled=${!ok} onClick=${save}>${rule ? t("common.save") : t("rules.create")}<//></div>
   <//>`;
 }
 
@@ -353,7 +408,7 @@ export function RuleCard({ action }) {
   const undone = action.state === "undone";
   return html`<div class=${`rule-chat-card${gone || undone ? " muted" : ""}`}>
     <div class="actions"><b>${undone ? html`<s>${t("scheduled.rule")} · ${action.title}</s>` : `${t(action.kind === "update" ? "scheduled.updated" : "scheduled.rule")} · ${rule?.title || action.title}`}</b><span class="grow"></span>${rule && rule.state.key !== "done" && html`<span class="hint">${t(rule.mode !== "off" && !rule.pausedReason ? "scheduled.on" : "scheduled.off")}</span><${RuleMode} rule=${rule} />`}</div>
-    ${gone ? html`<p>${t("scheduled.deleted")}</p>` : undone ? html`<p>${t("scheduled.undone")} · ${t("scheduled.restoreUntil", { time: fmtNext(action.restoreUntil) })}</p>` : rule && html`<p>${rule.when} (${rule.trigger?.schedule?.tz || ""})</p><p>${t("rules.sendsTo", { where: rule.destination || t("scheduled.destinationMissing") })}</p>${rule.nextRunAt > 0 && html`<p>${t("rules.next", { time: fmtNext(rule.nextRunAt, Date.now(), rule.trigger?.schedule?.tz) })}</p>`}`}
+    ${gone ? html`<p>${t("scheduled.deleted")}</p>` : undone ? html`<p>${t("scheduled.undone")} · ${t("scheduled.restoreUntil", { time: fmtNext(action.restoreUntil) })}</p>` : rule && html`${rule.skill && html`<p class="rule-skill">${t("mySkills.rules.uses", { title: rule.skill.title })}</p>`}<p>${rule.when} (${rule.trigger?.schedule?.tz || ""})</p><p>${t("rules.sendsTo", { where: rule.destination || t("scheduled.destinationMissing") })}</p>${rule.nextRunAt > 0 && html`<p>${t("rules.next", { time: fmtNext(rule.nextRunAt, Date.now(), rule.trigger?.schedule?.tz) })}</p>`}`}
     ${action.kind === "update" && action.canUndo && html`<p class="hint">${t("scheduled.updateUndoHint")}</p>`}
     ${action.state === "reverted" && html`<p class="hint">${t("scheduled.updateUndone")}</p>`}
     <div class="actions">${rule && html`<${Button} size="sm" onClick=${() => openRule(rule)}>${t("scheduled.view")}<//>`}${action.canUndo && html`<${Button} size="sm" disabled=${busy} onClick=${() => run("undo")}>${t("scheduled.undo")}<//>`}${action.canRestore && html`<${Button} size="sm" disabled=${busy} onClick=${() => run("restore")}>${t("scheduled.restore")}<//>`}</div>

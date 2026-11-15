@@ -1,4 +1,7 @@
 export default {
+  "downloadVersion": "Download version {version}",
+  "browserVersion": "Version {version} is available — download ↗",
+  "restartVersion": "Restart to update to {version}",
   "autoDownload": "Automatically download updates",
   "autoDownloadHint": "Download new versions in the background, then remind you to restart and install.",
   "manualOnly": "This installation needs manual installer downloads.",
@@ -10,7 +13,7 @@ export default {
   "restart": "Restart and update",
   "installing": "Restarting to update…",
   "check": "Check for updates",
-  "busy": "Tasks are running. Restart to update after they finish.",
+  "busy": "Tasks are running. You can restart to update when they finish.",
   "errors": {
     "failed": "The update action failed. Please try again.",
     "check_failed": "Could not check for updates. Please try again later.",

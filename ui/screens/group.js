@@ -8,14 +8,18 @@ import { RuleCard, RuleSource, useRuleActions } from "../components/rules.js";
 import { upsertStep } from "../components/activity.js";
 import { DeliveredFiles } from "../components/files.js";
 import { api, attachGroup } from "../lib/api.js";
-import { failed, saved, useStore } from "../lib/store.js";
+import { confirmSheet, failed, saved, useStore } from "../lib/store.js";
+import { officialSource } from "../lib/models.js";
+import { ModelPicker } from "../components/model-picker.js";
 import { fmtSep } from "../lib/format.js";
 import { fill, refreshGuide, refreshGuideSoon } from "../lib/guide.js";
 import { prefs } from "../lib/prefs.js";
 import { t, useLang } from "../lib/i18n.js";
 import { notify, plainSnippet } from "../lib/notify.js";
 import { reducedMotion } from "../design/motion.js";
-import { ErrorNotice, MsgActions, PromptCard, WorkLine, addFile, errText, isError, shownText } from "./chat.js";
+import { ErrorNotice, MsgActions, PromptCard, WorkLine, addFile, errText, isError, shownText, withInstalls } from "./chat.js";
+import { SkillInstallCard } from "../components/skill-install-card.js";
+import { SkillDraftCard } from "../components/skill-draft-card.js";
 import { ConversationFind, HistoryBar, HistoryPageButton, useMessageHistory } from "../components/chat-search.js";
 import { chatView, saveChatView, useChatDraft } from "../lib/chat-view.js";
 
@@ -27,7 +31,7 @@ const EVERYONE = "*";
 
 function toItems(messages) {
   return messages.map((m) => {
-    const base = { id: "m" + m.id, mid: m.id, botId: m.botId, conv: m.conversationId, at: m.createdAt, steps: m.steps, interim: m.interim, files: m.files, ruleSource: m.ruleSource };
+    const base = { id: "m" + m.id, mid: m.id, botId: m.botId, conv: m.conversationId, at: m.createdAt, steps: m.steps, used: m.used, interim: m.interim, files: m.files, ruleSource: m.ruleSource, errorContext: m.errorContext };
     if (m.role === "system") return { ...base, kind: "note", text: m.content };
     if (m.role === "assistant" && isError(m.content)) return { ...base, kind: "error", text: errText(m.content) };
     return { ...base, kind: "msg", role: m.role === "user" ? "user" : "assistant", text: m.content };
@@ -95,7 +99,9 @@ export function GroupSheet({ group, bots, onClose, onSaved }) {
   <//>`;
 }
 
-export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, initialFocus, onBackToSearch, visible = true }) {
+export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, initialFocus, onBackToSearch, visible = true, models, modelsError, reloadModels, defaultModel, account }) {
+  const [modelPicker, setModelPicker] = useState(null);
+  const [memberModels, setMemberModels] = useState({});
   const ruleActions = useRuleActions("", group.id);
   const viewId = `group:${group.id}`;
   const savedView = useRef(chatView(viewId));
@@ -131,7 +137,9 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
     try {
       const d = await api(`/groups/${enc}`);
       if (!mounted.current) return null;
-      setItems(toItems(d.messages || []));
+      // 成员出的技能安装卡片按时间插进时间线（正在答的那一轮里的由 live 显示）
+      setItems(withInstalls(toItems(d.messages || []), d.installs, d.live ? [d.live] : []));
+      setMemberModels(d.models || {});
       setPending(d.pending || []);
       setCanOpen(!!d.canOpen);
       setLoadErr("");
@@ -341,20 +349,41 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
         prev = it;
         continue;
       }
+      if (it.kind === "prompt" && (it.pkind === "skill_install" || it.pkind === "skill_draft")) {
+        const cont = prev && prev.kind !== "note" && !(prev.kind === "msg" && prev.role === "user") && prev.botId === it.botId;
+        out.push(html`<div class=${`msg-row assistant${cont ? " cont" : ""}`} key=${it.id}>
+          ${!cont && html`<div class="msg-author"><${BotAvatar} bot=${botOf(it.botId) || { id: it.botId }} size=${20} state="idle" /><span>${nameOf(it.botId)}</span></div>`}
+          ${it.pkind === "skill_draft" ? html`<${SkillDraftCard} id=${it.requestId} />` : html`<${SkillInstallCard} id=${it.requestId} />`}
+        </div>`);
+        prev = it;
+        continue;
+      }
       const isUser = it.kind === "msg" && it.role === "user";
       const same = prev && prev.kind !== "note" && (isUser ? prev.kind === "msg" && prev.role === "user" : prev.botId === it.botId);
       const author = !isUser && !same && html`<div class="msg-author"><${BotAvatar} bot=${botOf(it.botId) || { id: it.botId }} size=${20} state=${it.live ? "working" : "idle"} /><span>${nameOf(it.botId)}</span></div>`;
       const cls = `msg-row ${isUser ? "user" : "assistant"}${same ? " cont" : ""}${it.live ? " live" : ""}`;
       if (it.kind === "error") {
-        out.push(html`<div class=${cls} data-message-id=${it.mid} key=${it.id}>${author}<${ErrorNotice} text=${it.text} onFixKey=${() => onOpenSettings("modelflare", "account")} /></div>`);
+        const model = it.errorContext?.model ?? (botOf(it.botId)?.defaultModel || defaultModel);
+        const ranSteps = !!(it.steps || it.files?.length);
+        const retry = async () => {
+          try { await api(`/groups/${enc}/retry`, { method: "POST", body: { messageId: it.mid, allowRepeatedActions: ranSteps } }); }
+          catch (error) {
+            if (error.data?.code !== "confirm") throw error;
+            if (!(await confirmSheet({ title: t("firstUse.errors.retryTitle"), body: t("firstUse.errors.retryBody"), confirmLabel: t("firstUse.errors.retry") }))) return;
+            await api(`/groups/${enc}/retry`, { method: "POST", body: { messageId: it.mid, allowRepeatedActions: true } });
+          }
+          await load();
+        };
+        out.push(html`<div class=${cls} data-message-id=${it.mid} key=${it.id}>${author}<${ErrorNotice} detailsAfterActions text=${it.text} source=${officialSource(model)} topupUrl=${account?.topupUrl} ranSteps=${ranSteps} disabled=${running}
+          onRetry=${retry} onSwitchModel=${(e) => setModelPicker({ anchor: e.currentTarget, botId: it.botId, model: memberModels[it.botId] || botOf(it.botId)?.defaultModel || defaultModel })} onFixKey=${() => onOpenSettings("modelflare", officialSource(model) ? "official-add" : "account")} /></div>`);
       } else if (isUser) {
         out.push(html`<div class=${cls} data-message-id=${it.mid} key=${it.id}><div class="msg"><${Linkified} text=${it.text} /></div><${MsgActions} text=${it.text} at=${it.at} /></div>`);
       } else {
         const shown = shownText(it);
         out.push(html`<div class=${`${cls}${it.id === lastAi ? " last" : ""}`} data-message-id=${it.mid} key=${it.id}>
           ${author}
-          ${(it.live || it.steps) && html`<${WorkLine} live=${it.live} stopping=${it.live && stopping} text=${it.text} startedAt=${it.startedAt} steps=${it.activity} count=${it.steps} load=${it.mid ? loadActivity(it) : undefined} />`}
-          ${(it.prompts || []).map((p) => html`<${PromptCard} key=${p.requestId} requestId=${p.requestId} fallback=${p.prompt} />`)}
+          ${(it.live || it.steps) && html`<${WorkLine} live=${it.live} stopping=${it.live && stopping} text=${it.text} startedAt=${it.startedAt} steps=${it.activity} count=${it.steps} used=${it.used} botId=${it.botId} load=${it.mid ? loadActivity(it) : undefined} />`}
+          ${(it.prompts || []).map((p) => (p.kind === "skill_install" ? html`<${SkillInstallCard} key=${p.requestId} id=${p.requestId} />` : p.kind === "skill_draft" ? html`<${SkillDraftCard} key=${p.requestId} id=${p.requestId} />` : html`<${PromptCard} key=${p.requestId} requestId=${p.requestId} fallback=${p.prompt} />`))}
           ${it.ruleSource && html`<${RuleSource} source=${it.ruleSource} botId=${it.botId} />`}
           ${shown && html`<div class="msg"><${Markdown} text=${shown} conv=${it.conv} canOpen=${canOpen} /></div>`}
           ${files(it)}
@@ -368,7 +397,7 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
     const shownIds = new Set((live?.prompts || []).map((p) => p.requestId));
     for (const p of pending) if (!shownIds.has(p.id)) out.push(html`<div class="msg-row assistant" key=${"p" + p.id}><${PromptCard} requestId=${p.id} fallback="" /></div>`);
     return out;
-  }, [items, history.context, live, pending, stopping, canOpen, bots, lang, ruleActions]);
+  }, [items, history.context, live, pending, stopping, canOpen, bots, lang, ruleActions, running, account?.topupUrl, defaultModel, memberModels]);
 
   // 示例按真实成员生成（第 17 项）：名字里像"写作助手"的用起草的例子，否则用第一位成员的通用例子。
   // 只用在群里不重名的成员：填进去的 @名字 要能被服务端的点名解析（core/groups.ts mentionsIn）认成这个人
@@ -445,6 +474,11 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
         </div>
       </div>
     </div>
+    ${modelPicker && html`<${ModelPicker} anchor=${modelPicker.anchor} models=${models} error=${modelsError} onRetry=${reloadModels} current=${modelPicker.model} effective=${modelPicker.model} draftOnly account=${account} onClose=${() => setModelPicker(null)} onPick=${async (model) => {
+      const target = modelPicker.botId;
+      setModelPicker(null);
+      try { await api(`/groups/${enc}/model/${encodeURIComponent(target)}`, { method: "PUT", body: { model } }); setMemberModels((v) => ({ ...v, [target]: model })); saved(); } catch (error) { failed(error); }
+    }} />`}
     ${mentionOpen && ta.current && html`<${Popover} anchor=${ta.current} prefer="up" width=${260} keepFocus label=${t("group.mentionLabel")} onClose=${() => setMention(null)}>
       <ul role="listbox" aria-label=${t("group.mentionLabel")}>
         ${mentionHits.map((o, i) => html`<li role="option" key=${o.id} aria-selected=${i === mentionSel} class=${i === Math.min(mentionSel, mentionHits.length - 1) ? "sel" : ""}

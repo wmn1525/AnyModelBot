@@ -7,11 +7,13 @@ import { t } from "../lib/i18n.js";
 import {
   GUIDE_CHANNELS, STEPS, DEFAULT_NAMES, guide, completed, completionCard, composerBusy, guideBlocked, guideOverlay,
   channelLabel, currentStep, nextStep, progress, stepFinished, stepText, isActive, guideChannel,
-  setGuideChannel, skipChannel, setFocus, markSeen, hideGuide, refreshGuide, fillComposer,
+  setGuideChannel, skipChannel, setFocus, focusStep, markSeen, hideGuide, refreshGuide, fillComposer,
   runMediaDemo, startTemplate, signInForDrawing, enteredWelcome,
 } from "../lib/guide.js";
 const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const px = (name, fallback) => parseFloat(token(name)) || fallback;
+/** 页面上有没有正显示着的弹层（对话框、弹出菜单、命令面板）；隐藏着的（hidden、display: none）不算。 */
+export const openOverlay = (root = document) => [...root.querySelectorAll(".scrim, .pop, .palette")].some((el) => !el.closest("[hidden]") && el.getClientRects().length > 0);
 const discover = () => { setFocus(null); location.hash = "/discover"; };
 const connect = (channel) => { setFocus(null); location.hash = `/settings/connections/add-channel-${channel}`; };
 function Progress({ g }) {
@@ -31,7 +33,7 @@ function StepAction({ step, g, bot }) {
     ${!stepFinished("weixin", g) && html`<button type="button" class="text" onClick=${skipChannel}>${t("welcome.skip")}</button>`}</div>`;
   const sample = stepText(step, "try");
   return html`<div class="guide-try"><span class="t-label">${t("guide.tryThis")}</span><span class="txt">${sample}</span>
-    <button type="button" class="btn primary sm" onClick=${() => { fillComposer(sample, bot?.id); setFocus(step.id); }}>${t("guide.takeMe")}</button></div>`;
+    <button type="button" class="btn primary sm" onClick=${() => { if (focusStep(step.id)) fillComposer(sample, bot?.id); }}>${t("guide.takeMe")}</button></div>`;
 }
 export function Welcome({ bot }) {
   useEffect(enteredWelcome, []);
@@ -99,7 +101,11 @@ function confetti() {
   setTimeout(() => layer.remove(), dur * 1.8);
 }
 
-/** 一个出口处理主动引导和一次性提示；任务必需弹层总是优先。 */
+/**
+ * 一个出口处理主动引导和一次性提示；任务必需弹层总是优先。
+ * blocked：有权限卡在等、「需要你」有事项、当前机器人在回复——步骤引导和自动引导都不出现（主动点时由 focusStep 提示原因）。
+ * busy（其他机器人在忙）、对话最后一条是错误、输入框里在打字：只压住自动出现的引导，用户点出来的步骤照常显示。
+ */
 export function CoachMark({ bot, view, busy, blocked }) {
   const g = useStore(guide); const typing = useStore(composerBusy); const taskBlocked = useStore(guideBlocked);
   const last = useStore(completed); const born = useRef(Date.now());
@@ -109,10 +115,11 @@ export function CoachMark({ bot, view, busy, blocked }) {
   const id = g.focus && chat ? g.focus : hint;
   const step = STEPS.find((s) => s.id === id); const done = step && g.done.includes(id);
   const automatic = !step;
-  const active = isActive(g) && !!id && !overlay && !blocked && !taskBlocked && !busy && !(automatic && typing);
+  const active = isActive(g) && !!id && !overlay && !blocked && !(automatic && (taskBlocked || busy || typing));
   useEffect(() => {
-    const read = () => { const value = !!document.querySelector(".scrim, .pop, .palette"); setOverlay(value); guideOverlay.set(value); };
-    const observer = new MutationObserver(read); observer.observe(document.body, { childList: true, subtree: true }); read();
+    // 只算真正显示着的弹层：消息搜索的遮罩一直挂在页面上、关着时只是 hidden，不能把它当成「有弹层」
+    const read = () => { const value = openOverlay(); setOverlay(value); guideOverlay.set(value); };
+    const observer = new MutationObserver(read); observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden"] }); read();
     return () => observer.disconnect();
   }, []);
   useEffect(() => { if (last?.all && last.at > born.current) confetti(); }, [last?.at]);

@@ -36,10 +36,39 @@ describe("模板模型推荐", () => {
   };
   const ids = ["a", "b", "c", "d", "e"];
   const info = Object.fromEntries(ids.map((id, i) => [id, { quality: { intelligence: i + 1, costPerTask: i + 1 }, factors: { balanced: 1 }, tools: true, reasoning: true, context: 1000 }]));
-  it("共享五档的首中末，新手期跟随全局默认", async () => {
+  it("共享五档的首中末；体验期内高于全局默认所在档位才降档", async () => {
     const { recommendTemplate } = await load();
     for (const [tier, model] of [[0, "a"], [2, "c"], [4, "e"]]) expect(recommendTemplate({ tier }, ids, info, "balanced", "b").model).toBe(model);
-    expect(recommendTemplate({ tier: 4 }, ids, info, "balanced", "b", true)).toMatchObject({ model: "", reason: "starter" });
+    // 全局默认 b 落在第 1 档，往下取整到「低」：高档、中档模板都降到低档，低档模板照常推荐
+    expect(recommendTemplate({ tier: 4 }, ids, info, "balanced", "b", true)).toMatchObject({ model: "a", reason: "downgraded", tier: 0, downgraded: true });
+    expect(recommendTemplate({ tier: 2 }, ids, info, "balanced", "b", true)).toMatchObject({ model: "a", reason: "downgraded", tier: 0 });
+    expect(recommendTemplate({ tier: 0 }, ids, info, "balanced", "b", true)).toMatchObject({ model: "a", reason: "recommended", downgraded: false });
+    // 全局默认在「中」：高档模板降到中档，中档不降
+    expect(recommendTemplate({ tier: 4 }, ids, info, "balanced", "c", true)).toMatchObject({ model: "c", reason: "downgraded", tier: 2 });
+    expect(recommendTemplate({ tier: 2 }, ids, info, "balanced", "c", true)).toMatchObject({ model: "c", reason: "recommended" });
+    // 全局默认已在「高」，或不在体验期：不降档
+    expect(recommendTemplate({ tier: 4 }, ids, info, "balanced", "e", true)).toMatchObject({ model: "e", reason: "recommended" });
+    expect(recommendTemplate({ tier: 4 }, ids, info, "balanced", "a")).toMatchObject({ model: "e", reason: "recommended" });
+    // 全局默认没有分档资料：体验期内不推荐更贵的档位
+    expect(recommendTemplate({ tier: 4 }, ids, info, "balanced", "unknown-model", true)).toMatchObject({ model: "", reason: "unranked" });
+  });
+  it("降档后这一档没有满足能力的模型时跟随全局默认，并且只在这时补充原推荐档位", async () => {
+    const { recommendTemplate, recommendationText } = await load();
+    const lowNoTools = { ...info, a: { ...info.a, tools: false } };
+    const rec = recommendTemplate({ tier: 4, tools: true }, ids, lowNoTools, "balanced", "b", true);
+    expect(rec).toMatchObject({ model: "", reason: "incompatible", downgraded: true });
+    expect(recommendationText({ tier: 4 }, rec).usual).not.toBe("");
+    const plain = recommendTemplate({ tier: 4, tools: true }, ids, { ...info, e: { ...info.e, tools: false } }, "balanced", "b");
+    expect(plain).toMatchObject({ reason: "incompatible", downgraded: false });
+    expect(recommendationText({ tier: 4 }, plain).usual).toBe("");
+    expect(recommendationText({ tier: 4 }, recommendTemplate({ tier: 4 }, ids, info, "balanced", "b", true)).usual).toBe("");
+  });
+  it("体验额度期只算 Modelflare 个人账号的上手阶段", async () => {
+    const { inTrial } = await load();
+    expect(inTrial({ state: "signed_in", billedToEnterprise: false }, true)).toBe(true);
+    expect(inTrial({ state: "signed_in", billedToEnterprise: false }, false)).toBe(false);
+    expect(inTrial({ state: "signed_in", billedToEnterprise: true }, true)).toBe(false);
+    expect(inTrial(null, true)).toBe(false);
   });
   it("硬性能力缺失回退且明确原因，不跳到别的档；未知不当作支持", async () => {
     const { recommendTemplate, capabilityState } = await load();

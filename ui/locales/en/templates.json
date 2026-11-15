@@ -30,7 +30,7 @@
   },
   "model": {
     "recommended": "Recommended: {level} intelligence",
-    "starter": "Follow the global default while getting started. You can choose another model.",
+    "downgraded": "On the trial quota this bot starts with {actualTier} intelligence. This template usually works better with {originalTier} intelligence.",
     "unranked": "Not enough model data to pick a tier; following the global default.",
     "incompatible": "No model in the recommended tier meets the requirements; following the global default.",
     "unavailable": "Model recommendations are unavailable. Retry or choose an available model."
@@ -67,10 +67,10 @@
   "keepEditing": "Keep editing",
   "newEntry": "Not sure what to write? Start from a template",
   "entryHint": "Roles with persona and examples written for you. Review before adding.",
-  "browse": "Browse →",
+  "browse": "Browse",
   "orTemplate": "Or start from a template",
   "discoverEntry": "You can also start from a template",
-  "seeAll": "See all templates →",
+  "seeAll": "See all templates",
   "errors": {
     "fields": "The template request contains settings it cannot change.",
     "request": "Invalid creation request. Please reopen the template.",

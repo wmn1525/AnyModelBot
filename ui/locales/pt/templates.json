@@ -30,7 +30,7 @@
   },
   "model": {
     "recommended": "Inteligência recomendada: {level}",
-    "starter": "No início, usa o modelo global. Você pode escolher outro.",
+    "downgraded": "Com o crédito de teste, este bot começa com inteligência {actualTier}. Este modelo pronto costuma funcionar melhor com inteligência {originalTier}.",
     "unranked": "Faltam dados para escolher um nível; usa o modelo global.",
     "incompatible": "Não há modelo compatível no nível recomendado; usa o global.",
     "unavailable": "As recomendações estão indisponíveis. Tente novamente ou escolha um modelo."
@@ -67,10 +67,10 @@
   "keepEditing": "Continuar editando",
   "newEntry": "Não sabe o que escrever? Comece com um modelo pronto",
   "entryHint": "Papéis com personalidade e exemplos prontos. Revise antes de adicionar.",
-  "browse": "Explorar →",
+  "browse": "Explorar",
   "orTemplate": "Ou comece com um modelo pronto",
   "discoverEntry": "Você também pode começar com um modelo pronto",
-  "seeAll": "Ver todos os modelos prontos →",
+  "seeAll": "Ver todos os modelos prontos",
   "errors": {
     "fields": "A solicitação inclui ajustes que o modelo pronto não pode alterar.",
     "request": "Solicitação inválida. Abra o modelo pronto novamente.",

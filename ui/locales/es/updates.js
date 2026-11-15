@@ -1,4 +1,7 @@
 export default {
+  "downloadVersion": "Descargar la versión {version}",
+  "browserVersion": "Versión {version} disponible — descargar ↗",
+  "restartVersion": "Reiniciar para actualizar a {version}",
   "autoDownload": "Descargar actualizaciones automáticamente",
   "autoDownloadHint": "Descarga las nuevas versiones en segundo plano y luego te recuerda reiniciar para instalarlas.",
   "manualOnly": "Esta instalación requiere descargar el instalador manualmente.",
@@ -10,7 +13,7 @@ export default {
   "restart": "Reiniciar y actualizar",
   "installing": "Reiniciando para actualizar…",
   "check": "Buscar actualizaciones",
-  "busy": "Hay tareas en ejecución. Reinicia para actualizar cuando terminen.",
+  "busy": "Hay tareas en curso. Podrás reiniciar para actualizar cuando terminen.",
   "errors": {
     "failed": "No se pudo completar la actualización. Vuelve a intentarlo.",
     "check_failed": "No se pudo buscar actualizaciones. Vuelve a intentarlo más tarde.",

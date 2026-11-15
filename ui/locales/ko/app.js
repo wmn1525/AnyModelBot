@@ -33,7 +33,7 @@ export default {
     "langKeys": "언어 한국어 영어 중국어 일본어 러시아어 스페인어 포르투갈어",
     "switchBot": "“{name}”(으)로 전환"
   },
-  "lowBalance": "OKINTO New API 잔액이 ${amount} 남았습니다",
+  "lowBalance": "Okinto New API 잔액이 ${amount} 남았습니다",
   "serviceDown": "로컬 서비스에 연결할 수 없습니다: {error}",
   "resizeSide": "사이드바 너비 조절",
   "resizePanel": "오른쪽 패널 너비 조절",

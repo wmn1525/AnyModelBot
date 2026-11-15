@@ -56,7 +56,7 @@ export default {
     "fixKey": "로그인",
     "fixOfficialKey": "키 변경",
     "officialKeyInvalid": "{name}에서 이 API 키를 거부했습니다. 유효하지 않거나 취소되었을 수 있습니다.",
-    "authInvalid": "OKINTO New API 접근 권한이 만료되었거나 취소되었습니다. 다시 로그인하세요.",
+    "authInvalid": "Okinto New API 접근 권한이 만료되었거나 취소되었습니다. 다시 로그인하세요.",
     "loadHistory": "메시지 기록을 불러오지 못했습니다: {error}"
   },
   "menu": {
@@ -65,7 +65,52 @@ export default {
     "newConv": "새 대화",
     "reset": "컨텍스트 지우기",
     "status": "상태 보기",
-    "allCommands": "모든 명령어"
+    "allCommands": "모든 명령어",
+    "usables": "스킬 및 앱"
+  },
+  "use": {
+    "skills": "스킬",
+    "apps": "앱",
+    "search": "스킬 또는 앱 검색",
+    "noMatch": "일치하는 항목이 없습니다",
+    "prefill": "{name}을(를) 써서 {cursor}…",
+    "appExample": "{app}을(를) 써서 …",
+    "readonlyDesc": "읽기 전용: 조회와 읽기만 가능",
+    "readonlyNo": "읽기 전용이라 쓰기는 할 수 없습니다",
+    "noSkills": "이 봇에는 아직 사용할 수 있는 스킬이 없습니다.",
+    "noSkillsBody": "스킬을 가져오거나, 스킬 라이브러리의 설치 안내를 이 봇에게 보내세요.",
+    "importSkill": "스킬 가져오기",
+    "noApps": "이 봇에는 아직 사용할 수 있는 앱이 없습니다.",
+    "noAppsBody": "앱을 연결하면 이 봇이 바로 사용할 수 있습니다.",
+    "noAppsAssigned": "연결된 앱이 아직 이 봇에 할당되지 않았습니다.",
+    "connectApp": "앱 연결하기",
+    "unassigned": "이 봇에 할당되지 않음",
+    "assign": "이 봇에 할당",
+    "assigned": "{app}을(를) {bot}에 할당했습니다. 지금 바로 사용할 수 있습니다.",
+    "usingSkill": "스킬 사용 중 · {name}",
+    "usingApp": "{app} 사용 중",
+    "failedSkill": "스킬을 사용하지 못했습니다 · {name}. {reason}",
+    "failedApp": "{app}을(를) 사용하지 못했습니다. {reason}",
+    "reason": {
+      "loading": "스킬을 아직 불러오는 중입니다.",
+      "connection": "{app} 연결을 확인하세요.",
+      "denied": "이 호출을 허용하지 않았습니다.",
+      "readonly": "읽기 전용이라 쓰기는 할 수 없습니다.",
+      "failed": "이번에는 성공하지 못했습니다."
+    },
+    "used": "사용함: {list}",
+    "notUsed": "사용하지 못함: {list}",
+    "sep": ", ",
+    "state": {
+      "active": "적용됨",
+      "waiting": "현재 작업이 끝나면 적용",
+      "loading": "불러오는 중"
+    },
+    "try": "이렇게 말해 보세요: {example}",
+    "fill": "입력창에 넣기",
+    "fillTitle": "이 봇의 입력창에 넣기",
+    "copy": "복사",
+    "copyFailed": "복사하지 못했습니다"
   },
   "reset": {
     "title": "이 대화의 컨텍스트를 지울까요?",

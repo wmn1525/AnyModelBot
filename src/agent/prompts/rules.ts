@@ -36,6 +36,8 @@ export interface RuleBriefInput {
   event?: { source: string; payload: string };
   /** 冻结的记忆快照；undefined = 关着记忆 */
   memory?: string;
+  /** 用「我的技能」做：技能名和标题（运行时用最新版本） */
+  skill?: { name: string; title: string };
 }
 
 const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
@@ -43,6 +45,7 @@ const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…"
 /** 每次运行的第一条输入：规则、用户原话、最近几次的结果、这次是观察还是执行 */
 export function ruleBrief(o: RuleBriefInput): string {
   const parts = [`[规则]\n${o.title}（${o.when}）`, `[用户的原话]\n${o.instruction.trim()}`];
+  if (o.skill) parts.push(`[用技能]\n先用 skill 工具加载 ${o.skill.name}（「${o.skill.title}」），按它的步骤做；原话里写了的答案和要求优先。`);
   if (o.recent.length) parts.push(`[最近几次的结果]\n${o.recent.map((r) => `- ${r.at}：${clip(r.line.replace(/\s+/g, " ").trim(), 300)}`).join("\n")}`);
   if (o.event) parts.push(`[事件]\n来源：${o.event.source}\n${clip(o.event.payload, 2000)}`);
   if (o.memory !== undefined) parts.push(`[长期记忆快照]\n${o.memory.trim() || "（目前为空）"}`);

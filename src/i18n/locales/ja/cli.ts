@@ -4,10 +4,10 @@ export default {
   "done": "設定が完了しました。npm start で起動できます。WeChat を使うには、画面の「設定 > 接続」で QR コードをスキャンするか、npm run weixin:login を実行してください。",
   "title": "okbot の初期設定（データディレクトリ：{dir}）",
   "noMagpie": "magpie の実行ファイルが見つかりません。先に npm run setup を実行してください",
-  "alreadyConnected": "OKINTO New API は接続済みです（キー末尾：{tail}{account}）。既存の接続を使用します。",
+  "alreadyConnected": "Okinto New API は接続済みです（キー末尾：{tail}{account}）。既存の接続を使用します。",
   "accountSuffix": "、アカウント：{name}",
   "signedIn": "ログイン済み",
-  "askHow": "モデルの接続方法：Enter = この端末のブラウザーで OKINTO New API にログイン、remote = 別の端末でログイン、key = 自分の公式 API キーを使う、skip = 後で画面から接続： ",
+  "askHow": "モデルの接続方法：Enter = この端末のブラウザーで Okinto New API にログイン、remote = 別の端末でログイン、key = 自分の公式 API キーを使う、skip = 後で画面から接続： ",
   "askOfficial": "使用するサービス（番号を入力）： ",
   "askOfficialKey": "{name} の API キー（{url} で取得）： ",
   "officialConnected": "{name} に接続しました。利用できるモデルは {count} 個です",
@@ -19,12 +19,12 @@ export default {
   "askFeishuId": "Feishu App ID（cli_xxx、空欄でスキップ）： ",
   "askFeishuSecret": "Feishu App Secret： ",
   "savedToBot": "✓ ボット「{name}」に保存しました",
-  "openLink": "以下のリンクをこの端末のブラウザーで開き、OKINTO New API にログイン（または新規登録）して、Continue をクリックして連携を許可してください：",
+  "openLink": "以下のリンクをこの端末のブラウザーで開き、Okinto New API にログイン（または新規登録）して、Continue をクリックして連携を許可してください：",
   "signedInConnected": "✓ {name} としてログインし、この端末のキーを接続しました。利用できるモデル：{count}",
   "loginIncomplete": "ログインが完了しませんでした",
   "setupFailed": "設定に失敗しました：",
   "weixinConnected": "✓ WeChat に接続しました。npm start でメッセージの送受信を開始できます。すでに起動中なら、再起動するか、画面から WeChat チャネルを有効にし直してください。"
 ,
   "tryCn": "（接続設定を確認して再試行してください）",
-  "connected": "OKINTO New API に接続しました。利用可能なモデル: {count}"
+  "connected": "Okinto New API に接続しました。利用可能なモデル: {count}"
 } satisfies TranslatedCatalog["cli"];

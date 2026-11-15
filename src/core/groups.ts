@@ -98,6 +98,27 @@ export interface GroupChatsOptions {
   store: Store;
   /** 让这个机器人答一轮；返回它的回复（失败时返回空串，不抛错，也不接力） */
   runTurn(botId: string, groupId: string, input: string): Promise<string>;
+  /** 技能库的安装指令（去掉行首的 @ 之后整条都是）：返回链接；不是就返回 null（skills/installs.ts installPromptLinks） */
+  installLinks?(text: string): string[] | null;
+  /** 由这个机器人出安装卡片，不经过模型，也不让别的成员回答 */
+  install?(botId: string, groupId: string, urls: string[]): void;
+}
+
+/** 每行开头的 @成员 / @所有人（安装指令前面常带着点名） */
+export function withoutLeadingMentions(text: string, members: Member[]): string {
+  const words = [...members.map((m) => m.name.trim()), ...ALL_WORDS].filter(Boolean).sort((a, b) => b.length - a.length);
+  return text
+    .split(/\r?\n/)
+    .map((line) => {
+      let rest = line.trimStart();
+      for (let hit = true; hit && rest.startsWith("@"); ) {
+        const w = words.find((x) => rest.slice(1, 1 + x.length).toLowerCase() === x.toLowerCase());
+        hit = !!w;
+        if (w) rest = rest.slice(1 + w.length).trimStart();
+      }
+      return rest;
+    })
+    .join("\n");
 }
 
 interface Active {
@@ -107,11 +128,14 @@ interface Active {
   current: string;
   stopped: boolean;
   limitTold: boolean;
+  retryInput?: string;
 }
 
 export class GroupChats {
   private active = new Map<string, Active>();
   private subs = new Map<string, Set<GroupListener>>();
+  /** 群 → 最近一条用户消息由谁出技能安装卡片（chooseTargets 的第一个；@所有人 时是成员列表的第一个） */
+  private installOwners = new Map<string, string>();
 
   constructor(private o: GroupChatsOptions) {}
 
@@ -120,6 +144,11 @@ export class GroupChats {
       const b = this.o.store.getBot(id);
       return b ? [{ id: b.id, name: b.name }] : [];
     });
+  }
+
+  /** 这个群里最近一条用户消息该由谁出技能安装卡片（install_skill 工具据此拦下接力来的、@ 在后面的成员） */
+  installOwner(groupId: string): string | undefined {
+    return this.installOwners.get(groupId);
   }
 
   isRunning(groupId: string): boolean {
@@ -142,7 +171,15 @@ export class GroupChats {
     if (!g) return;
     const a = this.active.get(groupId);
     store.addMessage(groupPeer(groupId), "user", text);
-    const targets = chooseTargets(text, this.members(g), a?.current || g.lastBot);
+    const members = this.members(g);
+    const targets = chooseTargets(text, members, a?.current || g.lastBot);
+    if (targets[0]) this.installOwners.set(groupId, targets[0]);
+    // 技能库的安装指令：由该出卡片的那个机器人直接出卡片，别的成员不答
+    const links = targets[0] && this.o.install ? this.o.installLinks?.(withoutLeadingMentions(text, members)) : null;
+    if (links && targets[0]) {
+      this.o.install!(targets[0], groupId, links);
+      return;
+    }
     if (a) {
       a.stopped = false;
       a.relays = 0;
@@ -153,6 +190,25 @@ export class GroupChats {
     const next: Active = { queue: targets, relays: 0, current: "", stopped: false, limitTold: false };
     this.active.set(groupId, next);
     void this.drain(groupId, next);
+  }
+
+  /** Retry exactly one failed member turn, without routing mentions or advancing its read cursor. */
+  retry(groupId: string, messageId: number, allowRepeatedActions = false): "started" | "busy" | "missing" | "confirm" {
+    const { store } = this.o;
+    if (this.active.has(groupId)) return "busy";
+    const group = store.getGroup(groupId);
+    const message = store.getMessage(messageId);
+    if (!group || !message || message.role !== "assistant" || !message.content.startsWith("⚠️")) return "missing";
+    const conversation = store.getConversation(message.conversationId);
+    if (!conversation || conversation.peerId !== groupPeer(groupId) || !group.members.includes(conversation.botId)) return "missing";
+    if (message.errorContext && message.errorContext.groupId !== groupId) return "missing";
+    const input = message.errorContext?.input || store.previousUserMessage(conversation.id, messageId)?.content;
+    if (!input) return "missing";
+    if (!allowRepeatedActions && (message.steps || message.files?.length)) return "confirm";
+    const active: Active = { queue: [conversation.botId], relays: 0, current: "", stopped: false, limitTold: false, retryInput: input };
+    this.active.set(groupId, active);
+    void this.drain(groupId, active);
+    return "started";
   }
 
   /** 不再让后面的机器人回答；正在答的那一轮由调用方停。返回正在答的机器人 */
@@ -197,7 +253,8 @@ export class GroupChats {
     const list = store.listGroupMessages(g.id, 200, seen);
     if (list.length) store.setKV(seenKey(g.id, botId), String(list.at(-1)!.id));
     const lines = list
-      .filter((m) => m.role !== "system" && m.botId !== botId && !m.content.startsWith("⚠️"))
+      // 技能库的安装指令已经由应用出了卡片，不再交给模型（免得它又去装一遍）
+      .filter((m) => m.role !== "system" && m.botId !== botId && !m.content.startsWith("⚠️") && !(m.role === "user" && this.o.installLinks?.(withoutLeadingMentions(m.content, members))))
       .map((m) => ({ who: m.role === "user" ? USER_LABEL : name(m.botId), text: m.content }));
     return groupInput({ group: g.name, me: name(botId), others: members.filter((m) => m.id !== botId).map((m) => m.name), lines });
   }
@@ -211,11 +268,13 @@ export class GroupChats {
         const members = this.members(g);
         if (!members.some((m) => m.id === botId)) continue;
         a.current = botId;
-        const input = this.inputFor(g, botId, members);
+        const retryInput = a.retryInput;
+        delete a.retryInput;
+        const input = retryInput ?? this.inputFor(g, botId, members);
         const reply = await this.o.runTurn(botId, groupId, input).catch(() => "");
         a.current = "";
         store.setGroupLastBot(groupId, botId);
-        if (a.stopped) continue;
+        if (a.stopped || retryInput !== undefined) continue;
         for (const id of mentionsIn(reply, members).ids) {
           if (id === botId || a.queue.includes(id)) continue;
           if (a.relays >= MAX_RELAYS) {

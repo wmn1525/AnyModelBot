@@ -3,7 +3,18 @@ export default {
     "head": "Habilidades",
     "note": "Adicione fluxos de trabalho a este bot. As alterações entram em vigor depois que o trabalho atual dele terminar.",
     "import": "Importar ZIP",
-    "importSub": "Uma habilidade por ZIP, até 20 MB",
+    "importSub": "Uma habilidade por ZIP, até 20 MB. Você também pode enviar ao bot o link do GitHub de uma habilidade para instalá-la",
+    "browse": "Ver habilidades",
+    "sourceGithub": "Origem: GitHub · {repo}",
+    "sourceZip": "Origem: ZIP local",
+    "source": "Origem",
+    "zip": "ZIP local",
+    "repo": "Repositório",
+    "path": "Caminho",
+    "root": "Raiz do repositório",
+    "branch": "Branch",
+    "commit": "Commit",
+    "installedAt": "Instalada em",
     "empty": "Nenhuma habilidade importada ainda",
     "enable": "Ativar {name}",
     "files": "{count} arquivos · {size} KB",
@@ -25,7 +36,13 @@ export default {
       "conflict": "A habilidade instalada mudou. Selecione o ZIP de novo para confirmar a substituição.",
       "not_found": "Habilidade não encontrada. Atualize a lista.",
       "too_many": "Um bot pode ter até 100 habilidades importadas. Exclua primeiro as que você não usa."
-    }
+    },
+    "imported": {
+      "active": "\"{name}\" foi importada. Já funciona a partir da sua próxima mensagem.",
+      "waiting": "\"{name}\" foi importada. Vai funcionar a partir da sua próxima mensagem, quando a tarefa atual terminar.",
+      "loading": "\"{name}\" foi importada. Carregando; vai funcionar a partir da sua próxima mensagem."
+    },
+    "manualOnly": "Esta habilidade está configurada para o bot não usá-la sozinho. Escreva /{name} numa mensagem para usá-la."
   },
   "back": "Voltar ao chat",
   "backTitle": "Voltar ao chat (Esc)",
@@ -49,7 +66,7 @@ export default {
   },
   "budget": {
     "name": "Orçamento",
-    "signedOut": "Entre no OKINTO para definir um limite de gastos separado para este bot",
+    "signedOut": "Entre no Okinto para definir um limite de gastos separado para este bot",
     "signIn": "Entrar",
     "off": "Divide o saldo da sua conta com os outros bots, sem limite separado",
     "on": "Acompanha os gastos deste bot separadamente e para ao atingir o limite",

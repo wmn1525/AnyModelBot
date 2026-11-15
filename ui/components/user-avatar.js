@@ -1,6 +1,6 @@
 // 与 Modelflare web/default/src/lib/avatar.ts 一致：名称稳定选色，两步相邻色组成柔和渐变。
 import { useEffect, useState } from "preact/hooks";
-import { html, Skeleton } from "./ui.js";
+import { html } from "./ui.js";
 
 export function userAvatarGradient(name) {
   let hash = 0;
@@ -15,7 +15,7 @@ export function userAvatarGradient(name) {
 export function UserAvatar({ name = "", class: cls = "", src = "", fallback = false, loading = false }) {
   const [broken, setBroken] = useState(false);
   useEffect(() => setBroken(false), [src]);
-  if (loading) return html`<span class=${`user-avatar ${cls}`} aria-hidden="true"><${Skeleton} w="100%" h=${32} /></span>`;
+  if (loading) return html`<span class=${`user-avatar loading ${cls}`} aria-hidden="true"></span>`;
   return html`<span class=${`user-avatar ${cls}`} style=${userAvatarGradient(name)} aria-hidden="true">
     ${src && !broken ? html`<img src=${src} alt="" referrerpolicy="no-referrer" onError=${() => setBroken(true)} />`
       : fallback ? html`<img src="/amb/static/assets/favicon-64.png" alt="" />` : [...name.trim()][0]?.toUpperCase() || "?"}</span>`;

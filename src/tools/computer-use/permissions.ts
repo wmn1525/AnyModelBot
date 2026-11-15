@@ -84,22 +84,30 @@ export class CuPermissions {
     this.store = store;
     try {
       const saved = JSON.parse(store.getKV("cu.pending") || "{}");
+      let dropped = false;
       for (const [id, value] of Object.entries(saved)) {
         const p = value as CuBlocked;
+        // 不对应任何卡片的等待状态（卡片没挂上、那条消息已删除、已经做完）：重启后不留
+        if (!p.messageId || p.state === "done" || !store.getMessage(p.messageId)) { dropped = true; continue; }
         // 恢复过程中退出后不自动重放：需要用户显式继续。
         this.blocked.set(id, { ...p, ...(p.state === "continuing" ? { state: "ready" as const } : {}) });
       }
+      if (dropped) this.save();
       this.requested = new Set(JSON.parse(store.getKV("cu.requested") || "[]"));
     } catch { this.blocked.clear(); }
   }
   private save(): void { this.store?.setKV("cu.pending", JSON.stringify(Object.fromEntries(this.blocked))); }
+  /**
+   * 把插件记下的等待状态挂到一张卡片上。gate() 记下的那条可能已因权限开启被清掉，带着 missing 时重新建一条，
+   * 让卡片照常出现并在下次检测时接着做或显示「继续」。
+   */
   attach(botId: string, pending: Partial<CuBlocked>): void {
-    const b = this.blocked.get(botId);
+    const b = this.blocked.get(botId) ?? (pending.missing?.length ? { missing: pending.missing, at: Date.now(), tool: pending.tool || "computer-use" } : undefined);
     if (b && pending.background && this.store && !pending.messageId) {
       const conv = this.store.ensureConversation(botId, "web", "console", "控制台");
       pending.messageId = this.store.addMessage(conv.id, "assistant", "", undefined, { permissionWait: true });
     }
-    if (b) { this.blocked.set(botId, { ...b, ...pending, state: "waiting" }); this.save(); }
+    if (b) { this.blocked.set(botId, { ...b, ...pending, missing: b.missing, state: "waiting" }); this.save(); }
   }
   start(resume: (botId: string, pending: CuBlocked) => Promise<void>): void {
     this.resume = resume;
@@ -118,6 +126,8 @@ export class CuPermissions {
         continue;
       }
       if (pending.state === "continuing" || pending.missing.some((k) => status[k] !== "granted")) continue;
+      // 没挂上卡片的等待状态：权限全部开启后直接清掉，不再挡上手清单
+      if (!pending.messageId) { this.blocked.delete(id); this.save(); continue; }
       if (pending.background) { pending.state = "done"; pending.completedAt = Date.now(); this.save(); continue; }
       if (!pending.conversationId || !pending.messageId || !this.resume) continue;
       const lastUser = this.store?.listMessages(pending.conversationId, 30).filter((m) => m.role === "user").at(-1)?.id || 0;
@@ -171,6 +181,15 @@ export class CuPermissions {
   isBlocked(botId: string): boolean {
     const p = this.blocked.get(botId);
     return !!p && p.state !== "done" && p.state !== "continuing";
+  }
+
+  /**
+   * 确实在某个对话里显示着、还在等用户开启权限的卡片所属的机器人（上手清单只认这些）。
+   * 只被插件记下、没挂上卡片的遗留状态不算；权限已开启、只差点「继续」的也不算。
+   */
+  waitingBots(): string[] {
+    const status = this.status();
+    return [...this.blocked].filter(([, p]) => !!p.messageId && p.state === "waiting" && p.missing.some((k) => status[k] !== "granted")).map(([id]) => id);
   }
 
   /** 用户点了"稍后"或者已经重新发起任务：收起这个机器人的授权卡片 */

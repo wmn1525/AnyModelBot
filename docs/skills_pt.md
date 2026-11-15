@@ -25,9 +25,16 @@ Organize o trabalho concluído, os problemas e os planos para a próxima semana 
 
 Os nomes usam letras minúsculas do alfabeto inglês, dígitos e hifens simples, com até 64 caracteres. Os arquivos ZIP podem ter até 20 MB, com até 64 MB e 2.000 entradas depois de extraídos. O `SKILL.md` pode ter até 256 KB, e cada bot pode ter até 100 habilidades importadas. Se um ZIP contiver vários arquivos `SKILL.md`, empacote cada habilidade separadamente.
 
+## Instalar pela biblioteca de habilidades ou pelo GitHub
+
+- Na aba Habilidades de Apps e habilidades, você navega pela biblioteca por categoria ou por autor; a seção de habilidades nas configurações do bot também tem “Ver habilidades”. Clique em “Copiar instrução de instalação” e envie para qualquer bot.
+- Você também pode enviar ao bot o link do GitHub de uma habilidade (um repositório, uma pasta `/tree/<branch>/<caminho>` ou um arquivo `SKILL.md`) e dizer “instale isto”.
+- O bot lê o nome, a descrição, a origem, a licença e o número de arquivos da habilidade e mostra um cartão de confirmação. Nada é gravado até você clicar em Instalar, e a habilidade é instalada só naquele bot. Nos canais de chat, responda com o código do cartão; os cartões do Feishu têm botões. Só o dono pode instalar habilidades.
+- As habilidades instaladas mostram a origem “GitHub · repositório” na lista; em Ver aparecem o repositório, o caminho, o branch, o commit instalado e a hora da instalação.
+
 ## Usar, substituir e excluir
 
-- Uma habilidade vale apenas para o bot ao qual você a adicionou. Esse bot usa as mesmas habilidades no app e nos canais de chat.
+- Uma habilidade vale apenas para o bot ao qual você a adicionou (sobre Minhas habilidades, veja abaixo). Esse bot usa as mesmas habilidades no app e nos canais de chat.
 - Na lista, veja as instruções, ative, desative ou exclua habilidades. As alterações esperam até o bot ficar ocioso.
 - Importe de novo uma habilidade com o mesmo nome, revise-a e clique em Substituir habilidade. A substituição preserva o estado ativado ou desativado.
 - Excluir uma habilidade remove os arquivos dela e mantém o que já foi gerado no espaço de trabalho.
@@ -35,6 +42,30 @@ Os nomes usam letras minúsculas do alfabeto inglês, dígitos e hifens simples,
 
 As habilidades rodam com as permissões que o bot já tem. Uma habilidade que precisa de Python, de outro software ou da conexão de uma conta exige esse ambiente. Habilidades que dependem de ferramentas específicas de outro cliente podem precisar de ajustes. Ter um formato compatível não significa que todas as ferramentas de apoio estejam instaladas.
 
+## Usar numa conversa
+
+- Clique em **+** › **Habilidades e apps**, à esquerda da caixa de mensagem, para ver as habilidades e apps que este bot pode usar agora. Ao escolher uma, "Use {nome} para me ajudar a…" vai para a caixa de mensagem; complete a frase e envie. O bot decide se vai usá-la.
+- Nas configurações, cada habilidade mostra **Ativa**, **Ativa quando a tarefa atual terminar** ou **Carregando** ao lado do nome, com uma linha **Experimente dizer** embaixo. Clique nessa linha para colocar o exemplo na caixa de mensagem deste bot.
+- Enquanto o bot usa uma habilidade ou um app, o processo acima da resposta mostra "Usando a habilidade · {nome}" ou "Usando {app}". Quando a resposta termina, isso vira uma linha, "Usado: …", que você pode expandir para ver todas as etapas.
+- Pergunte ao bot "Quais habilidades você tem?" ou "Quais apps você tem?" e ele lista os que pode usar agora, cada um com um exemplo que você pode enviar.
+- Uma habilidade cujo `SKILL.md` define `disable-model-invocation: true` nunca é usada pelo bot por conta própria e não aparece em **Habilidades e apps**. Escreva `/nome-da-habilidade` numa mensagem para usá-la.
+
+## Salvar o que você fez como habilidade
+
+Quando um bot faz algo do jeito certo, você pode salvar como ele fez em Minhas habilidades, usar de novo depois ou agendar.
+
+- Para começar: no menu + da caixa de texto escolha “Salvar como habilidade…”, envie `/skill` ou apenas diga “salvar como habilidade”. Para salvar só uma parte, diga “salve a etapa 3 como habilidade”. Se o bot ainda estiver respondendo, ele espera esta rodada terminar.
+- O bot mostra “Montando a habilidade…” e depois um cartão de rascunho: título e nome do arquivo, quando usar, etapas, o que você corrigiu (dá para desmarcar), apps e habilidades usados e “Experimente dizer”. “Editar” abre o próprio arquivo da habilidade, que é verificado de novo ao concluir. Nada é gravado até você clicar em Salvar; o cartão expira em 30 minutos.
+- Segredos (chaves de API, tokens, senhas, códigos de verificação, cookies, números de documentos) nunca entram na habilidade e não dá para salvar se você os colocar de volta ao editar. Telefones, e-mails, nomes, nomes de grupos e caminhos de arquivos fora do espaço de trabalho ficam destacados e, por padrão, em “Perguntar a cada vez”: viram marcadores e o bot pergunta antes de cada uso. Escolha “Manter” para gravar o original na habilidade.
+- Também dá para salvar uma tarefa não concluída: o rascunho diz onde ela parou e a habilidade fica “Não verificada” até ser concluída com sucesso uma vez.
+- Se o título for igual, ou o bot perceber que é a mesma tarefa, o cartão mostra quantas mudanças há e oferece “Atualizar” ou “Salvar como nova”. Ao atualizar, a versão anterior fica guardada e pode ser restaurada em Gerenciar.
+- Minhas habilidades é uma lista única guardada só neste computador, com até 100 habilidades, contadas à parte das importadas em cada bot. No início ela fica ativada só no bot que a salvou; para usar em outro bot, ative o interruptor na lista de habilidades dele. Só o dono pode salvar habilidades, e não a partir de um grupo do WeChat ou Feishu.
+- Na lista de habilidades, as linhas de Minhas habilidades têm “Ver” e “Gerenciar”. Em Gerenciar você exporta um ZIP (só os arquivos desta habilidade, com um aviso se ela mantém dados pessoais), restaura a versão anterior ou a exclui. Um ZIP exportado pode ser importado em outro computador como habilidade de ZIP local.
+- Depois de salvar, “Agendar” faz o bot perguntar o horário e criar uma rotina “Executar uma tarefa” que sempre usa a versão mais recente. Habilidades que precisam controlar o computador, gerar imagens ou vídeos ou iniciar tarefas em segundo plano, e as não verificadas, não podem ser agendadas. Se a habilidade for excluída, desativada para esse bot ou, depois de atualizada ou restaurada, passar a pedir novas respostas, ganhar etapas que as execuções agendadas não fazem ou ficar não verificada, a rotina é pausada e aparece em Precisam de atenção, em Agendado.
+- Com mais de 10 habilidades, a lista ganha uma caixa de busca e os filtros “Todas / Minhas habilidades / GitHub / ZIP local / Desativadas”. Os nomes das habilidades na atividade abrem os detalhes delas.
+
 ## Armazenamento
 
 Os pacotes extraídos ficam em `skills/<ID do bot>/`, na pasta de dados. As habilidades ativadas são copiadas para `dsh/<ID do bot>/skills/` para o runtime. A importação só envia arquivos para a instância do AnyModelBot que você está usando; em uma implantação em servidor, os arquivos ficam armazenados nesse servidor. Os nomes e as descrições das habilidades ativadas, assim como as instruções ou referências carregadas durante o uso, passam a ser contexto enviado ao modelo selecionado. Veja [Dados e privacidade](./privacy_pt.md).
+
+Minhas habilidades ficam em `my-skills/` no diretório de dados e, na execução, são copiadas para `dsh/<ID do bot>/skills/` de cada bot em que estão ativadas.

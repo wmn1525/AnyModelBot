@@ -23,5 +23,7 @@ import * as rules from "./rules.js";
 
 import * as connections from "./connections.js";
 import * as apps from "./apps.js";
+import * as skills from "./skills.js";
+import * as mySkills from "./mySkills.js";
 
-export const catalogs = { connections, apps, web, desktop, app, diag, modelflare, official, account, magpie, channel, runtime, agent, approvals, media, cu, pwsh, activity, tasks, access, delivery, cli, rules };
+export const catalogs = { connections, apps, skills, mySkills, web, desktop, app, diag, modelflare, official, account, magpie, channel, runtime, agent, approvals, media, cu, pwsh, activity, tasks, access, delivery, cli, rules };

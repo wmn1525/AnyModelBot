@@ -65,6 +65,9 @@ import { readLocalChangelog } from "./changelog.js";
 import { COMPACT_ENDPOINT, serverCompactionEnabled, type CompactEndpoint } from "./agent/server-compaction.js";
 import type { BotSettings } from "./agent/settings.js";
 import { UserSkills } from "./skills/service.js";
+import { SkillInstalls } from "./skills/installs.js";
+import { SkillDrafts } from "./skills/drafts.js";
+import { skillState } from "./skills/display.js";
 import { TaskService } from "./tasks/service.js";
 import { RuleEvents } from "./tasks/rule-events.js";
 import { lockDataDir, type DataDirLock } from "./store/lock.js";
@@ -219,6 +222,10 @@ export class App {
   readonly catalog: BotCatalog;
   readonly botInstaller: BotInstaller;
   readonly userSkills: UserSkills;
+  /** 对话里的技能安装卡片：按 GitHub 链接读取、确认后装到这个机器人（skills/installs.ts） */
+  readonly skillInstalls: SkillInstalls;
+  /** 对话里「存成技能」的草稿卡：确认后存进「我的技能」（skills/drafts.ts、skills/mine.ts） */
+  readonly skillDrafts: SkillDrafts;
   web: WebServer | undefined;
   private catalogSweep: NodeJS.Timeout | undefined;
   desktop: DesktopHooks | undefined;
@@ -301,6 +308,25 @@ export class App {
       busy: (id) => this.runtime.busyBots().includes(id) || this.tasks.busy(id),
       startBot: (id) => this.startBot(id),
     });
+    // 技能安装卡片：读取走和搜索一样的网络（桌面版是系统代理）；装好后空闲的代理进程换新的，下一条消息起可用
+    this.skillInstalls = new SkillInstalls({
+      store: this.store,
+      skills: this.userSkills,
+      fetch: () => this.desktop?.fetch,
+      permission: (botId) => this.agent.settings(botId).permission,
+      onInstalled: () => void this.agent.refreshIdle(),
+    });
+    // 存成技能：保存、更新后空闲的代理进程换新的；渠道里的成功回执按机器人进程的现状说什么时候能用
+    this.skillDrafts = new SkillDrafts({
+      store: this.store,
+      skills: this.userSkills,
+      onSaved: () => void this.agent.refreshIdle(),
+      readiness: (botId, name) => {
+        const s = this.userSkills.mine.get(name);
+        const state = skillState({ name, digest: s?.digest ?? "", enabled: true }, this.agent.skillRuntime(botId));
+        return state === "off" ? "loading" : state;
+      },
+    });
     this.agent = new AgentManager({
       store: this.store,
       dataDir: config.dataDir,
@@ -349,6 +375,12 @@ export class App {
           })
         : undefined,
       mediaReady: () => !!this.magpie?.modelflareInfo().connected,
+      // install_skill 工具：卡片出在这个对话里；渠道里只有主人能装
+      skillInstalls: this.skillInstalls,
+      ownsConversation: (conversationId) => this.access.ownsConversation(conversationId),
+      // save_skill 工具：草稿卡出在这个对话里；渠道里只有主人能存
+      skillDrafts: this.skillDrafts,
+      userSkills: this.userSkills,
       search: this.search,
       apps: this.apps,
       onNotice: (text) => this.notice("warn", text),
@@ -388,8 +420,18 @@ export class App {
         const b = c?.data[botId];
         return c && b && this.store.getBot(botId)?.settings.budget.enabled ? { ...b, at: c.at } : undefined;
       },
+      mySkills: this.userSkills.mine,
     });
     this.agent.tasks = this.tasks;
+    // 「我的技能」改了：用它的规则按情况暂停；在哪些机器人上打开变了、版本变了的，空闲后换新的代理进程
+    this.userSkills.mine.onChange = (e) => {
+      try {
+        this.tasks.skillChanged(e);
+      } catch (err) {
+        log.warn("pausing rules for a changed skill failed", { message: (err as Error).message });
+      }
+      void this.agent.refreshIdle();
+    };
     this.ruleEvents = new RuleEvents(this.tasks);
     // "需要你"的五份：在等的提问和审批、任务（失败、预算）、规则（连续失败、暂停了）、没送到的结果（出站队列）、渠道（微信登录过期）
     this.attention.addSource(() => approvalItems(this.store, this.agent.approvals.pendingAll()));
@@ -416,6 +458,8 @@ export class App {
       access: this.access,
       // Key 可能在 OKINTO 控制台被删了：核对一下，重新签发了就让失败的那条消息再试一次
       recoverKey: () => (this.account?.signedIn ? this.account.repairKeys(15_000) : Promise.resolve(false)),
+      skillInstalls: this.skillInstalls,
+      skillDrafts: this.skillDrafts,
     });
   }
 
@@ -718,6 +762,10 @@ export class App {
     // 渠道账号是全局的，不跟着机器人停：之后它们的消息交给别的机器人（core/routes.ts）
     await this.agent.stopBot(botId);
     if (bot) this.userSkills.cleanup(botId);
+    this.skillInstalls.dropBot(botId);
+    // 「我的技能」保留（保存它的机器人删了也留着），只从打开名单里去掉
+    this.userSkills.mine.dropBot(botId);
+    this.skillDrafts.dropBot(botId);
     if (bot?.settings.budget.enabled && this.account.signedIn) {
       await this.account.setBotBudget(botId, bot.name, { ...bot.settings.budget, enabled: false }).catch((e) => log.warn("remove bot key failed", { message: (e as Error).message }));
     }
@@ -799,6 +847,8 @@ export class App {
       }
     }
     this.agent.start();
+    this.skillInstalls.start();
+    this.skillDrafts.start();
     this.cuPermissions.start((botId, pending) => this.runtime.resumePermission(botId, pending));
     this.apps.start();
     this.ensureAccount();
@@ -850,13 +900,15 @@ export class App {
     this.catalogSweep = setInterval(() => void this.agent.sweepCatalogBots().catch(() => undefined), 60_000);
     this.catalogSweep.unref();
     if (this.magpie && !this.opts.noWeb) {
-      // 余额与低余额提醒：启动后读一次，之后每 5 分钟一次
+      // 正常账户每五分钟刷新；资料读取失败后每分钟重试。
+      let budgetsAt = 0;
       const tick = () => {
-        if (this.account.signedIn) void this.account.refresh();
-        void this.refreshBotBudgets();
+        const account = this.account.status();
+        if (this.account.signedIn && (account.error || Date.now() - account.updatedAt >= 5 * 60_000)) void this.account.refresh();
+        if (Date.now() - budgetsAt >= 5 * 60_000) { budgetsAt = Date.now(); void this.refreshBotBudgets(); }
       };
       setTimeout(tick, 3000).unref();
-      this.accountTimer = setInterval(tick, 5 * 60_000);
+      this.accountTimer = setInterval(tick, 60_000);
       this.accountTimer.unref();
     }
   }
@@ -889,6 +941,8 @@ export class App {
 
   async stop(): Promise<void> {
     this.cuPermissions.stop();
+    this.skillInstalls.stop();
+    this.skillDrafts.stop();
     this.catalog.stop();
     if (this.catalogSweep) clearInterval(this.catalogSweep);
     // 先告诉运行时：之后因为退出而失败的回合不回复、不改用纯对话，留给下次启动提醒

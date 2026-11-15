@@ -1,6 +1,6 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
-  "external_mode": "外部のモデルエンドポイントを使用しているため、OKINTO New API 接続は管理しません",
+  "external_mode": "外部のモデルエンドポイントを使用しているため、Okinto New API 接続は管理しません",
   "bot_not_found": "ボットが見つかりません",
   "magpie_failed": "magpie を起動できませんでした：{message}",
   "default_bot_name": "マイアシスタント",

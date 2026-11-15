@@ -56,7 +56,7 @@ export default {
     "fixKey": "ログイン",
     "fixOfficialKey": "キーを変更",
     "officialKeyInvalid": "{name} がこの API キーを拒否しました。無効か、取り消された可能性があります。",
-    "authInvalid": "OKINTO New API へのアクセス許可が無効か、取り消されています。もう一度ログインしてください。",
+    "authInvalid": "Okinto New API へのアクセス許可が無効か、取り消されています。もう一度ログインしてください。",
     "loadHistory": "メッセージ履歴を読み込めませんでした：{error}"
   },
   "menu": {
@@ -65,7 +65,52 @@ export default {
     "newConv": "新しい会話",
     "reset": "コンテキストを消去",
     "status": "状態を表示",
-    "allCommands": "すべてのコマンド"
+    "allCommands": "すべてのコマンド",
+    "usables": "スキルとアプリ"
+  },
+  "use": {
+    "skills": "スキル",
+    "apps": "アプリ",
+    "search": "スキルやアプリを検索",
+    "noMatch": "一致する項目はありません",
+    "prefill": "{name}を使って{cursor}…",
+    "appExample": "{app}を使って…",
+    "readonlyDesc": "読み取り専用：検索と閲覧のみ",
+    "readonlyNo": "読み取り専用のため、書き込みはできません",
+    "noSkills": "このボットにはまだ使えるスキルがありません。",
+    "noSkillsBody": "スキルをインポートするか、スキルライブラリのインストール指示をボットに送ってください。",
+    "importSkill": "スキルをインポート",
+    "noApps": "このボットにはまだ使えるアプリがありません。",
+    "noAppsBody": "アプリを接続すると、このボットですぐに使えます。",
+    "noAppsAssigned": "接続済みのアプリは、まだこのボットに割り当てられていません。",
+    "connectApp": "アプリを接続",
+    "unassigned": "このボットに未割り当て",
+    "assign": "このボットに割り当てる",
+    "assigned": "{app} を {bot} に割り当てました。すぐに使えます。",
+    "usingSkill": "スキルを使用中 · {name}",
+    "usingApp": "{app} を使用中",
+    "failedSkill": "スキルを使えませんでした · {name}。{reason}",
+    "failedApp": "{app} を使えませんでした。{reason}",
+    "reason": {
+      "loading": "スキルはまだ読み込み中です。",
+      "connection": "{app} の接続を確認してください。",
+      "denied": "この呼び出しは許可されませんでした。",
+      "readonly": "読み取り専用のため、書き込みはできません。",
+      "failed": "今回はうまくいきませんでした。"
+    },
+    "used": "使用：{list}",
+    "notUsed": "使えなかったもの：{list}",
+    "sep": "、",
+    "state": {
+      "active": "有効",
+      "waiting": "現在のタスク終了後に有効",
+      "loading": "読み込み中"
+    },
+    "try": "こう言ってみましょう：{example}",
+    "fill": "入力欄に入れる",
+    "fillTitle": "このボットの入力欄に入れる",
+    "copy": "コピー",
+    "copyFailed": "コピーできませんでした"
   },
   "reset": {
     "title": "この会話のコンテキストを消去しますか？",

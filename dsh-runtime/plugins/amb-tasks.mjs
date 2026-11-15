@@ -138,6 +138,7 @@ export function apply(ctx) {
         kind: { type: 'string', enum: ['check', 'remind'] },
         mode: { type: 'string', enum: ['act', 'observe'], description: 'observe only when the user wants to watch first (先观察): it only records what it would say.' },
         message: { type: 'string', description: 'remind: the line to send.' },
+        skill: { type: 'string' },
       },
       output: TEXT_OUT,
       execute: tool('rule_create'),

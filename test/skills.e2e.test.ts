@@ -40,6 +40,9 @@ it("真实 HTTP：预览、导入、查看、停用、重新导入替换、启�
   expect((await request()).skills).toEqual([]);
   const first = await request("", "POST", zip);
   expect(first).toMatchObject({ status: 200, skills: [{ name: "weekly-report", enabled: true }] });
+  // 列表带着给用户看的名字、简介、「试试这样说」和生效状态（代理没开时没有进程，算已生效）
+  expect(first.skills[0]).toMatchObject({ title: "weekly-report", summary: "Prepare weekly reports", state: "active", modelInvocable: true });
+  expect(first.skills[0].example).toMatch(/weekly-report/);
   expect((await request("/weekly-report")).skill.instructions).toContain("Write the report");
   expect((await request("/weekly-report", "PUT", { enabled: false })).skills[0].enabled).toBe(false);
   const updated = skillZip([{ path: "SKILL.md", text: skillMd("weekly-report", "Updated instructions") }]);

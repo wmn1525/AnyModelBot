@@ -9,11 +9,23 @@ import { safeRelPath } from "../domain/paths.js";
 /** 宿主自己生成的技能（生图、电脑操作、目录 Bot 界面），用户的技能和 Bot 包都不能占用这些名字 */
 export const RESERVED_SKILLS = ["media", "computer-use", "amb-app"] as const;
 
+/** zip：ZIP 的大小；按 GitHub 链接安装时没有打包这一步，同一个上限用在下载总量上 */
 export const SKILL_LIMITS = { zip: 20 * 1024 * 1024, unpacked: 64 * 1024 * 1024, files: 2000, markdown: 256 * 1024, installed: 100 };
-export type SkillErrorCode = "invalid_zip" | "too_large" | "unsafe_path" | "missing_skill" | "multiple_skills" | "invalid_skill" | "reserved_name" | "conflict" | "not_found" | "too_many";
+export type SkillErrorCode =
+  | "invalid_zip" | "too_large" | "unsafe_path" | "missing_skill" | "multiple_skills" | "invalid_skill" | "reserved_name" | "conflict" | "not_found" | "too_many"
+  // 按 GitHub 链接安装（skills/github.ts）
+  | "invalid_link" | "repo_not_found" | "network" | "rate_limited"
+  // 「我的技能」（skills/mine.ts）：名字被它占用、已满 100 个
+  | "mine_name" | "mine_full";
+/** detail：多个技能时的个数 n、限流解除的时间 resetAt（毫秒）、被占用的技能名 name、占用它的「我的技能」的标题 title */
 export class SkillError extends Error {
-  constructor(readonly code: SkillErrorCode, readonly status = 400) { super(code); }
+  constructor(readonly code: SkillErrorCode, readonly status = 400, readonly detail: { n?: number; resetAt?: number; name?: string; title?: string } = {}) { super(code); }
 }
+
+/** Finder 添加的资源分支不属于技能内容（ZIP 和 GitHub 都跳过） */
+export const ignoredSkillPath = (name: string) => name.split("/").some((part) => part === "__MACOSX" || part === ".DS_Store" || part.startsWith("._"));
+/** 装好后会作为程序运行的文件：安装确认里提示有几个；写入时给可执行权限 */
+export const SCRIPT_FILE = /\.(sh|bash|zsh|py|js|mjs|cjs|ts|ps1|bat|cmd|rb|pl|php)$/i;
 
 // Windows 的设备名、ADS、末尾点/空格也拒绝，保证同一个包在三个平台上有相同含义。
 export function skillPath(p: string): boolean {
@@ -21,6 +33,8 @@ export function skillPath(p: string): boolean {
 }
 export const skillName = (s: unknown): s is string => typeof s === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s) && s.length <= 64 && skillPath(s);
 export const reservedSkill = (name: string) => (RESERVED_SKILLS as readonly string[]).includes(name);
+/** 新装的技能还不能叫这些名字：/skill 是「存成技能」的命令。已经装上的照常能用（部署时不查这一条） */
+export const NEW_RESERVED_SKILLS = ["skill"] as const;
 
 export interface SkillPackage {
   name: string;
@@ -29,6 +43,9 @@ export interface SkillPackage {
   bytes: number;
   files: BundleFile[];
   instructions: string;
+  /** frontmatter metadata 里的标题和「试试这样说」（导出的「我的技能」带着，别的技能一般没有） */
+  title?: string;
+  example?: string;
 }
 
 export async function readSkillZip(buffer: Buffer): Promise<SkillPackage> {
@@ -69,7 +86,7 @@ export async function readSkillZip(buffer: Buffer): Promise<SkillPackage> {
         const data = Buffer.concat(chunks);
         if (data.length !== entry.uncompressedSize || crc32(data) !== entry.crc32) throw new SkillError("invalid_zip");
         // Finder 添加的资源分支不属于技能内容，但仍受以上解包限制约束。
-        if (name.split("/").some((part) => part === "__MACOSX" || part === ".DS_Store" || part.startsWith("._"))) continue;
+        if (ignoredSkillPath(name)) continue;
         files.push({ path: name, data });
       }
     } finally { zip.close(); }
@@ -77,10 +94,21 @@ export async function readSkillZip(buffer: Buffer): Promise<SkillPackage> {
     if (e instanceof SkillError) throw e;
     throw new SkillError("invalid_zip");
   }
-  const roots = files.filter((f) => f.path === "SKILL.md" || f.path.endsWith("/SKILL.md"));
+  return packageFiles(files, crypto.createHash("sha256").update(buffer).digest("hex"));
+}
+
+/** 文件里的 SKILL.md（任意层级）；恰好一个才能装 */
+export const skillRoots = (paths: string[]) => paths.filter((p) => p === "SKILL.md" || p.endsWith("/SKILL.md"));
+
+/**
+ * 读出来的文件 → 技能包：ZIP 导入和按 GitHub 链接安装共用，同一个技能在两边成功或失败的原因一致。
+ * 路径安全和大小由调用方先查过（ZIP 边解包边查，GitHub 按目录树查）。
+ */
+export function packageFiles(files: BundleFile[], digest: string): SkillPackage {
+  const roots = skillRoots(files.map((f) => f.path));
   if (!roots.length) throw new SkillError("missing_skill");
-  if (roots.length !== 1) throw new SkillError("multiple_skills");
-  const root = roots[0];
+  if (roots.length !== 1) throw new SkillError("multiple_skills", 400, { n: roots.length });
+  const root = files.find((f) => f.path === roots[0])!;
   if (root.data.length > SKILL_LIMITS.markdown) throw new SkillError("too_large", 413);
   const instructions = root.data.toString("utf8").replace(/^\uFEFF/, "");
   const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(instructions);
@@ -93,10 +121,14 @@ export async function readSkillZip(buffer: Buffer): Promise<SkillPackage> {
   for (const key of ["disable-model-invocation", "user-invocable"]) {
     if (Object.hasOwn(metadata, key) && ![true, false, 0, 1].includes(metadata[key]) && !(typeof metadata[key] === "string" && /^(true|false|yes|no|on|off|0|1)$/i.test(metadata[key]))) throw new SkillError("invalid_skill");
   }
-  if (reservedSkill(metadata.name)) throw new SkillError("reserved_name");
+  if (reservedSkill(metadata.name) || (NEW_RESERVED_SKILLS as readonly string[]).includes(metadata.name)) throw new SkillError("reserved_name", 400, { name: metadata.name });
+  const meta = metadata.metadata && typeof metadata.metadata === "object" && !Array.isArray(metadata.metadata) ? metadata.metadata : {};
+  const metaText = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 200) : undefined);
   const prefix = root.path.slice(0, -"SKILL.md".length);
   const selected = files.filter((f) => f.path.startsWith(prefix)).map((f) => ({ ...f, path: f.path.slice(prefix.length) }));
   // DSH 的 frontmatter 解析器不接受 BOM；其他内容原样保留。
   selected.find((f) => f.path === "SKILL.md")!.data = Buffer.from(instructions);
-  return { name: metadata.name, description: metadata.description.trim(), digest: crypto.createHash("sha256").update(buffer).digest("hex"), bytes: selected.reduce((n, f) => n + f.data.length, 0), files: selected, instructions };
+  const title = metaText(meta.title);
+  const example = metaText(meta.example);
+  return { name: metadata.name, description: metadata.description.trim(), digest, bytes: selected.reduce((n, f) => n + f.data.length, 0), files: selected, instructions, ...(title ? { title } : {}), ...(example ? { example } : {}) };
 }

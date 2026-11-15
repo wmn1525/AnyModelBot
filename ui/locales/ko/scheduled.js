@@ -1,4 +1,22 @@
 export default {
+  "emptyTitle": "아직 규칙이 없어요",
+  "emptyNeedsTitle": "처리할 규칙이 없어요",
+  "emptyNeedsHint": "직접 처리해야 할 규칙이 여기에 표시됩니다.",
+  "searchBots": "봇 검색",
+  "noBotsMatch": "“{query}”에 해당하는 봇이 없어요",
+  "details": {
+    "prompt": "지시문",
+    "reminder": "알림 내용",
+    "schedule": "실행 주기",
+    "next": "다음 실행",
+    "destination": "전송 대상",
+    "month": "이번 달 비용",
+    "spent": "약 {spent} / {budget}"
+  },
+  "kindHint": {
+    "remind": "시간이 되면 알림만 보내드려요.",
+    "check": "시간이 되면 작업을 수행하고 결과를 보내드려요."
+  },
   "rule": "규칙",
   "title": "예약",
   "attention": "예약 · {count}개 확인 필요",

@@ -26,9 +26,10 @@ import { BotAvatar, MAIN_CHAR } from "./components/avatar.js";
 import { Onboarding } from "./screens/onboarding.js";
 import { CoachMark } from "./components/guide.js";
 import { WhatsNewHost, openWhatsNew } from "./components/whats-new.js";
+import { SkillDetailHost } from "./components/skill-detail.js";
 import { api } from "./lib/api.js";
 import { clearCatalogRemoved } from "./lib/catalog.js";
-import { loadGuide, leaveGuideSession, refreshGuide, isActive, setFocus, templateDraft } from "./lib/guide.js";
+import { loadGuide, leaveGuideSession, refreshGuide, isActive, focusStep, stepBlock, templateDraft } from "./lib/guide.js";
 import { restoreRelaunchDrafts } from "./lib/relaunch.js";
 import { previewText } from "./lib/errors.js";
 import { PREVIEW_EVENT, addResource, emptyResources, removeResource } from "./lib/resource-preview.js";
@@ -55,6 +56,7 @@ function parseHash() {
   if (kind === "discover") return { view: "discover" };
   if (kind === "scheduled") return { view: "scheduled" };
   if (kind === "apps") return { view: "apps", tab: a === "connected" ? "connected" : "all" };
+  if (kind === "skills") return { view: "apps", tab: "skills" };
   if (kind === "app" && a) return { view: "app", botId: a };
   if (kind === "preview" && a) return { view: "preview", catalogId: a };
   if (kind === "models") return { view: "settings", tab: "modelflare", row: "" }; // 旧链接
@@ -248,7 +250,7 @@ function App() {
     return () => window.removeEventListener("hashchange", on);
   }, []);
 
-  useInterval(() => api("/account").then(setAccount).catch(() => {}), 60_000, connected && managed);
+  useInterval(() => api("/account").then(setAccount).catch(() => {}), account?.state === "signed_in" && account.profileState !== "ready" ? 3000 : 60_000, connected && managed);
   const guideConnected = useRef(false);
   // 上手清单：连上 OKINTO 之后读进度（新用户在对话空状态里看到清单，老用户已做过的步骤会自动打勾）
   useEffect(() => {
@@ -270,7 +272,11 @@ function App() {
   // 额度要最新的时候请后端立刻读一次（3 秒内读过就沿用）：手动请求刷新时（amb-account-refresh），
   // 以及每处理完一件事（下面看"工作中"的变化）。后者 10 秒内最多一次，期间又处理完的到时补一次
   const refreshAccount = useRef(null);
-  refreshAccount.current = () => connected && managed && api("/account/refresh", { method: "POST", body: { maxAgeMs: 3000 } }).then(setAccount).catch(() => {});
+  refreshAccount.current = () => {
+    if (!connected || !managed) return;
+    setAccount((a) => a && { ...a, profileState: "loading" });
+    return api("/account/refresh", { method: "POST", body: { maxAgeMs: 3000 } }).then(setAccount).catch(() => setAccount((a) => a && { ...a, profileState: "error" }));
+  };
   useEffect(() => {
     const on = () => refreshAccount.current?.();
     window.addEventListener("amb-account-refresh", on);
@@ -453,11 +459,11 @@ function App() {
     setFromSearch(false);
     go("/discover");
   };
-  /** 连接应用（头像菜单、设置里原来的数据账号位置、机器人设置的「连接更多应用」）：tab = "connected" 时停在「已连接」 */
+  /** 应用与技能（头像菜单、设置里原来的数据账号位置、机器人设置的「连接更多应用」「浏览技能库」）：tab = "connected" 停在「应用 · 已连接」，"skills" 停在「技能」 */
   const openApps = (tab = "") => {
     setSearchOpen(false);
     setFromSearch(false);
-    go(tab === "connected" ? "/apps/connected" : "/apps");
+    go(tab === "connected" ? "/apps/connected" : tab === "skills" ? "/skills" : "/apps");
   };
   const openCatalog = (e) => (e.instanceId ? openChat(e.instanceId) : go(`/preview/${encodeURIComponent(e.id)}`));
   // 第一次发消息创建了实例：地址换成实例，界面不重新加载（BotAppScreen 按目录 id 复用）
@@ -475,11 +481,15 @@ function App() {
   }, []);
   const newBot = () => go(`/new?fresh=${Date.now()}`);
   // 清单里点一项：回到对话页，引导卡片指着要点的地方
+  // 清单步骤（侧栏的上手清单菜单）：切到当前机器人的对话页显示这一步的引导；被挡住时只提示原因
   const startGuide = (id) => {
-    setFocus(id);
+    if (!focusStep(id)) return;
     if (route.view !== "chat") openChat();
   };
   const openNeeds = () => go("/needs");
+  // 挡住上手引导的原因，按优先级只取最前一条：有权限卡在等 → 「需要你」有事项 → 当前机器人正在回复
+  const guideStop = cuBlocked.length ? "permission" : needs.n > 0 ? "needs" : bot && (pending[bot.id] || agentWorking[bot.id] || localWorking[bot.id]) ? "replying" : "";
+  useEffect(() => stepBlock.set(guideStop), [guideStop]);
   const openGroup = (id) => { setSearchOpen(false); setFromSearch(false); go(`/group/${encodeURIComponent(id)}`); };
   const openSearch = (focus = true) => {
     // 搜索是弹窗：关上后焦点回到打开它的地方（侧栏的搜索入口、聊天输入框等）
@@ -689,7 +699,7 @@ function App() {
         frameHost=${workHost} panelOpen=${panelOpen} onTogglePanel=${togglePanel} onEntry=${(entry) => setAppEntry({ catalogId: appCatalogId, entry })}
         onInstalled=${onInstalled} onBotUpdated=${onBotUpdated} onOpenBotSettings=${openBotSettings} onOpenSettings=${openSettings}
         chatProps=${{ models, modelsError, reloadModels, defaultModel: settings && settings.defaultModel, onWorking, pending: (bot && pending[bot.id]) || 0, serverBusy: !!(bot && agentWorking[bot.id]), onOpenSettings: openSettings, onOpenBotSettings: openBotSettings, onBotUpdated, account: managed ? account : null, onAccount: setAccount, cuBlocked: !!(bot && cuBlocked.includes(bot.id)) }} />`}
-      ${view === "group" && routedGroup && bots && html`<${GroupScreen} key=${routedGroup.id} group=${routedGroup} bots=${bots} onEdit=${() => setGroupSheet({ group: routedGroup })} onOpenSettings=${openSettings} onChanged=${reloadGroups}
+      ${view === "group" && routedGroup && bots && html`<${GroupScreen} key=${routedGroup.id} group=${routedGroup} bots=${bots} models=${models} modelsError=${modelsError} reloadModels=${reloadModels} defaultModel=${settings?.defaultModel} account=${managed ? account : null} onEdit=${() => setGroupSheet({ group: routedGroup })} onOpenSettings=${openSettings} onChanged=${reloadGroups}
         initialFocus=${{ id: route.messageId, query: route.query, nonce: messageJump }} onBackToSearch=${fromSearch ? () => openSearch() : undefined} />`}
       ${view === "conversation" && html`<${ConversationHistoryScreen} key=${route.conversationId} conversationId=${route.conversationId} initialFocus=${{ id: route.messageId, query: route.query, nonce: messageJump }} onBack=${() => openSearch()} onBot=${openChat} bots=${bots || []} />`}
       ${view === "group" && groupsData && !routedGroup && html`<div class="empty-state"><b>${t("app.groupMissing")}</b><button type="button" class="text" onClick=${() => openChat()}>${t("app.backToChat")}</button></div>`}
@@ -704,11 +714,12 @@ function App() {
       ${view === "needs" && html`<${NeedsYouScreen} multiBot=${!!bots && bots.length > 1} onChanged=${pollWorking} onOpenChat=${openChat} onRelogin=${relogin} onOpenBotSettings=${openBotSettings} />`}
       ${view === "bot-settings" && routedBot && html`<${BotSettingsScreen} key=${routedBot.id} bot=${routedBot} section=${route.section}
         models=${models} modelsError=${modelsError} reloadModels=${reloadModels} defaultModel=${settings && settings.defaultModel}
-        account=${managed ? account : null} onAccount=${setAccount} onOpenSettings=${openSettings} onOpenApps=${() => openApps()}
+        account=${managed ? account : null} onAccount=${setAccount} onOpenSettings=${openSettings} onOpenApps=${(tab) => openApps(typeof tab === "string" ? tab : "")}
         onBack=${() => openChat(routedBot.id)} onBotUpdated=${onBotUpdated} onDeleted=${() => onDeleted(routedBot.id)} />`}
       ${view === "bot-settings" && bots && !routedBot && html`<div class="empty-state"><b>${t("app.botMissing")}</b><button type="button" class="text" onClick=${() => openChat()}>${t("app.backToChat")}</button></div>`}
       </div>
       <${MessageSearchScreen} open=${searchOpen} query=${searchQuery} onQuery=${setSearchQuery} bots=${bots || []} groups=${groups} onClose=${closeSearch} onSelect=${openSearchHit} onBot=${openChat} onGroup=${openGroup} focusToken=${searchFocus} />
+      <${Toasts} />
     </main>
     ${sideOff && html`<${SideRail} bots=${bots} view=${sideView} onToggleSide=${toggleSide} onOpenSearch=${openSearch} onNew=${newBot} onTemplates=${() => openTemplates()} onNewGroup=${() => setGroupSheet({})} />`}
     ${panel && html`<${Splitter} key=${wide ? "work" : "info"} class="split-panel" size=${wide ? "--work-w" : "--panel-w"} edge="end" label=${t("app.resizePanel")} value=${wide ? workW : panelW} room=${room("--side-col")}
@@ -721,15 +732,14 @@ function App() {
       onSelectResource=${(active) => setResourcePanels((all) => ({ ...all, [shownPanel.key]: { ...all[shownPanel.key], active } }))}
       onRemoveResource=${(id) => setResourcePanels((all) => ({ ...all, [shownPanel.key]: removeResource(all[shownPanel.key], id) }))}
       onOpenBotSettings=${() => shownPanel.bot && openBotSettings(shownPanel.bot.id)} onOpenChat=${panelToChat} onOpenConnections=${(row) => openSettings("connections", row || "")} />`}
-    <${CoachMark} bot=${!searchOpen && ["chat", "app"].includes(view) ? bot : null} view=${searchOpen ? "search" : view} infoOpen=${panelKind === "chat" && !!panel} busy=${Object.values(working).some(Boolean)} blocked=${needs.n > 0 || !!cuBlocked.length} onConnections=${(channel) => openSettings("connections", `add-channel-${channel}`)} />
-    <${ScheduledSync} /><${PermissionSync} /><${NewRuleHost} bots=${bots || []} />
+    <${CoachMark} bot=${!searchOpen && ["chat", "app"].includes(view) ? bot : null} view=${searchOpen ? "search" : view} infoOpen=${panelKind === "chat" && !!panel} busy=${Object.values(working).some(Boolean)} blocked=${!!guideStop} onConnections=${(channel) => openSettings("connections", `add-channel-${channel}`)} />
+    <${ScheduledSync} /><${PermissionSync} /><${NewRuleHost} bots=${bots || []} /><${SkillDetailHost} />
     ${palette && html`<${Palette} commands=${commands} onClose=${() => setPalette(false)} />`}
     ${groupSheet && bots && html`<${GroupSheet} group=${groupSheet.group} bots=${bots} onClose=${() => setGroupSheet(null)}
       onSaved=${async (g) => { setGroupSheet(null); await reloadGroups(); openGroup(g.id); }} />`}
     <${WhatsNewHost} update=${update} onUpdateChanged=${reloadUpdate} />
     <${AppDialogHost} bots=${bots || []} chatBot=${!searchOpen ? appChatTarget : null} onOpenSettings=${(tab) => openSettings(tab)} />
     <${DialogHost} />
-    <${Toasts} />
   </div>`;
 }
 

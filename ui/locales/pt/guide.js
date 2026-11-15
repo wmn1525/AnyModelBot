@@ -20,10 +20,15 @@ export default {
   "closeCoach": "Fechar guia",
   "doneTitle": "Muito bem!",
   "fill": "Preencher",
-  "openConsole": "Ativar modelos de imagem no console do OKINTO ↗",
+  "openConsole": "Ativar modelos de imagem no console do Okinto ↗",
   "later": "Talvez depois",
   "stopHere": "Por enquanto é só",
   "next": "Próximo: {title}",
+  "blocked": {
+    "permission": "Primeiro resolva o pedido de permissão pendente e depois continue a lista.",
+    "needs": "Primeiro resolva o que está em “Precisa de você” e depois continue a lista.",
+    "replying": "Espere terminar de responder e depois continue a lista."
+  },
   "demo": {
     "label": "Demonstração",
     "generating": "Gerando a imagem de exemplo",

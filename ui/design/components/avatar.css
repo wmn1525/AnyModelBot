@@ -555,6 +555,8 @@
 /* 基础角色一组、领域专家一组，每行 6 个；两处（新建页、机器人设置）都是这个宽度 */
 .avatar-picker { display: grid; gap: var(--space-2); width: min(100%, 460px); }
 .avatar-group { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-1); }
+/* 分组名靠近它下面的那组：上方 16、下方 8，不和上一组的名字挤在一起 */
+.avatar-picker > .t-label:not(:first-child) { margin-top: var(--space-2); }
 .avatar-opt {
   display: grid; justify-items: center; align-content: start; gap: var(--space-1); min-width: 0; padding: var(--space-2-5) var(--space-1) var(--space-1-5);
   border-radius: var(--r-item); color: var(--muted); font-size: var(--fs-xs);

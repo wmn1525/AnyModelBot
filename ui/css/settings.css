@@ -3,6 +3,15 @@
    设置分页在侧栏：和机器人列表同一种结构（shell.css 的 .side-list + .nav-item），列表撑满、账户区贴底。 */
 @layer app {
 .skill-list .name, .skill-list .sub { overflow-wrap: anywhere; }
+/* 名字旁的生效状态（已生效 / 当前任务结束后生效 / 加载中），下面一行常驻的「试试这样说」：点了把这句填进对话的输入框 */
+.skill-list .skill-name { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1) var(--space-2); }
+.skill-list .skill-state { font-weight: var(--fw-regular); }
+.skill-list .skill-try, .apps-bot-row .skill-try { display: block; min-height: 0; margin-top: var(--space-1); padding: 0; text-align: left; font-size: var(--fs-xs); line-height: var(--lh-snug); color: var(--fg-2); overflow-wrap: anywhere; }
+.skill-list button.skill-try:hover, .apps-bot-row button.skill-try:hover { color: var(--fg); text-decoration: underline; text-underline-offset: 2px; }
+/* 刚导入的那一行亮一下 */
+.skill-list .row.fresh { animation: skill-fresh var(--dur-sheen) var(--ease-out); }
+@keyframes skill-fresh { 0%, 40% { background: var(--sel); } 100% { background: transparent; } }
+:root:is([data-motion="reduce"], [data-motion="off"]) .skill-list .row.fresh { animation: none; background: var(--sel); }
 .skill-meta { color: var(--muted); }
 .skill-instructions { margin: var(--space-4) 0; }
 .skill-instructions summary { cursor: pointer; color: var(--fg-2); }
@@ -296,12 +305,6 @@ button.need-head:hover, button.need-head:hover .need-who b { color: var(--fg); }
 }
 
 @layer app {
-/* 机器人设置页的"已保存"（第 15 项）：主内容区顶部水平居中，滚动、拖侧栏、窄窗口都跟着这一页，不落到左下角 */
-[data-screen="bot-settings"] { position: relative; }
-.bot-save-feedback { position: sticky; top: 0; height: 0; flex: none; z-index: calc(var(--z-float) + 1); pointer-events: none; }
-.app .bot-save-feedback .toasts { position: absolute; top: var(--space-3); bottom: auto; left: 0; right: 0; display: grid; justify-items: center; pointer-events: none; }
-.app .bot-save-feedback .toast { pointer-events: auto; }
-
 /* BYOK 页直接用账号登录（第 4 项）：Key 表单下面一条分隔线 + 次级区块，"连接"仍是这一页的主操作 */
 .own-key-login { margin-top: var(--section-gap-sm); display: grid; gap: var(--ctl-gap); }
 .own-key-login > h2 { margin: 0; }
@@ -373,4 +376,10 @@ button.need-head:hover, button.need-head:hover .need-who b { color: var(--fg); }
 .official-form .official-replace { font-size: var(--fs-2xs); margin: 0; }
 [aria-disabled="true"].text { pointer-events: none; opacity: var(--o-disabled); }
 @media (max-width: 420px) { .provider-option { flex-wrap: wrap; gap: 0 var(--space-1); } }
+}
+
+@layer app {
+/* 整页空状态（.page-empty，例如「需要你」没有事项）：这一页改成竖排，空状态占满标题下面剩下的高度、上下居中 */
+.settings:has(> .set-body > .page-empty) { display: flex; flex-direction: column; }
+.set-body:has(> .page-empty) { flex: 1 0 auto; display: flex; flex-direction: column; }
 }

@@ -1,6 +1,6 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
-  "external_mode": "외부 모델 엔드포인트를 사용할 때는 OKINTO New API 연결을 관리하지 않습니다",
+  "external_mode": "외부 모델 엔드포인트를 사용할 때는 Okinto New API 연결을 관리하지 않습니다",
   "bot_not_found": "봇을 찾을 수 없습니다",
   "magpie_failed": "magpie를 시작하지 못했습니다: {message}",
   "default_bot_name": "내 도우미",

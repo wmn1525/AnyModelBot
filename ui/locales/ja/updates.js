@@ -1,4 +1,7 @@
 export default {
+  "downloadVersion": "バージョン {version} をダウンロード",
+  "browserVersion": "新しいバージョン {version} をダウンロード ↗",
+  "restartVersion": "再起動して {version} に更新",
   "autoDownload": "更新を自動ダウンロード",
   "autoDownloadHint": "新しいバージョンをバックグラウンドでダウンロードし、再起動してインストールするよう通知します。",
   "manualOnly": "この起動方法ではインストーラーを手動でダウンロードしてください。",

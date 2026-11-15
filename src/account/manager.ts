@@ -70,6 +70,8 @@ export interface AccountStatus {
   avatar?: string;
   email?: string;
   profileReady?: boolean;
+  profileState?: "loading" | "ready" | "error";
+  profileCached?: boolean;
   profileUrl?: string;
   /** 余额来源：account = 登录账户；key = 只用 API Key；none = 未连接 */
   source: "account" | "key" | "none";
@@ -205,6 +207,8 @@ export class AccountManager {
     const bal = this.snapshot.balanceUsd;
     return {
       ...this.snapshot,
+      profileState: this.refreshing ? "loading" : this.snapshot.error ? "error" : this.snapshot.profileReady ? "ready" : "loading",
+      profileCached: !!this.session?.record.profile,
       state: this.state,
       loginUrl: this.state === "signing_in" ? (this.login?.url ?? "") : "",
       alerts,
@@ -335,7 +339,7 @@ export class AccountManager {
       this.session = session;
       this.state = "signed_in";
       this.applyAccount(account);
-      log.info("signed in to OKINTO", { name: account.display_name || account.username });
+      log.info("signed in to Okinto", { name: account.display_name || account.username });
       this.checkLowBalance();
       // 给开着预算、还没有 Key 的机器人补签（换设备或重新登录后）。走核对，和刷新余额时的核对合并，不会重复签发
       void this.repairKeys();
@@ -384,7 +388,7 @@ export class AccountManager {
 
   /** 授权在别处被撤销：断开并回到登录页 */
   private async onRevoked(): Promise<void> {
-    log.warn("OKINTO authorization revoked");
+    log.warn("Okinto authorization revoked");
     await this.forget();
     this.snapshot.error = t("account.revoked_elsewhere");
     this.o.hooks.alert(this.snapshot.error, false);
@@ -428,10 +432,14 @@ export class AccountManager {
   }
 
   private async doRefresh(): Promise<AccountStatus> {
+    const session = this.session;
+    let timer: NodeJS.Timeout | undefined;
     try {
       if (this.session) {
-        const session = this.session;
-        const account = await this.call((s) => s.account());
+        const account = await Promise.race([
+          this.call((s) => s.account()),
+          new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error(t("account.unreachable", { reason: "timeout" }))), 15_000); }),
+        ]);
         if (this.session !== session) return this.status();
         this.applyAccount(account);
         // 启动后、之后每 5 分钟、切回窗口时都顺带核对一次 Key；不拖慢余额的返回
@@ -453,15 +461,15 @@ export class AccountManager {
       }
       this.checkLowBalance();
     } catch (e) {
-      if (!(e instanceof AccountRevokedError)) {
+      if (this.session === session && !(e instanceof AccountRevokedError)) {
         this.snapshot.error = (e as Error).message;
         this.snapshot.profileReady = true;
         // 读不到时 bot 额度也不留旧数：界面和以前一样显示"暂不可用"
         this.snapshot.balanceUsd = null;
         this.snapshot.bot = null;
       }
-    }
-    return this.status();
+    } finally { clearTimeout(timer); }
+    return { ...this.status(), profileState: this.snapshot.error ? "error" : "ready" };
   }
 
   /** 余额跌破阈值时提醒一次；回到阈值以上后才会再次提醒 */
@@ -600,7 +608,7 @@ export class AccountManager {
 
     if (!alive.has(session.record.deviceKeyId) && !this.adoptDeviceKey(session, keys, botKeys) && (await this.o.hooks.sharedKeyRejected())) {
       if (this.session !== session) return false;
-      log.warn("device key is gone on OKINTO, issuing a new one", { id: session.record.deviceKeyId });
+      log.warn("device key is gone on Okinto, issuing a new one", { id: session.record.deviceKeyId });
       const key = await this.issueKey((routing) => this.call((s) => s.createKey(this.deviceKeyName(), undefined, routing)));
       if (!key.key) throw new Error(t("account.no_new_key"));
       try {
@@ -677,7 +685,7 @@ export class AccountManager {
   private noteRouting(supported: boolean, why: string): void {
     const before = this.routing().support;
     this.saveRouting({ support: supported ? "yes" : "no", checkedAt: Date.now() });
-    if (!supported && before !== "no") log.warn("OKINTO doesn't accept a routing strategy on app keys", { why });
+    if (!supported && before !== "no") log.warn("Okinto doesn't accept a routing strategy on app keys", { why });
   }
 
   /** 签发 Key 时要带的策略：OKINTO 最近说过不认就不带（隔一天再试） */
@@ -801,7 +809,7 @@ export class AccountManager {
       const now = ROUTING_STRATEGIES.find((x) => x === device.routing_strategy)!;
       if (now !== cur.chosen || cur.applied !== now) {
         this.saveRouting({ chosen: now, applied: now });
-        if (cur.chosen && now !== cur.chosen) log.info("key routing strategy was changed on OKINTO, following it", { strategy: now });
+        if (cur.chosen && now !== cur.chosen) log.info("key routing strategy was changed on Okinto, following it", { strategy: now });
       }
     } catch (e) {
       log.warn("applying key routing strategy failed", { message: (e as Error).message });

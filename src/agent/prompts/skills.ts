@@ -31,12 +31,12 @@ Tools are named \`mcp__computer-use__<tool>\`. Actions run automatically; no app
  */
 export const MEDIA_SKILL = `---
 name: media
-description: Generate or edit images and generate videos with OKINTO New API image and video models through the media_models, media_docs, generate_image and generate_video tools. Use when the user asks to draw, create, edit or restyle a picture, animate an image, or make a video.
+description: Generate or edit images and generate videos with Okinto New API image and video models through the media_models, media_docs, generate_image and generate_video tools. Use when the user asks to draw, create, edit or restyle a picture, animate an image, or make a video.
 ---
 
-# Images and videos (OKINTO New API)
+# Images and videos (Okinto New API)
 
-You have no OKINTO New API key and must not call the API yourself (no curl, no scripts): the tools call it with this bot's key. Every generation costs the user money.
+You have no Okinto New API key and must not call the API yourself (no curl, no scripts): the tools call it with this bot's key. Every generation costs the user money.
 
 ## When the user is asked first
 The app generates right away. It asks the user to confirm the model first only when the estimated cost is high (above $0.5: an expensive model, a long or high-resolution video, many images) or this bot is set to always ask.
@@ -57,5 +57,5 @@ Do not ask about the subject, style, purpose or model yourself: if they are not 
 ## Errors
 - For multi-step projects pass a stable \`request_id\` for each image/video operation. Save the exact arguments. After a timeout or restart, reuse that ID and the exact same inputs to retrieve the existing result; do not create a new paid video task. If submission status is unknown, report it and verify upstream before retrying. Changed inputs or an explicitly requested new take need a new ID.
 - 这把 Key 不能用这个模型 (model_not_found): this account cannot use that model; pick another one from \`media_models\`.
-- Any other 4xx names the problem: fix the body according to the model's page instead of sending the same request again. If the balance is empty, tell the user to top up on OKINTO New API.
+- Any other 4xx names the problem: fix the body according to the model's page instead of sending the same request again. If the balance is empty, tell the user to top up on Okinto New API.
 `;

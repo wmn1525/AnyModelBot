@@ -22,4 +22,6 @@ import modelflare from "./modelflare.js";
 import official from "./official.js";
 import connections from "./connections.js";
 import apps from "./apps.js";
-export default { connections, apps, media, activity, magpie, app, cu, approvals, pwsh, desktop, tasks, channel, web, cli, rules, delivery, access, diag, account, agent, runtime, modelflare, official } satisfies TranslatedCatalog;
+import skills from "./skills.js";
+import mySkills from "./mySkills.js";
+export default { connections, apps, skills, mySkills, media, activity, magpie, app, cu, approvals, pwsh, desktop, tasks, channel, web, cli, rules, delivery, access, diag, account, agent, runtime, modelflare, official } satisfies TranslatedCatalog;

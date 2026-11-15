@@ -9,12 +9,16 @@ import { markDone } from "../lib/guide.js";
 import { perms, confirmPermission } from "../lib/perms.js";
 import { prefs } from "../lib/prefs.js";
 import { t } from "../lib/i18n.js";
+import { UsablesPanel } from "./usables.js";
+import { focusRange, insertPhrase } from "../lib/usage.js";
 
 // 文案跟着界面语言：渲染时再取（写成函数，不在模块顶层缓存翻译）
 const commands = () => [
   ["/model", t("chat.commands.model")],
   ["/new", t("chat.commands.new")],
   ["/reset", t("chat.commands.reset")],
+  // 存成技能：交给机器人处理（等同于说「把刚才做的事存成技能」），不是固定回复的命令
+  ["/skill", t("mySkills.slash")],
   ["/status", t("chat.commands.status")],
   ["/stop", t("chat.commands.stop")],
   ["/tasks", t("chat.commands.tasks")],
@@ -42,7 +46,7 @@ export function Composer({ bot, modelKey = bot?.id, text, setText, taRef, placeh
   const plusRef = useRef(null);
   const modelRef = useRef(null);
   const permRef = useRef(null);
-  const [menu, setMenu] = useState(null); // "plus" | "perm" | "model" | null
+  const [menu, setMenu] = useState(null); // "plus" | "usables" | "perm" | "model" | null
   const [perm, setPerm] = useState("");
   const [slashSel, setSlashSel] = useState(0);
   const [slashOff, setSlashOff] = useState(false);
@@ -118,9 +122,23 @@ export function Composer({ bot, modelKey = bot?.id, text, setText, taRef, placeh
         if (await confirmSheet({ title: t("chat.reset.title"), body: t("chat.reset.body", { name: bot.name }), confirmLabel: t("chat.reset.confirm"), danger: true })) onSend("/reset");
       },
     },
+    // 存成技能：把刚才做成的事整理成草稿卡（skills/drafts.ts）
+    { label: t("mySkills.menu"), note: "/skill", onSelect: () => onSend("/skill") },
     { label: t("chat.menu.status"), note: "/status", onSelect: () => onSend("/status") },
     { label: t("chat.menu.allCommands"), note: "/help", onSelect: () => onSend("/help") },
+    { sep: true },
+    // 技能与应用：二级列表，点一项把「用{名称}帮我……」填进输入框（components/usables.js）
+    { label: t("chat.menu.usables"), sub: true, onSelect: () => requestAnimationFrame(() => setMenu("usables")) },
   ];
+  /** 技能与应用里点了一项：插进输入框（不丢草稿），选中「帮我」后面的省略号 */
+  const pickUsable = (p) => {
+    setMenu(null);
+    const r = insertPhrase(text, ta.current, p.text, { start: p.start, end: p.end });
+    setText(r.text);
+    setSlashOff(true);
+    requestAnimationFrame(() => autoGrow(ta.current));
+    focusRange(ta.current, r.start, r.end);
+  };
 
   // —— 斜杠命令菜单 ——
   const slashQuery = /^\/\S*$/.test(text) && !slashOff ? text.toLowerCase() : null;
@@ -172,7 +190,7 @@ export function Composer({ bot, modelKey = bot?.id, text, setText, taRef, placeh
         onInput=${(e) => { setText(e.target.value); setSlashOff(false); setSlashSel(0); autoGrow(e.target); }}
         onKeyDown=${onKey} />
       <div class="composer-bar">
-        ${plusItems && html`<button type="button" class="plus" ref=${plusRef} aria-label=${t("chat.menu.more")} aria-haspopup="menu" aria-expanded=${menu === "plus"} onClick=${() => setMenu(menu === "plus" ? null : "plus")}><${Icon} name="plus" size="md" /></button>`}
+        ${plusItems && html`<button type="button" class="plus" ref=${plusRef} aria-label=${t("chat.menu.more")} aria-haspopup="menu" aria-expanded=${menu === "plus" || menu === "usables"} onClick=${() => setMenu(menu === "plus" || menu === "usables" ? null : "plus")}><${Icon} name="plus" size="md" /></button>`}
         ${permChip && html`<button type="button" class=${`model-chip perm ${perm}`} ref=${permRef} title=${t("chat.perm.title", { note: permChip.note })} aria-haspopup="menu" aria-expanded=${menu === "perm"}
           onClick=${() => setMenu(menu === "perm" ? null : "perm")}>
           <${Icon} name=${permChip.icon} size="sm" class="lead" /><span class="v">${permChip.label}</span><${Icon} name="chevDown" />
@@ -200,6 +218,8 @@ export function Composer({ bot, modelKey = bot?.id, text, setText, taRef, placeh
       </ul>
     <//>`}
     ${menu === "plus" && plusItems && html`<${Menu} anchor=${plusRef.current} prefer="up" width=${240} label=${t("chat.menu.more")} onClose=${() => setMenu(null)} items=${plusItems} />`}
+    ${menu === "usables" && bot && html`<${UsablesPanel} anchor=${plusRef.current} bot=${bot} perm=${perm} onPick=${pickUsable} onClose=${() => setMenu(null)}
+      onOpenSkills=${() => onOpenBotSettings?.(botId, "skills")} onOpenApps=${() => (location.hash = "#/apps")} />`}
     ${menu === "perm" && permChip && html`<${Menu} anchor=${permRef.current} prefer="up" width=${280} label=${t("chat.perm.menu")} onClose=${() => setMenu(null)}
       items=${[
         { group: t("chat.perm.menu") },

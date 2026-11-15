@@ -1,7 +1,7 @@
 /* 连接应用：应用页（screens/apps.js）、连接 / 管理 / 自定义连接器弹窗（components/app-dialogs.js、custom-connector.js）、
    机器人设置的「应用」一节（components/bot-apps.js）、对话里的应用卡片（screens/chat.js）。
    应用页和发现页是同一种页面（.discover：占满主区、内容列居中、顶上通栏可拖动），这里只加它自己的部分。
-   卡片 = --well 上的一块（不描边）：应用标记 + 名字、一句话、接入方式，底部是状态和主操作。 */
+   卡片 = --well 上的一块（不描边）：应用标记 + 名字、一句话、接入方式，底部是状态和操作（次要按钮，和模板卡的「添加」一样；见 README「列表页的筛选、卡片操作和空状态」）。 */
 @layer app {
 .apps-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .apps-search { flex: 1 1 220px; max-width: 320px; margin: 0; width: auto; }
@@ -108,4 +108,9 @@
   .apps-tool-side { justify-content: flex-start; }
   .sheet .apps-form > .actions, .apps-done > .actions { flex-direction: column-reverse; align-items: stretch; }
 }
+}
+
+@layer app {
+/* 「已连接」为空时用整页空状态（.page-empty）：页面从网格换成竖排，空状态占满工具栏下面剩下的高度 */
+.discover:has(> .page-empty) { display: flex; flex-direction: column; }
 }

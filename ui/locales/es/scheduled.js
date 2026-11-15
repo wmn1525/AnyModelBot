@@ -1,4 +1,22 @@
 export default {
+  "emptyTitle": "Aún no hay reglas",
+  "emptyNeedsTitle": "Nada requiere atención",
+  "emptyNeedsHint": "Aquí aparecerán las reglas que necesiten tu atención.",
+  "searchBots": "Buscar bots",
+  "noBotsMatch": "No hay bots que coincidan con «{query}»",
+  "details": {
+    "prompt": "Instrucción",
+    "reminder": "Recordatorio",
+    "schedule": "Frecuencia",
+    "next": "Próxima ejecución",
+    "destination": "Enviar a",
+    "month": "Este mes",
+    "spent": "Unos {spent} de {budget}"
+  },
+  "kindHint": {
+    "remind": "Cuando llegue la hora, solo te enviaré un recordatorio.",
+    "check": "Cuando llegue la hora, haré la tarea y te enviaré el resultado."
+  },
   "rule": "Regla",
   "title": "Programado",
   "attention": "Programado · {count} requieren atención",

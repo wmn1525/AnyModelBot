@@ -14,7 +14,7 @@ import { BotAvatar } from "../components/avatar.js";
 import { UserAvatar } from "../components/user-avatar.js";
 import { GuidePill } from "../components/guide.js";
 import { api } from "../lib/api.js";
-import { updateDescription, updateError } from "../components/app-update.js";
+import { updateActionLabel, updateError } from "../components/app-update.js";
 import { confirmSheet, failed, toast, useStore } from "../lib/store.js";
 import { deleteBot } from "../lib/bots.js";
 import { useListPresence } from "../design/motion.js";
@@ -54,16 +54,30 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
   const [check, setCheck] = useState(""); // 这次手动检查的结果：checking / latest / failed（没检查过时为空，不说"已是最新"）
   const ref = useRef(null);
   const stackRef = useRef(null);
+  const updateRef = useRef(null);
+  const [blockedHint, setBlockedHint] = useState(false);
+  const hintTimer = useRef(null);
+  useEffect(() => {
+    if (!blockedHint) return;
+    const close = (e) => { if (!updateRef.current?.contains(e.target)) setBlockedHint(false); };
+    hintTimer.current = setTimeout(() => setBlockedHint(false), 3000);
+    document.addEventListener("pointerdown", close);
+    return () => { clearTimeout(hintTimer.current); document.removeEventListener("pointerdown", close); };
+  }, [blockedHint]);
+  useEffect(() => { if (!update?.busy) setBlockedHint(false); }, [update?.busy]);
   const signedIn = account?.state === "signed_in";
   useEffect(() => resumeAccountLogin(account), [account?.state]);
   const me = signedIn ? account.name?.trim() || t("welcome.accountFallback") : t("firstUse.myAccount");
-  const profileLoading = signedIn && !account.profileReady && !account.name && !account.error;
+  const profileLoading = signedIn && !(account.profileCached ?? !!(account.name || account.avatar)) && (account.profileState === "loading" || (!account.profileState && !account.profileReady && !account.error));
+  const profileFailed = signedIn && (account.profileState === "error" || (!account.profileState && !!account.error));
+  const retryProfile = () => { setOpen(false); window.dispatchEvent(new Event("amb-account-refresh")); };
   const changed = () => window.dispatchEvent(new Event("amb-connection-change"));
   const phase = update?.phase;
   const ready = phase === "ready";
   const updateWorking = ["checking", "downloading", "installing"].includes(phase);
   const runUpdate = async () => {
-    if (updateRequest.current || updateWorking || (ready && update?.busy)) return;
+    if (updateRequest.current || updateWorking) return;
+    if (ready && update?.busy) { setBlockedHint(true); clearTimeout(hintTimer.current); hintTimer.current = setTimeout(() => setBlockedHint(false), 3000); return; }
     setOpen(false);
     // 有新版本：已下载好的按"重启更新"（有任务在跑时服务端会拒绝）；没下载的开始下载；不支持应用内更新的打开下载页
     if (!update?.supported) return void window.open(update?.downloadUrl || update?.releaseUrl || "https://github.com/wmn1525/AnyModelBot/releases", "_blank", "noopener");
@@ -80,7 +94,8 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
     }
   };
   const checkUpdate = async () => {
-    if (update?.available) return runUpdate();
+    // 已下载好的「重启并更新到 …」直接重启（有任务在运行时 runUpdate 只说明原因）
+    if (update?.available || ready) return runUpdate();
     if (!update?.supported) { setOpen(false); return void window.open(update?.releaseUrl || "https://github.com/wmn1525/AnyModelBot/releases", "_blank", "noopener"); }
     setCheck("checking");
     try {
@@ -93,33 +108,35 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
     }
   };
   const checkLabel = check === "checking" || phase === "checking" ? t("firstUse.checking")
-    : updateWorking || ready ? updateDescription(update)
-    : update?.available ? t("sidebar.update", { version: update.latest || "" })
+    : updateWorking || ready || update?.available ? updateActionLabel(update)
     : check === "failed" ? t("firstUse.updateFailed")
     : check === "latest" ? t("firstUse.latest")
     : t("firstUse.checkUpdate");
   const showUpdate = update?.available || ["downloading", "installing", "ready"].includes(phase);
-  const updateLabel = ready && update?.busy ? t("updates.busy") : updateWorking ? updateDescription(update)
-    : [t(ready ? "updates.restart" : "updates.download"), update?.latest].filter(Boolean).join(" · ");
+  const updateLabel = updateActionLabel(update);
   return html`<div class="account-stack" ref=${stackRef}>
     ${!signedIn && account && account.loginAvailable !== false && account.state !== "unavailable" && html`<${AccountLogin} inline manual=${!!account.manualLogin} />`}
     <div class=${`account-row${open ? " on" : ""}`}>
-      <button type="button" class=${`account${open ? " on" : ""}`} ref=${ref} title=${me} aria-label=${t("firstUse.accountMenu", { name: me })} aria-haspopup="menu" aria-expanded=${open} onClick=${() => setOpen((v) => !v)}>
-        <${UserAvatar} name=${me} src=${signedIn ? account.avatar : ""} fallback=${signedIn && !account.name} loading=${profileLoading} class="me" /><span class="who" title=${profileLoading ? "" : me}>${profileLoading ? html`<span class="account-name-skeleton skel"></span>` : me}</span>
+      <div class=${`account${open ? " on" : ""}`}>
+        <button type="button" class="account-identity" ref=${ref} title=${me} aria-label=${t("firstUse.accountMenu", { name: me })} aria-haspopup="menu" aria-expanded=${open} onClick=${() => setOpen((v) => !v)}>
+          <${UserAvatar} name=${me} src=${signedIn ? account.avatar : ""} fallback=${signedIn && !account.name} loading=${profileLoading} class="me" /><span class=${`who${profileLoading ? " connecting" : ""}`}>${profileLoading ? t("account.profile.connecting") : me}</span>
+        </button>
         ${appsAttention && html`<span class="dot warn account-dot" title=${t("apps.attention")}></span>`}
-        <${Icon} name="chevDown" size="xs" class="account-chevron" />
-      </button>
-      ${showUpdate && html`<button type="button" class="icon-btn side-update" title=${updateLabel} aria-label=${updateLabel}
-        disabled=${updating || updateWorking || (ready && update?.busy)} aria-busy=${updating || updateWorking} onClick=${runUpdate}>
+        ${profileFailed && html`<button type="button" class="icon-btn account-retry" title=${t("account.profile.retryHint")} aria-label=${t("account.profile.retry")} onClick=${retryProfile}><${Icon} name="refresh" size="sm" /></button>`}
+        <button type="button" class="account-menu-toggle" aria-label=${t("firstUse.accountMenu", { name: me })} aria-haspopup="menu" aria-expanded=${open} onClick=${() => setOpen((v) => !v)}><${Icon} name="chevDown" size="xs" class="account-chevron" /></button>
+      </div>
+      ${showUpdate && html`<div class="side-update-wrap" ref=${updateRef}><button type="button" class="icon-btn side-update" title=${updateLabel} aria-label=${updateLabel}
+        aria-disabled=${!!(updating || updateWorking || (ready && update?.busy))} aria-describedby=${blockedHint ? "update-busy-hint" : undefined} aria-busy=${updating || updateWorking} onClick=${runUpdate}>
         ${updating || updateWorking ? html`<${Spinner} />` : html`<${Icon} name=${ready ? "refresh" : "down"} size="md" />`}
-      </button>`}
+      </button>${blockedHint && html`<${Popover} class="update-reason-pop" anchor=${updateRef.current} prefer="up" align="right" width=${300} keepFocus label=${t("updates.busy")} onClose=${() => setBlockedHint(false)}><div id="update-busy-hint" class="update-busy-hint" role="status">${t("updates.busy")}</div><//>`}</div>`}
     </div>
     ${open && html`<${Popover} class="account-popover" anchor=${stackRef.current} trigger=${ref.current} prefer="up" width=${stackRef.current?.offsetWidth || 280} label=${t("sidebar.account")} onClose=${() => setOpen(false)}>
       <div class="account-menu-head">
         <${UserAvatar} name=${me} src=${signedIn ? account.avatar : ""} fallback=${signedIn && !account.name} loading=${profileLoading} class="account-menu-avatar" />
-        <div class="account-menu-identity"><span class="name">${me}</span><span class="hint">${signedIn ? "Modelflare" : t("sidebar.localUser")}</span></div>
+        <div class="account-menu-identity"><span class="name">${me}</span><span class="hint">${signedIn ? "Okinto" : t("sidebar.localUser")}</span></div>
       </div>
       <div class="account-menu primary" role="menu">
+        ${profileFailed && html`<button type="button" role="menuitem" onClick=${retryProfile}><span class="menu-icon"><${Icon} name="refresh" size="md" /></span><span class="menu-label">${t("account.profile.reload")}</span></button>`}
         <button type="button" role="menuitem" onClick=${() => { setOpen(false); onSettings?.(); }}>
           <span class="menu-icon"><${Icon} name="gear" size="md" /></span><span class="menu-label">${t("sidebar.settings")}</span><kbd>${isMac ? "⌘," : "Ctrl+,"}</kbd></button>
         <button type="button" role="menuitem" onClick=${() => { setOpen(false); onApps?.(); }}>
@@ -127,7 +144,7 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
         <a role="menuitem" href="https://github.com/wmn1525/AnyModelBot/issues/new/choose" target="_blank" rel="noopener noreferrer" onClick=${() => setOpen(false)}>
           <span class="menu-icon"><${Icon} name="chat" size="md" /></span><span class="menu-label">${t("firstUse.feedback")}</span><${Icon} name="ext" size="xs" class="menu-trail" /></a>
         <button type="button" role="menuitem" disabled=${check === "checking" || updating || updateWorking || (ready && update.busy)} title=${ready && update.busy ? t("updates.busy") : ""} onClick=${checkUpdate}>
-          <span class="menu-icon"><${Icon} name="refresh" size="md" /></span><span class="menu-label" role="status">${checkLabel}</span>${update?.available && html`<span class="dot new"></span>`}</button>
+          <span class="menu-icon"><${Icon} name="refresh" size="md" /></span><span class="menu-label" role="status">${checkLabel}${ready && update.busy && html`<small class="update-disabled-reason">${t("updates.busy")}</small>`}</span>${update?.available && html`<span class="dot new"></span>`}</button>
       </div>
     <//>`}
   </div>`;
@@ -146,7 +163,7 @@ export function SideActions({ collapsed, bots, onToggleSide, onOpenSearch, onNew
     <${IconButton} icon="search" iconSize="md" class="side-search-btn" label=${t("sidebar.searchShortcut", { keys: isMac ? "⌘⇧F" : "Ctrl+Shift+F" })} aria-haspopup="dialog" onClick=${() => onOpenSearch?.()} />
     <${IconButton} icon="plus" iconSize="md" class="side-new" label=${t("sidebar.newMenu")} on=${!!newMenu} aria-haspopup="menu" aria-expanded=${!!newMenu}
       onClick=${(e) => { const el = e.currentTarget; setNewMenu((m) => (m ? null : el)); }} />
-    ${newMenu && html`<${Menu} anchor=${newMenu} align=${collapsed ? undefined : "right"} width=${180} label=${t("sidebar.newMenu")} onClose=${() => setNewMenu(null)}
+    ${newMenu && html`<${Menu} anchor=${newMenu} align=${collapsed ? undefined : "right"} label=${t("sidebar.newMenu")} onClose=${() => setNewMenu(null)}
       items=${[
         { label: t("sidebar.newBotItem"), icon: "spark", kbd: isMac ? "⌘N" : "Ctrl+N", onSelect: onNew },
         ...(canGroup ? [{ label: t("sidebar.newGroupItem"), icon: "chat", onSelect: onNewGroup }] : []),

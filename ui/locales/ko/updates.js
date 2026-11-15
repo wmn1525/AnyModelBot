@@ -1,4 +1,7 @@
 export default {
+  "downloadVersion": "버전 {version} 다운로드",
+  "browserVersion": "새 버전 {version} 다운로드 ↗",
+  "restartVersion": "재시작하여 {version}(으)로 업데이트",
   "autoDownload": "업데이트 자동 다운로드",
   "autoDownloadHint": "새 버전을 백그라운드에서 내려받고 재시작하여 설치하도록 알려 줍니다.",
   "manualOnly": "이 실행 방식에서는 설치 파일을 직접 내려받아야 합니다.",
@@ -10,7 +13,7 @@ export default {
   "restart": "재시작하여 업데이트",
   "installing": "업데이트를 위해 재시작 중…",
   "check": "업데이트 확인",
-  "busy": "작업이 실행 중입니다. 완료 후 재시작하여 업데이트할 수 있습니다.",
+  "busy": "작업이 실행 중이에요. 완료되면 재시작하여 업데이트할 수 있어요.",
   "errors": {
     "failed": "업데이트 작업에 실패했습니다. 다시 시도하세요.",
     "check_failed": "업데이트를 확인하지 못했습니다. 잠시 후 다시 시도하세요.",

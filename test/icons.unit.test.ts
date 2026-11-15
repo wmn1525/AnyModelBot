@@ -12,9 +12,11 @@ beforeAll(async () => {
 });
 afterAll(() => vi.unstubAllGlobals());
 
-describe("Heroicons operation icons", () => {
+describe("Application operation icons", () => {
   it("renders every public icon with the upstream viewport and accessible button-compatible SVG", () => {
     const source = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "../ui/icons/heroicons-source.json"), "utf8"));
+    const panels = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "../ui/icons/lucide-source.json"), "utf8"));
+    Object.assign(source.icons, panels.icons);
     expect(ui.ICONS).toHaveLength(48);
     expect(ui.ICONS).toEqual(Object.keys(source.icons));
     for (const name of ui.ICONS) {

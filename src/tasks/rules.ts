@@ -100,6 +100,10 @@ export interface RuleView {
   updatedAt: number;
   /** 正在跑（或排队）的那一次 */
   live?: { runId: string; state: string; since: number };
+  /** 用「我的技能」做：技能名、标题（技能删了时是建规则时的标题）、技能还在不在 */
+  skill?: { name: string; title: string; exists: boolean };
+  /** 因为技能暂停时那句原因（「需要处理」里显示） */
+  pausedLine?: string;
 }
 
 export function whenOf(rule: Pick<RuleRow, "trigger">, withZone = false, l: Lang = currentLang()): string {

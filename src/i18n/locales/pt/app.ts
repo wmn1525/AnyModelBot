@@ -1,6 +1,6 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
-  external_mode: "As conexões com o OKINTO não são gerenciadas ao usar um endpoint de modelo externo",
+  external_mode: "As conexões com o Okinto não são gerenciadas ao usar um endpoint de modelo externo",
   bot_not_found: "Bot não encontrado",
   magpie_failed: "O magpie não conseguiu iniciar: {message}",
   default_bot_name: "Meu assistente",

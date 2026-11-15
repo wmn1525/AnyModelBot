@@ -4,9 +4,9 @@ export default {
   bodyTooLarge: "Тело запроса слишком большое",
   needToken: "Нужен токен доступа: откройте /?token=<token>",
   externalNoConnection:
-    "В режиме внешнего API подключение OKINTO New API не управляется",
+    "В режиме внешнего API подключение Okinto New API не управляется",
   officialBadKey: "Ключ не может быть пустым или содержать пробелы",
-  externalNoAccount: "В режиме внешнего API аккаунт OKINTO New API не управляется",
+  externalNoAccount: "В режиме внешнего API аккаунт Okinto New API не управляется",
   lowBalanceRange: "Порог уведомления должен быть от $0 до $1,000",
   badZoom: "Неподдерживаемый масштаб",
   badReasoningEffort: "Неизвестная глубина рассуждений",
@@ -56,5 +56,5 @@ export default {
     "Чтобы сменить владельца в WeChat, отсканируйте QR-код заново",
 
   "missingApiKey": "Введите API-ключ",
-  "noBrowserLogin": "Используйте API-ключ OKINTO New API"
+  "noBrowserLogin": "Используйте API-ключ Okinto New API"
 } satisfies TranslatedCatalog["web"];

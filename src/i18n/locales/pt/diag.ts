@@ -2,7 +2,7 @@ import type { TranslatedCatalog } from "../../index.js";
 export default {
   fetch_timeout: "Tempo esgotado (sem resposta em {s} s)",
   no_endpoint: "Nenhum endereço de endpoint configurado",
-  no_model: "Nenhum modelo disponível: escolha um modelo padrão no OKINTO primeiro",
+  no_model: "Nenhum modelo disponível: escolha um modelo padrão no Okinto primeiro",
   no_content: "Sem choices[0].message.content na resposta: {body}",
   verdict_endpoint_ok: "Endpoint OK",
   verdict_endpoint_error: "Erro no endpoint: {error}",
@@ -29,7 +29,7 @@ export default {
   timeout_reply: "O modelo respondeu, mas o agente não concluiu o turno em {s} s",
   agent_off: "O modo agente está desativado (AMB_AGENT=off); os bots só conversam",
   no_runtime: "Runtime do agente (DSH) não encontrado; os bots só podem conversar",
-  agent_no_model: "Nenhum modelo disponível: conecte o OKINTO e escolha um modelo padrão primeiro",
+  agent_no_model: "Nenhum modelo disponível: conecte o Okinto e escolha um modelo padrão primeiro",
   queue_idle: "Nenhum turno em andamento",
   queue_busy: {
     one: "{count} turno em andamento (rodando há {s} s); novas mensagens na mesma conversa entram nele (ou ficam na fila atrás dele até o agente assumi-lo). Se estiver travado, use /stop ou “Reiniciar processo do agente” abaixo",

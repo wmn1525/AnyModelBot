@@ -1,4 +1,22 @@
 export default {
+  "emptyTitle": "ルールはまだありません",
+  "emptyNeedsTitle": "対応が必要なルールはありません",
+  "emptyNeedsHint": "対応が必要なルールがここに表示されます。",
+  "searchBots": "ボットを検索",
+  "noBotsMatch": "「{query}」に一致するボットはありません",
+  "details": {
+    "prompt": "指示文",
+    "reminder": "リマインダーの内容",
+    "schedule": "実行頻度",
+    "next": "次回の実行",
+    "destination": "送信先",
+    "month": "今月の費用",
+    "spent": "約 {spent} / {budget}"
+  },
+  "kindHint": {
+    "remind": "時間になったらお知らせします。それ以外の作業はしません。",
+    "check": "時間になったら作業を行い、結果をお送りします。"
+  },
   "rule": "ルール",
   "title": "スケジュール",
   "attention": "スケジュール · {count} 件に対応が必要",

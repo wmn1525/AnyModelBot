@@ -20,10 +20,15 @@ export default {
   "closeCoach": "ガイドを閉じる",
   "doneTitle": "準備完了です！",
   "fill": "入力する",
-  "openConsole": "OKINTO New API コンソールで画像モデルを有効にする ↗",
+  "openConsole": "Okinto New API コンソールで画像モデルを有効にする ↗",
   "later": "後で",
   "stopHere": "ここまでにする",
   "next": "次へ：{title}",
+  "blocked": {
+    "permission": "保留中の権限リクエストを先に済ませてから、チェックリストを続けてください。",
+    "needs": "「あなたの対応待ち」の項目を先に済ませてから、チェックリストを続けてください。",
+    "replying": "返信が終わるのを待ってから、チェックリストを続けてください。"
+  },
   "demo": {
     "label": "デモ",
     "generating": "サンプル画像を生成中",

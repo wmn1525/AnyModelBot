@@ -2,7 +2,7 @@
  * Modelflare 账户：本机回环 PKCE 登录、令牌轮换、撤销、设备 Key、预算 Key，以及相关纯函数。
  * 用本地 mock 模拟 Modelflare 的 OIDC 与 connected-app 接口（不连真实服务）。
  */
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
@@ -258,6 +258,24 @@ describe("AccountManager", () => {
     expect(again.status().balanceUsd).toBe(12.5);
     expect(AccountVault.at(dir).load()!.refreshToken).toBe("rt-2");
     expect(mf.s.refresh.has("rt-1")).toBe(false);
+  });
+
+  it("资料读取十五秒超时后保留缓存，迟到的响应不覆盖，重试后恢复", async () => {
+    await signIn();
+    vi.useFakeTimers();
+    let resolve!: (value: unknown) => void;
+    const call = vi.spyOn(manager as any, "call").mockImplementationOnce(() => new Promise((r) => { resolve = r; }));
+    try {
+      const pending = manager.refresh();
+      expect(manager.status()).toMatchObject({ profileState: "loading", profileCached: true, name: "Ada" });
+      expect(manager.refresh()).toBe(pending);
+      await vi.advanceTimersByTimeAsync(15_000);
+      expect(await pending).toMatchObject({ profileState: "error", name: "Ada", balanceUsd: null });
+      resolve({ display_name: "Late", balance_usd: 999 });
+      await Promise.resolve();
+      expect(manager.status().name).toBe("Ada");
+    } finally { call.mockRestore(); vi.useRealTimers(); }
+    expect(await manager.refresh()).toMatchObject({ profileState: "ready", name: "Ada", balanceUsd: 12.5 });
   });
 
   it("授权在网页上被撤销：断开内置网关、清掉账户文件、提示重新登录", async () => {

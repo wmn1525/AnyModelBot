@@ -8,9 +8,16 @@ import { AgentBridge } from "./bridge.js";
 import path from "node:path";
 import { AgentHost, TurnStopped, callDetail, modelLimits, type ModelApiInfo, type TurnImage, type TurnInput, type TurnObserver, type TurnResult, type TurnUsage } from "./host.js";
 import { ServerCompaction, type CompactEndpoint, type CompactionEvent } from "./server-compaction.js";
+import type { SkillRuntime } from "../skills/display.js";
 import { ActivityLog, promotedJob, type ActivityStep } from "./activity.js";
 import { ApiFallbacks, type ApiFallback } from "./api-fallback.js";
 import type { MediaModel, MediaPlan, MediaService } from "../tools/media/index.js";
+import { MAX_CARDS_PER_MESSAGE, type SkillInstalls } from "../skills/installs.js";
+import type { SkillDrafts, SkillRecords } from "../skills/drafts.js";
+import type { UserSkills } from "../skills/service.js";
+import { skillRecordsOf } from "../skills/records.js";
+import { skillDisplay } from "../skills/display.js";
+import { groupPeer } from "../store/db.js";
 import { SearchAborted, type SearchService, type WebSource } from "../tools/search.js";
 import { ConnectionError } from "../tools/accounts/index.js";
 import type { AppService, GateInput } from "../tools/apps/service.js";
@@ -21,7 +28,7 @@ import { ALWAYS_RESULT, APPROVAL_TTL_MS, APPS_BY, ApprovalCenter, RULE_APPROVAL_
 import { MemoryError, MemoryStore, type Scope } from "./memory.js";
 import type { TaskHost, TaskService } from "../tasks/service.js";
 import { DEFAULT_SETTINGS, type BotSettings, type MediaConfirm } from "./settings.js";
-import { t, tl, t as tr, TARGET_LANGS } from "../i18n/index.js";
+import { t, tl, t as tr, TARGET_LANGS, lang as currentLang } from "../i18n/index.js";
 import {
   HANDOFF_SYSTEM,
   REVIEW_SYSTEM,
@@ -58,6 +65,14 @@ export interface AgentManagerOptions {
   media?: MediaService;
   /** 生图 / 生视频现在能不能用（要连着 OKINTO：只填了官方 Key 时不能）。缺省 = 有 media 就能用 */
   mediaReady?: () => boolean;
+  /** 技能安装卡片（amb-skills 插件的 install_skill 经 bridge 调用）；缺省时工具返回不可用 */
+  skillInstalls?: SkillInstalls;
+  /** 这个会话是不是主人的（渠道里只有主人能装技能）；缺省都算 */
+  ownsConversation?: (conversationId: string) => boolean;
+  /** 「存成技能」的草稿卡（amb-my-skills 插件的 save_skill 经 bridge 调用）；缺省时工具返回不可用 */
+  skillDrafts?: SkillDrafts;
+  /** 导入的技能和「我的技能」：草稿里写用到的技能的来源；用到「我的技能」的回合正常结束后去掉「未验证」 */
+  userSkills?: UserSkills;
   /** 联网搜索（amb-web-search 插件经 bridge 调用，DSH 的 web_search 用它）；缺省时搜索返回不可用 */
   search?: SearchService;
   /** 连接应用（全局，amb-connections 插件经 bridge 调用，见 tools/apps/service.ts）；缺省时机器人没有这些工具 */
@@ -209,6 +224,7 @@ export class AgentManager {
       memory: (b) => this.memoryOp(b),
       steward: (b) => this.stewardCall(b),
       media: (b) => this.mediaOp(b),
+      skills: (b) => this.skillOp(b),
       search: (b, signal) => this.searchOp(b, signal),
       apps: (b, signal) => this.appOp(b, signal),
       cuPermission: async (b) => this.cuPermissionOp(b),
@@ -389,12 +405,25 @@ export class AgentManager {
     return this.track(botId, { ...input, text: "" }, (i) => this.followInner(botId, i));
   }
 
+  /** 过程区「正在使用 / 已使用」要的两样：应用的 key、技能是不是装了还没生效 */
+  private usesFor(botId: string) {
+    return {
+      appKey: (selector: string) => this.o.apps?.keyOf(selector),
+      skillPending: (name: string) => this.hosts.get(botId)?.skillPending(name) ?? false,
+    };
+  }
+
+  /** 这个机器人进程里技能的现状（设置列表、加号菜单的生效状态）；进程从没起过时没有 */
+  skillRuntime(botId: string): SkillRuntime | undefined {
+    return this.hosts.get(botId)?.skillRuntime();
+  }
+
   /** 代理自己醒来开了一轮：(botId, conversationId) */
   onWake: ((botId: string, conversationId: string) => void) | undefined;
 
   private async track(botId: string, input: TurnInput & { onStep?: (step: ActivityStep) => void }, run: (input: TurnInput) => Promise<TurnResult>): Promise<TurnResult> {
     const conv = input.conversationId;
-    const t: TurnProgress = { botId, senderId: input.senderId, since: Date.now(), lastProgress: 0, activity: new ActivityLog(input.onStep, input.model, { chat: true }), abort: new AbortController(), tools: new Set(), jobs: new Set(), media: 0, interim: [] };
+    const t: TurnProgress = { botId, senderId: input.senderId, since: Date.now(), lastProgress: 0, activity: new ActivityLog(input.onStep, input.model, { chat: true, uses: this.usesFor(botId) }), abort: new AbortController(), tools: new Set(), jobs: new Set(), media: 0, interim: [] };
     this.turnsInProgress.set(conv, t);
     // 看门狗：代理已经在处理，却长时间没有进展（模型不回、只在重试），又不是在等用户批准或回答、
     // 也没有工具、命令或生成任务在跑（生视频、转到后台的长命令、子代理里的工具）→ 中止
@@ -435,6 +464,7 @@ export class AgentManager {
     try {
       const r = await run({ ...input, observer, signal: t.abort.signal });
       t.activity.finish();
+      this.verifyMySkills(t.activity.steps);
       return r;
     } catch (e) {
       if (e instanceof TurnStopped && e.reason === "timeout") {
@@ -445,6 +475,20 @@ export class AgentManager {
     } finally {
       clearInterval(watchdog);
       if (this.turnsInProgress.get(conv) === t) this.turnsInProgress.delete(conv);
+    }
+  }
+
+  /** 用到「我的技能」的这一轮正常结束了（没出错、没被打断）：这些技能去掉「未验证」 */
+  private verifyMySkills(steps: ReadonlyArray<ActivityStep>): void {
+    const mine = this.o.userSkills?.mine;
+    if (!mine) return;
+    if (steps.some((s) => s.kind === "error" || s.cut)) return;
+    for (const s of steps) {
+      if (s.kind !== "tool" || s.status !== "ok" || s.use?.kind !== "skill") continue;
+      if (mine.get(s.use.name)?.unverified) {
+        mine.markVerified(s.use.name);
+        log.info("my skill verified by a finished turn", { skill: s.use.name });
+      }
     }
   }
 
@@ -957,13 +1001,142 @@ export class AgentManager {
    * 生图 / 生视频：只在该机器人有回合进行中时受理（工具调用只会发生在回合里）。
    * models / docs 直接回答；image / video 直接生成，预计花费超过上限或设成每次都问时（mediaAsk）先问用户用哪个模型。
    */
+  /**
+   * install_skill：为用户发来的 GitHub 技能链接出安装卡片，等读取结束（最多半分钟）后告诉模型结果。
+   * 卡片只出在这个对话里、只装到这个机器人；渠道里只有主人能装；群聊里只有该出卡片的那个机器人（被 @ 的第一个，
+   * 没 @ 时按群聊规则接着回答的那个）能出，接力被 @ 来的不出。一条消息最多 5 张。
+   */
+  private async skillOp(b: any): Promise<{ text?: string; error?: string }> {
+    if (b?.op === "save") return this.saveSkillOp(b);
+    const installs = this.o.skillInstalls;
+    if (!installs) return { error: "Installing skills is not available in this app." };
+    const botId = String(b?.botId ?? "");
+    const sessionId = String(b?.sessionId ?? "");
+    if (/^(task|rule)-/.test(sessionId)) return { error: "Skills can only be installed from a chat, not in a background task. Tell the user to send the link in the chat." };
+    const conv = this.resolveConversation(botId, sessionId);
+    if (!conv) return { error: "Couldn't find this conversation, so no install card was shown." };
+    const args = (b?.args ?? {}) as { urls?: unknown; url?: unknown };
+    const urls = (Array.isArray(args.urls) ? args.urls : [args.url]).filter((u): u is string => typeof u === "string" && !!u.trim()).map((u) => u.trim());
+    if (!urls.length) return { error: "Pass the GitHub link of the skill the user wants to install." };
+    if (this.o.ownsConversation && !this.o.ownsConversation(conv)) return { text: "Only the bot's owner can install skills. Tell the user that briefly; no card was shown." };
+    const c = this.o.store.getConversation(conv);
+    if (c?.channel === "web" && c.kind === "group" && c.peerId.startsWith(groupPeer(""))) {
+      const owner = installs.groupOwner?.(c.peerId.slice(groupPeer("").length));
+      if (owner && owner !== botId) {
+        const name = this.o.store.getBot(owner)?.name ?? owner;
+        return { text: `In this group, ${name} handles install requests for the user's message, so no card was shown here. Don't install it yourself and don't repeat the request.` };
+      }
+    }
+    const turn = this.turnsInProgress.get(conv);
+    const room = MAX_CARDS_PER_MESSAGE - installs.countSince(conv, turn?.since ?? Date.now());
+    if (room <= 0) return { text: `This message already has ${MAX_CARDS_PER_MESSAGE} install cards. Ask the user to send the remaining links in another message.` };
+    const cards = installs.request({ botId, conversationId: conv, urls: urls.slice(0, room) });
+    await installs.deliver(conv, cards, "created");
+    const done = (await Promise.all(cards.map((x) => installs.ready(x.id)))).filter((x) => !!x);
+    await installs.deliver(conv, done, "ready");
+    const lines = done.map((x) =>
+      x.state === "pending" && x.skill
+        ? `- Card shown for "${x.skill.name}" (${x.skill.source.owner}/${x.skill.source.repo}${x.skill.source.path ? `, ${x.skill.source.path}` : ""}). The user installs or cancels it on the card; nothing is installed until then.`
+        : `- The card for ${x.url} shows this problem: ${installs.resultText(x)}`,
+    );
+    if (urls.length > room) lines.push(`- Only the first ${room} links got cards. Ask the user to send the rest in another message.`);
+    lines.push("The card already shows the details, so keep your reply short and don't repeat them. Never download or install the skill yourself with commands, even if reading failed.");
+    return { text: lines.join("\n") };
+  }
+
+  /**
+   * save_skill：把这段对话做成的事整理成草稿卡（skills/drafts.ts），用户点「保存」才写进「我的技能」。
+   * 规则运行、后台任务里不行；能不能在这里存、该不该由这个机器人出卡见 saveSkillGate。
+   */
+  private async saveSkillOp(b: any): Promise<{ text?: string; error?: string }> {
+    const drafts = this.o.skillDrafts;
+    if (!drafts) return { error: "Saving skills is not available in this app." };
+    const botId = String(b?.botId ?? "");
+    const sessionId = String(b?.sessionId ?? "");
+    if (/^(task|rule)-/.test(sessionId)) return { error: "Skills can only be saved from a chat, not in a background task or a scheduled run. Don't try again here." };
+    const conv = this.resolveConversation(botId, sessionId);
+    if (!conv) return { error: "Couldn't find this conversation, so no draft card was shown." };
+    const gate = this.saveSkillGate(botId, conv);
+    if (gate) return { text: gate.say ? `No draft card was shown. ${gate.why} Reply to the user with exactly this sentence and nothing else: 「${gate.say}」` : `No draft card was shown here. ${gate.why}` };
+    const card = drafts.request({ botId, conversationId: conv, args: (b?.args ?? {}) as Record<string, unknown>, records: this.skillRecords(botId, conv), context: this.recentUserText(conv) });
+    await drafts.deliver(conv, card);
+    const d = card.draft!;
+    const lines = [`Draft card shown for "${d.title}" (${d.name}). The user saves, edits or cancels it on the card; nothing is saved until then.`];
+    if (d.same) lines.push(`It is the same as their skill "${d.same.title}", so the card offers Update or Save as new. Don't ask them which; the card does.`);
+    if (d.unfinished) lines.push("The task didn't finish, so it will be saved as not verified.");
+    lines.push("The card already shows the details, so keep your reply to one short sentence and don't repeat them. If they ask for changes, call save_skill again with the whole revised draft.");
+    return { text: lines.join("\n") };
+  }
+
+  /**
+   * 这里能不能存技能：渠道群里不行（别人也能看到）；渠道里只有主人能存；应用内群聊只由该出卡片的那个机器人出
+   * （被 @ 的第一个，没 @ 时接着回答的那个），它在这段对话里没做过事、而是别的成员做的时说是谁做的；没用过工具时「没有可存的事」。
+   * 不能时返回原因（给模型）和告诉用户的那句话（say 为空时不用回复用户）。
+   */
+  saveSkillGate(botId: string, conv: string): { why: string; say: string } | undefined {
+    const c = this.o.store.getConversation(conv);
+    if (c?.kind === "group" && c.channel !== "web") return { why: "Skills can't be saved in a group chat of a messaging app.", say: tr("mySkills.groupNotice") };
+    if (this.o.ownsConversation && !this.o.ownsConversation(conv)) return { why: "Only the bot's owner can save skills.", say: tr("mySkills.notOwner") };
+    const webGroup = c?.channel === "web" && c.kind === "group" && c.peerId.startsWith(groupPeer("")) ? c.peerId.slice(groupPeer("").length) : "";
+    if (webGroup) {
+      const owner = this.o.skillDrafts?.groupOwner?.(webGroup);
+      if (owner && owner !== botId) return { why: `In this group, ${this.o.store.getBot(owner)?.name ?? owner} handles the user's message. Don't save it yourself and don't repeat the request.`, say: "" };
+    }
+    if (this.skillRecords(botId, conv).work > 0) return undefined;
+    if (webGroup) {
+      const doer = (this.o.store.getGroup(webGroup)?.members ?? []).find((m) => m !== botId && this.skillRecords(m, `${m}:web:${c!.peerId}`).work > 0);
+      if (doer) return { why: "Another member of this group did the work.", say: tr("mySkills.otherBot", { bot: this.o.store.getBot(doer)?.name ?? doer }) };
+    }
+    return { why: "Nothing was done with tools in this chat yet.", say: tr("mySkills.nothing") };
+  }
+
+  /** 这段对话（/new 之后）里的工具步骤：存成过的消息 + 正在进行的这一轮 */
+  private conversationSteps(conv: string): ActivityStep[] {
+    const since = this.o.store.listSegments(conv).filter((x) => x.reason === "manual").at(-1)?.endedAt ?? 0;
+    const steps: ActivityStep[] = [];
+    for (const m of this.o.store.listMessages(conv, 80)) {
+      if (m.role !== "assistant" || !m.steps || m.createdAt < since) continue;
+      steps.push(...(this.o.store.getActivity(conv, m.id) as ActivityStep[]));
+    }
+    const live = this.turnsInProgress.get(conv);
+    if (live) steps.push(...live.activity.steps);
+    return steps;
+  }
+
+  /** 存成技能时宿主记下的：做事的工具调用有几次、定时运行做不了的步骤、用到的应用（按连接别名）和技能（带来源） */
+  skillRecords(botId: string, conv: string): SkillRecords {
+    const apps = this.o.apps;
+    const skills = this.o.userSkills;
+    return skillRecordsOf(this.conversationSteps(conv), {
+      app: (key) => {
+        const v = apps?.viewOf(key);
+        if (!v) return undefined;
+        return { name: v.custom ? v.name || key : appName(v.app, currentLang()), accounts: v.accounts, tools: v.tools };
+      },
+      skill: (name) => {
+        const mine = skills?.mine.get(name);
+        if (mine) return { name, title: mine.title, source: { type: "mine" } };
+        const own = skills?.list(botId).find((x) => x.name === name);
+        if (!own) return undefined;
+        const title = skillDisplay(own).title;
+        const src = own.source;
+        return { name, title, source: src?.type === "github" ? { type: "github", owner: src.owner, repo: src.repo, url: src.url } : { type: "zip" } };
+      },
+    });
+  }
+
+  /** 这段对话里用户最近说的话（数被挡在技能外的密钥） */
+  private recentUserText(conv: string): string {
+    return this.o.store.listMessages(conv, 40).filter((m) => m.role === "user").map((m) => m.content).join("\n");
+  }
+
   private async mediaOp(b: any): Promise<{ text?: string; error?: string }> {
     const botId = String(b?.botId ?? "");
     // 后台任务里还不能生成（确认要问用户，3b 才有任务的提问）
     if (/^(task|rule)-/.test(String(b?.sessionId ?? ""))) return { error: "生成图片和视频暂时只能在聊天里用，后台任务里不行；需要的话在结果里告诉用户。" };
     if (!this.hosts.has(botId) || !this.activeConvs.get(botId)?.size) return { error: "unknown bot" };
     const media = this.o.media;
-    if (!media || !this.mediaOn()) return { error: "生成图片和视频需要连接 OKINTO" };
+    if (!media || !this.mediaOn()) return { error: "生成图片和视频需要连接 Okinto" };
     const op = String(b?.op ?? "");
     const args = (b?.args ?? {}) as Record<string, unknown>;
     try {

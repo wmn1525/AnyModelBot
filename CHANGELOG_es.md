@@ -2,7 +2,27 @@
 
 [简体中文](./CHANGELOG.md) | [English](./CHANGELOG_en.md) | [日本語](./CHANGELOG_ja.md) | [한국어](./CHANGELOG_ko.md) | [Русский](./CHANGELOG_ru.md) | Español | [Português (Brasil)](./CHANGELOG_pt.md)
 
-Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, consulta las [versiones publicadas en GitHub](https://github.com/modelflare-ai/AnyModelBot/releases).
+Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, consulta las [versiones publicadas en GitHub](https://github.com/wmn1525/AnyModelBot/releases).
+
+## 0.1.36 - 2026-11-15
+
+### Novedades
+
+- **Guarda lo que hiciste como habilidad:** cuando un bot hace algo bien, elige «Guardar como habilidad…» en el menú + del cuadro de texto, envía `/skill` o simplemente di «guardar como habilidad». El bot arma una tarjeta con los pasos, lo que corregiste, las apps y habilidades que usó y una línea de «Prueba a decir». Guárdala en Mis habilidades, actívala para otros bots con un interruptor o prográmala. Los secretos nunca se escriben en la habilidad, y los datos personales, como teléfonos y correos, se preguntan cada vez por defecto. Puedes actualizar una habilidad, restaurar la versión anterior o exportarla como ZIP.
+- **Guarda habilidades desde WeChat y Feishu:** también puedes empezar en chats privados de WeChat, Feishu, Telegram, Slack y Discord. Responde «guardar» para conservarla o «cancelar» para descartarla; no se puede iniciar desde un grupo.
+- **Biblioteca de habilidades:** Conectar apps ahora se llama Apps y habilidades, con una nueva pestaña Habilidades que reúne 155 habilidades de 31 repositorios de código abierto, por categoría y por autor. Copia una instrucción de instalación y envíala a cualquier bot, o envía el enlace de GitHub de una habilidad, y confirma la tarjeta para instalarla.
+- **Usa habilidades y apps en un chat:** + › Habilidades y apps en el cuadro de texto muestra lo que el bot puede usar; elige una para insertar «Usa {name} para ayudarme a…». Sobre la respuesta ves qué habilidades y apps se están usando o se usaron, y los nombres de las habilidades abren sus detalles.
+
+### Mejoras y correcciones
+
+- **Una lista de habilidades más fácil:** primero aparecen las activadas. Con más de 10, puedes buscar y filtrar por Mis habilidades, GitHub, ZIP local o Desactivadas. Cada habilidad muestra si está activa, de dónde viene y una línea de «Prueba a decir».
+- **Plantillas con créditos de prueba:** las plantillas usan un nivel de modelo acorde a tus créditos actuales y dicen qué nivel recomiendan normalmente.
+- **Permisos para controlar la computadora:** si a una tarea en segundo plano la detiene un permiso, ahora aparece la tarjeta de permiso y no queda ninguna espera sin tarjeta.
+- **Primeros pasos y avisos:** al tocar un paso bloqueado de la lista se explica el motivo. Los avisos aparecen arriba al centro del área principal.
+- **Rutinas programadas:** una rutina abierta se divide en instrucción, frecuencia, próxima ejecución y destino. Elegir un bot usa una lista con búsqueda, y las rutinas nuevas empiezan con tarjetas para «Enviar un recordatorio» o «Hacer una tarea», que puede seguir una de Mis habilidades. Los estados vacíos y el aviso de zona horaria son más claros.
+- **Actualizaciones, cuenta y detalles:** el acceso a la actualización muestra la versión. Si los datos de la cuenta no cargan, puedes reintentar; «Cerrar sesión» aparece en rojo; los chats grupales de la app muestran una opción de recarga cuando se acaba el saldo, y las tarjetas de plantillas tienen borde y sus enlaces ya no llevan flecha.
+
+- Biblioteca de habilidades, guardar trabajos como habilidades e instalarlas desde el chat. La interfaz, mensajes en siete idiomas y herramientas usan Okinto; se conservan las conexiones existentes y se corrigen los enlaces de actualización.
 
 ## 0.1.35 - 2026-11-14
 
@@ -21,7 +41,7 @@ Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, 
 
 ### Sincronización del repositorio
 
-- Incluye upstream 0.1.33–0.1.35: reglas programadas, diez plantillas, vistas previas de recursos, diagnóstico de inicio y correcciones de interfaz. Conserva el inicio de sesión de OKINTO New API, grupos de modelos, saldos e imágenes; el nuevo resumen de cuenta respeta las monedas y cuotas ilimitadas.
+- Incluye upstream 0.1.33–0.1.35: reglas programadas, diez plantillas, vistas previas de recursos, diagnóstico de inicio y correcciones de interfaz. Conserva el inicio de sesión de Okinto New API, grupos de modelos, saldos e imágenes; el nuevo resumen de cuenta respeta las monedas y cuotas ilimitadas.
 
 ## 0.1.34 - 2026-11-14
 
@@ -49,7 +69,7 @@ Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, 
 
 ### Mejoras y correcciones
 
-- Mejoras en el regreso del inicio de sesión de Modelflare, nombres y avatares de cuenta y guía inicial. Las listas de aplicaciones conectadas, la búsqueda y los errores son más claros.
+- Mejoras en el regreso del inicio de sesión de Okinto, nombres y avatares de cuenta y guía inicial. Las listas de aplicaciones conectadas, la búsqueda y los errores son más claros.
 - Mejoras en el lienzo de Film Studio y el procesamiento de gráficos de US Stock Research. PPT Master y Company Research también adoptan el nuevo espacio de trabajo.
 - Los resultados indican su regla de origen y respetan la preferencia de notificaciones. Puedes evitar la suspensión antes de una ejecución cuando el ordenador está enchufado; no despierta un equipo ya suspendido o cerrado.
 
@@ -84,8 +104,8 @@ Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, 
 - Las cuentas de mensajes de Feishu existentes también se movieron a la tarjeta de Feishu en Conectar apps sin necesidad de volver a autorizarlas; autoriza de nuevo para leer y escribir también documentos en la nube.
 - Crear y actualizar páginas de Notion ahora pregunta primero, según la regla anterior.
 - Los tokens, las claves y las URL dedicadas de las apps se guardan en un archivo aparte, no en la base de datos, y se enmascaran en la interfaz y en los registros.
-- macOS ya no muestra un aviso del llavero: el inicio de sesión de Modelflare está protegido por los permisos del archivo, como las demás credenciales.
-- Cuando falla el inicio de sesión o la conexión con Modelflare, el mensaje indica el motivo de red real.
+- macOS ya no muestra un aviso del llavero: el inicio de sesión de Okinto está protegido por los permisos del archivo, como las demás credenciales.
+- Cuando falla el inicio de sesión o la conexión con Okinto, el mensaje indica el motivo de red real.
 - Puedes arrastrar la ventana desde un espacio vacío de la página Descubrir.
 - La guía de un chat grupal nuevo ahora consiste en tres consejos breves y dos o tres sugerencias para empezar; haz clic en una sugerencia para ponerla en el cuadro de entrada.
 - Los ajustes de modelo de la página Nuevo bot se ven como el grupo Modelo de los ajustes del bot, y el botón Crear ocupa todo el ancho del formulario.
@@ -95,8 +115,8 @@ Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, 
 
 ### Novedades
 
-- **Créditos de Bot:** las cuentas con créditos de Bot de Modelflare ven un anillo y el porcentaje restante en la esquina inferior izquierda. Haz clic para ver tus créditos de Bot, el saldo de la cuenta y el enlace Recargar. Los créditos de Bot solo se pueden usar en AnyModelBot, y las solicitudes con claves emitidas por la app los usan primero. Las cifras se actualizan al abrir la tarjeta y después de procesar cada mensaje. Las cuentas sin créditos de Bot ven la esquina igual que antes.
-- **$1 en créditos de Bot para cuentas nuevas:** la página de inicio de sesión y la página de clave de API ahora mencionan el crédito por registrarse. Las suscripciones de Modelflare suman créditos de Bot equivalentes al 10 % del plan, como también explica la tarjeta de créditos de Bot.
+- **Créditos de Bot:** las cuentas con créditos de Bot de Okinto ven un anillo y el porcentaje restante en la esquina inferior izquierda. Haz clic para ver tus créditos de Bot, el saldo de la cuenta y el enlace Recargar. Los créditos de Bot solo se pueden usar en AnyModelBot, y las solicitudes con claves emitidas por la app los usan primero. Las cifras se actualizan al abrir la tarjeta y después de procesar cada mensaje. Las cuentas sin créditos de Bot ven la esquina igual que antes.
+- **$1 en créditos de Bot para cuentas nuevas:** la página de inicio de sesión y la página de clave de API ahora mencionan el crédito por registrarse. Las suscripciones de Okinto suman créditos de Bot equivalentes al 10 % del plan, como también explica la tarjeta de créditos de Bot.
 - **Novedades tras cada actualización:** después de una actualización, el primer inicio muestra qué cambió, y puedes desplazarte hacia abajo por todas las versiones. Al hacer clic en el aviso de nueva versión de la barra lateral, primero se muestran las notas de esa versión, para que decidas antes de descargar o reiniciar. El registro de cambios está siempre disponible en Ajustes → Acerca de.
 - **Bots oficiales como espacios de trabajo de escritorio:** Análisis de empresas, PPT Master, Estudio de cine y Acciones de EE. UU. muestran tu trabajo en una lista a la izquierda y el contenido a la derecha. Nuevo abre un breve formulario guiado. La barra superior alterna entre Espacio de trabajo y Chat, donde ves la conversación completa. Acciones de EE. UU. muestra las cifras clave en gráficos, Estudio de cine tiene un storyboard con pistas de imagen, video y audio, y PPT Master te permite hojear las vistas previas.
 - **Elección de modelo en los bots con interfaz propia:** el cuadro de entrada funciona como en un chat normal, con el selector de modelos, el menú + y los comandos con barra.
@@ -115,7 +135,7 @@ Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, 
 - **Descarga automática de actualizaciones, activada de forma predeterminada:** las apps de escritorio instaladas descargan las nuevas versiones en segundo plano y luego ofrecen Reiniciar y actualizar en la barra lateral y en Ajustes → Acerca de. Desactiva las descargas automáticas en Ajustes → General para descargar manualmente.
 - La instalación requiere tu clic y espera a que no tengas chats activos ni tareas en segundo plano. Al salir de forma normal, las actualizaciones no se instalan automáticamente.
 - Quienes tengan la 0.1.28 o una anterior deben instalar manualmente esta versión una vez antes de poder usar las actualizaciones desde la app. Disponible en macOS, Windows y AppImage de Linux; las instalaciones con Docker o desde el código fuente se siguen actualizando manualmente.
-- **De vuelta a la app después de iniciar sesión:** después de aprobar en el navegador, la página espera a que la app esté realmente conectada antes de indicar que iniciaste sesión, y luego te lleva de vuelta a AnyModelBot. Si algo falla, te dice por qué. La página de clave de API también te permite iniciar sesión con una cuenta de Modelflare en su lugar.
+- **De vuelta a la app después de iniciar sesión:** después de aprobar en el navegador, la página espera a que la app esté realmente conectada antes de indicar que iniciaste sesión, y luego te lleva de vuelta a AnyModelBot. Si algo falla, te dice por qué. La página de clave de API también te permite iniciar sesión con una cuenta de Okinto en su lugar.
 - **Un modelo elegido para tu primer inicio de sesión:** si todavía no tienes un modelo predeterminado, la app elige un modelo de bajo costo que admita herramientas (con preferencia por DeepSeek), para que el crédito de prueba alcance para algunas tareas típicas. Si ninguno encaja, te explica por qué y te deja elegir.
 - **En macOS, los permisos de uso de la computadora se piden solo cuando hacen falta:** la primera vez que un bot necesita hacer clic, escribir o mirar la pantalla sin el permiso de Accesibilidad o de Grabación de pantalla, ese turno se detiene y el chat indica qué permiso falta, con botones para solicitarlo, abrir la página de ajustes correspondiente y volver a comprobar. Si hay que volver a abrir la app, se conservan los borradores sin enviar.
 - **Portadas en Descubrir:** los bots oficiales ahora tienen escenas de portada ilustradas que siguen el tema claro u oscuro, y los bots destacados se muestran como tarjetas grandes.
@@ -123,7 +143,7 @@ Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, 
 ### Mejoras y correcciones
 
 - Mensajes de error más claros: el saldo bajo, las credenciales vencidas, los modelos no disponibles, los límites de solicitudes y los fallos de red tienen cada uno su propia explicación y una acción correspondiente, como Recargar o cambiar de modelo. El error original queda en Detalles del error y se puede copiar sin los datos secretos. El mismo error ya no aparece dos veces, la barra lateral solo muestra “Falló: motivo”, y Volver a enviar advierte que toda la tarea se vuelve a ejecutar desde el principio. El bot Análisis de empresas agrupa los errores de sus tareas de la misma forma.
-- El área de la cuenta, abajo a la izquierda, siempre muestra tu saldo y un enlace Recargar, y el saldo bajo se señala ahí en lugar de en un aviso aparte dentro de la app. Su menú incluye comentarios, buscar actualizaciones y cerrar sesión; si cierras sesión con tareas en curso, primero te pregunta. Con tu propia clave de API, puedes iniciar sesión en Modelflare desde aquí y conservar tus claves y ajustes.
+- El área de la cuenta, abajo a la izquierda, siempre muestra tu saldo y un enlace Recargar, y el saldo bajo se señala ahí en lugar de en un aviso aparte dentro de la app. Su menú incluye comentarios, buscar actualizaciones y cerrar sesión; si cierras sesión con tareas en curso, primero te pregunta. Con tu propia clave de API, puedes iniciar sesión en Okinto desde aquí y conservar tus claves y ajustes.
 - Lista de primeros pasos: “Conecta tu app de chat habitual” te permite elegir un canal y abre sus ajustes, y solo cuenta cuando está realmente conectado. “Saluda” necesita una respuesta real. Después de decir “recuerda …”, la lista se actualiza en segundos. Las indicaciones ya no aparecen mientras tienes un borrador o hay una tarea en curso, y la lista se pliega cuando todo está hecho.
 - Después de reemplazar una clave o cambiar la fuente de modelos, la app te recuerda revisar los modelos de tus bots existentes. Durante la primera configuración no muestra este aviso.
 - Guardar los ajustes del bot varias veces seguidas muestra un solo “Guardado”. Los bots nuevos mantienen contraídos los ajustes de modelo, con el modelo predeterminado heredado a la vista, y ya no eligen en silencio el primer modelo de la lista. Al crear un grupo con varios bots se explica cómo funciona, con ejemplos de mensajes basados en sus miembros.
@@ -199,17 +219,17 @@ Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, 
 
 ### Novedades
 
-- **Usa tus propias claves de API oficiales:** ya no necesitas una cuenta. En el primer inicio, haz clic en Usar tu propia clave de API, o ve a Ajustes → Modelos e ingresa una clave de OpenAI, Anthropic, Google Gemini, xAI, DeepSeek, Kimi, GLM, Qwen, MiniMax o Mistral. Las solicitudes a los modelos van directamente al proveedor, el proveedor te factura y la clave se queda en este dispositivo. La generación de imágenes y video sigue disponible solo con Modelflare.
+- **Usa tus propias claves de API oficiales:** ya no necesitas una cuenta. En el primer inicio, haz clic en Usar tu propia clave de API, o ve a Ajustes → Modelos e ingresa una clave de OpenAI, Anthropic, Google Gemini, xAI, DeepSeek, Kimi, GLM, Qwen, MiniMax o Mistral. Las solicitudes a los modelos van directamente al proveedor, el proveedor te factura y la clave se queda en este dispositivo. La generación de imágenes y video sigue disponible solo con Okinto.
 - **Keenable para la búsqueda web:** elígelo en Ajustes → Red y acceso e ingresa una clave.
 
 ### Mejoras y correcciones
 
-- La pestaña Modelflare de Ajustes ahora se llama Modelos, y desde ahí puedes iniciar sesión en Modelflare si aún no lo hiciste.
+- La pestaña Okinto de Ajustes ahora se llama Modelos, y desde ahí puedes iniciar sesión en Okinto si aún no lo hiciste.
 - Análisis de empresas, Acciones de EE. UU. y PPT Master ahora están disponibles en japonés, coreano y ruso.
 
 ### Privacidad
 
-- Si solo usas claves de API oficiales y no inicias sesión, la app no lee los datos de tu cuenta de Modelflare ni su catálogo de precios. El gateway integrado lee el catálogo público de modelos de models.dev, y esa solicitud no lleva claves ni contenido de las conversaciones.
+- Si solo usas claves de API oficiales y no inicias sesión, la app no lee los datos de tu cuenta de Okinto ni su catálogo de precios. El gateway integrado lee el catálogo público de modelos de models.dev, y esa solicitud no lleva claves ni contenido de las conversaciones.
 
 ## 0.1.21 - 2026-11-03
 
@@ -245,7 +265,7 @@ Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, 
 
 ### Cambios importantes
 
-- **Ahora es obligatorio iniciar sesión:** ya no se admite pegar una clave de API; todos inician sesión con una cuenta de Modelflare. Después de actualizar, cualquier clave que hayas ingresado antes se elimina de este dispositivo y la app te pide iniciar sesión. Tus bots y conversaciones siguen funcionando una vez que lo hagas.
+- **Ahora es obligatorio iniciar sesión:** ya no se admite pegar una clave de API; todos inician sesión con una cuenta de Okinto. Después de actualizar, cualquier clave que hayas ingresado antes se elimina de este dispositivo y la app te pide iniciar sesión. Tus bots y conversaciones siguen funcionando una vez que lo hagas.
 - **El inicio de sesión ahora funciona en Docker y en instalaciones remotas:** inicia sesión desde un navegador en cualquier dispositivo y luego pega en la app el enlace de la barra de direcciones. Durante la configuración por línea de comandos, escribe `remote`.
 
 ### Novedades

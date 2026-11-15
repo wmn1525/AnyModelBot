@@ -15,6 +15,14 @@ body {
 [data-theme]:not(:root) { background: var(--bg); color: var(--fg); }
 :where(p, pre, code, td, .selectable, .msg, .notice-text, .err-text) { user-select: text; -webkit-user-select: text; }
 h1, h2, h3, h4, p { margin: 0; }
+/* 折行：说明文字不让最后一行只剩一两个字（中文常见「你。」单独成行），标题按行均分；只改折行位置，不改字号和行高 */
+:where(p, li, dd, small, figcaption, .hint, .sub) { text-wrap: pretty; }
+:where(h1, h2, h3) { text-wrap: balance; }
+/* 快捷键：「+」菜单、账户菜单、命令面板、搜索空状态共用这一套——浅底小胶囊、界面字体、不折行 */
+kbd {
+  display: inline-flex; align-items: center; flex: none; padding: var(--space-0-5) var(--space-1-5); border-radius: var(--r-mark);
+  background: var(--pill); color: var(--muted); font: var(--fw-regular) var(--fs-2xs)/var(--lh-snug) var(--font); white-space: nowrap;
+}
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: default; appearance: none; -webkit-appearance: none; text-align: center; }
 input, textarea { font: inherit; color: inherit; }
 a { color: var(--accent); text-decoration: none; }

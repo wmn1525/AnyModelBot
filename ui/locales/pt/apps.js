@@ -1,14 +1,20 @@
 export default {
-  "menu": "Conectar apps",
-  "commandKeys": "conectar apps app aplicativos mcp conector feishu lark notion github connect connector",
+  "menu": "Apps e habilidades",
+  "commandKeys": "apps e habilidades habilidades skills biblioteca de habilidades conectar apps app aplicativos mcp conector feishu lark notion github connect connector",
   "attention": "Um app precisa da sua atenção",
-  "title": "Apps",
-  "lead": "Conecte seus apps para que seus bots possam ler e escrever o conteúdo deles.",
+  "title": "Apps e habilidades",
+  "lead": "Conecte seus apps e encontre habilidades úteis para que seus bots façam mais por você.",
   "tab": {
     "all": "Todos",
     "connected": "Conectados"
   },
-  "search": "Pesquisar apps, usos ou contas",
+  "search": "Buscar apps e habilidades",
+  "tabs": {
+    "apps": "Apps {n}",
+    "skills": "Habilidades {n}"
+  },
+  "addMine": "Meus MCP · Adicionar personalizado",
+  "filterLabel": "Filtrar apps",
   "suggested": "Apps sugeridos",
   "mine": "Meus MCPs",
   "addCustom": "Adicionar conector personalizado",
@@ -120,10 +126,8 @@ export default {
     "terms": "Abrir os termos da API",
     "docs": "Documentação oficial",
     "done": "Conectado",
-    "next": "Agora você pode dizer ao seu bot:",
-    "sendToBot": "Enviar ao bot atual",
-    "copyExample": "Copiar exemplo",
-    "finish": "Concluir"
+    "finish": "Concluir",
+    "readyNow": "Já pode ser usado."
   },
   "manage": {
     "alias": "Apelido",

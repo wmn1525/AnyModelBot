@@ -17,6 +17,7 @@ import {
   agentPersona,
   botIdentity,
   botPrompt,
+  botSkills,
   NUDGE,
   TASK_RULES,
   TASK_SECTION,
@@ -122,6 +123,9 @@ async function parts(): Promise<Record<string, string>> {
     bot: botIdentity("小蓝", PERSONA),
     section: botPrompt({ name: "小蓝", persona: PERSONA, memory: true }),
     "section memory-off": botPrompt({ name: "小蓝", persona: PERSONA, memory: false }),
+    "skills section": botSkills([{ name: "xhs-title", title: "小红书爆款标题", example: "帮我给这篇笔记起几个小红书标题" }, { name: "weekly-report", title: "weekly-report", example: "用weekly-report帮我……" }], true),
+    "skills only": botSkills([{ name: "xhs-title", title: "小红书爆款标题", example: "帮我给这篇笔记起几个小红书标题" }], false),
+    "skills none": botSkills([], false),
     segment,
     "skill media": MEDIA_SKILL,
     "skill computer-use": CUA_SKILL,
@@ -158,6 +162,11 @@ async function parts(): Promise<Record<string, string>> {
  */
 const RULES: [rule: string, part: string, says: string[], gone?: string[]][] = [
   ["先给答案", "chat", ["先给答案或结果"]],
+  // 2026-11-15 技能与应用：加号菜单填的是界面上的名字，要能对上技能名；问起时只列能用的，每项一句示例（和「试试这样说」同一句）
+  ["界面上的名字对上技能名，点名时先加载", "skills section", ["小红书爆款标题 → xhs-title：帮我给这篇笔记起几个小红书标题", "- weekly-report：", "先用 skill 工具加载它再做"], ["weekly-report → weekly-report"]],
+  ["问起时只列能用的技能和应用，各附一句示例", "skills section", ["只列上面这些技能和Connected apps 里的应用", "附一句用户可以照着说的话", "没装的、关掉的、没分给你的不要列"]],
+  ["没有应用时不提应用那一段", "skills only", ["只列上面这些技能，"], ["Connected apps"]],
+  ["什么都没有时直说，并指到加号菜单", "skills none", ["问起时直说", "「技能与应用」"], ["skill 工具"]],
   ["长任务开始时说一句要做什么，只说一次", "chat", ["开始时用一句话说你要做什么，只说一次"]],
   ["不逐步讲解：处理过程在界面里", "chat", ["之后不要逐步讲解", "「处理过程」"]],
   ["做完说清做了什么、结果在哪里", "chat", ["说清做了什么、结果在哪里", "present"]],
@@ -384,14 +393,15 @@ describe("机器人段：宿主写文件，amb-prompt 插件每次模型请求�
     try {
       host.syncPrompt();
       const file = host.promptFile;
-      expect(fs.readFileSync(file, "utf8")).toBe(botPrompt({ name: "小蓝", persona: "人设一", memory: true }));
+      // 没装技能、也没有应用时，末尾是一句「问起时直说」（技能和应用那一段，botSkills）
+      expect(fs.readFileSync(file, "utf8")).toBe(`${botPrompt({ name: "小蓝", persona: "人设一", memory: true })}\n\n${botSkills([], false)}`);
       const st = fs.statSync(file);
       host.syncPrompt();
       expect(fs.statSync(file).ino).toBe(st.ino);
       expect(fs.statSync(file).mtimeMs).toBe(st.mtimeMs);
       store.updateBot("b", { name: "小红", systemPrompt: "人设二" });
       host.syncPrompt();
-      expect(fs.readFileSync(file, "utf8")).toBe(botPrompt({ name: "小红", persona: "人设二", memory: true }));
+      expect(fs.readFileSync(file, "utf8")).toBe(`${botPrompt({ name: "小红", persona: "人设二", memory: true })}\n\n${botSkills([], false)}`);
       expect(fs.readdirSync(path.dirname(file))).toEqual(["b.md"]);
     } finally {
       done();

@@ -3,7 +3,18 @@ export default {
     "head": "Habilidades",
     "note": "Agrega flujos de trabajo a este bot. Los cambios se aplican cuando termina lo que está haciendo.",
     "import": "Importar ZIP",
-    "importSub": "Una habilidad por ZIP, hasta 20 MB",
+    "importSub": "Una habilidad por ZIP, hasta 20 MB. También puedes enviarle al bot el enlace de GitHub de una habilidad para instalarla",
+    "browse": "Ver habilidades",
+    "sourceGithub": "Origen: GitHub · {repo}",
+    "sourceZip": "Origen: ZIP local",
+    "source": "Origen",
+    "zip": "ZIP local",
+    "repo": "Repositorio",
+    "path": "Ruta",
+    "root": "Raíz del repositorio",
+    "branch": "Rama",
+    "commit": "Commit",
+    "installedAt": "Instalada",
     "empty": "Aún no hay habilidades importadas",
     "enable": "Habilitar {name}",
     "files": "{count} archivos · {size} KB",
@@ -25,7 +36,13 @@ export default {
       "conflict": "La habilidad instalada cambió. Vuelve a seleccionar el ZIP para confirmar el reemplazo.",
       "not_found": "No se encontró la habilidad. Actualiza la lista.",
       "too_many": "Un bot puede tener hasta 100 habilidades importadas. Primero elimina las que no uses."
-    }
+    },
+    "imported": {
+      "active": "Se importó «{name}». Ya funciona desde tu próximo mensaje.",
+      "waiting": "Se importó «{name}». Funcionará desde tu próximo mensaje, cuando termine la tarea actual.",
+      "loading": "Se importó «{name}». Cargando; funcionará desde tu próximo mensaje."
+    },
+    "manualOnly": "Esta habilidad está configurada para que el bot no la use por su cuenta. Escribe /{name} en un mensaje para usarla."
   },
   "back": "Volver al chat",
   "backTitle": "Volver al chat (Esc)",
@@ -49,7 +66,7 @@ export default {
   },
   "budget": {
     "name": "Presupuesto",
-    "signedOut": "Inicia sesión en OKINTO para definir un límite de gasto aparte para este bot",
+    "signedOut": "Inicia sesión en Okinto para definir un límite de gasto aparte para este bot",
     "signIn": "Iniciar sesión",
     "off": "Comparte el saldo de tu cuenta con los demás bots, sin un límite aparte",
     "on": "Registra el gasto de este bot por separado y se detiene al llegar al límite",

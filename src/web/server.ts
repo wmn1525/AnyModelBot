@@ -13,6 +13,7 @@ import { LiveTurns, type LiveTurn } from "./live.js";
 import { connectionFromPids } from "../agent/peer-guard.js";
 import { groupPeer, type BotGroup } from "../store/db.js";
 import { GroupChats } from "../core/groups.js";
+import { installPromptLinks, MAX_CARDS_PER_MESSAGE } from "../skills/installs.js";
 import { ConnectionError, connectionUserMessage } from "../tools/accounts/index.js";
 import { lang, normalizeLang, requestLang, t } from "../i18n/index.js";
 import { HttpError, NOTION_CALLBACK, send, webEvent, consoleConvId, isLoopback, type Route, type WebContext } from "./http.js";
@@ -28,6 +29,8 @@ import { AppUserError } from "../tools/apps/service.js";
 import { tasksRoutes } from "./routes/tasks.js";
 import { chatRoutes } from "./routes/chat.js";
 import { botsRoutes } from "./routes/bots.js";
+import { skillInstallsRoutes } from "./routes/skill-installs.js";
+import { mySkillsRoutes } from "./routes/my-skills.js";
 import { FilePreviews } from "./file-previews.js";
 
 const log = logger("web");
@@ -135,6 +138,7 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
       const peer = groupPeer(groupId);
       const conv = app.store.ensureConversation(botId, "web", peer, g?.name ?? "", "group");
       const before = app.store.listMessages(conv.id, 1).at(-1)?.id ?? 0;
+      const model = conv.model || app.store.getBot(botId)?.defaultModel || app.config.llm.defaultModel;
       const lt = live.start(conv.id, botId, "", before);
       groupTurns.set(groupId, lt);
       groups.emit(groupId, "turn", { botId, conversationId: conv.id, ...lt.snapshot() });
@@ -152,10 +156,25 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
         const text = failure || lt.text;
         app.store.addMessage(conv.id, "assistant", text.startsWith("⚠️") ? text : `⚠️ ${text}`);
       }
+      for (const message of app.store.listMessages(conv.id, 30)) {
+        if (message.id > before && message.role === "assistant" && message.content.startsWith("⚠️")) {
+          app.store.setMessageErrorContext(message.id, { model, groupId, input });
+        }
+      }
       groups.emit(groupId, "turnEnd", { botId });
       return replies.map((m) => m.content).join("\n\n");
     },
+    // 技能库的安装指令：由该出卡片的成员直接出卡片（存在它的成员会话里，群的时间线按时间插进去）
+    installLinks: (text) => installPromptLinks(text),
+    install: (botId, groupId, urls) => {
+      const conv = app.store.ensureConversation(botId, "web", groupPeer(groupId), app.store.getGroup(groupId)?.name ?? "", "group");
+      app.skillInstalls.request({ botId, conversationId: conv.id, urls });
+      if (urls.length > MAX_CARDS_PER_MESSAGE) app.store.addMessage(conv.id, "assistant", t("skills.tooManyLinks", { max: MAX_CARDS_PER_MESSAGE }));
+    },
   });
+  app.skillInstalls.groupOwner = (groupId) => groups.installOwner(groupId);
+  // 「存成技能」在群里也只由该出卡片的那个成员出（同一条规则）
+  app.skillDrafts.groupOwner = (groupId) => groups.installOwner(groupId);
   function publicGroup(g: BotGroup) {
     const last = app.store.listGroupMessages(g.id, 5).filter((m) => m.role !== "system").at(-1);
     return {
@@ -233,7 +252,7 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
     publicGroup,
     groupMembers,
   };
-  const routes: Route[] = [systemRoutes(ctx), modelsRoutes(ctx), accountRoutes(ctx), settingsRoutes(ctx), computerRoutes(ctx), channelsRoutes(ctx), connectionsRoutes(ctx), appsRoutes(ctx), tasksRoutes(ctx), chatRoutes(ctx, filePreviews), botsRoutes(ctx, filePreviews)];
+  const routes: Route[] = [systemRoutes(ctx), modelsRoutes(ctx), accountRoutes(ctx), settingsRoutes(ctx), computerRoutes(ctx), channelsRoutes(ctx), connectionsRoutes(ctx), appsRoutes(ctx), tasksRoutes(ctx), chatRoutes(ctx, filePreviews), botsRoutes(ctx, filePreviews), skillInstallsRoutes(ctx), mySkillsRoutes(ctx)];
 
   async function api(req: http.IncomingMessage, res: http.ServerResponse, url: URL): Promise<void> {
     const p = url.pathname.slice("/amb/api".length);

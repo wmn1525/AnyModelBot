@@ -2,6 +2,7 @@
 /* 发现页：居中一列（最宽 --discover-w），标题 + 一句话，下面按分组排卡片。
    卡片 = 封面 + 头像、名字、一句话。封面是一张图（cover/light|dark.png），封面是大卡片（--r-card-lg），和模板卡同一个圆角；
    没有封面时是 --well 上一个大头像。精选最多两列、封面 16:9，其余最多三列、封面 16:10；窗口窄了自动少一列 */
+@layer app {   /* 和其他页面样式一样放在 app 层（README「层叠顺序」）；以前是无层样式，会压过工具类和后面文件里的规则 */
 .discover { --discover-w: 960px; --page-px: max(var(--page-gutter), calc((100% - var(--discover-w)) / 2)); height: 100%; overflow: auto; padding: 0 var(--page-px) var(--page-bottom); display: grid; gap: var(--section-gap); align-content: start; }
 /* 标题这一条是通栏的拖动区（和设置页、对话页的顶栏一样）：往两边伸到窗格的边、往上包住页面顶部的留白，空白处按住就能拖动窗口；
    里面的标题、说明、搜索框照常点选。应用页（screens/apps.js）用的也是这一条 */
@@ -107,3 +108,4 @@
 .side-list .drop-after::after { bottom: calc(var(--side-row-gap) / -2 - 1px); }
 .side-sec.drop-into > .side-sec-head > .side-group { background: var(--pill); }
 
+}

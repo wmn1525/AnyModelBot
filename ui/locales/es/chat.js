@@ -56,7 +56,7 @@ export default {
     "fixKey": "Iniciar sesión",
     "fixOfficialKey": "Reemplazar clave",
     "officialKeyInvalid": "{name} rechazó esta clave de API. Es posible que no sea válida o que se haya revocado.",
-    "authInvalid": "Tu acceso a OKINTO venció o se revocó. Vuelve a iniciar sesión.",
+    "authInvalid": "Tu acceso a Okinto venció o se revocó. Vuelve a iniciar sesión.",
     "loadHistory": "No se pudo cargar el historial de mensajes: {error}"
   },
   "menu": {
@@ -65,7 +65,52 @@ export default {
     "newConv": "Nueva conversación",
     "reset": "Borrar contexto",
     "status": "Mostrar estado",
-    "allCommands": "Todos los comandos"
+    "allCommands": "Todos los comandos",
+    "usables": "Habilidades y apps"
+  },
+  "use": {
+    "skills": "Habilidades",
+    "apps": "Apps",
+    "search": "Buscar habilidades o apps",
+    "noMatch": "Sin resultados",
+    "prefill": "Usa {name} para ayudarme a{cursor}…",
+    "appExample": "Usa {app} para ayudarme a…",
+    "readonlyDesc": "Solo lectura: puede buscar y leer",
+    "readonlyNo": "Este bot es de solo lectura, así que no puede escribir",
+    "noSkills": "Este bot todavía no tiene habilidades.",
+    "noSkillsBody": "Importa una habilidad o envíale a este bot una instrucción de instalación de la biblioteca de habilidades.",
+    "importSkill": "Importar una habilidad",
+    "noApps": "Este bot todavía no tiene apps.",
+    "noAppsBody": "Conecta una app y este bot podrá usarla de inmediato.",
+    "noAppsAssigned": "Tus apps conectadas todavía no están asignadas a este bot.",
+    "connectApp": "Conectar una app",
+    "unassigned": "Sin asignar a este bot",
+    "assign": "Asignar a este bot",
+    "assigned": "{app} quedó asignada a {bot}. Ya se puede usar.",
+    "usingSkill": "Usando la habilidad · {name}",
+    "usingApp": "Usando {app}",
+    "failedSkill": "No se pudo usar la habilidad · {name}. {reason}",
+    "failedApp": "No se pudo usar {app}. {reason}",
+    "reason": {
+      "loading": "La habilidad todavía se está cargando.",
+      "connection": "Revisa la conexión con {app}.",
+      "denied": "No permitiste esta llamada.",
+      "readonly": "Este bot es de solo lectura, así que no puede escribir.",
+      "failed": "Esta vez no funcionó."
+    },
+    "used": "Usado: {list}",
+    "notUsed": "No se pudo usar: {list}",
+    "sep": ", ",
+    "state": {
+      "active": "Activa",
+      "waiting": "Activa cuando termine la tarea actual",
+      "loading": "Cargando"
+    },
+    "try": "Prueba decir: {example}",
+    "fill": "Insertar en el mensaje",
+    "fillTitle": "Insertar en el mensaje para este bot",
+    "copy": "Copiar",
+    "copyFailed": "No se pudo copiar"
   },
   "reset": {
     "title": "¿Borrar el contexto de esta conversación?",

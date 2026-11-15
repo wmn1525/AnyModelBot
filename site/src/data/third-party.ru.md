@@ -12,6 +12,10 @@
 
 https://github.com/tailwindlabs/heroicons/releases/tag/v2.2.0
 
+## Lucide (panel-left / panel-right)
+
+Для левой и правой панелей используются `panel-left` / `panel-right` из Lucide 1.73.0 — прежний скруглённый прямоугольник с вертикальной линией. Исходный код и происхождение: `ui/icons/lucide.js` и `ui/icons/lucide-source.json`. Полные лицензии ISC / MIT: [ui/icons/lucide-LICENSE](./ui/icons/lucide-LICENSE).
+
 ## magpie — встроенный шлюз моделей и источник части стилей интерфейса
 
 Источник: https://github.com/yetone/magpie (подмодуль vendor/magpie, v0.1.1720).

@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { APP_LANGUAGES, assertLocaleBranding } from "./lib/brand-copy.mjs";
 import { extractFile } from "@electron/asar";
 
 const executable = process.argv[2];
@@ -27,7 +28,15 @@ assert.ok(login.includes("new_api_refresh") && login.includes("newApiDesktop"), 
 assert.ok(read("dist/electron/main.js").includes("newapi-login.js"), "Desktop must load the OKINTO login module");
 assert.ok(read("dist/src/account/newapi.js").includes("/pg/chat/completions"), "OKINTO playground chat relay is missing");
 assert.ok(read("ui/lib/links.js").includes("https://api.okinto.com"), "UI links must point to OKINTO");
-for (const lang of ["zh-CN", "en", "ja", "ko", "ru"]) {
-  assert.ok(read(`ui/locales/${lang}/settings.js`).includes("OKINTO"), `OKINTO settings label missing for ${lang}`);
+for (const lang of APP_LANGUAGES) {
+  for (const file of fs.readdirSync(path.join("ui", "locales", lang)).filter((name) => name.endsWith(".js") && name !== "index.js")) {
+    assertLocaleBranding(read(`ui/locales/${lang}/${file}`), `${lang}/${file}`);
+  }
+  assert.ok(read(`ui/locales/${lang}/settings.js`).includes("Okinto"), `Okinto settings label missing for ${lang}`);
 }
-console.log(`OKINTO bundle verified: okbot ${pkg.version}; login, API endpoint, chat relay and all five language labels present`);
+for (const file of ["ui/components/whats-new.js", "ui/screens/sidebar.js"]) {
+  assert.ok(read(file).includes("https://github.com/wmn1525/AnyModelBot/releases"), `Fork release link missing: ${file}`);
+  assert.ok(!read(file).includes("https://github.com/modelflare-ai/AnyModelBot"), `Upstream release link leaked: ${file}`);
+}
+assert.ok(read("ui/screens/sidebar.js").includes('signedIn ? "Okinto"'), "Account menu must show Okinto");
+console.log(`Okinto bundle verified: okbot ${pkg.version}; login, API endpoint, chat relay and all seven display catalogs verified`);

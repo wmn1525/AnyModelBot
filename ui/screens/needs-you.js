@@ -136,7 +136,7 @@ export function NeedsYouScreen({ multiBot, onChanged, onOpenChat, onRelogin, onO
     <div class="set-head"><h1 class="set-title">${t("needs.title")}</h1></div>
     <div class="set-body">
       ${!items && html`<div class="list needs-list"><div class="need"><${Skeleton} w="50%" /><${Skeleton} w="70%" /></div></div>`}
-      ${items && !items.length && html`<p class="set-none">${t("needs.none")}</p>`}
+      ${items && !items.length && html`<div class="page-empty"><span class="page-empty-icon"><${Icon} name="check" size="lg" /></span><h2>${t("needs.none")}</h2></div>`}
       ${items && items.length > 0 && html`<div class="list needs-list">
         ${items.map((it) => html`<${NeedItem} key=${it.id} item=${it} multiBot=${multiBot} onAct=${onAct(it)} onOpenChat=${onOpenChat} onRelogin=${onRelogin} onOpenBotSettings=${onOpenBotSettings} />`)}
       </div>`}

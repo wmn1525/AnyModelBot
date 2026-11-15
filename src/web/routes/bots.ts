@@ -91,7 +91,7 @@ export function botsRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
         }
       }
       const sub = seg.slice(2).join("/");
-      if (seg[2] === "skills") return skillsApi(req, res, url, id, seg.slice(3), app.userSkills, readJson, () => { void app.agent.refreshIdle(); });
+      if (seg[2] === "skills") return skillsApi(req, res, url, id, seg.slice(3), app.userSkills, readJson, () => { void app.agent.refreshIdle(); }, () => app.agent.skillRuntime(id));
       if (sub === "settings" && m === "GET") return send(res, 200, { settings: bot.settings, computerUse: app.agent.computerUse(id) });
       if (sub === "settings" && m === "PUT") {
         const b = await readJson(req);
@@ -169,6 +169,12 @@ export function botsRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
           model: conv?.model ?? "",
           messages: conv ? app.store.listMessages(conv.id, 200).filter((x) => x.id <= cut).map(publicMessage) : [],
           pending: app.store.listApprovals({ status: "pending", conversationId: consoleConvId(id), limit: 50 }).map((r) => publicApproval(r, app.store)),
+          // 技能安装卡片：按时间插进历史（处理过的只显示结果）
+          installs: [
+            ...app.skillInstalls.list([consoleConvId(id)]).map((c) => ({ id: c.id, at: c.createdAt })),
+            // 「存成技能」草稿卡：同样按时间插进历史（kind 区分卡片）
+            ...app.skillDrafts.list([consoleConvId(id)]).map((c) => ({ id: c.id, at: c.createdAt, kind: "skill_draft" })),
+          ],
           live: turns.map((t) => t.snapshot()),
           // 桌面版：交付的文件用系统程序打开；网页里在新标签页打开
           canOpen: !!app.desktop?.openPath,

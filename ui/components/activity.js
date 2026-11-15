@@ -80,8 +80,10 @@ export function ActivityList({ steps }) {
  * 回复上方的工作状态行，可展开成活动明细。
  * live：进行中（label 由调用方给，比如"思考中 12 秒"）；steps：已有的步骤；count + load：历史消息只知道有几步，展开时再取。
  * phase：阶段（思考 / 回复 / 用时…）变了文字淡入一次（.wl 的 key 换掉才重播，秒数跳动不重播）。
+ * used：结束后接在「用时」后面的「已使用：…」；uses：进行中在这一行下面逐行显示的「正在使用…」（[{ key, text, status }]）。
+ * 两者里的技能名可以是按钮（.skill-link，点了看技能详情，见 screens/chat.js WorkLine）。
  */
-export function ActivityLine({ label, phase, live, steps, count = 0, load }) {
+export function ActivityLine({ label, phase, live, steps, count = 0, load, used = "", uses = null }) {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(null);
   const [err, setErr] = useState("");
@@ -92,12 +94,22 @@ export function ActivityLine({ label, phase, live, steps, count = 0, load }) {
     load().then(setLoaded, (e) => setErr(e.message));
   }, [open]);
   const text = html`<span key=${phase} class=${`wl${live ? " shimmer" : ""}`}>${label}</span>`;
-  if (!n && !live) return html`<div class="work-line">${text}</div>`;
+  const sum = !live && used ? html`<span class="wl-sep" aria-hidden="true">·</span><span class="wl-used">${used}</span>` : null;
+  const using = live && uses?.length
+    ? html`<ul class="use-list" aria-live="polite">${uses.map((u) => html`<li key=${u.key} class=${`use ${u.status}`}><span class=${`dot ${DOT[u.status] || ""}`} aria-hidden="true"></span><span class="use-t">${u.text}</span></li>`)}</ul>`
+    : null;
+  if (!n && !live) return html`<div class="work-line">${text}${sum}</div>`;
   if (!n) return html`<div class="work-line live" aria-live="off">${text}</div>`;
+  // 整行点了展开、折回；里面的技能名（.skill-link）是另外的按钮，点它只看技能详情，不展开。键盘用右边的箭头按钮
+  const toggle = (e) => {
+    if (e.target.closest?.(".skill-link")) return;
+    setOpen(!open);
+  };
   return html`<div class=${`activity${open ? " open" : ""}`}>
-    <button type="button" class=${`work-line toggle${live ? " live" : ""}`} aria-expanded=${open} aria-live="off" title=${t(open ? "activity.collapse" : "activity.expand")} onClick=${() => setOpen(!open)}>
-      ${text}<${Icon} name="chevRight" size="xs" class="chev" />
-    </button>
+    <div class=${`work-line toggle${live ? " live" : ""}`} aria-live="off" title=${t(open ? "activity.collapse" : "activity.expand")} onClick=${toggle}>
+      ${text}${sum}<button type="button" class="wl-chev" aria-expanded=${open} aria-label=${t(open ? "activity.collapse" : "activity.expand")} onClick=${(e) => (e.stopPropagation(), setOpen(!open))}><${Icon} name="chevRight" size="xs" class="chev" /></button>
+    </div>
+    ${using}
     ${open && (list ? html`<${ActivityList} steps=${list} />` : html`<div class="act-list empty"><span class="hint">${err || t("common.loading")}</span></div>`)}
   </div>`;
 }

@@ -45,9 +45,6 @@
 .app > .splitter { --side-col: inherit; --panel-track: inherit; z-index: calc(var(--z-float) + 1); --split-inset: calc(var(--pane-gap) + var(--r-pane)); }
 .app > .split-side { --split-x: calc(var(--side-col) - var(--pane-gap) / 2); }
 .app > .split-panel { --split-x: calc(100% - var(--panel-track) - var(--pane-gap) / 2); }
-/* "已保存" sits in the window's bottom-left corner, over the sidebar above the account button,
-   so it never covers the floating composer: left edge on the sidebar rows' line, one --side-inset above the account row */
-.app .toasts { left: var(--side-inset); bottom: calc(var(--side-inset) * 2 + var(--ctl-2xl)); }
 /* 主区：窗口底色上的一块面板，只有一道细线、没有投影。不要给它加 backdrop-filter / transform——里面的菜单是 position: fixed */
 .main {
   position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column;
@@ -460,7 +457,7 @@ a.text { display: inline-flex; align-items: center; text-decoration: none; }
 /* 长译文只在文字列折行，图标和尾部的快捷键 / 提醒点保持对齐。 */
 .account-menu .menu-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .account-menu .menu-trail { color: var(--muted); }
-.account-menu kbd { flex: none; margin-inline-start: auto; padding: var(--space-0-5) var(--space-1-5); border-radius: var(--r-mark); background: var(--pill); font-family: inherit; font-size: var(--fs-2xs); color: var(--muted); }
+.account-menu kbd { margin-inline-start: auto; }   /* 外观见 base/reset.css 的 kbd */
 .account-menu > :is(a, button):is(:hover, :focus-visible):not(:disabled) { background: var(--sel); }
 .account-menu > :is(a, button):active:not(:disabled) { background: var(--sel-press); }
 .account-menu > :is(a, button):is(:hover, :focus-visible):not(:disabled) .menu-icon { color: var(--fg); }
@@ -494,4 +491,19 @@ a.text { display: inline-flex; align-items: center; text-decoration: none; }
 .account-login .login-links { justify-content: flex-start; gap: var(--space-1); font-size: var(--fs-2xs); }
 .account-login .login-links > * + *::before { content: "·"; margin-right: var(--space-1); color: var(--muted); }
 .account-login .login-links .text:hover { text-decoration: underline; color: var(--fg); }
+}
+
+@layer app {
+  .account-identity { --focus-offset: -2px; display: flex; align-items: center; gap: var(--space-2-5); flex: 1; min-width: 0; height: 100%; text-align: start; border-radius: var(--r-item); }
+  .account .who.connecting { color: var(--muted); font-weight: var(--fw-regular); }
+  .user-avatar.loading { background: var(--well); box-shadow: none; }
+  .account .account-retry { --ib-size: var(--ctl-xs); --ib-fg: var(--amber); margin-inline: calc(-1 * var(--space-1)); }
+  .account-menu-toggle { --focus-offset: -2px; display: grid; place-items: center; width: var(--ctl-xs); height: var(--ctl-md); flex: none; margin-inline: calc(-1 * var(--space-1)); border-radius: var(--r-ctl); }
+  .side-update-wrap { position: relative; flex: none; }
+  .side-update[aria-disabled="true"] { opacity: var(--o-disabled); }
+  .side-update[aria-busy="true"] { opacity: 1; }
+  .update-reason-pop { background: var(--fg); color: var(--surface); border-radius: var(--r-tile-sm); }
+  .update-busy-hint { padding: var(--space-2) var(--space-3); font-size: var(--fs-xs); line-height: var(--lh-normal); }
+  .update-disabled-reason { display: block; margin-top: var(--space-0-5); font-size: var(--fs-2xs); color: var(--amber); }
+  .account-menu > button:disabled:has(.update-disabled-reason) { opacity: 1; color: var(--muted); }
 }

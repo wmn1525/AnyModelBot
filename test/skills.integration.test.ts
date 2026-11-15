@@ -64,15 +64,32 @@ describe.skipIf(!locateDshRuntime(findAppRoot()))("ZIP 技能运行时", () => {
     const firstRequest = calls.find((b) => b.tools);
     expect(JSON.stringify(firstRequest)).toContain("Prepare weekly reports");
     expect(JSON.stringify(firstRequest)).not.toContain("skill-marker-v1");
+    // 系统提示词里有这个机器人装的技能（界面上的名字 → 技能名：示例），问起时只列它们
+    const system = JSON.stringify(firstRequest.messages.filter((m: any) => m.role === "system"));
+    expect(system).toContain("# 技能和应用");
+    expect(system).toMatch(/- zip-fixture：/);
+    // 这一轮用到了技能：历史消息带着「已使用」，设置列表里它已生效
+    const chat = await (await fetch(base + "/chat")).json() as any;
+    expect(chat.messages.findLast((m: any) => m.role === "assistant").used).toEqual([{ kind: "skill", name: "zip-fixture", status: "ok" }]);
+    const listed = await (await fetch(base + "/skills")).json() as any;
+    expect(listed.skills[0]).toMatchObject({ name: "zip-fixture", state: "active", modelInvocable: true });
     const working = json("/chat", { text: "HOLD_SKILL" });
     for (let i = 0; !held && i < 100; i++) await new Promise((r) => setTimeout(r, 20));
     expect(held).toBeTypeOf("function");
     await json("/skills/zip-fixture", { enabled: false }, "PUT");
     expect(fs.existsSync(path.join(dir, "dsh/default/skills/zip-fixture"))).toBe(true);
+    // 正在跑的时候装上的技能：等当前任务结束才生效（不说下一条消息起）；关掉的不标状态
+    const second = await fetch(base + "/skills", { method: "POST", headers: { "content-type": "application/zip" }, body: new Uint8Array(skillZip([{ path: "SKILL.md", text: skillMd("zip-second", "second-marker") }])) });
+    const during = (await second.json() as any).skills;
+    expect(during.find((x: any) => x.name === "zip-second").state).toBe("waiting");
+    expect(during.find((x: any) => x.name === "zip-fixture").state).toBe("off");
     held!();
     await working;
     await json("/chat", { text: "IDLE_SKILL disabled" });
     expect(fs.existsSync(path.join(dir, "dsh/default/skills/zip-fixture"))).toBe(false);
+    const after = (await (await fetch(base + "/skills")).json() as any).skills;
+    expect(after.find((x: any) => x.name === "zip-second").state).toBe("active");
+    expect((await fetch(base + "/skills/zip-second", { method: "DELETE" })).status).toBe(200);
     await upload("skill-marker-v2", digest);
     await json("/skills/zip-fixture", { enabled: true }, "PUT");
     expect((await json("/chat", { text: "IMPORTED_SKILL updated" })).reply).toContain("resource-skill-marker-v2");

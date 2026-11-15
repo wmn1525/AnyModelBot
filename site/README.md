@@ -282,3 +282,7 @@ docker compose -f site/deploy/compose.yml --env-file site/deploy/.env up -d --no
   - 精灵图分档：`<角色>.webp` 每格 448，另有 `<角色>@224 / @112 / @56` 的 WebP 和 AVIF。`BotFace.astro` 按 2 倍屏挑最小的够用的一档（`src/lib/bots.ts` 的 `SPRITE_TIERS`，和 App 一致），小头像不再由浏览器从 448 实时缩小。
 - **演示**：Hero 的"看演示"弹窗播放真实录屏（`src/components/DemoVideo.astro`，每种语言各一个 MP4，构建时从 `docs/assets/demo/` 同步到 `public/demo/`）。点开就播、关掉就停，没点的人不下载；减少动态效果时不自动播放。"它能动手"仍是动画（`src/scripts/tour.ts`）。旧的动画导览 `src/components/DemoTour.astro` 已不再渲染。
 - **文案**：`src/i18n/locales/<语言>/`，页面里不写死文案。首页使用 `home.hero.*`、`home.features.*` 等多级键；各语言入口文件只组装模块。新增译文由维护者逐条撰写和本土化，不使用翻译接口。`manifest.json` 的 `ready` 标识控制正式语言入口，生产构建检查全部目标语言的原始词典，不能用回退文案冒充翻译完成。例外是两种语言内容本来就不同的：聊天渠道（`src/data/channels.ts`）和公告（`src/data/announcements.ts`），各写各的，禁词扫描同样覆盖 `src/data`。
+
+## 0.1.36 同步
+
+技能库、存成技能和七语言 Okinto 文案已与应用同步。旧的 API 路由、配置键和凭据文件名保留兼容；第三方许可证与来源声明保留原作者名称。

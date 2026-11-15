@@ -93,11 +93,11 @@ export class NewApiAccountManager {
       const response = await this.raw("/api/user/auth/refresh", { method: "POST", headers: { "content-type": "application/json", ...(this.bundle?.session?.sid ? { "X-Auth-Session": this.bundle.session.sid } : {}) }, body: "{}" });
       const body = await response.json().catch(() => ({})) as any;
       if (!response.ok || body.success !== true || !body.data?.access_token) {
-        if ([401, 403].includes(response.status)) throw new ApiError("OKINTO 登录已失效，请重新登录", 401);
+        if ([401, 403].includes(response.status)) throw new ApiError("Okinto 登录已失效，请重新登录", 401);
         throw new ApiError(body.message || `登录刷新失败（HTTP ${response.status}）`, response.ok ? 502 : response.status);
       }
       const bundle = body.data as AuthBundle;
-      if (!Number.isFinite(bundle.access_expires_at) || !Number.isSafeInteger(bundle.user?.id) || bundle.user.id <= 0) throw new ApiError("OKINTO 登录返回格式无效", 502);
+      if (!Number.isFinite(bundle.access_expires_at) || !Number.isSafeInteger(bundle.user?.id) || bundle.user.id <= 0) throw new ApiError("Okinto 登录返回格式无效", 502);
       if (generation !== this.loginGeneration || this.stopped) throw new ApiError("登录已取消", 409);
       registerSecret(bundle.access_token);
       this.bundle = bundle;
@@ -186,7 +186,7 @@ export class NewApiAccountManager {
     const low = this.status().lowBalance;
     const key = "newapi.lowBalanceAlerted";
     if (low && !this.o.store.getKV(key)) {
-      this.o.store.setKV(key, "1"); this.o.hooks.alert(`OKINTO 账户余额不足：$${this.balance!.toFixed(2)}，请到 ${this.o.origin}/console/topup 充值`, this.o.alerts().push);
+      this.o.store.setKV(key, "1"); this.o.hooks.alert(`Okinto 账户余额不足：$${this.balance!.toFixed(2)}，请到 ${this.o.origin}/console/topup 充值`, this.o.alerts().push);
     } else if (!low) this.o.store.deleteKV(key);
   }
 
@@ -233,7 +233,7 @@ export class NewApiAccountManager {
 
   /** Intersect the public image catalog with the authenticated group/model list. */
   async mediaModels(kind: MediaKind): Promise<MediaModel[]> {
-    if (!this.active || !this.signedIn) throw new ApiError("请先登录 OKINTO", 401);
+    if (!this.active || !this.signedIn) throw new ApiError("请先登录 Okinto", 401);
     if (kind !== "image") return [];
     await this.loadGroups();
     if (this.mediaCache && Date.now() - this.mediaCache.at < 5 * 60_000) return this.mediaCache.data;
@@ -258,7 +258,7 @@ export class NewApiAccountManager {
         price: knownRatio ? priceNote(priced, effective) : "", cost: knownRatio ? unitPrice(priced, effective) : undefined,
         priority: entry?.display_priority ?? 1e9 });
     }
-    if (generation !== this.loginGeneration || !this.signedIn || this.stopped) throw new ApiError("OKINTO 登录状态已变更，请重试", 409);
+    if (generation !== this.loginGeneration || !this.signedIn || this.stopped) throw new ApiError("Okinto 登录状态已变更，请重试", 409);
     const data = sortModels(models);
     this.mediaCache = { at: Date.now(), data };
     return data;
@@ -279,7 +279,7 @@ export class NewApiAccountManager {
     };
     try {
       signal.throwIfAborted();
-      if (generation !== this.loginGeneration || !this.signedIn || this.stopped) throw new ApiError("OKINTO 登录状态已变更，请重试", 409);
+      if (generation !== this.loginGeneration || !this.signedIn || this.stopped) throw new ApiError("Okinto 登录状态已变更，请重试", 409);
       await tokenData("/api/token/", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
         name, group: selected.group, expired_time: Math.floor(Date.now() / 1000) + 15 * 60,
         unlimited_quota: true, model_limits_enabled: true, model_limits: selected.model, cross_group_retry: false,
@@ -291,7 +291,7 @@ export class NewApiAccountManager {
       if (!token?.key || typeof token.key !== "string") throw new ApiError("无法读取临时生图令牌，请检查站点令牌权限", 502);
       const key = token.key.startsWith("sk-") ? token.key : `sk-${token.key}`;
       registerSecret(token.key); registerSecret(key);
-      if (generation !== this.loginGeneration || this.stopped || !this.signedIn) throw new ApiError("OKINTO 登录状态已变更，请重试", 409);
+      if (generation !== this.loginGeneration || this.stopped || !this.signedIn) throw new ApiError("Okinto 登录状态已变更，请重试", 409);
       signal.throwIfAborted();
       const { model: _model, group: _group, ...payload } = body;
       const response = await this.raw(endpoint, { method: "POST", headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
@@ -347,7 +347,7 @@ export class NewApiAccountManager {
       if (req.headers.authorization !== `Bearer ${this.relayKey}`) return json(401, { error: { message: "Unauthorized" } });
       const path = new URL(req.url!, "http://localhost").pathname;
       if (this.bundle && req.method === "GET" && path === "/v1/models") return json(200, { data: this.chatModels().map((id) => ({ id, object: "model" })) });
-      if (!this.signedIn) return json(401, { error: { message: "OKINTO 登录已失效，请重新登录" } });
+      if (!this.signedIn) return json(401, { error: { message: "Okinto 登录已失效，请重新登录" } });
       const images = path === "/v1/images/generations" || path === "/v1/images/edits";
       const gemini = /^\/v1(?:beta)?\/models\/(.+):generateContent$/.exec(path);
       if (req.method !== "POST" || path !== "/v1/chat/completions" && !images && !gemini) return json(404, { error: { message: "Unsupported New API relay endpoint" } });
@@ -396,7 +396,7 @@ export class NewApiAccountManager {
     return out;
   }
   async usage(days: number): Promise<UsageSummary> {
-    if (!this.signedIn) throw new ApiError("请先登录 OKINTO", 409);
+    if (!this.signedIn) throw new ApiError("请先登录 Okinto", 409);
     const now = Date.now(), start = startOfLocalDay(now - (days - 1) * 86400000);
     const rows: Array<{ model_name: string; created_at: number; quota: number; count: number; token_used: number }> = [];
     for (let page = 1; page <= 100; page++) {
@@ -405,14 +405,14 @@ export class NewApiAccountManager {
       rows.push(...data.items.map((r) => ({ ...r, count: 1, token_used: 0 })));
       if (rows.length >= data.total || !data.items.length) return summarizeUsage(rows, this.quotaPerUnit, start, days);
     }
-    throw new ApiError("用量记录超过 10000 条，请到 OKINTO 控制台查看完整记录", 409);
+    throw new ApiError("用量记录超过 10000 条，请到 Okinto 控制台查看完整记录", 409);
   }
   async repairKeys(): Promise<boolean> { if (!this.signedIn) return false; await this.refresh(); return false; }
-  async setRoutingStrategy(): Promise<AccountStatus> { throw new ApiError("请在 OKINTO 控制台管理路由策略", 409); }
-  async setBotBudget(_id: string, _name: string, _budget: BotBudget): Promise<void> { throw new ApiError("游乐场登录使用账户余额；请在 OKINTO 控制台管理账户额度", 409); }
+  async setRoutingStrategy(): Promise<AccountStatus> { throw new ApiError("请在 Okinto 控制台管理路由策略", 409); }
+  async setBotBudget(_id: string, _name: string, _budget: BotBudget): Promise<void> { throw new ApiError("游乐场登录使用账户余额；请在 Okinto 控制台管理账户额度", 409); }
   async botBudgets(): Promise<Record<string, Pick<AppKey, "status" | "limit_usd" | "remain_usd" | "used_usd">>> { return {}; }
   async notifications(): Promise<unknown> { return { items: [], unread_count: 0 }; }
-  async invite(): Promise<{ code: string; url: string }> { throw new ApiError("请到 OKINTO 控制台查看邀请信息", 409); }
+  async invite(): Promise<{ code: string; url: string }> { throw new ApiError("请到 Okinto 控制台查看邀请信息", 409); }
 
   private async closeRelay(): Promise<void> {
     await this.relayStarting?.catch(() => {});

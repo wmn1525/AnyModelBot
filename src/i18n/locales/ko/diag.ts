@@ -2,7 +2,7 @@ import type { TranslatedCatalog } from "../../index.js";
 export default {
   "fetch_timeout": "시간 초과({s}초 동안 응답 없음)",
   "no_endpoint": "엔드포인트 주소가 설정되지 않았습니다",
-  "no_model": "사용 가능한 모델이 없습니다. 먼저 OKINTO New API에서 기본 모델을 선택하세요",
+  "no_model": "사용 가능한 모델이 없습니다. 먼저 Okinto New API에서 기본 모델을 선택하세요",
   "no_content": "응답에 choices[0].message.content가 없습니다: {body}",
   "verdict_endpoint_ok": "엔드포인트 정상",
   "verdict_endpoint_error": "엔드포인트 오류: {error}",
@@ -28,7 +28,7 @@ export default {
   "timeout_reply": "모델이 응답했지만 에이전트가 {s}초 안에 대화 차례를 완료하지 못했습니다",
   "agent_off": "에이전트 모드가 꺼져 있어(AMB_AGENT=off) 봇은 대화만 가능합니다",
   "no_runtime": "에이전트 런타임(DSH)을 찾지 못해 봇은 대화만 가능합니다",
-  "agent_no_model": "사용 가능한 모델이 없습니다. 먼저 OKINTO New API에 연결하고 기본 모델을 선택하세요",
+  "agent_no_model": "사용 가능한 모델이 없습니다. 먼저 Okinto New API에 연결하고 기본 모델을 선택하세요",
   "queue_idle": "진행 중인 대화 처리가 없습니다",
   "queue_busy": {
     "other": "대화 {count}건 진행 중(최장 {s}초). 같은 대화의 새 메시지는 진행 중인 처리에 추가되거나 에이전트가 받을 때까지 대기합니다. 멈춘 경우 /stop 또는 아래의 ‘에이전트 프로세스 다시 시작’을 사용하세요"

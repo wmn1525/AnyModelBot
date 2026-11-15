@@ -2,7 +2,7 @@
  * 代理回合的活动记录：把 DSH 的会话事件折叠成看得懂的几类步骤（模型请求、工具调用、重试、子代理、压缩、出错）。
  * 网页对话里折叠在"用时"下面，微信/飞书会话在信息面板里看；/status 和看门狗用它说明卡在哪一步。
  */
-import type { ActivityStep } from "../domain/activity.js";
+import { appFailure, stepUse, type ActivityStep, type StepUse } from "../domain/activity.js";
 import { summarizeCall } from "./host.js";
 import { t as tr } from "../i18n/index.js";
 import { localProxyFailureHint } from "../network-error.js";
@@ -54,10 +54,14 @@ export class ActivityLog {
    * model：这一轮用的模型（DSH 只在会话第一次请求时报 request/context，之后的回合靠它起名）。
    * chat：聊天回合——模型说的话（回复和回合中间说的话）进了对话，模型那一步不再重复这些文字，只留调用了什么和思考
    */
+  /**
+   * opts.uses：给步骤标上用到的技能、应用（网页对话的过程区用）——
+   * appKey 把模型写的应用（id、名字）换成应用的 key；skillPending 说这个技能是不是装了还没生效（没用成时据此说「技能还在加载」）。
+   */
   constructor(
     private onChange?: (step: ActivityStep) => void,
     private model = "",
-    private opts: { chat?: boolean } = {},
+    private opts: { chat?: boolean; uses?: { appKey?: (selector: string) => string | undefined; skillPending?: (name: string) => boolean } } = {},
   ) {}
 
   get last(): ActivityStep | undefined {
@@ -122,6 +126,7 @@ export class ActivityLog {
           input: clip(prettyArgs(args), MAX_INPUT),
           status: "running",
           at: time,
+          use: this.useOf(name, args),
         });
         return true;
       }
@@ -129,7 +134,8 @@ export class ActivityLog {
         const msg = data.message ?? {};
         const prev = this.find(String(msg.toolCallId ?? ""));
         if (!prev) return true;
-        this.put({ ...prev, status: msg.isError ? "error" : "ok", ms: Math.max(0, time - prev.at), output: clip(textOf(msg.content), MAX_OUTPUT) || undefined });
+        const output = textOf(msg.content);
+        this.put({ ...prev, status: msg.isError ? "error" : "ok", ms: Math.max(0, time - prev.at), output: clip(output, MAX_OUTPUT) || undefined, use: msg.isError ? this.failedUse(prev.use, output) : prev.use });
         // 命令跑得太久，转到了后台：单独记一步，结束时（job/settled 或结束通知）更新
         const job = promotedJob(data);
         if (job) this.put({ id: `j:${job}`, kind: "job", title: tr("activity.job"), summary: prev.summary, input: prev.input, status: "running", at: time });
@@ -235,6 +241,22 @@ export class ActivityLog {
   end(why: string, time = Date.now()): void {
     for (const s of this.steps) if (s.status === "running") this.put({ ...s, status: "error", cut: true, ms: Math.max(0, time - s.at) });
     this.put({ id: `x${time}`, kind: "error", title: tr("activity.stopped"), summary: why, status: "error", at: time });
+  }
+
+  /** 这次工具调用用到的技能或应用（只在网页聊天的回合里标） */
+  private useOf(tool: string, args: string): StepUse | undefined {
+    const uses = this.opts.uses;
+    if (!uses) return undefined;
+    const use = stepUse(tool, args);
+    if (use?.kind !== "app") return use;
+    return { ...use, app: uses.appKey?.(use.app) ?? use.app };
+  }
+
+  /** 没用成：技能只在「装了还没生效」时说明，其余（模型编的名字、关掉的技能）不显示；应用按结果文字分原因 */
+  private failedUse(use: StepUse | undefined, output: string): StepUse | undefined {
+    if (!use) return undefined;
+    if (use.kind === "skill") return this.opts.uses?.skillPending?.(use.name) ? { ...use, reason: "loading" } : undefined;
+    return { ...use, reason: appFailure(output) };
   }
 
   private find(id: string): ActivityStep | undefined {

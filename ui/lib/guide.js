@@ -87,6 +87,18 @@ export const markDone = (id) => {
 export const setGuideChannel = (channel) => { if (GUIDE_CHANNELS.includes(channel)) void change({ channel }).catch(() => {}); };
 export const skipChannel = () => change({ skip: "weixin" }).catch(failed);
 export const setFocus = (focus) => guide.set((g) => ({ ...g, focus, focusAuto: false }));
+/**
+ * 主动点清单步骤时挡住引导的原因（按优先级）：有权限卡在等、「需要你」里有事项、当前机器人正在回复。
+ * 由 main.js 按当前状态写入；空字符串表示可以显示引导。
+ */
+export const stepBlock = createStore("");
+/** 用户主动点一步：能显示引导就显示；被挡住时用提示说明原因，原因解除后不自动弹出。返回是否显示了。 */
+export function focusStep(id) {
+  const reason = stepBlock.get();
+  if (reason) { toast(t(`guide.blocked.${reason}`), "warn"); return false; }
+  setFocus(id);
+  return true;
+}
 export const arm = (id) => setFocus(id);
 export function markSeen(key) {
   guide.set((g) => ({ ...g, seen: [...new Set([...g.seen, key])], hints: g.hints.filter((x) => x !== key) }));

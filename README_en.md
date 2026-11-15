@@ -1,7 +1,7 @@
 <h1 align="center">okinto 中转</h1>
 
-> 0.1.35 · Scheduled rules, ten bot templates, resource previews, startup diagnostics and interface refinements; preserves OKINTO sign-in, balances, model groups and image generation.
-> App connectors and custom MCP, sidebar groups, right-panel tabs, and Spanish and Portuguese (Brazil); preserves OKINTO sign-in, balances, model groups and image generation.
+> 0.1.36 · Skill library, saving work as skills and installing skills in chat; software labels, seven-language messages and tool descriptions now use Okinto, with fork update links and existing connection compatibility preserved.
+> App connectors and custom MCP, sidebar groups, right-panel tabs, and Spanish and Portuguese (Brazil); preserves Okinto sign-in, balances, model groups and image generation.
 > Added a What’s new dialog and changelog in About. Version checks, update downloads and release notes all use this repository.
 
 
@@ -121,7 +121,7 @@ A bot is more than a chat window: it has a persona, a default model, its own wor
 - **You define each bot.** A persona is just text, and templates are only a starting point. The six avatars change how a bot looks, not what it can do.
 - **Real file work.** Bots read and write files, run commands in a sandbox, and send the results back to the chat as files.
 - **Three permission presets per bot.** *Read-only*, *Workspace* (the default: write inside the bot's own folder; it asks before writing outside its workspace) and *Full access* (no sandbox; even with full access, it asks before deleting a whole folder).
-- **Import skills.** In **Bot settings → Skills**, import a ZIP containing `SKILL.md` (one skill per ZIP, up to 20 MB), then preview and add it. View, enable, disable or delete skills; import the same name again to confirm replacement. Changes take effect after current work finishes. [Skill guide](./docs/skills_en.md).
+- **Skills: install, import or save your own.** Pick a skill from the library in **Apps & skills**, then send its install prompt or GitHub link to a bot and confirm the card; or import a ZIP containing `SKILL.md` in **Bot settings → Skills** (one skill per ZIP, up to 20 MB). Once a bot gets something right, say "save as skill" or send `/skill` and confirm the draft card to keep it in My skills, use it on several bots, export it as a ZIP or schedule it. Changes take effect after current work finishes. [Skill guide](./docs/skills_en.md).
 - **Approval cards, not surprises.** Actions that write outside the workspace stop and wait for your answer.
 - **Told after a restart.** A message still in progress when the app quit or crashed is flagged in its conversation at the next start, so you can send it again; nothing is redone on its own.
 - **Group chats.** Create a group and add a few bots. Whoever you @ answers; with no @, the bot that answered last carries on. Bots can also @ another member to hand off. Each bot keeps its own model, workspace and memory, and costs are tracked per bot.
@@ -171,7 +171,7 @@ The full story, in Chinese: [okinto 中转 超级智能体](./docs/blog/superage
 - **Memory that carries over.** Each bot, group, and team has its own memory, kept as Markdown and kept separate. Content that looks like passwords or keys isn't saved.
 - **Long chats stay usable.** A context steward compacts or starts a fresh segment with a hand-off summary before the window fills up.
 - **Accounts shared by all bots.** Add WeChat, Feishu, Telegram, Slack and Discord chat accounts once under Settings › Chat channels. Every bot shares them, and each channel can have several accounts with aliases. Send `/bot name` once in a chat app to talk to a different bot.
-- **Connect apps.** Connect apps in the avatar menu comes with connectors for Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian and Canva, and you can add custom MCP connectors (remote servers or local commands). Connect once and every bot can use it by default; narrow it per bot and per tool. Read-only tools run right away, writes ask you first, and deletes or anything sent to other people always ask.
+- **Connect apps.** Apps & skills in the avatar menu comes with connectors for Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian and Canva, and you can add custom MCP connectors (remote servers or local commands). Connect once and every bot can use it by default; narrow it per bot and per tool. Read-only tools run right away, writes ask you first, and deletes or anything sent to other people always ask.
 - **WeChat and Feishu.** Scan a QR code to connect WeChat, or connect a Feishu bot with streaming reply cards. WeChat also carries images and files.
 - **Telegram, Slack and Discord.** Paste a token in Settings › Chat channels. No public address needed. Replies appear as they're written, and images and files work both ways. Direct messages only for now, and approvals and questions are answered by text.
 - **Four ways to run it.** Desktop app, command line, Docker, or the local web console at `127.0.0.1:3600`.
@@ -324,4 +324,4 @@ okinto 中转 is released under the [MIT License](./LICENSE). Bundled third-part
 [ci-link]: https://github.com/wmn1525/AnyModelBot/actions/workflows/ci.yml
 [pricing-link]: https://api.okinto.com/pricing
 [okinto-link]: https://api.okinto.com
-> App connectors and custom MCP, sidebar groups, right-panel tabs, and Spanish and Portuguese (Brazil); preserves OKINTO sign-in, balances, model groups and image generation.
+> App connectors and custom MCP, sidebar groups, right-panel tabs, and Spanish and Portuguese (Brazil); preserves Okinto sign-in, balances, model groups and image generation.

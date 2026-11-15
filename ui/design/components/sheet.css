@@ -38,3 +38,10 @@
 .qr-wait, .qr-status { display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: var(--space-1-5); font-size: var(--fs-xs); line-height: var(--lh-snug); color: var(--muted); }
 .qr-code { display: flex; align-items: center; gap: var(--ctl-gap); }
 .qr-code .field { width: 140px; }
+
+/* 分组表单：头尾固定，内容独立滚动。 */
+.sheet.framed { padding: 0; gap: 0; overflow: hidden; grid-template-rows: auto minmax(0, 1fr) auto; max-height: min(720px, calc(100dvh - 2 * var(--float-inset))); }
+.sheet.framed > .sheet-head { padding: var(--sheet-pad) var(--sheet-pad) var(--space-4); border-bottom: 1px solid transparent; }
+.sheet.framed.scrolled > .sheet-head { border-bottom-color: var(--line-2); }
+.sheet-body { min-height: 0; overflow: auto; padding: var(--space-5) var(--sheet-pad); }
+.sheet-footer { border-top: 1px solid var(--line-2); padding: var(--space-4) var(--sheet-pad) var(--sheet-pad); display: flex; justify-content: flex-end; gap: var(--ctl-gap); }

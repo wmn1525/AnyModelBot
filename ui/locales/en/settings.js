@@ -1,496 +1,520 @@
-// settings · en
 export default {
-  tabs: {
-    general: "General",
-    appearance: "Appearance",
-    modelflare: "OKINTO New API",
-    computer: "Computer use",
-    connections: "Chat channels",
-    privacy: "Privacy & security",
-    network: "Network & access",
-    data: "Data",
-    troubleshoot: "Troubleshooting",
-    about: "About",
+  "tabs": {
+    "general": "General",
+    "appearance": "Appearance",
+    "modelflare": "Okinto New API",
+    "computer": "Computer use",
+    "connections": "Chat channels",
+    "privacy": "Privacy & security",
+    "network": "Network & access",
+    "data": "Data",
+    "troubleshoot": "Troubleshooting",
+    "about": "About"
   },
-  connections: {
-    feishu: "Feishu messages",
-    channelSub: "Message your bots from these apps. All bots share the accounts, and sending /bot and a name in a chat switches to another bot.",
-    channelKeys: "{channel} channel chat connection account bot /bot",
-    manage: "Manage",
-    defaultIs: "{bot} replies by default",
-    requests: "{count} access requests",
-    defaultBot: "Default bot",
-    defaultBotHint: "It answers new chats. Send /bot in a chat to see the bots, and /bot and a name once to switch; that chat stays with the new bot.",
-    removeAccount: "Remove this account",
-    removeChannelBody: "No bot will be able to send or receive through this account, and its allow list is cleared. Chat history is kept.",
-    notionSub: "Pages and databases. Read-only bots can only read, and no bot can delete pages",
-    feishuSub: "Reads your chats and messages as you, read-only",
-    notionKeys: "notion notes docs database connection account authorize",
-    feishuKeys: "feishu lark messages chats connection account authorize",
-    viaToken: "Token",
-    viaOAuth: "Authorized",
-    needsReauth: "Authorization expired. Authorize again",
-    dataMoved: "Data accounts such as Notion and Feishu have moved to Connect apps.",
-    dataMovedKeys: "data accounts notion feishu connect apps mcp",
-    openApps: "Open Connect apps",
-    reauthorize: "Authorize again",
-    rename: "Rename",
-    remove: "Remove",
-    removeTitle: "Remove {name}?",
-    removeBody: "No bot will be able to use this account. You can add it again later.",
-    notionOAuthTitle: "Authorize Notion",
-    oauthFailed: "Couldn't open the authorization page. Try again later",
-    openAgain: "Didn't open? Click here",
-    waiting: "Waiting for your approval…",
-    notionTokenTitle: "Connect Notion with a token",
-    notionTokenHint: "A personal access token reaches everything you can see; an internal connection only reaches pages shared with it.",
-    createToken: "Create a token ↗",
-    tokenLabel: "Token",
-    add: "Add",
-    feishuTitle: "Add a Feishu account",
-    feishuAppHint: "The app needs user permissions for reading messages. You'll scan a code to authorize next.",
-    next: "Next",
-    qrAlt: "Feishu authorization QR code",
-    openInBrowser: "Open in browser ↗",
-    retry: "Try again",
-    renameHint: "You can use this name when you talk to a bot, like \"check my work Feishu\".",
-    nameLabel: "Name",
-    save: "Save",
-    dataSub: "Bots can read these accounts for you. All bots share them and you can add several, so you can say \"check my work Feishu messages\".",
-    connect: "Connect",
-    addOne: "Add another",
-    addAnother: "Add another account",
-    addAnotherSub: "One app can have several accounts",
-    how: {
-      weixin: "Scan a QR code with WeChat on your phone",
-      feishu: "Scan with Feishu on your phone. The app is created for you",
-      telegram: "Create a bot with @BotFather and paste its token",
-      slack: "Create a Slack app and paste two tokens",
-      discord: "Create a Discord app and paste its bot token"
+  "connections": {
+    "feishu": "Feishu messages",
+    "channelSub": "Message your bots from these apps. All bots share the accounts, and sending /bot and a name in a chat switches to another bot.",
+    "channelKeys": "{channel} channel chat connection account bot /bot",
+    "manage": "Manage",
+    "defaultIs": "{bot} replies by default",
+    "requests": "{count} access requests",
+    "defaultBot": "Default bot",
+    "defaultBotHint": "It answers new chats. Send /bot in a chat to see the bots, and /bot and a name once to switch; that chat stays with the new bot.",
+    "removeAccount": "Remove this account",
+    "removeChannelBody": "No bot will be able to send or receive through this account, and its allow list is cleared. Chat history is kept.",
+    "notionSub": "Pages and databases. Read-only bots can only read, and no bot can delete pages",
+    "feishuSub": "Reads your chats and messages as you, read-only",
+    "notionKeys": "notion notes docs database connection account authorize",
+    "feishuKeys": "feishu lark messages chats connection account authorize",
+    "viaToken": "Token",
+    "viaOAuth": "Authorized",
+    "needsReauth": "Authorization expired. Authorize again",
+    "dataMoved": "Data accounts such as Notion and Feishu have moved to Apps & skills.",
+    "dataMovedKeys": "data accounts notion feishu connect apps mcp apps & skills",
+    "openApps": "Open Apps & skills",
+    "reauthorize": "Authorize again",
+    "rename": "Rename",
+    "remove": "Remove",
+    "removeTitle": "Remove {name}?",
+    "removeBody": "No bot will be able to use this account. You can add it again later.",
+    "notionOAuthTitle": "Authorize Notion",
+    "oauthFailed": "Couldn't open the authorization page. Try again later",
+    "openAgain": "Didn't open? Click here",
+    "waiting": "Waiting for your approval…",
+    "notionTokenTitle": "Connect Notion with a token",
+    "notionTokenHint": "A personal access token reaches everything you can see; an internal connection only reaches pages shared with it.",
+    "createToken": "Create a token ↗",
+    "tokenLabel": "Token",
+    "add": "Add",
+    "feishuTitle": "Add a Feishu account",
+    "feishuAppHint": "The app needs user permissions for reading messages. You'll scan a code to authorize next.",
+    "next": "Next",
+    "qrAlt": "Feishu authorization QR code",
+    "openInBrowser": "Open in browser ↗",
+    "retry": "Try again",
+    "renameHint": "You can use this name when you talk to a bot, like \"check my work Feishu\".",
+    "nameLabel": "Name",
+    "save": "Save",
+    "dataSub": "Bots can read these accounts for you. All bots share them and you can add several, so you can say \"check my work Feishu messages\".",
+    "connect": "Connect",
+    "addOne": "Add another",
+    "addAnother": "Add another account",
+    "addAnotherSub": "One app can have several accounts",
+    "how": {
+      "weixin": "Scan a QR code with WeChat on your phone",
+      "feishu": "Scan with Feishu on your phone. The app is created for you",
+      "telegram": "Create a bot with @BotFather and paste its token",
+      "slack": "Create a Slack app and paste two tokens",
+      "discord": "Create a Discord app and paste its bot token"
     },
-    connectTitle: "Connect {channel}",
-    connectedTitle: "{channel} connected",
-    connectingTitle: "Connecting {channel}…",
-    failedTitle: "{channel} didn't connect",
-    waitingScan: "Waiting for you to scan…",
-    waitingOwner: "Send the first message to finish linking",
-    useToken: "Use a token instead",
-    useOneClick: "Use one-click authorization",
-    useApp: "Use my own app",
-    useScan: "Scan a code instead",
-    feishuPortal: "Feishu Open Platform ↗",
-    oauthTimedOut: "This took too long and the authorization page has expired. Start again.",
-    steps: {
-      weixin: [
+    "connectTitle": "Connect {channel}",
+    "connectedTitle": "{channel} connected",
+    "connectingTitle": "Connecting {channel}…",
+    "failedTitle": "{channel} didn't connect",
+    "waitingScan": "Waiting for you to scan…",
+    "waitingOwner": "Send the first message to finish linking",
+    "useToken": "Use a token instead",
+    "useOneClick": "Use one-click authorization",
+    "useApp": "Use my own app",
+    "useScan": "Scan a code instead",
+    "feishuPortal": "Feishu Open Platform ↗",
+    "oauthTimedOut": "This took too long and the authorization page has expired. Start again.",
+    "steps": {
+      "weixin": [
         "Scan the code below with “Scan” in WeChat on your phone",
         "Confirm on your phone"
       ],
-      feishu: [
+      "feishu": [
         "Scan the code below with Feishu on your phone",
         "Follow the prompts to create your bot app"
       ],
-      feishuApp: [
+      "feishuApp": [
         "On {link}, turn on “Bot”, choose “Receive events through a persistent connection” under event subscriptions, and subscribe to {event}",
         "Turn on these permissions: {p1}, {p2}, {p3}, {p4}",
         "Enter the App ID and App Secret below"
       ],
-      telegram: [
+      "telegram": [
         "Find {bot} in Telegram and send {cmd} to create a bot",
         "Enter the token it gives you below"
       ],
-      slack: [
+      "slack": [
         "On {link}, create an app, turn on Socket Mode, and generate an App-Level Token with {conn}",
         "Give the Bot Token {s1}, {s2}, {s3} and {s4}, and subscribe to the {event} event",
         "Allow messages in App Home, then install the app to your workspace",
         "Enter both tokens below"
       ],
-      discord: [
+      "discord": [
         "In the {link}, create an app, add a Bot, and copy its token",
         "Use the OAuth2 URL Generator with bot checked to add it to a server you're in",
         "Enter the token below, then send it a direct message in Discord"
       ],
-      notion: [
+      "notion": [
         "On the browser page that just opened, choose what to share and approve",
         "Come back here. The account appears on its own"
       ],
-      feishuData: [
+      "feishuData": [
         "Scan with Feishu on your phone to create your personal app",
         "Scan again to let it read your chats and messages"
       ],
-      feishuDataApp: [
+      "feishuDataApp": [
         "Scan with Feishu on your phone to let it read your chats and messages"
       ]
     },
-    tryIt: "Send it a message in {channel}",
-    switchBot: "To talk to a different bot, send /bot and its name",
-    ownerWaiting: "Waiting for your first message. Whoever messages first becomes the owner, and everyone else needs the owner's approval.",
-    ownerBound: "{who} is the owner. You can start chatting.",
-    ownerLogin: "Your {channel} account is the owner. You can start chatting.",
-    openChat: "Open {channel} ↗",
-    done: "Done",
-    fix: "Change connection details",
-    limit: {
-      weixin: "WeChat's rule: for each message you send, it can reply up to 10 times within 24 hours.",
-      telegram: "Only direct chats are handled for now. Messages sent while the app is closed are picked up within 24 hours.",
-      slack: "Only direct chats are handled for now. Messages sent while the app is closed aren't received.",
-      discord: "Only direct chats are handled for now. Messages sent while the app is closed aren't received."
+    "tryIt": "Send it a message in {channel}",
+    "switchBot": "To talk to a different bot, send /bot and its name",
+    "ownerWaiting": "Waiting for your first message. Whoever messages first becomes the owner, and everyone else needs the owner's approval.",
+    "ownerBound": "{who} is the owner. You can start chatting.",
+    "ownerLogin": "Your {channel} account is the owner. You can start chatting.",
+    "openChat": "Open {channel} ↗",
+    "done": "Done",
+    "fix": "Change connection details",
+    "limit": {
+      "weixin": "WeChat's rule: for each message you send, it can reply up to 10 times within 24 hours.",
+      "telegram": "Only direct chats are handled for now. Messages sent while the app is closed are picked up within 24 hours.",
+      "slack": "Only direct chats are handled for now. Messages sent while the app is closed aren't received.",
+      "discord": "Only direct chats are handled for now. Messages sent while the app is closed aren't received."
     },
-    connection: "Connection",
-    viaScan: "WeChat QR code",
-    changeApp: "Change app",
-    changeToken: "Change token",
-    removed: "Removed {name}"
+    "connection": "Connection",
+    "viaScan": "WeChat QR code",
+    "changeApp": "Change app",
+    "changeToken": "Change token",
+    "removed": "Removed {name}"
   },
-  gateway: {
-    running: "Running",
-    starting: "Starting",
-    restarting: "Restarting",
-    failed: "Failed",
-    stopped: "Stopped",
-    external: "External endpoint",
+  "gateway": {
+    "running": "Running",
+    "starting": "Starting",
+    "restarting": "Restarting",
+    "failed": "Failed",
+    "stopped": "Stopped",
+    "external": "External endpoint"
   },
-  theme: { light: "Light", dark: "Dark" },
-  textSize: { sm: "Small", md: "Default", lg: "Large", xl: "Extra large" },
-  font: { system: "System", serif: "Serif", custom: "Custom" },
-  width: { normal: "Default", wide: "Wide", full: "Full" },
-  side: {
-    label: "Settings",
-    back: "Back to app",
-    backTitle: "Back to app (Esc)",
-    search: "Search settings",
-    nav: "Settings sections",
+  "theme": {
+    "light": "Light",
+    "dark": "Dark"
   },
-  groups: {
-    theme: "Theme",
-    text: "Text",
-    layout: "Layout",
-    effects: "Effects",
-    desktop: "Desktop app",
-    account: "Account",
-    models: "Models",
-    official: "Official API keys",
-    line: "Connection",
-    channels: "Chat channels",
-    data: "Data accounts",
+  "textSize": {
+    "sm": "Small",
+    "md": "Default",
+    "lg": "Large",
+    "xl": "Extra large"
   },
-  searchResults: "Search results",
-  noMatch: "No matching settings",
-  preview: {
-    label: "Preview",
-    reply: "Sure, and error handling gets clearer too. With {b} on, the line below wraps:",
+  "font": {
+    "system": "System",
+    "serif": "Serif",
+    "custom": "Custom"
   },
-  rekey: {
-    title: "Change OKINTO New API key",
-    submit: "Verify and save",
+  "width": {
+    "normal": "Default",
+    "wide": "Wide",
+    "full": "Full"
   },
-  disconnect: {
-    title: "Disconnect OKINTO New API?",
-    body: "This deletes the API key from this computer. Your bots and conversations stay, ready for when you reconnect.",
-    confirm: "Disconnect",
+  "side": {
+    "label": "Settings",
+    "back": "Back to app",
+    "backTitle": "Back to app (Esc)",
+    "search": "Search settings",
+    "nav": "Settings sections"
   },
-  logout: {
-    title: "Sign out of OKINTO New API?",
-    body: "This revokes this computer's access and deletes the API keys issued to it and your bots at sign-in. Your bots and conversations stay.",
-    confirm: "Sign out",
-    notRevoked: "The server didn't confirm the revocation. You're signed out here — you can revoke access again under Authorized apps on the OKINTO New API website",
+  "groups": {
+    "theme": "Theme",
+    "text": "Text",
+    "layout": "Layout",
+    "effects": "Effects",
+    "desktop": "Desktop app",
+    "account": "Account",
+    "models": "Models",
+    "official": "Official API keys",
+    "line": "Connection",
+    "channels": "Chat channels",
+    "data": "Data accounts"
   },
-  notifyDenied: "Notifications aren't allowed. Allow them for this page in your system or browser site settings",
-  rows: {
-    language: {
-      sub: "Used for the interface, the tray menu and system messages from your bots",
-      keys: "language english chinese 中文", // i18n-ignore
-    },
-    sendKey: {
-      name: "Send with",
-      sub: "{key} adds a new line. Enter won't send while you're typing with an input method",
-      keys: "send enter return new line newline shortcut keyboard",
-    },
-    notify: {
-      name: "Notify when a reply is done",
-      sub: "When the window isn't in front, show a system notification when a bot finishes replying or needs you to confirm",
-      keys: "notification notify alert background",
-    },
-    close: {
-      name: "When closing the window",
-      sub: "While hidden in the tray, bots keep sending and receiving messages in the background",
-      keys: "tray quit close minimize background",
-      tray: "Hide to tray",
-      quit: "Quit",
-    },
-    autostart: {
-      name: "Launch at login",
-      sub: "Start in the background after you log in",
-      keys: "startup launch login boot autostart",
-    },
-    browser: {
-      name: "Open in browser",
-      sub: "Open this same local interface in your default browser",
-      keys: "browser web",
-    },
-    guide: {
-      name: "Getting-started checklist",
-      hidden: "Hidden. Start over to bring it back on the chat page and at the bottom of the sidebar",
-      progress: "Learn what your bots can do, one step at a time · {done}/{total} done",
-      keys: "guide onboarding tutorial checklist getting started",
-      restart: "Start over",
-      restarted: "Checklist restarted",
-    },
-    theme: {
-      name: "Theme",
-      sub: "Light, dark, or match your system",
-      keys: "theme appearance dark light night mode",
-    },
-    textSize: {
-      name: "Text size",
-      subDesktop: "Changes text only. To scale icons and spacing too, use Zoom below",
-      sub: "Changes text only; icons and spacing stay the same",
-      keys: "text size font size larger bigger",
-    },
-    font: {
-      name: "Interface font",
-      sub: "System default, serif, or any font installed on your computer",
-      keys: "font family typeface serif",
-    },
-    fontName: {
-      name: "Custom font",
-      subSet: "Separate several fonts with commas to fall back in order. Fonts that aren't installed fall back to the system font",
-      subEmpty: "Enter a font name, like Inter. Until then, the system font is used",
-      keys: "font custom typeface",
-      placeholder: "Font name",
-    },
-    codeFont: {
-      name: "Code font",
-      sub: "Monospace font for code blocks, commands and paths. Leave empty to use the system monospace font",
-      keys: "code font monospace",
-      placeholder: "System monospace",
-    },
-    zoom: {
-      name: "Zoom",
-      sub: "Make everything in the window bigger or smaller, including icons and spacing",
-      keys: "zoom scale bigger smaller",
-    },
-    chatWidth: {
-      name: "Chat width",
-      sub: "Widen the conversation on large screens so long code and tables wrap less",
-      keys: "width wide full conversation column",
-    },
-    codeWrap: {
-      name: "Wrap code",
-      sub: "Wrap long lines in code blocks instead of scrolling sideways",
-      keys: "code wrap line wrap",
-    },
-    motion: {
-      name: "Animations",
-      sub: "When off, transitions, pop-ups and bot avatars stay still. System follows your Reduce motion setting",
-      keys: "animation motion transition reduce motion",
-    },
-    resetAppearance: {
-      name: "Reset appearance",
-      subDesktop: "Restore theme, fonts, zoom and all the settings above to their defaults",
-      sub: "Restore theme, fonts and all the settings above to their defaults",
-      keys: "reset restore default",
-      button: "Reset",
-    },
-    account: {
-      apiKey: "Connect with an API key from api.okinto.com",
-      name: "OKINTO New API account",
-      signedIn: "Signed in",
-      enterprise: "{name}'s usage is billed to your organization's wallet",
-      signedOut: "Sign in to see usage, notifications and your invite link, and to set budgets for individual bots",
-      keys: "account sign in sign up log in login",
-      logout: "Sign out",
-      noBrowserLogin: "API key connection",
-      login: "Sign in / Sign up",
-    },
-    connection: {
-      playground: "Use your New API playground session; requests are billed to the selected group",
-      name: "Connection",
-      subExternal: "Endpoint set by the AMB_MAGPIE_BASE_URL environment variable (development/testing)",
-
-  "nameSignedIn": "Account connection",
-  "subSignedIn": "Using your OKINTO account",
-  "sub": "Using an OKINTO site API key",
-  "keys": "OKINTO API key connection models",
-  "rekey": "Replace API key",
-  "disconnect": "Disconnect"
-},
-    balance: {
-      fromToken: "Remaining quota for this API key; view the wallet in the console",
-      fromAccount: "New API account wallet balance",
-      name: "Balance",
-      error: "Couldn't load: {error}",
-      fromKey: "From New API billing; quota scope depends on site settings",
-      updated: "Updated {time}",
-      keys: "balance top up wallet credit",
-      refresh: "Refresh balance",
-      topUp: "Top up ↗",
-    },
-    lowBalance: {
-      name: "Low balance alert",
-      sub: "Get one in-app alert when your balance drops below this amount. Resets after you top up",
-      keys: "alert low balance reminder",
-      none: "Off",
-    },
-    lowBalancePush: {
-      name: "Also send alerts to your chat apps",
-      sub: "Sent by your bot: on WeChat to whoever scanned the login QR code (they need to have messaged recently), on Feishu to the most recent direct chat, on Telegram, Slack and Discord to the owner",
-      keys: "push alert wechat feishu lark telegram slack discord",
-    },
-    usage: {
-      name: "Usage",
-      sub: "Spending by day and by model",
-      keys: "usage spending cost billing",
-    },
-    notifications: {
-      name: "Notifications",
-      unread: "{count} unread",
-      sub: "Notifications and announcements from OKINTO New API",
-      keys: "notification announcement message",
-    },
-    invite: {
-      name: "Invite friends",
-      sub: "Earn a reward when friends sign up and top up through your link",
-      keys: "invite referral reward",
-      copy: "Copy invite link",
-    },
-    line: {"name": "API domain", "sub": "Choose a domain or compare response times. Changes apply to new requests", "keys": "domain speed latency okinto origin cf network route"},
-    defaultModel: {
-      name: "Default model",
-      sub: "Used when a bot doesn't set its own",
-      keys: "default model",
-      auto: "Auto (first in list)",
-    },
-    imageModel: {
-      name: "Default image model",
-      sub: "Used by default when a bot generates images",
-      keys: "image picture generate model",
-    },
-    videoModel: {
-      name: "Default video model",
-      sub: "Used by default when a bot generates videos",
-      keys: "video generate model",
-    },
-    keyQuality: {
-      name: "Value",
-      sub: "Whether to try cheaper or steadier routes first",
-      keys: "cheap balanced quality routing route group cost",
-    },
-    effort: {
-      sub: "Higher means deeper thinking and slower replies. On Auto, the model decides. Models that can't adjust aren't affected.",
-      keys: "reasoning effort thinking depth",
-    },
-    autoModel: "Auto ({model})",
-    models: {
-      name: "Available models",
-      error: "Couldn't load: {error}",
-      sub: "Models available to your account",
-      keys: "models list refresh",
-      count: { one: "{count} model", other: "{count} models" },
-    },
-    console: {
-      name: "OKINTO New API console",
-      sub: "Billing, invoices and API key management",
-      keys: "console dashboard billing invoice",
-    },
-    cuStatus: {
-      name: "Computer use backend",
-      ready: "Available",
-      notReady: "Unavailable",
-      keys: "computer use cua accessibility screen recording",
-    },
-    cuNotice: {
-      name: "System permissions",
-      keys: "permission permissions",
-    },
-    cuPerBot: {
-      name: "Turn on per bot",
-      sub: "Each bot can turn on computer use and set its own approval mode",
-      keys: "bot bots",
-      open: "Open bot settings",
-    },
-    keyStorage: {
-      name: "Key storage",
-      sub: "Your OKINTO New API key lives only in the built-in gateway's isolated config on this computer, never in logs or command-line arguments",
-      keys: "security key storage",
-    },
-    accountStorage: {
-      name: "Account credentials",
-      sub: "OKINTO New API sign-in credentials are stored only in the data folder, encrypted with the system keychain on desktop. The interface only sees your account name",
-      keys: "security sign in keychain credentials",
-    },
-    token: {
-      name: "Access token",
-      required: "Required: the interface listens on a non-local address, or the desktop app generates a random one at each launch",
-      local: "Listening on this computer only, so no token is needed",
-      keys: "token access",
-    },
-    sandbox: {
-      name: "Bot sandbox",
-      sub: "The local interface rejects requests from bot sandboxes, so bots can't approve their own actions or read your config",
-      keys: "security dsh sandbox",
-    },
-    screens: {
-      name: "Screenshots",
-      sub: "Computer use screenshots go only to the model, never into chats",
-      keys: "privacy screenshot",
-    },
-    webSearch: {
-      name: "Web search",
-      sub: "Free search by default. A key you add is used first",
-      keys: "search web internet tavily exa bocha zhipu keenable searxng",
-      auto: "Auto",
-      bocha: "Bocha",
-      zhipu: "Zhipu",
-    },
-    webSearchKey: {
-      name: "{provider} key",
-      placeholder: "Paste key",
-      rejected: "Key rejected. Using free search for now",
-      remove: "Remove",
-      keys: "search key api",
-    },
-    webSearchUrl: {
-      name: "SearXNG address",
-      keys: "search searxng url address",
-    },
-    listen: {
-      name: "Listen address",
-      sub: "To change it, set AMB_UI_HOST / AMB_UI_PORT and restart",
-      keys: "port host address listen",
-      copy: "Copy address",
-    },
-    dataDir: {
-      name: "Data folder",
-      sub: "SQLite, bot workspaces, WeChat sign-in state and built-in gateway config",
-      keys: "path folder directory data",
-      copy: "Copy path",
-    },
-    version: {
-      name: "Version",
-      keys: "version update upgrade",
-      available: "Version {version} is available",
-      latest: "You're on the latest version",
-      download: "Download ↗",
-      notes: "What's new",
-    },
-    licenses: {
-      name: "Licenses & third-party notices",
-      sub: "MIT. Some interface styles adapted from magpie (MIT)",
-      keys: "license licenses notices open source",
-    },
-    diagnostics: {
-      name: "Diagnostics",
-      gateway: "Built-in gateway",
-      restarts: { one: "Restarted {count} time", other: "Restarted {count} times" },
-      keys: "gateway magpie diagnostics",
-    },
-    troubleshoot: {
-      sub: "Gateway and agent process status, model and agent tests, recent logs, and copying diagnostics",
-      keys: "log logs test agent stuck spinning hang diagnostics restart PowerShell pwsh slow commands",
-    },
-    links: {
-      sub: "Website and docs",
-      docs: "Docs ↗",
-    },
+  "searchResults": "Search results",
+  "noMatch": "No matching settings",
+  "preview": {
+    "label": "Preview",
+    "reply": "Sure, and error handling gets clearer too. With {b} on, the line below wraps:"
   },
+  "rekey": {
+    "title": "Change Okinto New API key",
+    "submit": "Verify and save"
+  },
+  "disconnect": {
+    "title": "Disconnect Okinto New API?",
+    "body": "This deletes the API key from this computer. Your bots and conversations stay, ready for when you reconnect.",
+    "confirm": "Disconnect"
+  },
+  "logout": {
+    "title": "Sign out of Okinto New API?",
+    "body": "This revokes this computer's access and deletes the API keys issued to it and your bots at sign-in. Your bots and conversations stay.",
+    "confirm": "Sign out",
+    "notRevoked": "The server didn't confirm the revocation. You're signed out here — you can revoke access again under Authorized apps on the Okinto New API website"
+  },
+  "notifyDenied": "Notifications aren't allowed. Allow them for this page in your system or browser site settings",
+  "rows": {
+    "language": {
+      "sub": "Used for the interface, the tray menu and system messages from your bots",
+      "keys": "language english chinese 中文"
+    },
+    "sendKey": {
+      "name": "Send with",
+      "sub": "{key} adds a new line. Enter won't send while you're typing with an input method",
+      "keys": "send enter return new line newline shortcut keyboard"
+    },
+    "notify": {
+      "name": "Notify when a reply is done",
+      "sub": "When the window isn't in front, show a system notification when a bot finishes replying or needs you to confirm",
+      "keys": "notification notify alert background"
+    },
+    "close": {
+      "name": "When closing the window",
+      "sub": "While hidden in the tray, bots keep sending and receiving messages in the background",
+      "keys": "tray quit close minimize background",
+      "tray": "Hide to tray",
+      "quit": "Quit"
+    },
+    "autostart": {
+      "name": "Launch at login",
+      "sub": "Start in the background after you log in",
+      "keys": "startup launch login boot autostart"
+    },
+    "browser": {
+      "name": "Open in browser",
+      "sub": "Open this same local interface in your default browser",
+      "keys": "browser web"
+    },
+    "guide": {
+      "name": "Getting-started checklist",
+      "hidden": "Hidden. Start over to bring it back on the chat page and at the bottom of the sidebar",
+      "progress": "Learn what your bots can do, one step at a time · {done}/{total} done",
+      "keys": "guide onboarding tutorial checklist getting started",
+      "restart": "Start over",
+      "restarted": "Checklist restarted"
+    },
+    "theme": {
+      "name": "Theme",
+      "sub": "Light, dark, or match your system",
+      "keys": "theme appearance dark light night mode"
+    },
+    "textSize": {
+      "name": "Text size",
+      "subDesktop": "Changes text only. To scale icons and spacing too, use Zoom below",
+      "sub": "Changes text only; icons and spacing stay the same",
+      "keys": "text size font size larger bigger"
+    },
+    "font": {
+      "name": "Interface font",
+      "sub": "System default, serif, or any font installed on your computer",
+      "keys": "font family typeface serif"
+    },
+    "fontName": {
+      "name": "Custom font",
+      "subSet": "Separate several fonts with commas to fall back in order. Fonts that aren't installed fall back to the system font",
+      "subEmpty": "Enter a font name, like Inter. Until then, the system font is used",
+      "keys": "font custom typeface",
+      "placeholder": "Font name"
+    },
+    "codeFont": {
+      "name": "Code font",
+      "sub": "Monospace font for code blocks, commands and paths. Leave empty to use the system monospace font",
+      "keys": "code font monospace",
+      "placeholder": "System monospace"
+    },
+    "zoom": {
+      "name": "Zoom",
+      "sub": "Make everything in the window bigger or smaller, including icons and spacing",
+      "keys": "zoom scale bigger smaller"
+    },
+    "chatWidth": {
+      "name": "Chat width",
+      "sub": "Widen the conversation on large screens so long code and tables wrap less",
+      "keys": "width wide full conversation column"
+    },
+    "codeWrap": {
+      "name": "Wrap code",
+      "sub": "Wrap long lines in code blocks instead of scrolling sideways",
+      "keys": "code wrap line wrap"
+    },
+    "motion": {
+      "name": "Animations",
+      "sub": "When off, transitions, pop-ups and bot avatars stay still. System follows your Reduce motion setting",
+      "keys": "animation motion transition reduce motion"
+    },
+    "resetAppearance": {
+      "name": "Reset appearance",
+      "subDesktop": "Restore theme, fonts, zoom and all the settings above to their defaults",
+      "sub": "Restore theme, fonts and all the settings above to their defaults",
+      "keys": "reset restore default",
+      "button": "Reset"
+    },
+    "account": {
+      "apiKey": "Connect with an API key from api.okinto.com",
+      "name": "Okinto New API account",
+      "signedIn": "Signed in",
+      "enterprise": "{name}'s usage is billed to your organization's wallet",
+      "signedOut": "Sign in to see usage, notifications and your invite link, and to set budgets for individual bots",
+      "keys": "account sign in sign up log in login",
+      "logout": "Sign out",
+      "noBrowserLogin": "API key connection",
+      "login": "Sign in / Sign up"
+    },
+    "connection": {
+      "playground": "Use your New API playground session; requests are billed to the selected group",
+      "name": "Connection",
+      "subExternal": "Endpoint set by the AMB_MAGPIE_BASE_URL environment variable (development/testing)",
+      "nameSignedIn": "Account connection",
+      "subSignedIn": "Using your Okinto account",
+      "sub": "Using an Okinto site API key",
+      "keys": "Okinto API key connection models",
+      "rekey": "Replace API key",
+      "disconnect": "Disconnect"
+    },
+    "balance": {
+      "fromToken": "Remaining quota for this API key; view the wallet in the console",
+      "fromAccount": "New API account wallet balance",
+      "name": "Balance",
+      "error": "Couldn't load: {error}",
+      "fromKey": "From New API billing; quota scope depends on site settings",
+      "updated": "Updated {time}",
+      "keys": "balance top up wallet credit",
+      "refresh": "Refresh balance",
+      "topUp": "Top up ↗"
+    },
+    "lowBalance": {
+      "name": "Low balance alert",
+      "sub": "Get one in-app alert when your balance drops below this amount. Resets after you top up",
+      "keys": "alert low balance reminder",
+      "none": "Off"
+    },
+    "lowBalancePush": {
+      "name": "Also send alerts to your chat apps",
+      "sub": "Sent by your bot: on WeChat to whoever scanned the login QR code (they need to have messaged recently), on Feishu to the most recent direct chat, on Telegram, Slack and Discord to the owner",
+      "keys": "push alert wechat feishu lark telegram slack discord"
+    },
+    "usage": {
+      "name": "Usage",
+      "sub": "Spending by day and by model",
+      "keys": "usage spending cost billing"
+    },
+    "notifications": {
+      "name": "Notifications",
+      "unread": "{count} unread",
+      "sub": "Notifications and announcements from Okinto New API",
+      "keys": "notification announcement message"
+    },
+    "invite": {
+      "name": "Invite friends",
+      "sub": "Earn a reward when friends sign up and top up through your link",
+      "keys": "invite referral reward",
+      "copy": "Copy invite link"
+    },
+    "line": {
+      "name": "API domain",
+      "sub": "Choose a domain or compare response times. Changes apply to new requests",
+      "keys": "domain speed latency okinto origin cf network route"
+    },
+    "defaultModel": {
+      "name": "Default model",
+      "sub": "Used when a bot doesn't set its own",
+      "keys": "default model",
+      "auto": "Auto (first in list)"
+    },
+    "imageModel": {
+      "name": "Default image model",
+      "sub": "Used by default when a bot generates images",
+      "keys": "image picture generate model"
+    },
+    "videoModel": {
+      "name": "Default video model",
+      "sub": "Used by default when a bot generates videos",
+      "keys": "video generate model"
+    },
+    "keyQuality": {
+      "name": "Value",
+      "sub": "Whether to try cheaper or steadier routes first",
+      "keys": "cheap balanced quality routing route group cost"
+    },
+    "effort": {
+      "sub": "Higher means deeper thinking and slower replies. On Auto, the model decides. Models that can't adjust aren't affected.",
+      "keys": "reasoning effort thinking depth"
+    },
+    "autoModel": "Auto ({model})",
+    "models": {
+      "name": "Available models",
+      "error": "Couldn't load: {error}",
+      "sub": "Models available to your account",
+      "keys": "models list refresh",
+      "count": {
+        "one": "{count} model",
+        "other": "{count} models"
+      }
+    },
+    "console": {
+      "name": "Okinto New API console",
+      "sub": "Billing, invoices and API key management",
+      "keys": "console dashboard billing invoice"
+    },
+    "cuStatus": {
+      "name": "Computer use backend",
+      "ready": "Available",
+      "notReady": "Unavailable",
+      "keys": "computer use cua accessibility screen recording"
+    },
+    "cuNotice": {
+      "name": "System permissions",
+      "keys": "permission permissions"
+    },
+    "cuPerBot": {
+      "name": "Turn on per bot",
+      "sub": "Each bot can turn on computer use and set its own approval mode",
+      "keys": "bot bots",
+      "open": "Open bot settings"
+    },
+    "keyStorage": {
+      "name": "Key storage",
+      "sub": "Your Okinto New API key lives only in the built-in gateway's isolated config on this computer, never in logs or command-line arguments",
+      "keys": "security key storage"
+    },
+    "accountStorage": {
+      "name": "Account credentials",
+      "sub": "Okinto New API sign-in credentials are stored only in the data folder, encrypted with the system keychain on desktop. The interface only sees your account name",
+      "keys": "security sign in keychain credentials"
+    },
+    "token": {
+      "name": "Access token",
+      "required": "Required: the interface listens on a non-local address, or the desktop app generates a random one at each launch",
+      "local": "Listening on this computer only, so no token is needed",
+      "keys": "token access"
+    },
+    "sandbox": {
+      "name": "Bot sandbox",
+      "sub": "The local interface rejects requests from bot sandboxes, so bots can't approve their own actions or read your config",
+      "keys": "security dsh sandbox"
+    },
+    "screens": {
+      "name": "Screenshots",
+      "sub": "Computer use screenshots go only to the model, never into chats",
+      "keys": "privacy screenshot"
+    },
+    "webSearch": {
+      "name": "Web search",
+      "sub": "Free search by default. A key you add is used first",
+      "keys": "search web internet tavily exa bocha zhipu keenable searxng",
+      "auto": "Auto",
+      "bocha": "Bocha",
+      "zhipu": "Zhipu"
+    },
+    "webSearchKey": {
+      "name": "{provider} key",
+      "placeholder": "Paste key",
+      "rejected": "Key rejected. Using free search for now",
+      "remove": "Remove",
+      "keys": "search key api"
+    },
+    "webSearchUrl": {
+      "name": "SearXNG address",
+      "keys": "search searxng url address"
+    },
+    "listen": {
+      "name": "Listen address",
+      "sub": "To change it, set AMB_UI_HOST / AMB_UI_PORT and restart",
+      "keys": "port host address listen",
+      "copy": "Copy address"
+    },
+    "dataDir": {
+      "name": "Data folder",
+      "sub": "SQLite, bot workspaces, WeChat sign-in state and built-in gateway config",
+      "keys": "path folder directory data",
+      "copy": "Copy path"
+    },
+    "version": {
+      "name": "Version",
+      "keys": "version update upgrade",
+      "available": "Version {version} is available",
+      "latest": "You're on the latest version",
+      "download": "Download ↗",
+      "notes": "What's new"
+    },
+    "licenses": {
+      "name": "Licenses & third-party notices",
+      "sub": "MIT. Some interface styles adapted from magpie (MIT)",
+      "keys": "license licenses notices open source"
+    },
+    "diagnostics": {
+      "name": "Diagnostics",
+      "gateway": "Built-in gateway",
+      "restarts": {
+        "one": "Restarted {count} time",
+        "other": "Restarted {count} times"
+      },
+      "keys": "gateway magpie diagnostics"
+    },
+    "troubleshoot": {
+      "sub": "Gateway and agent process status, model and agent tests, recent logs, and copying diagnostics",
+      "keys": "log logs test agent stuck spinning hang diagnostics restart PowerShell pwsh slow commands"
+    },
+    "links": {
+      "sub": "Website and docs",
+      "docs": "Docs ↗"
+    }
+  }
 };

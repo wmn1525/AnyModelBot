@@ -94,12 +94,12 @@ const chapters = [
       </div>
     </div>
 
-    <!-- 还有这些：上面两章没讲到的能力，只是一段纯文字清单（不加图标、分隔线和入场动效） -->
-    <div class="caps" aria-labelledby="caps-h3">
+    <!-- 英文首页省略补充能力清单，其余语言继续使用现有内容。 -->
+    {lang !== "en" && <div class="caps" aria-labelledby="caps-h3">
       <h3 class="subhead" id="caps-h3">{more.h3}</h3>
       <ul class="caps__list" role="list">
         {more.items.map((p) => <li><b>{p.title}</b>{p.body}</li>)}
       </ul>
-    </div>
+    </div>}
   </div>
 </section>

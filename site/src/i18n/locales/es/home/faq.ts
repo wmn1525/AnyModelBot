@@ -5,8 +5,8 @@ export default {
   "more": "¿No la encontraste? Consulta la documentación",
   "items": [
     {
-      "q": "¿Cómo importo mis propias habilidades?",
-      "a": "Ve a los ajustes del bot → Habilidades → Importar ZIP, revisa la vista previa y agrégala. Cada ZIP contiene un SKILL.md y puede ocupar hasta 20 MB; los scripts y las referencias se conservan. La importación no se conecta a GitHub. Los requisitos de software y de red dependen de la habilidad. Para reemplazar una habilidad, vuelve a importar una con el mismo nombre y confirma el reemplazo."
+      "q": "¿Cómo agrego habilidades a un bot?",
+      "a": "Hay tres formas: copia una instrucción de instalación de la biblioteca en Apps y habilidades o envíale al bot el enlace de GitHub de una habilidad, y confirma la tarjeta; importa un ZIP con un SKILL.md (hasta 20 MB) en los ajustes del bot → Habilidades → Importar ZIP; o, cuando un bot hace algo bien, di «guardar como habilidad» o envía /skill y confirma el borrador para guardarla en Mis habilidades, donde puedes activarla en otros bots, exportarla como ZIP o programarla. Los secretos nunca se escriben en una habilidad; el software y la conexión que necesita dependen de cada habilidad."
     },
     {
       "q": "¿Cómo encuentro una conversación anterior?",
@@ -38,7 +38,7 @@ export default {
     },
     {
       "q": "¿Los bots pueden trabajar con mis apps, como Notion o GitHub?",
-      "a": "Sí, una vez que las conectes. Usa Conectar apps en el menú del avatar: GitHub, Notion, Linear, Atlassian y Canva vienen integrados, y puedes agregar conectores MCP personalizados. Puedes conectar varias cuentas de la misma app y preguntarle a cualquier bot por ellas usando su número o alias. Las herramientas de solo lectura se ejecutan de inmediato, las escrituras te preguntan primero, y las eliminaciones o cualquier cosa que se envíe a otras personas siempre preguntan. Los bots de solo lectura solo pueden leer."
+      "a": "Sí, una vez que las conectes. Usa Apps y habilidades en el menú del avatar: GitHub, Notion, Linear, Atlassian y Canva vienen integrados, y puedes agregar conectores MCP personalizados. Puedes conectar varias cuentas de la misma app y preguntarle a cualquier bot por ellas usando su número o alias. Las herramientas de solo lectura se ejecutan de inmediato, las escrituras te preguntan primero, y las eliminaciones o cualquier cosa que se envíe a otras personas siempre preguntan. Los bots de solo lectura solo pueden leer."
     },
     {
       "q": "¿Y si no tengo cuenta de OKINTO?",

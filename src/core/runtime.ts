@@ -22,6 +22,8 @@ import { takeTaskNotes } from "./task-notes.js";
 import { t } from "../i18n/index.js";
 import { localProxyFailureHint } from "../network-error.js";
 import type { CuBlocked } from "../tools/computer-use/permissions.js";
+import { installPromptLinks, MAX_CARDS_PER_MESSAGE, type SkillInstalls } from "../skills/installs.js";
+import type { SkillDrafts } from "../skills/drafts.js";
 
 const log = logger("runtime");
 
@@ -112,6 +114,10 @@ export interface RuntimeOptions {
    * 返回 true = 换了 Key，这条消息自动再试一次（只在还没有任何输出时）。缺省不重试。
    */
   recoverKey?: () => Promise<boolean>;
+  /** 技能安装卡片（skills/installs.ts）：技能库的安装指令由这里直接出卡片，渠道里的「y 1234」、飞书按钮也在这里处理 */
+  skillInstalls?: SkillInstalls;
+  /** 「存成技能」草稿卡（skills/drafts.ts）：/skill 先出「正在整理技能…」，渠道里的「保存」「取消」、飞书按钮也在这里处理 */
+  skillDrafts?: SkillDrafts;
 }
 
 const help = () => t("runtime.help");
@@ -358,12 +364,16 @@ export class BotRuntime {
     const agent = this.opts.agent;
     // 代理模式：收到的图片/文件先进工作区，消息里写路径
     if (agent?.available) storeInbound(agent.host(bot.id).workspace, ev);
-    const text = eventText(ev);
+    let text = eventText(ev);
     if (!text) return;
     const images = inboundImages(ev);
     // 上次重启时没处理完、当时又没能告诉用户的：先说一声
     const notice = takeNotice(store, convId);
     if (notice) await out.apply({ type: "text", text: notice }).catch((e) => log.warn("restart notice failed", { message: (e as Error).message.slice(0, 200) }));
+
+    // 技能库「复制安装指令」的固定格式：不经过模型，直接出安装卡片（也不并进进行中的回合）
+    const installLinks = this.opts.skillInstalls ? installPromptLinks(text) : null;
+    if (installLinks) return this.installFromPrompt(ev, out, bot.id, convId, text, installLinks, run);
 
     // 前面还有消息在处理：代理回合进行中就把这条并进去（模型下一步看到，回复一起给），否则排在它们后面。
     // 命令（/model、/reset…）不并入，等前面的处理完
@@ -390,6 +400,26 @@ export class BotRuntime {
       }
       await out.apply({ type: "text", text: msg });
       return;
+    }
+
+    // /skill：等同于说「把刚才做的事存成技能」（后面的文字是补充说明），交给机器人整理成草稿卡；不能存时
+    // （渠道群、不是主人、群里该别的机器人出、没有可存的事）直接回一句。用户消息照原样记下
+    const skillCmd = /^\/skill(?:\s+([\s\S]*))?$/i.exec(text.trim());
+    if (skillCmd) {
+      const gate = agent?.available ? agent.saveSkillGate(bot.id, conv.id) : { why: "", say: t("mySkills.nothing") };
+      if (gate && !gate.say) return;
+      if (!run.userStored) store.addMessage(conv.id, "user", text);
+      run.userStored = true;
+      if (gate) {
+        store.addMessage(conv.id, "assistant", gate.say);
+        await out.apply({ type: "text", text: gate.say });
+        this.answered(conv.id, run);
+        return;
+      }
+      text = skillCmd[1]?.trim() ? t("mySkills.slashPromptWith", { text: skillCmd[1].trim() }) : t("mySkills.slashPrompt");
+      // 网页单聊：先出一张「正在整理技能…」，机器人交来草稿时原位变成草稿卡
+      const drafts = this.opts.skillDrafts;
+      if (drafts && ev.channel === "web" && ev.conversation.kind !== "group") await out.apply(drafts.op(drafts.begin(bot.id, conv.id)));
     }
 
     if (text.startsWith("/")) {
@@ -471,6 +501,35 @@ export class BotRuntime {
   }
 
   /**
+   * 技能库的安装指令（「帮我安装这个技能：链接」，每行一条）：应用直接读取、出确认卡片，不经过模型。
+   * 网页对话一出卡片就显示（卡片自己显示读取中）；渠道等读完再发文字版（带编号）。渠道里只有主人能装。
+   */
+  private async installFromPrompt(ev: InboundEvent, out: ReplySession, botId: string, convId: string, text: string, links: string[], run: Inflight): Promise<void> {
+    const { store } = this.opts;
+    const installs = this.opts.skillInstalls!;
+    if (!run.userStored) store.addMessage(convId, "user", text);
+    run.userStored = true;
+    const say = async (msg: string) => {
+      store.addMessage(convId, "assistant", msg);
+      await out.apply({ type: "text", text: msg });
+    };
+    try {
+      if (this.opts.access && !this.opts.access.ownsConversation(convId)) return await say(t("skills.notOwner"));
+      const cards = installs.request({ botId, conversationId: convId, urls: links });
+      if (ev.channel === "web") for (const c of cards) await out.apply(installs.op(c));
+      else {
+        for (const c of cards) {
+          const done = await installs.ready(c.id);
+          if (done) await out.apply(installs.op(done));
+        }
+      }
+      if (links.length > MAX_CARDS_PER_MESSAGE) await say(t("skills.tooManyLinks", { max: MAX_CARDS_PER_MESSAGE }));
+    } finally {
+      this.answered(convId, run);
+    }
+  }
+
+  /**
    * 渠道在进入每会话串行队列之前调用：处理审批回复（y 1234 / n 1234）、提问回答和 /status /help /stop。
    * handled=false 但带 ack：前一条还在处理，渠道先把 ack 发出去，消息照常入队。
    */
@@ -513,6 +572,12 @@ export class BotRuntime {
     const { quote, plain } = quoteOf(ev);
     const ruleAction = tasks?.ruleReplyAction(convId, quote ? plain : text, quote || "", ev.sender.id);
     if (ruleAction?.handled) return { handled: true, ack: ruleAction.text };
+    // 渠道里对技能安装卡片的回复：「y 1234」安装、「n 1234」取消（网页对话里有按钮，不认文字）
+    const installReply = ev.channel !== "web" ? this.opts.skillInstalls?.handleReply(convId, quote ? plain : text, `${ev.channel}:${ev.sender.id}`) : undefined;
+    if (installReply?.handled) return installReply;
+    // 渠道里对「存成技能」草稿的回复：「保存」「取消」「保留个人信息」「另存」（别的话交给机器人，它判断是不是在改草稿）
+    const draftReply = ev.channel !== "web" ? this.opts.skillDrafts?.handleReply(convId, quote ? plain : text, `${ev.channel}:${ev.sender.id}`) : undefined;
+    if (draftReply?.handled) return draftReply;
     const r = agent.approvals.handleReply(convId, text, `${ev.channel}:${ev.sender.id}`, { ...tasks?.replyContext(convId), ...(quote ? { quote, plain } : {}) });
     if (r.handled) return r;
     // 引用了后台任务推来的结果或失败那句（微信），或发在任务请求那条消息的回复链里（飞书）：直接交给那个任务，不经聊天代理
@@ -571,6 +636,8 @@ export class BotRuntime {
   /** 卡片按钮回调：批准/拒绝/选择选项。 */
   cardAction(botId: string, value: Record<string, string>, by: string): { toast: string; ok: boolean; card?: Record<string, unknown> } {
     const agent = this.opts.agent;
+    if (value?.amb === "skill") return this.opts.skillInstalls ? this.opts.skillInstalls.cardAction(botId, value, by) : { toast: t("runtime.requestMissing"), ok: false };
+    if (value?.amb === "skill-draft") return this.opts.skillDrafts ? this.opts.skillDrafts.cardAction(botId, value, by) : { toast: t("runtime.requestMissing"), ok: false };
     if (value?.amb === "rule" && by.startsWith("feishu:") && agent?.tasks) return agent.tasks.ruleCardAction(botId, value.id, value.op, by.slice(7));
     const row = agent && value?.id ? this.opts.store.getApproval(String(value.id)) : undefined;
     // 卡片从渠道账号发回来：看这条请求所在的会话是不是走这个账号
@@ -619,10 +686,31 @@ export class BotRuntime {
       steps.set(step.id, step);
       void out.apply({ type: "activity", step });
     };
-    const unbind = agent.approvals.bindSink(convId, async (row) => {
+    const unbindApprovals = agent.approvals.bindSink(convId, async (row) => {
       visible = true;
       await out.apply(interactiveOp(row));
     });
+    // install_skill 工具出的卡片：网页对话一出就显示（卡片自己显示读取中），渠道读完再发那段文字
+    const installs = this.opts.skillInstalls;
+    const webConv = store.getConversation(convId)?.channel === "web";
+    const unbindInstalls = installs?.bindSink(convId, async (card, phase) => {
+      if (phase !== (webConv ? "created" : "ready")) return;
+      visible = true;
+      await out.apply(installs.op(card));
+    });
+    // save_skill 工具出的草稿卡：网页显示卡片，渠道发文字版（飞书带按钮）
+    const drafts = this.opts.skillDrafts;
+    const unbindDrafts = drafts?.bindSink(convId, async (card) => {
+      visible = true;
+      await out.apply(drafts.op(card));
+    });
+    const unbind = () => {
+      unbindApprovals();
+      unbindInstalls?.();
+      unbindDrafts?.();
+      // 这一轮结束了还在「正在整理技能…」的卡（机器人没交草稿）：整理失败，带重试
+      drafts?.settle(convId);
+    };
     // 模型在回合中间说的话、交付的文件：马上显示，结束时随回复存下
     const said = new TurnSaid(out);
     await out.apply({ type: "typing", on: true });
@@ -753,18 +841,18 @@ export class BotRuntime {
         log.warn("agent host unavailable, falling back to plain chat");
         return false;
       }
-      const permission = err instanceof TurnStopped && err.reason === "permission";
-      const conv = store.getConversation(convId);
-      const msg = permission ? conv?.channel === "web" ? t("cu.waiting") : t("cu.channelWait", { items: (err as TurnStopped).missing.map((k) => t(k === "screen" ? "runtime.permScreen" : "runtime.permAccessibility")).join(t("runtime.listSep")) }) : turnFailedText(err, [...steps.values()]);
       if (!inflight.userStored) store.addMessage(convId, "user", text);
       inflight.userStored = true;
-      // 出错、中止之前说过的话和交付过的文件留在历史里（文件不再发到其它渠道）
-      const messageId = store.addMessage(convId, "assistant", msg, [...steps.values()], { interim: said.interim, files: said.presented, permissionWait: permission });
-      agent.tasks?.finishRuleActions(convId, messageId);
-      if (permission) {
-        const desktop = store.ensureConversation(botId, "web", "console", "控制台");
-        const cardId = desktop.id === convId ? messageId : store.addMessage(desktop.id, "assistant", t("cu.waiting"), undefined, { permissionWait: true });
-        agent.cuPermissions?.attach(botId, { senderId, conversationId: convId, sessionId: store.getAgentSession(convId), messageId: cardId, lastUserId: store.listMessages(convId, 30).filter((m) => m.role === "user").at(-1)?.id || 0, background: false, requestText: text });
+      let msg: string;
+      if (err instanceof TurnStopped && err.reason === "permission") {
+        const paused = this.pauseForPermission(botId, convId, err, [...steps.values()], said, { senderId, text });
+        msg = paused.text;
+        agent.tasks?.finishRuleActions(convId, paused.messageId);
+      } else {
+        msg = turnFailedText(err, [...steps.values()]);
+        // 出错、中止之前说过的话和交付过的文件留在历史里（文件不再发到其它渠道）
+        const messageId = store.addMessage(convId, "assistant", msg, [...steps.values()], { interim: said.interim, files: said.presented });
+        agent.tasks?.finishRuleActions(convId, messageId);
       }
       await out.apply({ type: "stream.finish", text: msg });
       this.answered(convId, inflight);
@@ -800,6 +888,26 @@ export class BotRuntime {
    * 代理自己醒来的一轮（后台命令结束，DSH 唤醒了空闲的代理）：像普通回合一样登记（/status、/stop、看门狗、插话都认它），
    * 经渠道主动发到会话里（网页对话进 live 登记；飞书回复最近一条消息；微信占一条回复配额），回复与步骤存进历史。
    */
+  /**
+   * 电脑操作缺 macOS 权限被拦下：这一轮暂停，不出红色错误条。网页对话里这一轮的位置显示权限卡；
+   * 外部渠道只有文字说明，卡片放在「桌面对话」。开启后 30 分钟内且没有新消息就自动接着做，否则点「继续」。
+   */
+  private pauseForPermission(botId: string, convId: string, err: TurnStopped, steps: ActivityStep[], said: TurnSaid, request: { senderId?: string; text: string }): { text: string; messageId: number } {
+    const { store, agent } = this.opts;
+    const conv = store.getConversation(convId);
+    const text = conv?.channel === "web" ? t("cu.waiting")
+      : t("cu.channelWait", { items: err.missing.map((k) => t(k === "screen" ? "runtime.permScreen" : "runtime.permAccessibility")).join(t("runtime.listSep")) });
+    const messageId = store.addMessage(convId, "assistant", text, steps, { interim: said.interim, files: said.presented, permissionWait: true });
+    const desktop = store.ensureConversation(botId, "web", "console", "控制台");
+    const cardId = desktop.id === convId ? messageId : store.addMessage(desktop.id, "assistant", t("cu.waiting"), undefined, { permissionWait: true });
+    agent?.cuPermissions?.attach(botId, {
+      senderId: request.senderId, conversationId: convId, sessionId: store.getAgentSession(convId), messageId: cardId,
+      lastUserId: store.listMessages(convId, 30).filter((m) => m.role === "user").at(-1)?.id || 0, background: false, requestText: request.text,
+      missing: err.missing as CuBlocked["missing"],
+    });
+    return { text, messageId };
+  }
+
   /** 权限恢复只在原代理会话里继续，不重新提交原始请求、不占用输入草稿。 */
   async resumePermission(botId: string, pending: CuBlocked): Promise<void> {
     const { store, agent } = this.opts;
@@ -872,8 +980,14 @@ export class BotRuntime {
           fl.interrupted = true;
           return;
         }
-        const msg = turnFailedText(e as Error, [...steps.values()]);
-        store.addMessage(convId, "assistant", msg, [...steps.values()], { interim: said.interim, files: said.presented });
+        // 后台命令结束后自己接着做时被权限拦下：和回复用户消息时一样暂停、挂权限卡，开启后在原对话接着做
+        let msg: string;
+        if (e instanceof TurnStopped && e.reason === "permission") {
+          msg = this.pauseForPermission(botId, convId, e, [...steps.values()], said, { text: asked || t("runtime.jobResult") }).text;
+        } else {
+          msg = turnFailedText(e as Error, [...steps.values()]);
+          store.addMessage(convId, "assistant", msg, [...steps.values()], { interim: said.interim, files: said.presented });
+        }
         await out.apply({ type: "stream.finish", text: msg });
         this.answered(convId, fl);
         return;

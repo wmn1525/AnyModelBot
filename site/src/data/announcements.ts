@@ -49,6 +49,15 @@ export const RELEASE = {
   days: 30,
   /** 各版本的一句话亮点（可选），没有就显示"okbot {version} 已发布" */
   highlights: {
+    "0.1.36": {
+      "zh": "技能库，把做成的事存成技能",
+      "en": "Skill library and saving work as skills",
+      "ja": "スキルライブラリと作業のスキル保存",
+      "ko": "스킬 라이브러리와 한 일을 스킬로 저장",
+      "ru": "Библиотека навыков и свои навыки",
+      "es": "Biblioteca de habilidades y tus propias habilidades",
+      "pt": "Biblioteca de habilidades e suas próprias habilidades"
+    },
     "0.1.35": {
       "zh": "更简洁的界面、余额展示与规则修复",
       "en": "Cleaner UI, visible balances and rule fixes",

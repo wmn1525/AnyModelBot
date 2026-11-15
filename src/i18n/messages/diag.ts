@@ -6,7 +6,7 @@ export const zh = {
   // 测试模型
   fetch_timeout: "超时（{s} 秒内没有响应）",
   no_endpoint: "没有配置端点地址",
-  no_model: "没有可用的模型：请先在 OKINTO New API 里选择默认模型",
+  no_model: "没有可用的模型：请先在 Okinto New API 里选择默认模型",
   no_content: "响应里没有 choices[0].message.content：{body}",
   verdict_endpoint_ok: "端点正常",
   verdict_endpoint_error: "端点出错：{error}",
@@ -19,7 +19,7 @@ export const zh = {
   gateway_state: "{error}（内置网关状态：{state}）",
   gateway_state_error: "{error}（内置网关状态：{state}，{lastError}）",
   skip_no_chat: "这家官方 API 没有 Chat Completions 接口，只测内置网关",
-  skip_not_connected: "还没有连接 OKINTO New API",
+  skip_not_connected: "还没有连接 Okinto New API",
   skip_external: "外部端点模式：机器人直接调用该端点，不经内置网关",
   // 测试代理
   stage_queue: "消息队列",
@@ -33,7 +33,7 @@ export const zh = {
   timeout_reply: "模型已响应，但代理 {s} 秒内没有结束这一轮",
   agent_off: "代理模式已关闭（AMB_AGENT=off），机器人只做纯对话",
   no_runtime: "找不到代理运行时（DSH），机器人只能纯对话",
-  agent_no_model: "没有可用的模型：请先连接 OKINTO New API 并选择默认模型",
+  agent_no_model: "没有可用的模型：请先连接 Okinto New API 并选择默认模型",
   queue_idle: "没有正在处理的回合",
   queue_busy: "{count} 轮对话正在处理（最长已 {s} 秒）；同一会话的新消息会并入正在进行的回合（代理还没接手时排在后面）。卡住时用 /stop，或下面的\"重启代理进程\"",
   spawn_waiting: "等待正在进行的启动（已 {s} 秒，阶段：{stage}）",
@@ -91,7 +91,7 @@ export const zh = {
 export const en: Catalog<typeof zh> = {
   fetch_timeout: "Timed out (no response within {s}s)",
   no_endpoint: "No endpoint address configured",
-  no_model: "No model available: choose a default model in OKINTO New API first",
+  no_model: "No model available: choose a default model in Okinto New API first",
   no_content: "No choices[0].message.content in the response: {body}",
   verdict_endpoint_ok: "Endpoint OK",
   verdict_endpoint_error: "Endpoint error: {error}",
@@ -104,7 +104,7 @@ export const en: Catalog<typeof zh> = {
   gateway_state: "{error} (built-in gateway state: {state})",
   gateway_state_error: "{error} (built-in gateway state: {state}, {lastError})",
   skip_no_chat: "This official API has no Chat Completions endpoint, so only the built-in gateway is tested",
-  skip_not_connected: "OKINTO New API isn't connected yet",
+  skip_not_connected: "Okinto New API isn't connected yet",
   skip_external: "External endpoint mode: bots call the endpoint directly, without the built-in gateway",
   stage_queue: "Message queue",
   stage_spawn: "Start agent process",
@@ -117,7 +117,7 @@ export const en: Catalog<typeof zh> = {
   timeout_reply: "The model responded, but the agent didn't finish the turn within {s}s",
   agent_off: "Agent mode is off (AMB_AGENT=off); bots are chat-only",
   no_runtime: "Agent runtime (DSH) not found; bots can only chat",
-  agent_no_model: "No model available: connect OKINTO New API and choose a default model first",
+  agent_no_model: "No model available: connect Okinto New API and choose a default model first",
   queue_idle: "No turns in progress",
   queue_busy: {
     one: "{count} turn in progress (running for {s}s); new messages in the same conversation join it (or wait behind it until the agent picks it up). If it's stuck, use /stop or \"Restart agent process\" below",

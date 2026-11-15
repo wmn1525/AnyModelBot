@@ -137,6 +137,36 @@ describe("GroupChats", () => {
     ]);
   });
 
+  it("重试绑定失败成员和原始轮次，不按点名接力，错误来源在重载后保留", async () => {
+    const group = store.createGroup("群", [a, b]);
+    const conv = store.ensureConversation(a, "web", groupPeer(group.id), "", "group");
+    store.addMessage(conv.id, "user", "原始问题");
+    const failed = store.addMessage(conv.id, "assistant", "⚠️ 402 low balance");
+    store.setMessageErrorContext(failed, { groupId: group.id, model: "official-deepseek/model", input: "原始问题" });
+    store.addMessage(conv.id, "user", "之后的新问题");
+    const { service, turns, idle } = chats(() => "@小蓝 请接着做");
+    expect(service.retry(group.id, failed)).toBe("started");
+    expect(service.retry(group.id, failed)).toBe("busy");
+    await idle(group.id);
+    expect(turns).toEqual([{ botId: a, input: "原始问题" }]);
+    expect(store.listGroupMessages(group.id).find((m) => m.id === failed)?.errorContext?.model).toBe("official-deepseek/model");
+    const other = store.createGroup("另一个群", [a, b]);
+    expect(service.retry(other.id, failed)).toBe("missing");
+  });
+
+  it("重试有副作用的失败轮次先要求确认，旧消息可从原会话取回请求", async () => {
+    const group = store.createGroup("群", [a, b]);
+    const conv = store.ensureConversation(b, "web", groupPeer(group.id), "", "group");
+    store.addMessage(conv.id, "user", "原始请求");
+    const failed = store.addMessage(conv.id, "assistant", "⚠️ 402", [{ tool: "write_file" }]);
+    const { service, turns, idle } = chats();
+    expect(service.retry(group.id, failed)).toBe("confirm");
+    expect(turns).toEqual([]);
+    expect(service.retry(group.id, failed, true)).toBe("started");
+    await idle(group.id);
+    expect(turns).toEqual([{ botId: b, input: "原始请求" }]);
+  });
+
   it("后面的机器人能看到前面的回复，每轮只收到新消息", async () => {
     const g = store.createGroup("群", [a, b]);
     const { service, turns, idle } = chats((id) => (id === a ? "红的回答" : "蓝的回答"));

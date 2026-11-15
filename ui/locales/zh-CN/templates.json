@@ -30,7 +30,7 @@
   },
   "model": {
     "recommended": "推荐：模型智能「{level}」",
-    "starter": "上手期间先跟随全局默认，你也可以自己选择。",
+    "downgraded": "当前体验额度下先用「{actualTier}」，这个模板通常更适合「{originalTier}」。",
     "unranked": "当前模型资料不足以分档，先跟随全局默认。",
     "incompatible": "推荐档位没有满足能力要求的模型，先跟随全局默认。",
     "unavailable": "暂时无法推荐模型，请重试或选择可用的模型。"
@@ -67,10 +67,10 @@
   "keepEditing": "继续编辑",
   "newEntry": "不知道怎么写？从模板开始",
   "entryHint": "人设、示例都写好的角色，添加前可以先看",
-  "browse": "去看看 →",
+  "browse": "去看看",
   "orTemplate": "或从模板开始",
   "discoverEntry": "也可以从模板开始",
-  "seeAll": "查看全部模板 →",
+  "seeAll": "查看全部模板",
   "errors": {
     "fields": "模板创建请求包含不允许的设置。",
     "request": "创建请求无效，请重新打开模板。",

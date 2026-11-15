@@ -18,8 +18,8 @@ export default {
         "body": "Previsualiza archivos y sitios en el panel derecho sin cambiar su anchura al cambiar de pestaña. Admite Markdown, texto, PDF, imágenes y HTML, con descarga y apertura externa."
       },
       {
-        "title": "Importa tus propias habilidades",
-        "body": "Importa un ZIP en los ajustes del bot para agregar flujos de trabajo, como informes o procesamiento de documentos. Puedes activar, desactivar o reemplazar cada habilidad."
+        "title": "Habilidades: instala o guarda las tuyas",
+        "body": "Elige una habilidad de la biblioteca, envíale al bot un enlace de GitHub o importa un ZIP. Cuando un bot hace algo bien, di «guardar como habilidad» para reutilizarlo o programarlo."
       },
       {
         "title": "Busca en el historial de chats",

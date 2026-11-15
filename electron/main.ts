@@ -444,7 +444,7 @@ async function smoke(out: string): Promise<void> {
     let screen = "";
     for (let i = 0; i < 50; i++) {
       screen = String(await wc.executeJavaScript("document.querySelector('[data-screen]')?.getAttribute('data-screen') || ''"));
-      const ready = await wc.executeJavaScript("document.body.innerText.includes(\"OKINTO\")");
+      const ready = await wc.executeJavaScript("document.body.innerText.includes(\"Okinto\")");
       if (screen && screen !== "loading" && ready) break;
       await new Promise((r) => setTimeout(r, 200));
     }
@@ -457,7 +457,7 @@ async function smoke(out: string): Promise<void> {
     const status = await wc.executeJavaScript("fetch('/amb/api/status').then(r=>r.status)");
     const magpie = await wc.executeJavaScript("fetch('/magpie/').then(r=>r.status)");
     const title = await wc.executeJavaScript("document.title");
-    console.log(`SMOKE ${JSON.stringify({ hasUi: !!screen && screen !== "loading", screen, newApiForm: uiText.includes("OKINTO"), title, product: app.getName(), windowTitle: win!.getTitle(), profile: app.getPath("userData"), status, magpie, magpieState: core?.magpie?.state })}`);
+    console.log(`SMOKE ${JSON.stringify({ hasUi: !!screen && screen !== "loading", screen, newApiForm: uiText.includes("Okinto"), title, product: app.getName(), windowTitle: win!.getTitle(), profile: app.getPath("userData"), status, magpie, magpieState: core?.magpie?.state })}`);
   } finally {
     app.quit(); // 任何一步失败也退出，不让冒烟测试挂到超时
   }

@@ -1,4 +1,4 @@
-/* Heroicons Outline 线性图标 svg.ic（ui.js 的 Icon）。规范见 README「图标」。
+/* Heroicons / Lucide 线性图标 svg.ic（ui.js 的 Icon）。规范见 README「图标」。
    保留官方 24 格画布、currentColor、圆头圆角。尺寸只取 --ic-xs … --ic-xl 五档；线宽 --ic-stroke 是显示出来的像素，
    这里把它换算回画布单位（× 24 / 尺寸），所以图标放大缩小，线都一样细。
    上下文要换尺寸就覆盖 --ic-size（.pick .ic { --ic-size: var(--ic-xs) }），不要直接写 width / height——那样线会跟着变粗变细。

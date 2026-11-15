@@ -5,9 +5,9 @@ export default {
   "line": {
     "label": "Domínio da API",
     "sub": "Escolha um domínio ou compare os tempos de resposta. Não há troca automática.",
-    "global": "modelflare.dev",
-    "cn": "origin.modelflare.dev",
-    "cf": "cf.modelflare.dev",
+    "global": "api.okinto.com",
+    "cn": "origin.api.okinto.com",
+    "cf": "cf.api.okinto.com",
     "test": "Testar domínios",
     "testing": "Testando…",
     "testNote": "Os testes são feitos a partir do dispositivo que executa o okbot: tempo de resposta mediano e quantas de 3 sondagens deram certo. Sem chave de API nem chamadas a modelos; isso não mede a velocidade de geração.",
@@ -16,7 +16,7 @@ export default {
     "unreachable": "Inacessível"
   },
   "login": {
-    "label": "Entrar ou criar conta com OKINTO",
+    "label": "Entrar ou criar conta com Okinto",
     "waiting": "Conclua o login no navegador — você vai voltar para cá automaticamente",
     "reopen": "Reabrir a página de login ↗",
     "copyLink": "Copiar link",
@@ -24,7 +24,7 @@ export default {
     "manualLabel": "Link depois do login",
     "manualSubmit": "Concluir login",
     "manualSending": "Entrando…",
-    "hint": "Entre na janela da OKINTO para carregar seu saldo, grupos e modelos disponíveis. Não é necessário copiar uma chave de API."
+    "hint": "Entre na janela da Okinto para carregar seu saldo, grupos e modelos disponíveis. Não é necessário copiar uma chave de API."
   },
   "model": {
     "found": {
@@ -49,10 +49,10 @@ export default {
   },
   "useKey": "Conectar com uma chave de API",
   "keyOnly": "Serviço: https://api.okinto.com · Use uma chave de API deste site",
-  "createKey": "Criar uma chave no console da OKINTO New API ↗",
+  "createKey": "Criar uma chave no console da Okinto New API ↗",
   "key": {
     "label": "Chave de API",
-    "placeholder": "Cole sua chave de API da OKINTO New API",
+    "placeholder": "Cole sua chave de API da Okinto New API",
     "paste": "Colar da área de transferência",
     "show": "Mostrar",
     "hide": "Ocultar",
@@ -63,7 +63,7 @@ export default {
     "useCn": "Mudar para a rota otimizada para a China e tentar novamente",
     "note": "Sua chave permanece neste dispositivo e nunca é gravada em logs ou argumentos da linha de comando.",
     "connecting": "Conectando…",
-    "submit": "Conectar OKINTO New API",
+    "submit": "Conectar Okinto New API",
     "slow": "A rede está lenta.",
     "slowLine": "A rede está lenta. Você pode mudar a rota em Avançado.",
     "advanced": "Avançado"

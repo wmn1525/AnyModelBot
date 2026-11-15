@@ -80,7 +80,8 @@ export type OutboundOp =
    */
   | {
       type: "interactive";
-      kind: "ask_user" | "approval" | "secret_request" | "rule";
+      /** skill_install：技能安装卡片（skills/installs.ts）；skill_draft：「存成技能」草稿卡（skills/drafts.ts）。requestId 是卡片 id */
+      kind: "ask_user" | "approval" | "secret_request" | "rule" | "skill_install" | "skill_draft";
       title?: string;
       prompt: string;
       options?: string[];

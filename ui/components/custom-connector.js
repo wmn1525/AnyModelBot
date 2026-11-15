@@ -216,7 +216,8 @@ export function CustomConnectorSheet({ id, apps, full, chatBot, onClose }) {
     const ok = view.state === "connected";
     return html`<${Sheet} title=${title} wide sticky onClose=${onClose}>
       ${ok
-        ? html`<${ConnectedStep} title=${stateText("connected", view.tools.length)} label=${result.many > 1 ? t("apps.custom.addedMany", { n: result.many }) : view.name} chatBot=${chatBot} onClose=${onClose} sub=${skipped.length ? t("apps.custom.skipped", { names: skipped.join(", ") }) : ""} />`
+        ? html`<${ConnectedStep} title=${stateText("connected", view.tools.length)} label=${result.many > 1 ? t("apps.custom.addedMany", { n: result.many }) : view.name} chatBot=${chatBot} onClose=${onClose} sub=${skipped.length ? t("apps.custom.skipped", { names: skipped.join(", ") }) : ""}
+            example=${result.many > 1 ? "" : t("chat.use.appExample", { app: view.name })} />`
         : html`<div class="apps-done">
             <${Notice} tone="amber">${t("apps.custom.savedOff", { state: stateText(view.state) || t("apps.state.off") })}<//>
             ${view.log && html`<details class="skill-instructions"><summary>${t("apps.manage.log")}</summary><pre>${view.log}</pre></details>`}

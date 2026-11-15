@@ -16,8 +16,9 @@ import { Welcome, GuideCompletion, MediaDemo, OfficialGuideNotice } from "../com
 import { CuPermissionCard } from "../components/cu-permission.js";
 import { RuleCard, RuleSource, useRuleActions } from "../components/rules.js";
 import { api, attachChat, streamChat } from "../lib/api.js";
-import { confirmSheet, failed, useStore } from "../lib/store.js";
-import { appDisplayName, openRepair } from "../lib/apps.js";
+import { confirmSheet, failed, toast, useStore } from "../lib/store.js";
+import { appDisplayName, appsStore, openRepair } from "../lib/apps.js";
+import { focusRange, insertPhrase, useBotSkills, usedFromSteps, usedLine, usedName, usedSummaryText } from "../lib/usage.js";
 import { completed, composerBusy, consumeWelcome, guideBlocked, currentStep as guideStep, demo, fill, guide, isActive,  markDone, refreshGuide, refreshGuideSoon } from "../lib/guide.js";
 import { fmtSep, fmtClock, fmtDur } from "../lib/format.js";
 import { t, useLang } from "../lib/i18n.js";
@@ -25,6 +26,9 @@ import { notify, plainSnippet } from "../lib/notify.js";
 import { reducedMotion, usePresence } from "../design/motion.js";
 import { ConversationFind, HistoryBar, HistoryPageButton, useMessageHistory } from "../components/chat-search.js";
 import { chatView, saveChatView, useChatDraft } from "../lib/chat-view.js";
+import { SkillInstallCard } from "../components/skill-install-card.js";
+import { SkillDraftCard } from "../components/skill-draft-card.js";
+import { openSkillDetail } from "../lib/my-skills.js";
 
 const NEAR_BOTTOM = 80;
 let seq = 0;
@@ -38,9 +42,26 @@ export const errText = (s) => s.replace(/^⚠️\s*/, "");
 function toItems(messages) {
   return messages.map((m) =>
     m.role === "assistant" && isError(m.content)
-      ? { kind: "error", id: "m" + m.id, mid: m.id, text: errText(m.content), at: m.createdAt, steps: m.steps, interim: m.interim, files: m.files, ruleSource: m.ruleSource, permissionWait: m.permissionWait }
-      : { kind: "msg", id: "m" + m.id, mid: m.id, role: m.role === "user" ? "user" : "assistant", text: m.content, at: m.createdAt, steps: m.steps, interim: m.interim, files: m.files, ruleSource: m.ruleSource, permissionWait: m.permissionWait },
+      ? { kind: "error", id: "m" + m.id, mid: m.id, text: errText(m.content), at: m.createdAt, steps: m.steps, used: m.used, interim: m.interim, files: m.files, ruleSource: m.ruleSource, permissionWait: m.permissionWait }
+      : { kind: "msg", id: "m" + m.id, mid: m.id, role: m.role === "user" ? "user" : "assistant", text: m.content, at: m.createdAt, steps: m.steps, used: m.used, interim: m.interim, files: m.files, ruleSource: m.ruleSource, permissionWait: m.permissionWait },
   );
+}
+
+/**
+ * 技能安装卡片（src/skills/installs.ts）按时间插进历史；进行中的那条消息里的卡片由 live 显示，这里不重复
+ */
+export function withInstalls(list, installs = [], live = []) {
+  const since = live?.[0]?.startedAt ?? Infinity;
+  const out = [...list];
+  for (const x of installs || []) {
+    if (x.at >= since) continue;
+    // kind：skill_install 技能安装卡片 · skill_draft「存成技能」草稿卡（src/skills/drafts.ts）
+    const pkind = x.kind || "skill_install";
+    const item = { kind: "prompt", pkind, id: (pkind === "skill_draft" ? "sd" : "si") + x.id, requestId: x.id, botId: x.botId, at: x.at };
+    const i = out.findIndex((m) => m.at > x.at);
+    out.splice(i < 0 ? out.length : i, 0, item);
+  }
+  return out;
 }
 
 /** 回复显示的全文：模型在回合中间说的话在前，按说的顺序，最后的回复接着（最后没再说话时回复就是中间说的最后一句，不重复） */
@@ -197,7 +218,7 @@ export function PromptCard({ requestId, fallback }) {
  * 结束后"用时 N 秒"（短于 3 秒且没有步骤时不显示）。
  * 代理回合有步骤时这一行可以展开成处理过程（默认折叠）；历史消息只知道步数，展开时用 load 取。
  */
-export function WorkLine({ live, stopping, text, startedAt, workedMs, steps, count, load }) {
+export function WorkLine({ live, stopping, text, startedAt, workedMs, steps, count, load, used, botId }) {
   const [, tick] = useState(0);
   useEffect(() => {
     if (!live) return;
@@ -205,9 +226,16 @@ export function WorkLine({ live, stopping, text, startedAt, workedMs, steps, cou
     return () => clearInterval(timer);
   }, [live]);
   const ms = live ? Date.now() - startedAt : workedMs;
+  // 用到的技能和应用：进行中按步骤逐行写「正在使用…」，结束后接在「用时」后面写「已使用：…」（名字和加号菜单、设置列表一致）
+  const found = live || steps?.length ? usedFromSteps(steps) : used || [];
+  const skills = useBotSkills(found.length ? botId : null);
+  useStore(appsStore);
   if (!live && !(ms >= 3000) && !steps?.length && !count) return null;
-  // 有一步在做时说那一步（模型在回合中间说过话也一样）；没有时出了字是"正在回复"
-  const cur = live ? currentStep(steps) : "";
+  const items = found.map((u) => ({ ...u, label: usedName(u, skills) })).filter((u) => u.label);
+  // 有一步在做时说那一步（模型在回合中间说过话也一样）；没有时出了字是"正在回复"。在用技能或应用的那一步说人话（「正在使用 Notion」），不说工具名
+  const busyUse = live && (steps || []).findLast((s) => s.status === "running")?.use;
+  const busyItem = busyUse && items.find((u) => u.kind === busyUse.kind && u.name === (busyUse.kind === "skill" ? busyUse.name : busyUse.app));
+  const cur = live ? (busyItem ? usedLine({ ...busyItem, status: "running" }, busyItem.label) : currentStep(steps)) : "";
   // 按了停止：代理要重启进程，可能要几秒，先说清楚在停
   const long = ms >= 3000;
   const label = live
@@ -219,7 +247,27 @@ export function WorkLine({ live, stopping, text, startedAt, workedMs, steps, cou
     : long ? t("chat.work.done", { d: fmtDur(ms) }) : t("chat.work.process");
   // 换阶段（思考 → 回复 → 用时）时文字淡入：key 变才重播，秒数跳动不重播
   const phase = !live ? "done" : stopping ? "stop" : !cur && text ? "reply" : "think";
-  return html`<${ActivityLine} label=${label} phase=${phase} live=${live} steps=${steps} count=${count} load=${load} />`;
+  // 技能名可以点：打开和机器人设置里「查看」同一份只读详情（所有来源都行；宿主自带的生图、电脑操作不能点；应用不能点）
+  const name = (u) => (u.kind === "skill" && !HOST_SKILLS.has(u.name)
+    ? html`<button type="button" class="text skill-link" title=${t("mySkills.activity.view")} onClick=${(e) => (e.stopPropagation(), openSkillDetail({ botId, name: u.name }))}>${u.label}</button>`
+    : u.label);
+  const uses = live ? items.map((u) => ({ key: `${u.kind}:${u.name}`, status: u.status, text: withMark(usedLine(u, MARK), name(u)) })) : null;
+  return html`<${ActivityLine} label=${label} phase=${phase} live=${live} steps=${steps} count=${count} load=${load} used=${live || !items.length ? "" : usedSummaryNodes(items, name)} uses=${uses} />`;
+}
+
+/** 宿主自己生成的技能（生图、电脑操作、目录 Bot 界面）：没有可看的详情 */
+const HOST_SKILLS = new Set(["media", "computer-use", "amb-app"]);
+const MARK = "\u0001";
+/** 一句带标记的话：标记换成 node（可点的技能名） */
+const withMark = (text, node) => String(text).split(MARK).flatMap((p, i) => (i ? [node, p] : [p]));
+/** 结束后折叠的那一行（和 usedSummaryText 同样的话），每个名字分别可点 */
+function usedSummaryNodes(items, name) {
+  const sep = t("chat.use.sep");
+  const part = (key, list) => withMark(t(key, { list: MARK }), list.map((x, i) => html`${i ? sep : ""}${name(x)}`));
+  const ok = items.filter((x) => x.status !== "error");
+  const bad = items.filter((x) => x.status === "error");
+  const parts = [ok.length && part("chat.use.used", ok), bad.length && part("chat.use.notUsed", bad)].filter(Boolean);
+  return parts.map((p, i) => html`${i ? " · " : ""}${p}`);
 }
 
 /**
@@ -243,7 +291,8 @@ export function MsgActions({ text, at }) {
  * - 凭据失效、模型不可用、限流、网络、其他 403 分开说，不把所有 403 都当成欠费。
  * - "重新发送"是从头再执行这条消息：这一轮已经做过操作（有步骤、交付了文件）时先说清楚可能会重复，再让用户决定。
  */
-export function ErrorNotice({ text, onRetry, onFixKey, onSwitchModel, source = "", ranSteps = false, topupUrl = "" }) {
+export function ErrorNotice({ text, onRetry, onFixKey, onSwitchModel, source = "", ranSteps = false, topupUrl = "", disabled = false, detailsAfterActions = false }) {
+  const [retrying, setRetrying] = useState(false);
   const e = classifyError(text);
   const kind = e.kind;
   const auth = kind === "auth";
@@ -255,24 +304,31 @@ export function ErrorNotice({ text, onRetry, onFixKey, onSwitchModel, source = "
     : t(`firstUse.errors.${kind}`);
   const hint = kind === "balance" ? (source ? t("firstUse.errors.balanceOfficialHint", { name: source }) : t("firstUse.errors.balanceHint")) : kind === "model" ? t("firstUse.errors.modelHint") : "";
   const retry = async () => {
-    if (ranSteps && !(await confirmSheet({ title: t("firstUse.errors.retryTitle"), body: t("firstUse.errors.retryBody"), confirmLabel: t("firstUse.errors.retry") }))) return;
-    onRetry();
+    if (retrying || disabled) return;
+    setRetrying(true);
+    try {
+      if (ranSteps && !(await confirmSheet({ title: t("firstUse.errors.retryTitle"), body: t("firstUse.errors.retryBody"), confirmLabel: t("firstUse.errors.retry") }))) return;
+      await onRetry();
+    } catch (error) { failed(error); }
+    finally { setRetrying(false); }
   };
   const details = kind !== "unfinished" || e.raw;
   const detailText = redact(text);
-  return html`<${Notice} tone="red" action=${html`<div class="err-actions">
-      ${kind === "balance" && !source && html`<a class="btn primary" href=${topupUrl || MF_TOPUP} target="_blank" rel="noopener noreferrer">${t("sidebar.topUp")}</a>`}
-      ${auth && onFixKey && html`<button type="button" class="btn" onClick=${onFixKey}>${source ? t("chat.error.fixOfficialKey") : t("chat.error.fixKey")}</button>`}
-      ${(kind === "balance" || kind === "model") && onSwitchModel && html`<button type="button" class="btn" onClick=${onSwitchModel}>${t("chat.menu.switchModel")}</button>`}
-      ${onRetry && kind !== "auth" && html`<button type="button" class="btn" title=${t("firstUse.errors.retryHint")} onClick=${retry}>${t("firstUse.errors.retry")}</button>`}</div>`}>
-    <div class="err-main">${main}</div>
-    ${hint && html`<div class="err-hint">${hint}</div>`}
-    ${details && html`<details class="err-details">
+  const detail = details && html`<details class="err-details">
       <summary>${t("firstUse.errors.details")}</summary>
       ${(e.status || e.requestId) && html`<div class="err-meta">${e.status ? html`<span>${t("firstUse.errors.status", { status: e.status })}</span>` : ""}${e.requestId ? html`<span>Request ID: <code>${e.requestId}</code></span>` : ""}</div>`}
       <pre class="err-raw">${detailText}</pre>
       <${CopyButton} text=${detailText} label=${t("firstUse.errors.copy")} />
-    </details>`}
+    </details>`;
+  return html`<${Notice} tone="red" action=${html`<div class="err-actions">
+      ${kind === "balance" && !source && html`<a class="btn primary" href=${topupUrl || MF_TOPUP} target="_blank" rel="noopener noreferrer">${t("sidebar.topUp")}</a>`}
+      ${auth && onFixKey && html`<button type="button" class="btn" onClick=${onFixKey}>${source ? t("chat.error.fixOfficialKey") : t("chat.error.fixKey")}</button>`}
+      ${(kind === "balance" || kind === "model") && onSwitchModel && html`<button type="button" class="btn" disabled=${disabled || retrying} onClick=${onSwitchModel}>${t("chat.menu.switchModel")}</button>`}
+      ${onRetry && kind !== "auth" && html`<button type="button" class="btn" disabled=${disabled || retrying} title=${t("firstUse.errors.retryHint")} onClick=${retry}>${t("firstUse.errors.retry")}</button>`}</div>${detailsAfterActions && detail}`}>
+    <div class="err-main">${main}</div>
+    ${hint && html`<div class="err-hint">${hint}</div>`}
+    ${!detailsAfterActions && detail}
+
   <//>`;
 }
 
@@ -356,6 +412,15 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
       else void send(fillReq.text);
       return;
     }
+    // 「填入输入框」（技能与应用的示例）：不发送，不丢草稿，插在光标处
+    if (fillReq.insert) {
+      const r = insertPhrase(text, ta.current, fillReq.text, fillReq.select);
+      setText(r.text);
+      composer.current?.closeSlash();
+      requestAnimationFrame(() => autoGrow(ta.current));
+      focusRange(ta.current, r.start, r.end);
+      return;
+    }
     if (text.trim()) return;
     setText(fillReq.text);
     composer.current?.closeSlash();
@@ -373,8 +438,8 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
       convId.current = d.conversationId || "";
       setConvModel(bot.id, d.model || "");
       setCanOpen(!!d.canOpen);
-      const list = toItems(d.messages || []);
-      const reply = ended && list.findLast((x) => x.role !== "user");
+      const list = withInstalls(toItems(d.messages || []), d.installs, d.live);
+      const reply = ended && list.findLast((x) => x.kind !== "prompt" && x.role !== "user");
       if (reply && reply.at >= ended.since) reply.workedMs = ended.ms;
       const cards = (d.pending || []).map((a) => ({ kind: "prompt", id: "p" + a.id, requestId: a.id, prompt: "" }));
       // 进行中的消息（切走前、刷新前或别的窗口发的）：显示用户消息和到目前为止的回复，再接上它继续更新。
@@ -488,7 +553,7 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
       setItems((l) => {
         if (d.requestId && l.some((x) => x.kind === "prompt" && x.requestId === d.requestId)) return l;
         const i = l.findIndex((x) => x.id === liveId);
-        const c = { kind: "prompt", id: uid(), requestId: d.requestId, prompt: d.prompt, turn, enter: true };
+        const c = { kind: "prompt", id: uid(), requestId: d.requestId, prompt: d.prompt, pkind: d.kind, turn, enter: true };
         return i < 0 ? [...l, c] : [...l.slice(0, i), c, ...l.slice(i)];
       });
     try {
@@ -578,6 +643,12 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
     const msg = (raw ?? text).trim();
     if (msg) { history.clear(); setFindOpen(false); }
     if (msg && (generating || following.current) && !msg.startsWith("/") && raw === undefined) return steer(msg);
+    // 正在回复时点「存成技能…」或发 /skill：排在这一轮后面，回复结束后再整理
+    if (msg && (generating || following.current) && /^\/skill\b/i.test(msg)) {
+      skillQueued.current = msg;
+      if (raw === undefined) setText("");
+      return toast(t("mySkills.queued"));
+    }
     if (!msg || generating || following.current) return;
     if (raw === undefined) {
       setText("");
@@ -699,7 +770,7 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
           ${it.role === "user"
             ? userMessage(it)
             : html`${(it.live || it.workedMs || it.steps) && html`<${WorkLine} live=${it.live} stopping=${it.live && stopping} text=${it.text} startedAt=${it.startedAt} workedMs=${it.workedMs}
-                steps=${it.activity} count=${it.steps} load=${it.mid ? loadActivity(it.mid) : undefined} />`}
+                steps=${it.activity} count=${it.steps} used=${it.used} botId=${bot.id} load=${it.mid ? loadActivity(it.mid) : undefined} />`}
               ${it.permissionWait && html`<${CuPermissionCard} botId=${bot.id} messageId=${it.mid} />`}
               ${it.ruleSource && html`<${RuleSource} source=${it.ruleSource} botId=${bot.id} />`}
               ${shown && html`<div class="msg"><${Markdown} text=${shown} conv=${convId.current || `${bot.id}:web:console`} canOpen=${canOpen} /></div>`}
@@ -709,12 +780,12 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
               ${!it.live && html`<${MsgActions} text=${shown} at=${it.at} />`}`}
         </div>`);
       } else if (it.kind === "prompt") {
-        out.push(html`<div class=${cls} key=${it.id}><${PromptCard} requestId=${it.requestId} fallback=${it.prompt} /></div>`);
+        out.push(html`<div class=${cls} key=${it.id}>${it.pkind === "skill_install" ? html`<${SkillInstallCard} id=${it.requestId} />` : it.pkind === "skill_draft" ? html`<${SkillDraftCard} id=${it.requestId} />` : html`<${PromptCard} requestId=${it.requestId} fallback=${it.prompt} />`}</div>`);
       } else if (it.kind === "media-demo") {
         out.push(html`<div class=${cls} key=${it.id} data-guide-sample><${MediaDemo} onLoad=${onMedia} account=${account} /></div>`);
       } else if (it.kind === "error") {
         out.push(html`<div class=${cls} data-message-id=${it.mid} key=${it.id}>
-          ${(it.activity?.length || it.steps) && html`<${WorkLine} workedMs=${it.workedMs} steps=${it.activity} count=${it.steps} load=${it.mid ? loadActivity(it.mid) : undefined} />`}
+          ${(it.activity?.length || it.steps) && html`<${WorkLine} workedMs=${it.workedMs} steps=${it.activity} count=${it.steps} used=${it.used} botId=${bot.id} load=${it.mid ? loadActivity(it.mid) : undefined} />`}
           ${it.interim?.length > 0 && html`<div class="msg"><${Markdown} text=${it.interim.join("\n\n")} conv=${convId.current || `${bot.id}:web:console`} canOpen=${canOpen} /></div>`}
           ${files(it)}
           <${ErrorNotice} text=${it.text} topupUrl=${account?.topupUrl} onRetry=${it.retry ? () => send(it.retry) : undefined} source=${officialSource(effective)} ranSteps=${!!(it.activity?.length || it.steps || it.files?.length)}
@@ -731,6 +802,13 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
   // 经 ctl 交来的话（专业 Bot 界面上的操作、还没有实例时发的第一句）：历史还没读到时先记着，读到后再发——
   // 否则先发出去的这一轮会被随后到的历史整个换掉（回复很快出错时连提示都没了）
   const queued = useRef("");
+  const skillQueued = useRef("");
+  useEffect(() => {
+    if (generating || following.current || !skillQueued.current) return;
+    const msg = skillQueued.current;
+    skillQueued.current = "";
+    void send(msg);
+  }, [generating]);
   if (ctl) ctl.current = { send: (msg) => (generating || following.current || queued.current ? false : items === null ? ((queued.current = msg), true) : (void send(msg), true)) };
   useEffect(() => () => { if (ctl) ctl.current = null; }, []);
   useEffect(() => {

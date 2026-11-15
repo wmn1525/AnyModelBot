@@ -164,6 +164,8 @@ export function tasksRoutes(ctx: WebContext): Route {
           schedule: scheduleOf(b.schedule, app.delivery.timeZone),
           ...(b.runBudgetUsd !== undefined ? { runBudgetUsd: Number(b.runBudgetUsd) } : {}),
           ...(b.monthBudgetUsd !== undefined ? { monthBudgetUsd: Number(b.monthBudgetUsd) } : {}),
+          // 「用技能（可选）」：在这条规则所属机器人上打开的「我的技能」
+          ...(typeof b.skill === "string" && b.skill ? { skill: b.skill } : {}),
         });
         if (!r.rule) throw new HttpError(400, r.error ?? t("rules.createFailed"));
         return send(res, 200, { rule: app.tasks.getRuleView(r.rule.id) });
@@ -185,6 +187,7 @@ export function tasksRoutes(ctx: WebContext): Route {
         if (b.conversationId !== undefined) patch.conversationId = String(b.conversationId);
         if (b.runBudgetUsd !== undefined) patch.runBudgetUsd = Number(b.runBudgetUsd);
         if (b.monthBudgetUsd !== undefined) patch.monthBudgetUsd = Number(b.monthBudgetUsd);
+        if (b.skill !== undefined) patch.skill = typeof b.skill === "string" ? b.skill : null;
         if (b.mode !== undefined) {
           if (!["off", "observe", "act"].includes(b.mode)) throw new HttpError(400, t("rules.badMode"));
           patch.mode = b.mode as RuleMode;

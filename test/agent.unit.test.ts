@@ -671,7 +671,8 @@ describe("full access patch", () => {
     expect(fs.readFileSync(host.promptFile, "utf8")).not.toContain("Connected apps");
     prompt = 'Connected apps (use app_tools …): Linear ("linear").';
     host.syncPrompt();
-    expect(fs.readFileSync(host.promptFile, "utf8")).toMatch(/小安[\s\S]*\n\nConnected apps \(use app_tools …\): Linear \("linear"\)\.$/);
+    // 后面是「技能和应用」那一段：有应用时，问起来要列 Connected apps 里的应用
+    expect(fs.readFileSync(host.promptFile, "utf8")).toMatch(/小安[\s\S]*\n\nConnected apps \(use app_tools …\): Linear \("linear"\)\.\n\n# 技能和应用\n[\s\S]*Connected apps 里的应用/);
   });
   it("other presets keep DSH's own permission rows", () => {
     for (const p of ["workspace", "readonly"] as const) {

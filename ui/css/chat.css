@@ -445,3 +445,39 @@ button.task-origin:hover { color: var(--fg); }
 .cu-perm-what .hint, .cu-perm .hint { color: var(--muted); font-size: var(--fs-xs); }
 .cu-perm-actions { margin-top: var(--space-0-5); }
 }
+
+@layer app {
+  .notice > .err-details { flex: 1 1 100%; margin-left: calc(1px * var(--ic-sm) + var(--space-2-5)); }
+}
+
+/* 技能与应用：结束后接在「用时」后面的「已使用：…」；进行中在状态行下面逐行写「正在使用…」（状态点和步骤同一套颜色） */
+.work-line .wl-sep { flex: none; color: var(--faint); }
+.work-line .wl-used { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg-2); }
+.use-list { list-style: none; margin: 0 0 var(--space-3); padding: var(--space-1-5) var(--group-pad); background: var(--well); border-radius: var(--r-card); display: grid; gap: var(--space-1); font-size: var(--fs-sm); color: var(--fg-2); }
+.activity.open > .use-list { margin-bottom: var(--space-2); }
+.use-list .use { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.use-list .use-t { min-width: 0; overflow-wrap: anywhere; }
+.use-list .use.error .use-t { color: var(--fg); }
+.activity:has(> .use-list) > .work-line { margin-bottom: var(--space-2); }
+
+/* 加号菜单 ›「技能与应用」：技能、应用两组，每项 图标 + 名称 / 一行说明；某组没有可用项时写原因和入口 */
+.pop.use-pop { display: flex; flex-direction: column; }
+.pop.use-pop ul { max-height: min(420px, 60vh); }
+.pop.use-pop li.use-item { cursor: default; }
+.pop.use-pop li.use-item .txt .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pop.use-pop li.use-item .use-note { color: var(--amber); }
+.pop.use-pop li .lead.use-initial {
+  display: grid; place-items: center; width: var(--ctl-xs); height: var(--ctl-xs); margin-top: 0; align-self: center;
+  border-radius: var(--r-mark); background: var(--pill); color: var(--fg-2); font-size: var(--fs-2xs); font-weight: var(--fw-semibold);
+}
+.pop.use-pop li .lead.use-mark { margin-top: 0; align-self: center; }
+.pop.use-pop li.use-unassigned .btn { flex: none; margin-left: auto; }
+.pop.use-pop li.use-unassigned:hover { background: none; }
+.pop.use-pop .tone-warn { color: var(--amber); }
+.pop.use-pop li.use-empty { display: grid; justify-items: start; gap: var(--space-1); padding: var(--space-1-5) var(--item-px) var(--space-2); white-space: normal; }
+.pop.use-pop li.use-empty p { margin: 0; }
+.pop.use-pop .use-empty-t { font-size: var(--fs-sm); color: var(--fg); }
+.pop.use-pop .use-empty-b { font-size: var(--fs-xs); color: var(--muted); line-height: var(--lh-snug); }
+.pop.use-pop li.use-empty .btn { margin-top: var(--space-1); }
+.pop.use-pop li.use-loading, .pop.use-pop li.use-none { color: var(--muted); font-size: var(--fs-xs); }
+.pop.menu-pop li .menu-sub { flex: none; margin-left: auto; color: var(--muted); }

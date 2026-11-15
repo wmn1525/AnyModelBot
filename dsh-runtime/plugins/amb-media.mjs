@@ -1,9 +1,9 @@
 // anymodel bot image / video generation tools (MIT, part of anymodel bot).
 //
 // Registers media_models, media_docs, generate_image and generate_video. The agent never holds a
-// Modelflare key: each call goes to the host over the loopback bridge (AMB_BRIDGE_URL / AMB_BRIDGE_TOKEN),
+// Okinto key: each call goes to the host over the loopback bridge (AMB_BRIDGE_URL / AMB_BRIDGE_TOKEN),
 // which asks the user to confirm the model only for a high estimated cost or a bot set to always ask, calls
-// Modelflare with this bot's key and saves the result under media/ in the workspace. The agent then delivers
+// Okinto with this bot's key and saves the result under media/ in the workspace. The agent then delivers
 // the file with the present tool. Every model has its own request format, so the agent reads the model's live
 // docs with media_docs and passes the body.
 import { defineTool } from '@deepseek-ai/dsh-tools'
@@ -43,7 +43,7 @@ export function apply(ctx) {
 
   ctx.tools.register(defineTool({
     name: 'media_models',
-    description: 'List the image and video models this bot may use on Modelflare, with the default model, parameter ranges (sizes, ratios, resolutions, seconds, reference media) and reference prices. Free; call it before choosing a model.',
+    description: 'List the image and video models this bot may use on Okinto, with the default model, parameter ranges (sizes, ratios, resolutions, seconds, reference media) and reference prices. Free; call it before choosing a model.',
     parameters: {
       kind: { type: 'string', enum: ['image', 'video'], description: 'Only this kind. Omit for both.' },
     },
@@ -53,7 +53,7 @@ export function apply(ctx) {
 
   ctx.tools.register(defineTool({
     name: 'media_docs',
-    description: "Read the live documentation page of one image or video model from docs.modelflare.dev: endpoint, exact request body, parameter table, reference-media fields and limits. Every model has its own format; read it before passing a body to generate_image or generate_video.",
+    description: "Read the live documentation page of one image or video model from the configured model documentation service: endpoint, exact request body, parameter table, reference-media fields and limits. Every model has its own format; read it before passing a body to generate_image or generate_video.",
     parameters: {
       model: { type: 'string', required: true, description: 'Exact model id, e.g. kling-3.0-turbo.' },
     },
@@ -63,7 +63,7 @@ export function apply(ctx) {
 
   ctx.tools.register(defineTool({
     name: 'generate_image',
-    description: 'Generate or edit an image with an image model on Modelflare. It generates right away; only a high estimated cost (or a bot set to always ask) makes the app ask the user to confirm the model first, who may pick another one or cancel. The image is saved in the workspace under media/; deliver it with the present tool when the user should receive it. Write the prompt in detail (subject, style, composition, text in the image).',
+    description: 'Generate or edit an image with an image model on Okinto. It generates right away; only a high estimated cost (or a bot set to always ask) makes the app ask the user to confirm the model first, who may pick another one or cancel. The image is saved in the workspace under media/; deliver it with the present tool when the user should receive it. Write the prompt in detail (subject, style, composition, text in the image).',
     parameters: {
       prompt: { type: 'string', required: true, description: 'What the image should show, in detail. Shown to the user when asked; keep it in sync with the prompt inside body.' },
       request_id: { type: 'string', description: 'Stable identifier for one generation. Keep it and all inputs unchanged when recovering a request; a completed image is reused. Never change it automatically after an ambiguous submission.' },
@@ -78,7 +78,7 @@ export function apply(ctx) {
 
   ctx.tools.register(defineTool({
     name: 'generate_video',
-    description: 'Generate a short video with a video model on Modelflare. It generates right away; only a high estimated cost (or a bot set to always ask) makes the app ask the user to confirm the model first, who may pick another one or cancel. It can take several minutes. The video is saved in the workspace under media/; deliver it with the present tool. Only use it when the user asks for a video: video generation costs much more than images.',
+    description: 'Generate a short video with a video model on Okinto. It generates right away; only a high estimated cost (or a bot set to always ask) makes the app ask the user to confirm the model first, who may pick another one or cancel. It can take several minutes. The video is saved in the workspace under media/; deliver it with the present tool. Only use it when the user asks for a video: video generation costs much more than images.',
     parameters: {
       prompt: { type: 'string', required: true, description: 'What the video should show, in detail. Shown to the user when asked; keep it in sync with the prompt inside body.' },
       request_id: { type: 'string', description: 'Stable identifier for one generation. Reuse it with exactly the same inputs to resume polling/download after a timeout or restart without creating another paid video task. Use a new ID only for a deliberate new take.' },

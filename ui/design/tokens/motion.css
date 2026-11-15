@@ -5,6 +5,8 @@
    - 唯一的位移是窄窗口的信息面板抽屉（--slide），乘以 --motion；关闭动画时连淡入也没有（见文末 data-motion）。 */
 :root {
   --dur-fast: 100ms;
+  --dur-feedback: 150ms;
+  --t-feedback: var(--dur-feedback) var(--ease-out);
   --dur-base: 140ms;
   --dur-moderate: 180ms;
   --dur-slow: 240ms;
@@ -55,6 +57,7 @@
 }
 :root[data-motion="off"] {
   --dur-fast: var(--dur-off);
+  --dur-feedback: var(--dur-off);
   --dur-base: var(--dur-off);
   --dur-moderate: var(--dur-off);
   --dur-slow: var(--dur-off);

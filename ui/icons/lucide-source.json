@@ -1,0 +1,21 @@
+{
+  "project": "Lucide",
+  "version": "1.73.0",
+  "commit": "55782beff3a0133df79c417eb68f96e8f19e2404",
+  "repository": "https://github.com/lucide-icons/lucide",
+  "source": "https://raw.githubusercontent.com/lucide-icons/lucide/55782beff3a0133df79c417eb68f96e8f19e2404",
+  "viewBox": "0 0 24 24",
+  "license": "./lucide-LICENSE",
+  "icons": {
+    "panel": {
+      "icon": "panel-right",
+      "sha256": "327d197328f9feb1f88c36c9db04e9b00fe717d877459f92fcd892f5e4c349fa",
+      "path": "icons/panel-right.svg"
+    },
+    "sidebar": {
+      "icon": "panel-left",
+      "sha256": "029f67b9e3eeb7ddf7c7c499b174c50388725e8ea50d4ea59ed7dbaf8d61cb82",
+      "path": "icons/panel-left.svg"
+    }
+  }
+}

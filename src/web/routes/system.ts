@@ -110,7 +110,8 @@ export function systemRoutes(ctx: WebContext): Route {
     if (p === "/agent" && m === "GET") {
       const items = app.attention.list();
       return send(res, 200, { ...app.agent.status(), busy: [...new Set([...live.bots(), ...app.runtime.busyBots()])], background: app.tasks.background(), attention: items.length, needs: app.attention.byBot(items),
-        cuBlocked: Object.keys(app.cuPermissions.view().blocked),
+        // 确实显示着、还在等开启权限的卡片所属的机器人；没挂上卡片的遗留状态不算
+        cuBlocked: app.cuPermissions.waitingBots(),
         // 连接应用里有没有要用户处理凭证的连接（头像上的提醒点）
         appsAttention: app.apps.attention() });
     }

@@ -4,14 +4,16 @@ import { h, render } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "preact/hooks";
 import htm from "htm";
 import { HEROICONS } from "../icons/heroicons.js";
-import { useStore, toasts, dismissToast, dialog } from "../lib/store.js";
+import { LUCIDE_ICONS } from "../icons/lucide.js";
+import { useStore, toasts, dismissToast, pauseToast, resumeToast, dialog } from "../lib/store.js";
 import { usePresence } from "../design/motion.js";
 import { has, t } from "../lib/i18n.js";
 
 export const html = htm.bind(h);
 
-// Heroicons Outline 通用操作图标：保留应用内部名称，原始图形与出处见 ui/icons/。
-export const ICONS = Object.keys(HEROICONS);
+// 通用图标用 Heroicons；左右侧栏使用原来的 Lucide 分栏图形，共用尺寸与线宽。
+const ICON_SHAPES = { ...HEROICONS, ...LUCIDE_ICONS };
+export const ICONS = Object.keys(ICON_SHAPES);
 const IC_PX = { xs: 12, sm: 14, md: 16, lg: 20, xl: 24 }; // 和 --ic-xs … --ic-xl 一致；宽高属性只是样式表加载前的兜底
 
 const cx = (...a) => a.filter(Boolean).join(" ");
@@ -25,7 +27,7 @@ export function Icon({ name, size, strong, class: cls }) {
   const sizeName = Object.hasOwn(IC_PX, size) ? size : Object.keys(IC_PX).find((key) => IC_PX[key] === Number(size)) || "md";
   const px = IC_PX[sizeName];
   return html`<svg class=${cx("ic", `ic-${sizeName}`, strong && "ic-strong", cls)} width=${px} height=${px} viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${HEROICONS[name].map(([tag, attrs], key) => h(tag, { ...attrs, key }))}</svg>`;
+    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICON_SHAPES[name].map(([tag, attrs], key) => h(tag, { ...attrs, key }))}</svg>`;
 }
 
 /** 按钮：variant = "primary" | "ghost" | "danger"；size = "sm" | "lg"；loading 时转圈并禁用 */
@@ -387,7 +389,8 @@ export function Popover({ anchor, trigger, onClose, class: cls = "", width = 280
 }
 
 /**
- * 菜单：items = [{ label, icon, note, onSelect, danger, disabled, cur }] | { sep: true } | { group: "…" }
+ * 菜单：items = [{ label, icon, note, onSelect, danger, disabled, cur, sub }] | { sep: true } | { group: "…" }
+ * sub：点了打开下一层（右边一个箭头，代替勾）。
  * 键盘：↑↓ 选择，Enter 执行，Esc 关闭。
  */
 export function Menu({ anchor, items, onClose, width = 240, prefer, align, label }) {
@@ -426,7 +429,7 @@ export function Menu({ anchor, items, onClose, width = 240, prefer, align, label
                 ${hasIcons && html`<span class=${cx("lead", !it.icon && "empty-icon")} aria-hidden="true">${it.icon && html`<${Icon} name=${it.icon} size="sm" />`}</span>`}
                 ${it.note ? html`<span class="txt"><span class="v">${it.label}</span><span class="n">${it.note}</span></span>` : html`<span class="v">${it.label}</span>`}
                 ${it.kbd && html`<kbd class="menu-shortcut">${it.kbd}</kbd>`}
-                <span class="check"><${Icon} name="check" size="sm" /></span>
+                ${it.sub ? html`<${Icon} name="chevRight" size="xs" class="menu-sub" />` : html`<span class="check"><${Icon} name="check" size="sm" /></span>`}
               </li>`,
       )}
     </ul>
@@ -485,8 +488,9 @@ export const Badge = ({ s }) => {
 
 /** 自绘确认框：焦点先在"取消"（安全选项），Esc 关闭，Tab 在框内循环 */
 /** sticky：点遮罩不关（扫码、填表进行到一半时，误点不该把流程丢掉）；Esc 和关闭钮照常 */
-export function Sheet({ title, onClose, children, wide, label, leaving, closable = true, sticky = false }) {
+export function Sheet({ title, onClose, children, wide, label, leaving, closable = true, sticky = false, framed = false, footer, class: cls = "" }) {
   const ref = useRef(null);
+  const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const prev = document.activeElement;
     requestAnimationFrame(() => (ref.current?.querySelector("[data-autofocus]") || ref.current?.querySelector("input, textarea") || ref.current?.querySelector("button"))?.focus());
@@ -518,9 +522,9 @@ export function Sheet({ title, onClose, children, wide, label, leaving, closable
     };
   }, []);
   return html`<div class=${cx("scrim", leaving && "leaving")} onPointerDown=${(e) => !sticky && e.target === e.currentTarget && onClose()}>
-    <div class=${`sheet${wide ? " wide" : ""}`} ref=${ref} role="dialog" aria-modal="true" aria-label=${label || title}>
+    <div class=${cx("sheet", wide && "wide", framed && "framed", scrolled && "scrolled", cls)} ref=${ref} role="dialog" aria-modal="true" aria-label=${label || title}>
       ${title && html`<div class="sheet-head"><h2>${title}</h2>${closable && html`<${IconButton} icon="close" iconSize="md" class="sheet-close" label=${t("common.close")} onClick=${onClose} />`}</div>`}
-      ${children}
+      ${framed ? html`<div class="sheet-body" onScroll=${(e) => setScrolled(e.currentTarget.scrollTop > 0)}>${children}</div>${footer && html`<footer class="sheet-footer">${footer}</footer>`}` : children}
     </div>
   </div>`;
 }
@@ -547,10 +551,10 @@ export function DialogHost() {
   <//>`;
 }
 
-export function Toasts({ scope = "" }) {
+export function Toasts({ scope }) {
   const list = useStore(toasts);
   return html`<div class="toasts" role="status" aria-live="polite">
-    ${list.filter((it) => (it.scope || "") === scope).map((it) => html`<div key=${it.id} class=${`toast ${it.kind}${it.leaving ? " leaving" : ""}`}>
+    ${list.filter((it) => !it.queued && (scope === undefined || (it.scope || "") === scope)).map((it) => html`<div key=${it.id} class=${`toast ${it.kind}${it.leaving ? " leaving" : ""}`} onMouseEnter=${() => pauseToast(it.id)} onMouseLeave=${() => resumeToast(it.id)}>
       <span>${it.text}</span>
       ${it.kind === "err" && html`<${IconButton} icon="close" size="xs" iconSize="xs" label=${t("common.close")} onClick=${() => dismissToast(it.id)} />`}
     </div>`)}

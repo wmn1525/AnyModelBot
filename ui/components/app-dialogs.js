@@ -9,8 +9,8 @@ import { html, Button, CopyButton, Icon, IconButton, MenuButton, Notice, Seg, Sh
 import { AppMark } from "./app-mark.js";
 import { api } from "../lib/api.js";
 import { ATTENTION, appDialog, appLabel, appsStore, builtinName, closeAppDialog, methodLabel, openConnect, openCustom, repairActions, setApps, stateText, stateTone, stepsOf } from "../lib/apps.js";
-import { confirmSheet, failed, saved, toast, useStore } from "../lib/store.js";
-import { sendToChat } from "../lib/guide.js";
+import { confirmSheet, failed, saved, useStore } from "../lib/store.js";
+import { copyExample, fillChat } from "../lib/usage.js";
 import { has, t, useLang } from "../lib/i18n.js";
 import { CustomConnectorSheet } from "./custom-connector.js";
 
@@ -140,27 +140,25 @@ export function OAuthWait({ oauth, onRetry }) {
   </div>`;
 }
 
-/** 连上之后：已连接、账号名、下一步、一句可以直接发给机器人的示例 */
+/**
+ * 连上之后：已连接、账号名、现在就能用，和一句「试试这样说」。应用连上就能用，不用等机器人重启。
+ * 正在和某个机器人对话（chatBot）时可以把这句填进它的输入框（不发送）；随时可以复制。
+ */
 export function ConnectedStep({ title, label, sub, example, chatBot, onClose }) {
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(example);
-      toast(t("common.copied"));
-    } catch {
-      failed(t("common.error"));
-    }
-  };
-  const send = () => {
+  const fillIn = () => {
     onClose();
-    if (chatBot?.route) location.hash = chatBot.route;
-    sendToChat(example, chatBot?.target || chatBot?.id);
+    // 群聊没有单个机器人的输入框：只复制
+    fillChat(chatBot.id, example);
   };
+  const canFill = !!chatBot && !String(chatBot.target || "").startsWith("group:");
   return html`<div class="apps-done">
     <p class="apps-done-head"><span class="apps-done-mark"><${Icon} name="check" size="sm" strong /></span><b>${title || t("apps.connect.done")}</b>${label && html`<span class="tone-muted">${label}</span>`}</p>
     ${sub && html`<p class="hint">${sub}</p>`}
-    ${example && html`<p class="hint">${t("apps.connect.next")}</p><p class="apps-example">${example}</p>`}
+    <p class="hint">${t("apps.connect.readyNow")}</p>
+    ${example && html`<p class="apps-example">${t("chat.use.try", { example })}</p>`}
     <div class="actions">
-      ${example && (chatBot ? html`<${Button} onClick=${send}>${t("apps.connect.sendToBot")}<//>` : html`<${Button} onClick=${copy}>${t("apps.connect.copyExample")}<//>`)}
+      ${example && canFill && html`<${Button} onClick=${fillIn}>${t("chat.use.fill")}<//>`}
+      ${example && html`<${Button} onClick=${() => copyExample(example)}>${t("chat.use.copy")}<//>`}
       <${Button} variant="primary" data-autofocus onClick=${onClose}>${t("apps.connect.finish")}<//>
     </div>
   </div>`;

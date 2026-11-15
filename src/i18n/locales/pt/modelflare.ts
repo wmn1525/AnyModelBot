@@ -7,7 +7,7 @@ export default {
   timeout: "tempo esgotado",
   invalid_key: "A chave é inválida ou foi revogada",
   forbidden: "Esta chave não tem permissão para usar este modelo ou grupo",
-  unavailable: "O OKINTO está temporariamente indisponível (HTTP {status}){retry}",
+  unavailable: "O Okinto está temporariamente indisponível (HTTP {status}){retry}",
   retry_after: "; tente de novo em {s} s",
-  bad_models: "O OKINTO retornou uma lista de modelos que não conseguimos ler",
+  bad_models: "O Okinto retornou uma lista de modelos que não conseguimos ler",
 } satisfies TranslatedCatalog["modelflare"];

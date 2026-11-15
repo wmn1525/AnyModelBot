@@ -29,9 +29,9 @@ export default {
     "viaToken": "Token",
     "viaOAuth": "Autorizada",
     "needsReauth": "La autorización venció. Vuelve a autorizar",
-    "dataMoved": "Las cuentas de datos, como Notion y Feishu, se trasladaron a Conectar apps.",
-    "dataMovedKeys": "cuentas de datos notion feishu conectar apps mcp data accounts connect apps",
-    "openApps": "Abrir Conectar apps",
+    "dataMoved": "Las cuentas de datos, como Notion y Feishu, se trasladaron a Apps y habilidades.",
+    "dataMovedKeys": "cuentas de datos notion feishu conectar apps mcp data accounts connect apps apps y habilidades",
+    "openApps": "Abrir Apps y habilidades",
     "reauthorize": "Volver a autorizar",
     "rename": "Cambiar nombre",
     "remove": "Quitar",
@@ -195,10 +195,10 @@ export default {
     "reply": "Por supuesto, y el manejo de errores también queda más claro. Con {b} activado, la línea de abajo se ajusta:"
   },
   "logout": {
-    "title": "¿Cerrar sesión en OKINTO?",
+    "title": "¿Cerrar sesión en Okinto?",
     "body": "Esto revoca el acceso de esta computadora. Tus bots y conversaciones se conservan y continúan cuando vuelvas a iniciar sesión.",
     "confirm": "Cerrar sesión",
-    "notRevoked": "El servidor no confirmó la revocación. Aquí ya cerraste sesión; puedes volver a revocar el acceso en Apps autorizadas, en el sitio web de OKINTO"
+    "notRevoked": "El servidor no confirmó la revocación. Aquí ya cerraste sesión; puedes volver a revocar el acceso en Apps autorizadas, en el sitio web de Okinto"
   },
   "notifyDenied": "Las notificaciones no están permitidas. Permítelas para esta página en los ajustes del sistema o en la configuración del sitio de tu navegador",
   "rows": {
@@ -298,7 +298,7 @@ export default {
       "button": "Restablecer"
     },
     "account": {
-      "name": "Cuenta de OKINTO",
+      "name": "Cuenta de Okinto",
       "signedIn": "Sesión iniciada",
       "enterprise": "El uso de {name} se factura a la billetera de tu organización",
       "signedOut": "Inicia sesión para ver el uso, las notificaciones y tu enlace de invitación, y para definir presupuestos para bots individuales",
@@ -313,9 +313,9 @@ export default {
       "subExternal": "Endpoint definido por la variable de entorno AMB_MAGPIE_BASE_URL (desarrollo/pruebas)",
       "playground": "Usa tu sesión de Playground de New API; las solicitudes se facturan al grupo seleccionado",
       "nameSignedIn": "Conexión de cuenta",
-      "subSignedIn": "Usando tu cuenta de OKINTO",
-      "sub": "Usando una clave API del sitio OKINTO",
-      "keys": "Modelos de la conexión con clave API de OKINTO",
+      "subSignedIn": "Usando tu cuenta de Okinto",
+      "sub": "Usando una clave API del sitio Okinto",
+      "keys": "Modelos de la conexión con clave API de Okinto",
       "rekey": "Sustituir clave API",
       "disconnect": "Desconectar"
     },
@@ -349,7 +349,7 @@ export default {
     "notifications": {
       "name": "Notificaciones",
       "unread": "{count} sin leer",
-      "sub": "Notificaciones y anuncios de OKINTO",
+      "sub": "Notificaciones y anuncios de Okinto",
       "keys": "notificación anuncio mensaje notification announcement message"
     },
     "invite": {
@@ -361,7 +361,7 @@ export default {
     "line": {
       "name": "Dominio de la API",
       "sub": "Elige un dominio o compara los tiempos de respuesta. Los cambios se aplican a las solicitudes nuevas",
-      "keys": "dominio velocidad latencia red ruta domain speed latency modelflare origin cf network route"
+      "keys": "dominio velocidad latencia red ruta domain speed latency Okinto origin cf network route"
     },
     "defaultModel": {
       "name": "Modelo predeterminado",
@@ -401,7 +401,7 @@ export default {
       }
     },
     "console": {
-      "name": "Consola de OKINTO",
+      "name": "Consola de Okinto",
       "sub": "Facturación y facturas",
       "keys": "consola panel facturación factura console dashboard billing invoice"
     },
@@ -428,7 +428,7 @@ export default {
     },
     "accountStorage": {
       "name": "Credenciales de la cuenta",
-      "sub": "Las credenciales de inicio de sesión de OKINTO solo se guardan en la carpeta de datos, y solo tu usuario del sistema puede leerlas. La interfaz solo ve el nombre de tu cuenta",
+      "sub": "Las credenciales de inicio de sesión de Okinto solo se guardan en la carpeta de datos, y solo tu usuario del sistema puede leerlas. La interfaz solo ve el nombre de tu cuenta",
       "keys": "seguridad iniciar sesión credenciales security sign in credentials"
     },
     "token": {
@@ -511,11 +511,11 @@ export default {
     }
   },
   "rekey": {
-    "title": "Cambiar clave de OKINTO New API",
+    "title": "Cambiar clave de Okinto New API",
     "submit": "Verificar y guardar"
   },
   "disconnect": {
-    "title": "¿Desconectar OKINTO New API?",
+    "title": "¿Desconectar Okinto New API?",
     "body": "Esto elimina la clave API de este equipo. Tus bots y conversaciones se conservan para cuando vuelvas a conectar.",
     "confirm": "Desconectar"
   }

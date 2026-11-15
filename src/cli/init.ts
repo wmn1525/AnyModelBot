@@ -80,7 +80,7 @@ async function setup(app: App, rl: ReturnType<typeof lineReader>, dataDir: strin
       if (how === "key") {
         await officialKey(app, rl);
       } else if (how !== "skip") {
-        const key = await rl.ask("OKINTO New API Key：", true);
+        const key = await rl.ask("Okinto New API Key：", true);
         const r = await app.connectModelflare(key, "auto");
         if (!r.ok) throw new Error(r.message);
         console.log(tr("cli.connected", { count: r.models.length }));
@@ -120,7 +120,7 @@ async function loginInBrowser(app: App, rl: ReturnType<typeof lineReader>, remot
     const s = account.status();
     if (s.state === "signed_in") {
       const models = await app.runtime.listModels(true).catch(() => []);
-      console.log(tr("cli.signedInConnected", { name: s.name || "OKINTO", count: models.length }));
+      console.log(tr("cli.signedInConnected", { name: s.name || "Okinto", count: models.length }));
       return;
     }
     if (s.state !== "signing_in") throw new Error(s.error || tr("cli.loginIncomplete"));

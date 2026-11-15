@@ -1,4 +1,3 @@
-// Authored localization. Keep technical identifiers unchanged.
 export default {
   "palette": {
     "title": "コマンドパレット",
@@ -34,7 +33,7 @@ export default {
     "langKeys": "言語 日本語 英語 中国語 韓国語 ロシア語 スペイン語 ポルトガル語",
     "switchBot": "「{name}」に切り替える"
   },
-  "lowBalance": "OKINTO New API の残高が ${amount} になりました",
+  "lowBalance": "Okinto New API の残高が ${amount} になりました",
   "serviceDown": "ローカルサービスに接続できません：{error}",
   "resizeSide": "サイドバーの幅を変更",
   "resizePanel": "右パネルの幅を変更",

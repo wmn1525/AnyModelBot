@@ -69,7 +69,9 @@ export function publicBot(b: NonNullable<ReturnType<App["store"]["getBot"]>>) {
 
 /** 历史消息给界面：交付的文件带上名字、大小、是不是直接显示的图片、还在不在 */
 export function publicMessage(m: Message) {
-  return m.files ? { ...m, files: m.files.map((p) => describeFile(p)) } : m;
+  const { errorContext, ...message } = m;
+  const result = { ...message, ...(errorContext ? { errorContext: { model: errorContext.model, groupId: errorContext.groupId } } : {}) };
+  return m.files ? { ...result, files: m.files.map((p) => describeFile(p)) } : result;
 }
 
 /** 网页“测试对话”渠道：收集输出 */

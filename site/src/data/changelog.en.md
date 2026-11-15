@@ -2,7 +2,26 @@
 
 [简体中文](./CHANGELOG.md) | English | [日本語](./CHANGELOG_ja.md) | [한국어](./CHANGELOG_ko.md) | [Русский](./CHANGELOG_ru.md) | [Español](./CHANGELOG_es.md) | [Português (Brasil)](./CHANGELOG_pt.md)
 
-This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
+This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/wmn1525/AnyModelBot/releases).
+
+## 0.1.36 - 2026-11-15
+
+### New
+
+- **Save what you did as a skill:** once a bot gets something right, choose "Save as skill…" from the input box's + menu, send `/skill`, or just say "save as skill". The bot drafts a card with the steps, what you corrected, the apps and skills it used, and a "Try saying" line. Save it to My skills, turn it on for other bots with one switch, or schedule it. Secrets are never written into a skill, and personal details such as phone numbers and emails default to being asked each time. You can update a skill, restore the previous version or export it as a ZIP.
+- **Skill library:** Connect apps is now Apps & skills, with a new Skills tab listing 155 skills from 31 open-source repositories, by category and by author. Copy an install prompt and send it to any bot, or send a skill's GitHub link, then confirm the card to install it.
+- **Use skills and apps in a chat:** + → Skills & apps in the input box lists what the bot can use; pick one to insert "Use {name} to help me…". Above the reply you see which skills and apps are in use or were used, and skill names open their details.
+
+### Improvements and fixes
+
+- **An easier skill list:** skills that are on come first. With more than 10, search and filter by My skills, GitHub, Local ZIP or Off. Each skill shows whether it's active, where it came from and a "Try saying" line.
+- **Templates during trial credits:** templates use a model tier that fits your current credits and say which tier they normally recommend.
+- **Computer use permissions:** when a background task is stopped by a missing permission, the permission card now appears, and no orphaned waiting state is left behind.
+- **Getting started and notices:** clicking a blocked checklist step explains why. Notices now appear at the top center of the main area.
+- **Scheduled rules:** an expanded rule is split into prompt, frequency, next run and destination. Choosing a bot uses a searchable list, and new rules start with cards for "Send a reminder" or "Do a task", which can follow one of My skills. Empty states and the time zone notice are clearer.
+- **Updates, account and details:** the update entry names the version. Account details can be retried if they fail to load, Sign out is red, group chats in the app show a top-up action when the balance runs out, template cards have borders and their links drop the arrow.
+
+- Skill library, saving work as skills and installing skills in chat; software labels, seven-language messages and tool descriptions now use Okinto, with fork update links and existing connection compatibility preserved.
 
 ## 0.1.35 - 2026-11-14
 
@@ -21,7 +40,7 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 
 ### Fork synchronization
 
-- Includes upstream 0.1.33–0.1.35: scheduled rules, ten bot templates, resource previews, startup diagnostics and interface fixes. Preserves OKINTO New API sign-in, model groups, balances and image generation; the new account overview retains currency units and unlimited quotas.
+- Includes upstream 0.1.33–0.1.35: scheduled rules, ten bot templates, resource previews, startup diagnostics and interface fixes. Preserves Okinto New API sign-in, model groups, balances and image generation; the new account overview retains currency units and unlimited quotas.
 
 ## 0.1.34 - 2026-11-14
 
@@ -49,7 +68,7 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 
 ### Improvements and fixes
 
-- Improved Modelflare sign-in return handling, account names and avatars, and first-use guidance. Connected-app lists, search and error messages are clearer.
+- Improved Okinto sign-in return handling, account names and avatars, and first-use guidance. Connected-app lists, search and error messages are clearer.
 - Improved Film Studio canvas layout and US Stock Research chart-data handling; PPT Master and Company Research also adopt the updated workspace.
 - Rule results identify their source and follow the reply-notification preference. An optional setting prevents sleep shortly before a rule is due while plugged in; it cannot wake an already sleeping or closed computer.
 
@@ -81,8 +100,8 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 - Settings › Connections is now Chat channels and only holds chat app accounts. Your existing Notion accounts moved to Connect apps and don't need to be authorized again.
 - Creating and updating Notion pages now asks first, following the rule above.
 - App tokens, keys and dedicated URLs are stored in a separate file, not in the database, and are masked in the interface and logs.
-- macOS no longer shows a keychain prompt: the Modelflare sign-in is protected by file permissions, like the other credentials.
-- When signing in or connecting to Modelflare fails, the message names the actual network reason.
+- macOS no longer shows a keychain prompt: the Okinto sign-in is protected by file permissions, like the other credentials.
+- When signing in or connecting to Okinto fails, the message names the actual network reason.
 - You can drag the window from empty space on the Discover page.
 - The guide in a new group chat is now three short tips and two or three starters; click a starter to put it in the input box.
 - Model settings on the New bot page look like the Model group in bot settings, and the Create button is as wide as the form.
@@ -92,19 +111,19 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 
 ### New features and improvements
 
-- Synced upstream through 819fc63 (0.1.30), retaining OKINTO sign-in, account wallets, grouped models, direct API keys and image generation.
+- Synced upstream through 819fc63 (0.1.30), retaining Okinto sign-in, account wallets, grouped models, direct API keys and image generation.
 - Windows installers and Linux AppImages download updates in the background by default; installation requires clicking restart and waits while tasks are active. The current unsigned macOS builds continue to use manual installer downloads. Version 0.1.28 and earlier require a manual installation of this release first.
 - Added a What’s new dialog and changelog in About. Version checks, update downloads and release notes all use this repository.
 - All four official bots now have side-by-side project lists and workspaces with a full conversation view. Their shared composer supports model selection, attachments and slash commands.
 - Improved first-use model selection, actionable errors, Discover covers and recent conversation search; fixed verification-code handling and interface layouts.
-- Adapted OKINTO to the upstream directory and route refactor, preserving balance currencies, unlimited quotas and group endpoints without advertising upstream-only Bot credit promotions.
+- Adapted Okinto to the upstream directory and route refactor, preserving balance currencies, unlimited quotas and group endpoints without advertising upstream-only Bot credit promotions.
 
 ## 0.1.30 - 2026-11-10
 
 ### New
 
-- **Bot credits:** Accounts with Modelflare Bot credits see a ring and the percentage left in the bottom-left corner. Click it to see your Bot credits, account balance and the Top up link. Bot credits are usable only in AnyModelBot, and requests from keys the app issues use them first. The numbers refresh when you open the card and after each message is handled. Accounts without Bot credits see the same corner as before.
-- **$1 in Bot credits for new accounts:** The sign-in page and the API key page now mention the sign-up credit. Modelflare subscriptions add Bot credits worth 10% of the plan, as the credit card also explains.
+- **Bot credits:** Accounts with Okinto Bot credits see a ring and the percentage left in the bottom-left corner. Click it to see your Bot credits, account balance and the Top up link. Bot credits are usable only in AnyModelBot, and requests from keys the app issues use them first. The numbers refresh when you open the card and after each message is handled. Accounts without Bot credits see the same corner as before.
+- **$1 in Bot credits for new accounts:** The sign-in page and the API key page now mention the sign-up credit. Okinto subscriptions add Bot credits worth 10% of the plan, as the credit card also explains.
 - **What's new:** After an update, the first launch shows what changed, and you can scroll down through every version. Clicking the new-version notice in the sidebar shows the new version's notes first, so you can decide before you download or restart. The changelog is always available in Settings → About.
 - **Official bots as desktop workspaces:** Company Research, PPT Master, Film Studio and US Stock Research show your work in a list on the left and the content on the right. New starts a short guided form. The top bar switches between Workspace and Chat, where you see the full conversation. US Stock Research charts the key numbers, Film Studio has a storyboard with picture, video and audio lanes, and PPT Master lets you page through previews.
 - **Model choice in bots with their own UI:** The input box works like a regular chat, with the model picker, the + menu and slash commands.
@@ -122,7 +141,7 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 - **Automatic update downloads, enabled by default:** Installed desktop apps download new versions in the background, then offer Restart and update in the sidebar and Settings → About. Turn automatic downloads off in Settings → General to download manually.
 - Installation requires your click and waits until you have no active chats or background tasks. Normal quits do not install updates automatically.
 - Users on 0.1.28 or earlier must manually install this version once before using in-app updates. Supported on macOS, Windows and Linux AppImage; Docker and source deployments still update manually.
-- **Back to the app after signing in:** After you approve in the browser, the page waits until the app is actually connected before it says you're signed in, then takes you back to AnyModelBot. If something fails, it tells you why. The API key page also lets you sign in with a Modelflare account instead.
+- **Back to the app after signing in:** After you approve in the browser, the page waits until the app is actually connected before it says you're signed in, then takes you back to AnyModelBot. If something fails, it tells you why. The API key page also lets you sign in with a Okinto account instead.
 - **A model picked for your first sign-in:** If you have no default model yet, the app picks a low-cost model that supports tools (DeepSeek first), so the trial credit covers a few typical tasks. If none fits, it explains why and lets you choose.
 - **macOS Computer Use permissions asked only when needed:** The first time a bot needs to click, type or look at the screen without Accessibility or Screen Recording permission, that turn stops and the chat says which permission is missing, with buttons to request it, open the matching settings page and check again. If the app has to be reopened, unsent drafts are kept.
 - **Discover covers:** Official bots now have illustrated cover scenes that follow the light or dark theme, and featured bots show as large cards.
@@ -130,7 +149,7 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 ### Improvements and fixes
 
 - Clearer error messages: low balance, expired credentials, unavailable models, rate limits and network failures each get their own explanation and a matching action, such as Top up or switching models. The raw error sits under Error details and can be copied with secrets removed. The same error no longer pops up twice, the sidebar shows only "Failed: reason", and Send again warns that the whole task runs from the start. The company research bot folds task errors the same way.
-- The account area in the bottom left always shows your balance and a Top up link, and low balance is flagged there instead of in a separate in-app notice. Its menu has feedback, check for updates and sign out; signing out while tasks are running asks first. With your own API key, you can sign in to Modelflare from here and keep your keys and settings.
+- The account area in the bottom left always shows your balance and a Top up link, and low balance is flagged there instead of in a separate in-app notice. Its menu has feedback, check for updates and sign out; signing out while tasks are running asks first. With your own API key, you can sign in to Okinto from here and keep your keys and settings.
 - Getting started checklist: "Connect your usual chat app" lets you pick a channel and opens its settings, and only counts once it is actually connected. "Say hello" needs a real reply. After you say "remember …", the checklist updates within seconds. Guidance no longer pops up while you have a draft or a task is running, and the checklist folds away once everything is done.
 - After you replace a key or switch model source, the app reminds you to check your existing bots' models. It stays quiet on first setup.
 - Saving bot settings several times in a row shows a single "Saved". New bots keep model settings collapsed with the inherited default shown, and no longer silently pick the first model in the list. Creating a multi-bot group explains how it works, with example prompts based on its members.
@@ -148,7 +167,7 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 - Added ZIP skill import, preview, enable/disable, replacement and removal, managed per bot.
 - Added local chat history search with bot, conversation, channel and date filters and links to the original messages.
 - Fixed catalog bot content sizing and scrolling, and added media task tracking and recovery.
-- Included driver download retries, Electron checksum caching and Intel Mac Apple networking fixes; retained OKINTO sign-in, grouped models and image generation.
+- Included driver download retries, Electron checksum caching and Intel Mac Apple networking fixes; retained Okinto sign-in, grouped models and image generation.
 
 ## 0.1.27 - 2026-11-08
 
@@ -167,25 +186,25 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 ### Improved
 
 - Synced the upstream Chinese website copy with clearer setup steps after download, where to find ready-made assistants, and the requirement to keep the computer and app online for tasks sent from a phone.
-- Updated the READMEs to explain OKINTO sign-in, model selection and image generation using the current interface.
+- Updated the READMEs to explain Okinto sign-in, model selection and image generation using the current interface.
 - Updated the PPT assistant skill checksum after the branding copy change so package integrity checks pass.
 
 ## 0.1.25 - 2026-11-05
 
 ### Fixed
 
-- Fixed interrupted OKINTO image transfers caused by revoking temporary tokens before the complete image response arrived.
+- Fixed interrupted Okinto image transfers caused by revoking temporary tokens before the complete image response arrived.
 - Improved parsing for JSON, SSE streams and multiple image response formats. Interrupted or invalid responses produce clear errors without automatically generating again.
 - Model names in activity, history and diagnostics now show readable Chinese group names and hide internal routing prefixes.
-- Removed old branding from interface labels and messages in favor of OKINTO / okbot.
+- Removed old branding from interface labels and messages in favor of Okinto / okbot.
 
 ## 0.1.24 - 2026-11-05
 
 ### Fixed
 
-- Restored the OKINTO New API integration omitted from the previous release. The default endpoint is api.okinto.com, with desktop OKINTO sign-in and site API key support.
+- Restored the Okinto New API integration omitted from the previous release. The default endpoint is api.okinto.com, with desktop Okinto sign-in and site API key support.
 - Restored wallet balance, grouped model selection, pricing and image generation while retaining official provider API keys and catalog bots.
-- Installers, windows and interface labels now use okbot / OKINTO. Update checks use this repository.
+- Installers, windows and interface labels now use okbot / Okinto. Update checks use this repository.
 
 ## 0.1.23 - 2026-11-05
 
@@ -197,17 +216,17 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 
 ### New
 
-- **Use your own official API keys:** You no longer need an account. On first launch, click Use your own API key, or go to Settings → Models and enter a key from OpenAI, Anthropic, Google Gemini, xAI, DeepSeek, Kimi, GLM, Qwen, MiniMax or Mistral. Model requests go straight to the provider, the provider bills you, and the key stays on this device. Image and video generation is still only available through Modelflare.
+- **Use your own official API keys:** You no longer need an account. On first launch, click Use your own API key, or go to Settings → Models and enter a key from OpenAI, Anthropic, Google Gemini, xAI, DeepSeek, Kimi, GLM, Qwen, MiniMax or Mistral. Model requests go straight to the provider, the provider bills you, and the key stays on this device. Image and video generation is still only available through Okinto.
 - **Keenable for web search:** Choose it in Settings → Network & access and enter a key.
 
 ### Improvements and fixes
 
-- The Modelflare tab in Settings is now called Models, and you can sign in to Modelflare there if you aren't signed in.
+- The Okinto tab in Settings is now called Models, and you can sign in to Okinto there if you aren't signed in.
 - Company Research, US Stock Research and PPT Master now support Japanese, Korean and Russian.
 
 ### Privacy
 
-- With only official API keys and no sign-in, the app doesn't read Modelflare's account data or price catalog. The built-in gateway reads the public model catalog from models.dev, and that request carries no keys or conversation content.
+- With only official API keys and no sign-in, the app doesn't read Okinto's account data or price catalog. The built-in gateway reads the public model catalog from models.dev, and that request carries no keys or conversation content.
 
 ## 0.1.21 - 2026-11-03
 
@@ -243,7 +262,7 @@ This covers changes you'll notice in the app. For older versions, see the [GitHu
 
 ### Important changes
 
-- **Sign-in is now required:** Pasting an API key is no longer supported; everyone signs in with a Modelflare account. After you update, any key you entered earlier is removed from this device and the app asks you to sign in. Your bots and conversations keep working once you do.
+- **Sign-in is now required:** Pasting an API key is no longer supported; everyone signs in with a Okinto account. After you update, any key you entered earlier is removed from this device and the app asks you to sign in. Your bots and conversations keep working once you do.
 - **Sign-in now works in Docker and remote deployments:** Sign in from a browser on any device, then paste the link from the address bar back into the app. During command-line setup, enter `remote`.
 
 ### New

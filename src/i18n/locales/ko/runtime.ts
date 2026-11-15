@@ -1,11 +1,11 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
-  "help": "명령어:\n/model — 사용 가능한 모델 목록(번호 포함)\n/model <number or name> — 이 대화의 모델 변경\n/reset — 이 대화의 컨텍스트 지우기(에이전트 모드에서는 새 세션도 시작하며 장기 기억은 유지)\n/new — 새 대화 시작: 기존 대화는 인계 메모와 함께 보관하고 장기 기억은 유지\n/bot — 봇 목록; /bot <number or name> — 다른 봇으로 전환(채팅 앱에서만 사용)\n/status — 현재 모델, 에이전트 상태, 처리 중인 메시지의 진행 상황 표시\n/stop — 처리 중인 메시지 중지(현재 대화만 중지하며 봇의 다른 대화는 계속 진행)\n/tasks — 이 대화의 백그라운드 작업과 규칙 목록\n/stop <number> — /tasks 목록의 백그라운드 작업이나 규칙 중지\n/help — 도움말 표시",
+  "help": "명령어:\n/model — 사용 가능한 모델 목록(번호 포함)\n/model <number or name> — 이 대화의 모델 변경\n/reset — 이 대화의 컨텍스트 지우기(에이전트 모드에서는 새 세션도 시작하며 장기 기억은 유지)\n/skill — 방금 한 일을 스킬로 저장(뒤에 적으면 일부만 저장)\n/new — 새 대화 시작: 기존 대화는 인계 메모와 함께 보관하고 장기 기억은 유지\n/bot — 봇 목록; /bot <number or name> — 다른 봇으로 전환(채팅 앱에서만 사용)\n/status — 현재 모델, 에이전트 상태, 처리 중인 메시지의 진행 상황 표시\n/stop — 처리 중인 메시지 중지(현재 대화만 중지하며 봇의 다른 대화는 계속 진행)\n/tasks — 이 대화의 백그라운드 작업과 규칙 목록\n/stop <number> — /tasks 목록의 백그라운드 작업이나 규칙 중지\n/help — 도움말 표시",
   "botList": "대화할 수 있는 봇:\n{list}\n\n/bot <number or name>을 보내 전환하세요.",
   "botCurrent": "(현재)",
   "botMissing": "‘{name}’ 봇이 없습니다. /bot으로 목록을 확인하세요.",
   "botSwitched": "이제 {name}와 대화합니다.",
-  "noModels": "사용 가능한 모델이 없습니다. 먼저 OKINTO New API에 로그인하거나 공식 API 키를 입력하세요(설정 → 모델)",
+  "noModels": "사용 가능한 모델이 없습니다. 먼저 Okinto New API에 로그인하거나 공식 API 키를 입력하세요(설정 → 모델)",
   "startingNote": "(에이전트가 아직 시작 중이어서 모델이 직접 응답했습니다. 준비되면 에이전트가 자동으로 이어받습니다.)",
   "emptyReply": "(모델이 빈 응답을 반환했습니다)",
   "interrupted": "⚠️ 생성이 중단되었습니다: {error}",
@@ -54,7 +54,7 @@ export default {
   "newFailed": "⚠️ 새 대화를 시작하지 못했습니다: {error}",
   "newDone": "✅ 새 대화를 시작했습니다(기존 대화는 인계 메모와 함께 보관하고 장기 기억은 유지)",
   "modelListFailed": "⚠️ 모델 목록을 가져오지 못했습니다: {error}",
-  "modelListEmpty": "사용 가능한 모델이 없습니다. 먼저 OKINTO New API에 로그인하거나 공식 API 키를 입력하세요(설정 → 모델).",
+  "modelListEmpty": "사용 가능한 모델이 없습니다. 먼저 Okinto New API에 로그인하거나 공식 API 키를 입력하세요(설정 → 모델).",
   "modelListHead": "사용 가능한 모델(/model <number>로 변경):",
   "modelCurrent": "  ← 현재",
   "modelReset": "✅ 봇의 기본 모델로 돌아왔습니다",

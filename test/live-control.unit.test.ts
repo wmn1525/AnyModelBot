@@ -5,7 +5,8 @@ import { KeyedQueue } from "../src/core/queue.js";
 import { AgentBridge } from "../src/agent/bridge.js";
 import { ControlChannel } from "../src/agent/control.js";
 import { ActivityLog, describeStep, promotedJob } from "../src/agent/activity.js";
-import { answerText } from "../src/agent/host.js";
+import { answerText, TurnStopped } from "../src/agent/host.js";
+import { CuPermissions } from "../src/tools/computer-use/permissions.js";
 import { BotRuntime, steerAck } from "../src/core/runtime.js";
 import { Store } from "../src/store/db.js";
 import { DEFAULT_SETTINGS } from "../src/agent/settings.js";
@@ -362,6 +363,35 @@ describe("runtime: restart markers and wake-up replies", () => {
     // 没有醒着的一轮（已经有人跟着、或者随代理进程没了）：什么也不发
     await s.rt.wake("b1", CONV);
     expect(seen).toHaveLength(1);
+  });
+
+  it("a wake-up turn blocked by a missing macOS permission pauses with a card instead of the red error", async () => {
+    const s = setup();
+    const a = s.send("BGJOB please");
+    await until(() => s.pending.length === 1);
+    s.pending[0].resolve({ ...reply, text: "还在跑" });
+    await a;
+    s.store.setAgentSession(CONV, "b1", "S");
+    const perms = new CuPermissions(() => ({ status: () => ({ accessibility: "denied" as const, screen: "granted" as const }), request: async () => {}, openSettings: () => {} }));
+    perms.bindStore(s.store);
+    (s.agent as any).cuPermissions = perms;
+    expect(perms.gate("b1", "click")).toMatchObject({ ok: false });
+    const ops: OutboundOp[] = [];
+    s.rt.registerReplier("b1", "weixin", () => ({ out: { apply: async (op) => void ops.push(op) } }));
+    s.wake("S:t2");
+    const w = s.rt.wake("b1", CONV);
+    await until(() => !!s.follow());
+    s.follow()!.reject(new TurnStopped("permission", 10, false, ["accessibility"]));
+    await w;
+    const last = s.store.listMessages(CONV).at(-1)!;
+    expect(last).toMatchObject({ role: "assistant", permissionWait: true });
+    expect(last.content).not.toMatch(/⚠️/);
+    const desktop = s.store.ensureConversation("b1", "web", "console");
+    const card = s.store.listMessages(desktop.id).at(-1)!;
+    expect(card.permissionWait).toBe(true);
+    expect(perms.view().blocked.b1).toMatchObject({ conversationId: CONV, messageId: card.id, sessionId: "S", state: "waiting", requestText: "BGJOB please" });
+    expect(perms.waitingBots()).toEqual(["b1"]);
+    expect(ops.filter((o) => o.type === "stream.finish").map((o: any) => o.text)).toEqual([last.content]);
   });
 
   it("the app shuts down during a wake-up turn: no reply, the marker stays", async () => {

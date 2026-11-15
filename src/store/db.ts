@@ -5,6 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { normalizeSettings, type BotSettings } from "../domain/bot-settings.js";
 import { normalizeAppRef, type BotAppRef } from "../domain/app-ref.js";
 import type { Schedule } from "../domain/schedule.js";
+import { usedSummary, type ActivityStep, type UsedItem } from "../domain/activity.js";
 import { ChatSearch } from "./chat-search.js";
 
 /**
@@ -74,6 +75,23 @@ export interface ChannelAccount {
   createdAt: number;
 }
 
+/**
+ * 活动记录里可能用到技能、应用的那几步（skill、app_call、升级前 Notion / 飞书账号的工具），只取算「已使用」要的字段：
+ * 列历史消息时不把整份活动记录读出来。
+ */
+const USES_SQL = `CASE WHEN json_valid(activity) THEN (SELECT json_group_array(json_object('kind', json_extract(value, '$.kind'), 'title', json_extract(value, '$.title'), 'input', json_extract(value, '$.input'), 'status', json_extract(value, '$.status'), 'use', json(json_extract(value, '$.use')))) FROM json_each(activity) WHERE json_extract(value, '$.kind') = 'tool' AND (json_extract(value, '$.title') IN ('skill', 'app_call') OR json_extract(value, '$.title') GLOB 'notion_*' OR json_extract(value, '$.title') GLOB 'feishu_*')) END AS uses`;
+
+function usedOf(raw: unknown): { used?: UsedItem[] } {
+  if (typeof raw !== "string" || raw === "[]") return {};
+  try {
+    const steps = (JSON.parse(raw) as Array<Record<string, unknown>>).map(({ use, ...rest }) => (use ? { ...rest, use } : rest)) as unknown as ActivityStep[];
+    const used = usedSummary(steps);
+    return used.length ? { used } : {};
+  } catch {
+    return {};
+  }
+}
+
 export interface Message {
   id: number;
   conversationId: string;
@@ -82,12 +100,15 @@ export interface Message {
   createdAt: number;
   /** 代理回合的活动记录有几步（内容按需用 getActivity 取） */
   steps?: number;
+  /** 这一轮用到的技能和应用（网页过程区折叠后的「已使用：…」，从活动记录里算） */
+  used?: UsedItem[];
   /** 模型在回合中间说的话（按说的顺序），显示在 content 前面 */
   interim?: string[];
   /** 这条回复交付的文件（真实路径） */
   files?: string[];
   ruleSource?: { ruleId: string; title: string; dueAt: number; late: boolean; timeZone: string };
   permissionWait?: boolean;
+  errorContext?: { model: string; groupId: string; input: string };
 }
 
 /** 一条助手消息除了正文之外的东西：回合中间说的话、交付的文件 */
@@ -96,6 +117,7 @@ export interface MessageExtra {
   files?: string[];
   ruleSource?: Message["ruleSource"];
   permissionWait?: boolean;
+  errorContext?: Message["errorContext"];
 }
 
 export interface WeixinAccount {
@@ -409,6 +431,8 @@ export interface RuleRow {
   revision?: number;
   /** 软撤销的恢复截止时间；非零时永不调度、列表不展示。 */
   undoneUntil?: number;
+  /** 用「我的技能」做（skills/mine.ts）：技能名、建规则时的标题、已经回答过的「运行时再问」占位 */
+  skill?: { name: string; title: string; asks: string[] };
 }
 
 type Row = Record<string, unknown>;
@@ -474,7 +498,7 @@ const RUN_COLS: Record<string, string> = {
 };
 const INPUT_COLS: Record<string, string> = { runId: "run_id", messageId: "message_id", deliveredAt: "delivered_at", takenAt: "taken_at" };
 const RULE_COLS: Record<string, string> = {
-  missedPolicy: "missed_policy", sourceGroupId: "source_group_id", requiresGroup: "requires_group", revision: "revision", undoneUntil: "undone_until",
+  missedPolicy: "missed_policy", sourceGroupId: "source_group_id", requiresGroup: "requires_group", revision: "revision", undoneUntil: "undone_until", skill: "skill",
   conversationId: "conversation_id",
   title: "title",
   instruction: "instruction",
@@ -644,8 +668,11 @@ const COLUMNS: Array<[string, string, string]> = [
   ["rules", "requires_group", "INTEGER NOT NULL DEFAULT 0"],
   ["rules", "revision", "INTEGER NOT NULL DEFAULT 1"],
   ["rules", "undone_until", "INTEGER NOT NULL DEFAULT 0"],
+  // 「让它做件事」用「我的技能」（JSON：技能名、标题、回答过的占位）；空 = 不用
+  ["rules", "skill", "TEXT NOT NULL DEFAULT ''"],
   ["messages", "rule_source", "TEXT NOT NULL DEFAULT ''"],
   ["messages", "permission_wait", "INTEGER NOT NULL DEFAULT 0"],
+  ["messages", "error_context", "TEXT NOT NULL DEFAULT ''"],
   // 保留与清理（3f）：任务文件夹定在什么时候清理
   ["tasks", "cleanup_at", "INTEGER NOT NULL DEFAULT 0"],
 ];
@@ -952,7 +979,7 @@ export class Store {
     const replies = convs.length ? ` OR (conversation_id IN (${convs.map(() => "?").join(", ")}) AND role = 'assistant')` : "";
     const rows = this.db
       .prepare(
-        `SELECT * FROM (SELECT id, conversation_id, role, content, created_at, interim, files, rule_source, permission_wait, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps FROM messages WHERE id > ? AND (conversation_id = ?${replies}) ORDER BY id DESC LIMIT ?) ORDER BY id`,
+        `SELECT * FROM (SELECT id, conversation_id, role, content, created_at, interim, files, rule_source, permission_wait, error_context, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps, ${USES_SQL} FROM messages WHERE id > ? AND (conversation_id = ?${replies}) ORDER BY id DESC LIMIT ?) ORDER BY id`,
       )
       .all(afterId, groupPeer(groupId), ...convs.map((c) => c.id), limit) as Row[];
     return rows.map((r) => ({ ...this.toMessage(r), botId: botOf.get(String(r.conversation_id)) ?? "" }));
@@ -975,10 +1002,17 @@ export class Store {
     const now = Date.now();
     const json = (a: unknown[] | undefined) => (a?.length ? JSON.stringify(a) : "");
     const res = this.db
-      .prepare("INSERT INTO messages(conversation_id, role, content, created_at, activity, interim, files, rule_source, permission_wait) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .run(conversationId, role, content, now, json(activity), json(extra.interim), json(extra.files), extra.ruleSource ? JSON.stringify(extra.ruleSource) : "", extra.permissionWait ? 1 : 0);
+      .prepare("INSERT INTO messages(conversation_id, role, content, created_at, activity, interim, files, rule_source, permission_wait, error_context) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(conversationId, role, content, now, json(activity), json(extra.interim), json(extra.files), extra.ruleSource ? JSON.stringify(extra.ruleSource) : "", extra.permissionWait ? 1 : 0, extra.errorContext ? JSON.stringify(extra.errorContext) : "");
     this.db.prepare("UPDATE conversations SET updated_at = ? WHERE id = ?").run(now, conversationId);
     return Number(res.lastInsertRowid);
+  }
+  setMessageErrorContext(id: number, context: NonNullable<Message["errorContext"]>): void {
+    this.db.prepare("UPDATE messages SET error_context = ? WHERE id = ?").run(JSON.stringify(context), id);
+  }
+  previousUserMessage(conversationId: string, beforeId: number): Message | undefined {
+    const row = this.db.prepare("SELECT * FROM messages WHERE conversation_id = ? AND id < ? AND role = 'user' ORDER BY id DESC LIMIT 1").get(conversationId, beforeId) as Row | undefined;
+    return row ? this.toMessage(row) : undefined;
   }
   /** 这个会话里用户最近一次发消息的时间（没有返回 0） */
   lastUserMessageAt(conversationId: string): number {
@@ -987,13 +1021,13 @@ export class Store {
   }
   /** 一条消息（任务详情里的「来自」：请求那条用户消息） */
   getMessage(id: number): Message | undefined {
-    const r = this.db.prepare("SELECT id, conversation_id, role, content, created_at FROM messages WHERE id = ?").get(id) as Row | undefined;
-    return r ? { id: Number(r.id), conversationId: String(r.conversation_id), role: String(r.role) as Message["role"], content: String(r.content), createdAt: Number(r.created_at) } : undefined;
+    const r = this.db.prepare(`SELECT *, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps, ${USES_SQL} FROM messages WHERE id = ?`).get(id) as Row | undefined;
+    return r ? this.toMessage(r) : undefined;
   }
   listMessages(conversationId: string, limit = 500): Message[] {
     const rows = this.db
       .prepare(
-        "SELECT * FROM (SELECT id, conversation_id, role, content, created_at, interim, files, rule_source, permission_wait, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps FROM messages WHERE conversation_id = ? ORDER BY id DESC LIMIT ?) ORDER BY id ASC",
+        `SELECT * FROM (SELECT id, conversation_id, role, content, created_at, interim, files, rule_source, permission_wait, error_context, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps, ${USES_SQL} FROM messages WHERE conversation_id = ? ORDER BY id DESC LIMIT ?) ORDER BY id ASC`,
       )
       .all(conversationId, limit) as Row[];
     return rows.map((r) => this.toMessage(r));
@@ -1008,10 +1042,12 @@ export class Store {
       content: String(r.content),
       createdAt: Number(r.created_at),
       ...(Number(r.steps) ? { steps: Number(r.steps) } : {}),
+      ...usedOf(r.uses),
       ...(interim.length ? { interim } : {}),
       ...(files.length ? { files } : {}),
       ...(r.rule_source ? { ruleSource: parseJson<Message["ruleSource"]>(r.rule_source) } : {}),
       ...(Number(r.permission_wait) ? { permissionWait: true } : {}),
+      ...(r.error_context ? { errorContext: parseJson<Message["errorContext"]>(r.error_context) } : {}),
     };
   }
   /** 全部历史中的新手事实；不依赖界面曾加载过哪一页，也不把错误或命令回复算成对话。 */
@@ -1683,6 +1719,7 @@ export class Store {
       missedPolicy: r.missed_policy === "skip" ? "skip" : "catchup",
       sourceGroupId: String(r.source_group_id ?? ""), requiresGroup: Number(r.requires_group) === 1,
       revision: Number(r.revision ?? 1), undoneUntil: Number(r.undone_until ?? 0),
+      ...(parseJson<RuleRow["skill"]>(r.skill)?.name ? { skill: parseJson<RuleRow["skill"]>(r.skill) } : {}),
       id: String(r.id),
       botId: String(r.bot_id),
       conversationId: String(r.conversation_id),
@@ -1713,7 +1750,7 @@ export class Store {
          VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(r.id, r.botId, r.conversationId, r.title, r.instruction, r.message, r.kind, JSON.stringify(r.trigger), r.mode, r.folder, r.version ?? 1, r.nextRunAt, r.anytime ? 1 : 0, r.createdAt, r.updatedAt, r.runBudgetUsd ?? 0.1, r.monthBudgetUsd ?? 3);
-    this.updateRule(r.id, { missedPolicy: r.missedPolicy ?? "catchup", sourceGroupId: r.sourceGroupId ?? "", requiresGroup: !!r.requiresGroup, revision: r.revision ?? 1, undoneUntil: r.undoneUntil ?? 0 });
+    this.updateRule(r.id, { missedPolicy: r.missedPolicy ?? "catchup", sourceGroupId: r.sourceGroupId ?? "", requiresGroup: !!r.requiresGroup, revision: r.revision ?? 1, undoneUntil: r.undoneUntil ?? 0, ...(r.skill ? { skill: r.skill } : {}) });
     return this.getRule(r.id)!;
   }
   /** 规则从 since 起（按该跑的时间）花了多少：本月的花费 */

@@ -21,7 +21,7 @@ export function newApiDesktop(origin: string, dataDir: string): NewApiDesktop {
       let cancel!: () => void;
       const result = new Promise<void>((resolve, reject) => {
         const children = new Set<BrowserWindow>();
-        const window = new BrowserWindow({ width: 1060, height: 800, title: "登录 OKINTO", autoHideMenuBar: true,
+        const window = new BrowserWindow({ width: 1060, height: 800, title: "登录 Okinto", autoHideMenuBar: true,
           webPreferences: { partition, nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true } });
         let finished = false;
         const finish = (error?: Error) => {
@@ -61,8 +61,8 @@ export function newApiDesktop(origin: string, dataDir: string): NewApiDesktop {
           if (finished) return;
           const body = await response.json().catch(() => ({})) as { success?: boolean };
           if (response.ok && body.success) finish();
-          else void window.loadURL(`${origin}/login`).catch(() => finish(new Error("无法打开 OKINTO 登录页面，请检查网络后重试")));
-        }).catch(() => { if (!finished) finish(new Error("无法检查 OKINTO 登录状态，请重试")); });
+          else void window.loadURL(`${origin}/login`).catch(() => finish(new Error("无法打开 Okinto 登录页面，请检查网络后重试")));
+        }).catch(() => { if (!finished) finish(new Error("无法检查 Okinto 登录状态，请重试")); });
       });
       active = { result, cancel: () => cancel() };
       return active;

@@ -2,7 +2,7 @@ import type { TranslatedCatalog } from "../../index.js";
 export default {
   "fetch_timeout": "タイムアウト（{s} 秒以内に応答がありませんでした）",
   "no_endpoint": "エンドポイントのアドレスが設定されていません",
-  "no_model": "利用できるモデルがありません。先に OKINTO New API で既定のモデルを選択してください",
+  "no_model": "利用できるモデルがありません。先に Okinto New API で既定のモデルを選択してください",
   "no_content": "応答に choices[0].message.content がありません：{body}",
   "verdict_endpoint_ok": "エンドポイントは正常です",
   "verdict_endpoint_error": "エンドポイントのエラー：{error}",
@@ -28,7 +28,7 @@ export default {
   "timeout_reply": "モデルから応答がありましたが、{s} 秒以内にターンの処理が完了しませんでした",
   "agent_off": "エージェントモードは無効です（AMB_AGENT=off）。ボットはチャットのみ利用できます",
   "no_runtime": "エージェントランタイム（DSH）が見つかりません。ボットはチャットのみ利用できます",
-  "agent_no_model": "利用できるモデルがありません。先に OKINTO New API に接続して既定のモデルを選択してください",
+  "agent_no_model": "利用できるモデルがありません。先に Okinto New API に接続して既定のモデルを選択してください",
   "queue_idle": "処理中のターンはありません",
   "queue_busy": {
     "other": "{count} 件のターンを処理中です（最長 {s} 秒経過）。同じ会話の新しいメッセージは現在のターンに追加されるか、エージェントが受け取るまで待機します。応答が止まっている場合は /stop、または下の「エージェントプロセスを再起動」を使用してください"

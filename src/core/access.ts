@@ -85,6 +85,15 @@ export class AccessControl {
     return this.owner(accountOf(ev), ev.channel)?.peerId === ev.conversation.id;
   }
 
+  /** 这个会话是不是主人的（本机网页里的会话都算）：渠道里只有主人能装技能（skills/installs.ts） */
+  ownsConversation(conversationId: string): boolean {
+    const c = this.store.getConversation(conversationId);
+    if (!c) return false;
+    if (c.channel === "web") return true;
+    if (c.kind === "group") return false;
+    return this.owner(c.account || c.botId, c.channel)?.peerId === c.peerId;
+  }
+
   /** 只判断，不登记（runtime.handle 里的兜底检查） */
   allowed(ev: InboundEvent): boolean {
     // 本机界面本来就可信

@@ -1,8 +1,8 @@
 # 개발 안내
 
 
-> 0.1.35 · 예약 규칙, 봇 템플릿 10개, 리소스 미리 보기, 시작 진단 및 UI 개선. OKINTO 로그인, 잔액, 모델 그룹 및 이미지 생성을 유지합니다.
-> 앱 연결과 사용자 지정 MCP, 사이드바 그룹, 오른쪽 탭, 스페인어 및 포르투갈어(브라질)를 지원합니다. OKINTO 로그인, 잔액, 모델 그룹과 이미지 생성을 유지합니다.
+> 0.1.36 · 스킬 라이브러리, 작업을 스킬로 저장 및 채팅에서 설치. 화면·7개 언어 메시지·도구 설명을 Okinto로 통일하고 업데이트 링크와 기존 연결 설정 호환성을 유지합니다.
+> 앱 연결과 사용자 지정 MCP, 사이드바 그룹, 오른쪽 탭, 스페인어 및 포르투갈어(브라질)를 지원합니다. Okinto 로그인, 잔액, 모델 그룹과 이미지 생성을 유지합니다.
 > 새 업데이트 안내와 정보 페이지의 변경 기록을 추가했습니다. 버전 확인, 다운로드 및 업데이트 설명은 이 저장소를 사용합니다.
 
 [简体中文](./development.md) | [English](./development_en.md) | [日本語](./development_ja.md) | 한국어 | [Русский](./development_ru.md) | [Español](./development_es.md) | [Português (Brasil)](./development_pt.md)
@@ -10,7 +10,7 @@
 소스에서 AnyModelBot을 실행하거나 패키징하고 기여하려는 분을 위한 안내입니다. 앱을 사용하기만 하려면 [릴리스](https://github.com/modelflare-ai/AnyModelBot/releases)에서 설치 파일을 받으세요. [README](../README_ko.md#-다운로드-및-실행)를 참고하세요.
 
 - 봇은 역할, 기본 모델, 기억으로 구성됩니다. 계정은 전역 설정(설정 › 채팅 채널)으로 관리하며 모든 봇이 공유합니다. 서비스별 계정 수는 자유롭게 추가할 수 있습니다. 한 사람이 개인적으로 사용하는 환경을 대상으로 합니다.
-- 모델은 Modelflare 계정 또는 내 공식 API 키로 사용합니다. [Modelflare](https://modelflare.dev/?utm_source=anymodelbot&utm_campaign=amb_readme)에서 제공합니다. 처음 실행할 때 로그인하거나 가입하면 모델 목록이 자동으로 나타납니다. 요청은 내장 [magpie](https://github.com/yetone/magpie) 게이트웨이를 거칩니다.
+- 모델은 Okinto 계정 또는 내 공식 API 키로 사용합니다. [Okinto](https://api.okinto.com/?utm_source=anymodelbot&utm_campaign=amb_readme)에서 제공합니다. 처음 실행할 때 로그인하거나 가입하면 모델 목록이 자동으로 나타납니다. 요청은 내장 [magpie](https://github.com/yetone/magpie) 게이트웨이를 거칩니다.
 - 하나의 코드로 세 가지 방식으로 실행합니다: **데스크톱 앱(Electron)**, **명령줄 `npm start`**, **Docker**.
 
 ## 저장소 구조
@@ -30,7 +30,7 @@ src/
   skills/        사용자가 직접 설치하는 스킬(ZIP 패키지)
   store/         SQLite(node:sqlite, 네이티브 빌드 불필요)
   domain/        순수 데이터 형태와 규칙: 봇 설정, 방해 금지 시간, 일정, 카탈로그 봇 기록, 에이전트 단계. I/O 없음, i18n에만 의존. store는 여기에만 의존(의존 방향은 test/architecture.unit.test.ts에서 검사)
-  account/       Modelflare 계정: PKCE 루프백 로그인, 토큰 교체, 잔액·알림, 봇별 예산 키, 모델 기능·참고 가격
+  account/       Okinto 계정: PKCE 루프백 로그인, 토큰 교체, 잔액·알림, 봇별 예산 키, 모델 기능·참고 가격
   web/           콘솔 서버: server.ts가 시작·인증·분배, routes/에 영역별 API(JSON API+SSE 실시간 대화), http.ts는 공용 도우미
   cli/           첫 실행 init 마법사, weixin-login
   providers/     모델 출처: modelflare.ts(경로, 키 검증 GET /v1/models, 모델 라우팅·출처 표시), modelflare-domains.ts(경로 속도 측정), official.ts(공식 API 제공업체 목록, 주소 고정)
@@ -59,7 +59,7 @@ Node.js 22.13 이상과 magpie 소스 컴파일을 위한 Go 1.26.8 이상이 �
 ```bash
 npm install
 npm run setup        # vendor/magpie 서브모듈을 가져와 build/bin/에 컴파일
-npm run init         # 선택: 터미널에서 첫 설정(Modelflare 로그인, Feishu 인증 정보)
+npm run init         # 선택: 터미널에서 첫 설정(Okinto 로그인, Feishu 인증 정보)
 npm start            # 게이트웨이+봇+http://127.0.0.1:3600/ 콘솔 시작
 ```
 
@@ -103,20 +103,20 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 
 컨테이너 내부 콘솔은 0.0.0.0에서 수신 대기하므로 토큰 접근이 필수입니다. 3600 포트를 인터넷에 직접 노출하지 마세요. WeChat QR 로그인은 설정 › 채팅 채널에 있습니다.
 
-## 모델(Modelflare)
+## 모델(Okinto)
 
-- 첫 화면의 ‘Modelflare 로그인 / 회원가입’을 누르면 시스템 브라우저에서 로그인·가입하고 계속 버튼으로 접근을 허용합니다. 앱으로 돌아오면 이 컴퓨터 전용 API 키를 발급·연결하고 기본 모델을 선택한 뒤 대화를 시작합니다. Docker·원격 배포는 브라우저 콜백을 받을 수 없으므로, 로그인 후 이동하는 열리지 않는 `127.0.0.1` 주소의 링크를 첫 화면에 붙여 넣습니다(`POST /amb/api/account/login/complete`, state와 PKCE 검증은 동일). 이전 버전에서 API 키를 입력하고 로그인하지 않은 경우 업그레이드할 때 키를 기기에서 제거하므로 로그인해야 합니다. 브라우저 콜백 페이지는 먼저 ‘로그인을 완료하는 중’을 보여 주고, 토큰 교환·계정 조회·기기 전용 키 발급·게이트웨이 연결이 모두 성공한 뒤에야 ‘로그인 성공’을 표시합니다(실패하면 이유 표시). 데스크톱 앱은 `anymodelbot://` 링크를 등록하고, 페이지는 열릴 때 한 번 앱을 열어 보며 ‘AnyModelBot 열기’로 다시 시도할 수 있습니다. 앱이 실제로 그 링크를 받았을 때만 ‘돌아갔습니다’를 표시합니다. 직접 API 키를 쓰는 화면에서도 Modelflare 계정으로 바로 로그인할 수 있습니다. 처음 연결할 때 전역 기본 모델이 비어 있으면 `src/account/first-model.ts`의 규칙(도구 호출 지원, 1회 선점 금액과 대표 작업 비용이 체험 한도 안, DeepSeek 우선)으로 첫 사용 모델을 한 번 고릅니다. 맞는 모델이 없으면 미리 고르지 않고 사용자가 고릅니다.
-- 로그인 방식은 RFC 8252의 네이티브 앱에 맞춘 OIDC 인증 코드+PKCE(RFC 7636)입니다. 공개 클라이언트(`client_id`: `anymodel-bot`)로서 클라이언트 비밀 값이 없고 필요하지도 않습니다. 결과는 `127.0.0.1`의 임시 포트로 전달됩니다. Modelflare 프로필의 인증된 앱에서 권한을 취소하면 앱이 이를 감지해 로그인 화면으로 돌아옵니다.
+- 첫 화면의 ‘Okinto 로그인 / 회원가입’을 누르면 시스템 브라우저에서 로그인·가입하고 계속 버튼으로 접근을 허용합니다. 앱으로 돌아오면 이 컴퓨터 전용 API 키를 발급·연결하고 기본 모델을 선택한 뒤 대화를 시작합니다. Docker·원격 배포는 브라우저 콜백을 받을 수 없으므로, 로그인 후 이동하는 열리지 않는 `127.0.0.1` 주소의 링크를 첫 화면에 붙여 넣습니다(`POST /amb/api/account/login/complete`, state와 PKCE 검증은 동일). 이전 버전에서 API 키를 입력하고 로그인하지 않은 경우 업그레이드할 때 키를 기기에서 제거하므로 로그인해야 합니다. 브라우저 콜백 페이지는 먼저 ‘로그인을 완료하는 중’을 보여 주고, 토큰 교환·계정 조회·기기 전용 키 발급·게이트웨이 연결이 모두 성공한 뒤에야 ‘로그인 성공’을 표시합니다(실패하면 이유 표시). 데스크톱 앱은 `anymodelbot://` 링크를 등록하고, 페이지는 열릴 때 한 번 앱을 열어 보며 ‘AnyModelBot 열기’로 다시 시도할 수 있습니다. 앱이 실제로 그 링크를 받았을 때만 ‘돌아갔습니다’를 표시합니다. 직접 API 키를 쓰는 화면에서도 Okinto 계정으로 바로 로그인할 수 있습니다. 처음 연결할 때 전역 기본 모델이 비어 있으면 `src/account/first-model.ts`의 규칙(도구 호출 지원, 1회 선점 금액과 대표 작업 비용이 체험 한도 안, DeepSeek 우선)으로 첫 사용 모델을 한 번 고릅니다. 맞는 모델이 없으면 미리 고르지 않고 사용자가 고릅니다.
+- 로그인 방식은 RFC 8252의 네이티브 앱에 맞춘 OIDC 인증 코드+PKCE(RFC 7636)입니다. 공개 클라이언트(`client_id`: `anymodel-bot`)로서 클라이언트 비밀 값이 없고 필요하지도 않습니다. 결과는 `127.0.0.1`의 임시 포트로 전달됩니다. Okinto 프로필의 인증된 앱에서 권한을 취소하면 앱이 이를 감지해 로그인 화면으로 돌아옵니다.
 - 갱신 토큰은 데이터 폴더의 `modelflare-account.json`(권한 600)에 저장하며, 내장 게이트웨이의 API 키처럼 파일 권한으로만 보호하고 시스템 키체인은 쓰지 않습니다(0.1.30 이하 데스크톱 앱이 암호화한 파일은 처음 읽을 때 평문으로 다시 씁니다). 화면에는 계정 이름만 전달합니다. 로그아웃하면 컴퓨터의 권한을 취소하고 Modelflare가 로그인 시 컴퓨터·봇에 발급한 키를 삭제합니다.
 - 잔액은 설정 → 모델 상단에 Bot 크레딧과 남은 비율과 함께 바로 표시됩니다. 사이드바의 잔액 링과 호버 카드는 없습니다. 충전은 Modelflare를 열고, 설정 진입과 앱 복귀 시 잔액을 갱신하며 수동 새로고침도 지원합니다. 설정한 알림 기준 아래가 되면 앱에서 알리고 채팅으로도 보낼 수 있습니다.
-- 로그인하면 설정 → 모델에 일별·모델별 사용량, Modelflare 알림, 초대 링크도 표시합니다.
+- 로그인하면 설정 → 모델에 일별·모델별 사용량, Okinto 알림, 초대 링크도 표시합니다.
 - 봇 예산(로그인 필요): 봇 설정 → 예산. 켜면 설정 금액이 한도인 전용 키(게이트웨이의 별도 provider)를 쓰고 끄면 공유 키로 돌아갑니다.
 - 추론 강도: 모델 선택 패널 또는 설정 → 모델에서 고릅니다(자동 / 낮음 / 보통 / 높음). 전역 설정 하나이며 다음 턴부터 적용됩니다. 자동이면 매개변수를 보내지 않고 모델 기본값을 씁니다. 지원하는 모델에만 적용됩니다. Responses API의 추론 모델, 모델 프로필에 추론으로 표시된 Chat 및 Claude입니다(Claude 4.6 이상은 adaptive와 `output_config.effort`, 이전 모델은 `budget_tokens`).
-- 이미지·동영상 생성: 에이전트에 `media_models`(모델·기본값·매개변수 범위·참고 가격), `media_docs`(docs.modelflare.dev에서 요청 형식 실시간 조회), `generate_image`, `generate_video`와 내장 미디어 스킬을 제공합니다. 모델마다 형식이 달라 문서를 보고 요청 본문을 작성합니다. 작업 공간의 참고 이미지는 `workspace:path`로 지정합니다. 키는 앱을 벗어나지 않습니다. 앱이 봇 키로 Modelflare를 호출하고 작업 공간 `media/`에 결과를 저장해 대화로 전달합니다.
+- 이미지·동영상 생성: 에이전트에 `media_models`(모델·기본값·매개변수 범위·참고 가격), `media_docs`(docs.api.okinto.com에서 요청 형식 실시간 조회), `generate_image`, `generate_video`와 내장 미디어 스킬을 제공합니다. 모델마다 형식이 달라 문서를 보고 요청 본문을 작성합니다. 작업 공간의 참고 이미지는 `workspace:path`로 지정합니다. 키는 앱을 벗어나지 않습니다. 앱이 봇 키로 Modelflare를 호출하고 작업 공간 `media/`에 결과를 저장해 대화로 전달합니다.
 - 생성 전 확인: 기본적으로 즉시 생성합니다. 기본 모델이 아니거나 요청이 모호하다는 이유만으로 묻지 않고 합리적으로 해석한 뒤 결과에서 사용한 내용을 한 줄로 설명합니다. 예상 비용이 $0.5를 넘을 때만 프롬프트·매개변수·참고 가격·확인 이유와 함께 모델을 묻습니다(이미지 수, 동영상 길이·해상도 등으로 계산하며 비용을 추정할 수 없는 동영상도 포함). 승인·모델 변경·취소가 가능하며 WeChat에서는 번호나 모델 이름으로, Feishu/웹에서는 클릭으로 답합니다. 10분 내 답이 없으면 생성하지 않습니다. 항상 확인하려면 봇 설정 → 이미지와 동영상 → 생성 전에 확인 → 항상 확인을 선택하세요.
 - 웹 검색: `web_search`는 DeepSeek 키가 필요한 자체 검색을 쓰지 않고 `amb-web-search` 플러그인을 통해 앱에 위임합니다. 기본 검색은 무료이며 Exa 공개 MCP, Bing, DuckDuckGo를 순서대로 시도하되 최근 성공한 것을 우선합니다. 실패한 제공업체(요청 제한, 봇 검사, 무관한 Bing 결과)는 10분간 건너뜁니다. 설정 → 네트워크 및 접근 → 웹 검색에서 Tavily, Exa, Bocha, Zhipu(키 필요), 자체 SearXNG를 지정하면 우선 사용하고 실패 시 무료 검색으로 대체합니다. 키는 채널 토큰처럼 로컬 DB에 저장하며 에이전트에 전달하지 않습니다. 데스크톱은 시스템 프록시, 명령줄은 Node fetch(`NODE_USE_ENV_PROXY=1`이면 `HTTPS_PROXY` 적용)를 사용합니다.
 - 채팅 채널 계정(`src/core/routes.ts`): WeChat, Feishu, Telegram, Slack, Discord도 전역 계정입니다. 설정 › 채팅 채널에서 추가하고 별칭을 지정합니다. 메시지 수신 봇은 사용자가 `/bot`으로 선택한 봇 → 계정 기본 봇 → 첫 번째 봇 순서입니다. `/bot`은 목록, `/bot name`은 전환 후 선택 저장입니다. 각 봇의 시스템 프롬프트에 다른 봇과 전환법을 넣어 관련 질문에 답하게 합니다. 소유자·허용 목록은 계정에 속하므로 허용된 사용자는 모든 봇과 대화할 수 있습니다. 계정 키는 네임스페이스이며 기존 채널은 이전 봇 ID를 유지해 로그인·한도·허용 목록·대기열과 기본 봇이 그대로 남습니다. 봇 삭제는 계정에 영향을 주지 않습니다.
-- 앱 연결(`src/tools/apps/service.ts`): 전역 목록 하나(아바타 메뉴 › 앱 연결)입니다. 기본적으로 모든 봇이 연결된 앱을 사용할 수 있고, 봇별·도구별로 좁힐 수 있습니다(봇 설정 › 앱). 앱은 앱 페이지에서 카드 하나로 표시되며 여러 계정을 가질 수 있습니다. 어떤 봇에게든 ‘첫 번째 Feishu와 두 번째 Feishu 확인해 줘’라고 할 수 있고, 계정은 도구의 `account` 인수(번호 또는 이름)로 고릅니다.
+- 앱 연결(`src/tools/apps/service.ts`): 전역 목록 하나(아바타 메뉴 › 앱과 스킬)입니다. 기본적으로 모든 봇이 연결된 앱을 사용할 수 있고, 봇별·도구별로 좁힐 수 있습니다(봇 설정 › 앱). 앱은 앱 페이지에서 카드 하나로 표시되며 여러 계정을 가질 수 있습니다. 어떤 봇에게든 ‘첫 번째 Feishu와 두 번째 Feishu 확인해 줘’라고 할 수 있고, 계정은 도구의 `account` 인수(번호 또는 이름)로 고릅니다.
   - **기본 제공 앱**(`catalog.ts`): Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian, Canva. 인증 방식은 커스텀 커넥터와 같습니다: 로그인 인증(OAuth, 동적 등록, `oauth.ts`), 요청 헤더, 쿼리 매개변수, 전용 URL. Yuque는 앱에 포함된 로컬 프로그램(`vendor/yuque-mcp`, `scripts/vendor-yuque-mcp.mjs`로 생성)이며 사용자는 토큰만 붙여넣습니다.
   - **커스텀 커넥터**: 원격 Streamable HTTP(연결되지 않으면 구형 SSE) 또는 로컬 명령, 최대 20개. 붙여넣기 인식과 양식 ⇄ JSON 변환은 `ui/lib/connector-config.js`에 있습니다. 로컬 명령은 로그인 셸의 PATH(`shell-path.ts`)로 실행하며, 처음에 패키지를 내려받는 실행기(npx, uvx)는 더 오래 기다립니다.
   - **연결은 메인 프로세스가 합니다**(`mcp-client.ts`, 공식 `@modelcontextprotocol/client`): 자격 증명은 메인 프로세스에만 있고 `app-secrets.json`(권한 600, 데이터베이스 밖, `secrets.ts`)에 저장됩니다. `amb-connections` 플러그인이 각 도구 호출을 bridge를 통해 앱에 넘깁니다. MCP 연결의 도구는 하나씩 등록하지 않고, 모델에는 고정된 도구 세 개를 줍니다: `app_tools`(도구 찾기), `app_tool_schema`(매개변수 보기), `app_call`(실행). 그리고 `app_connect`로 사용자에게 연결을 요청할 수 있습니다(대화에 카드가 나타나고, 연결되면 작업을 이어갑니다).
@@ -124,11 +124,11 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
   - **기존 Notion·Feishu 계정**(`src/tools/accounts/`): 업그레이드 전에 연결한 계정은 다시 인증하지 않아도 그대로 쓸 수 있고, 토큰은 첫 실행 때 데이터베이스에서 `app-secrets.json`으로 옮겨집니다. Notion(`notion.ts`)은 한 번의 접근 허용 또는 토큰을 사용합니다: 토큰은 REST API, 접근 허용은 OAuth + PKCE + 동적 등록으로 로컬 `/oauth/notion/callback`에 돌아온 뒤 공식 원격 MCP(`mcp.notion.com`)를 호출합니다. 모델에는 여전히 `notion_search`, `notion_read_page`, `notion_query_database`, `notion_create_page`, `notion_update_page`가 보이며 삭제는 없습니다. Feishu(`feishu.ts`)의 기존 계정은 사용자 신원으로 메시지를 읽기만 합니다(`feishu_list_chats`, `feishu_read_chat`, `feishu_search_messages`). 새로 연결하는 Feishu 계정은 공식 원격 MCP(클라우드 문서 읽기/쓰기 + 메시지 읽기)를 쓰고, 기존 계정도 다시 인증하면 이쪽으로 바뀝니다.
 - 기본 이미지·동영상 모델은 첫 설정 때 텍스트 모델과 함께 선택하고 설정 → 모델에서 변경합니다. 자동은 추천 순서 중 참고 자료가 필요 없는 첫 모델을 사용합니다.
 - 모델 선택기는 컨텍스트 길이, 이미지 이해·도구·추론 기능, 공개 가격표의 100만 입력/출력 토큰당 최저 참고 가격을 표시합니다. 최종 금액은 청구서 기준입니다.
-- 가성비(로그인 필요): 컴퓨터 키와 봇 예산 키에 Modelflare Smart Key의 `routing_strategy`를 넣습니다. 저렴한 가격 `low_cost`는 최저 배수부터, 균형 `balanced`는 중간 가격부터(기본값), 품질 `stable`은 최고 배수부터 시도합니다. 설정 → 모델 → 가성비 또는 모델 선택기 첫 슬라이더에서 바꾸면 기존 키도 `PATCH /api/connected-app/api-keys/<id>`로 갱신하고 로컬 DB `account.routing`에 저장합니다. 선택 이력이 없는 로그인 사용자는 첫 키 검사 때 기존 키에 균형을 한 번 적용합니다(로그: `applied the default key routing strategy`). Modelflare가 `routing_strategy`를 응답에 돌려줘야 지원으로 판정합니다. 필드를 거부하면(400/422) 제외하고 다시 발급하므로 발급·검사·예산 기능이 실패하지 않습니다. 무시하여 응답에 없을 때도 미지원으로 보고 설정을 숨긴 뒤 하루 후 재시도합니다.
+- 가성비(로그인 필요): 컴퓨터 키와 봇 예산 키에 Okinto Smart Key의 `routing_strategy`를 넣습니다. 저렴한 가격 `low_cost`는 최저 배수부터, 균형 `balanced`는 중간 가격부터(기본값), 품질 `stable`은 최고 배수부터 시도합니다. 설정 → 모델 → 가성비 또는 모델 선택기 첫 슬라이더에서 바꾸면 기존 키도 `PATCH /api/connected-app/api-keys/<id>`로 갱신하고 로컬 DB `account.routing`에 저장합니다. 선택 이력이 없는 로그인 사용자는 첫 키 검사 때 기존 키에 균형을 한 번 적용합니다(로그: `applied the default key routing strategy`). Modelflare가 `routing_strategy`를 응답에 돌려줘야 지원으로 판정합니다. 필드를 거부하면(400/422) 제외하고 다시 발급하므로 발급·검사·예산 기능이 실패하지 않습니다. 무시하여 응답에 없을 때도 미지원으로 보고 설정을 숨긴 뒤 하루 후 재시도합니다.
 - 지능(두 번째 슬라이더): 계정이 사용할 수 있고 Artificial Analysis 데이터가 있는 모델의 지능 지수(높을수록 좋음)와 작업당 비용(낮을수록 좋음)으로 파레토 경계를 구해 최대 5개 지점을 제시하며 최저가·최고 성능 모델을 항상 포함합니다. 실제 추론 강도를 기준으로 하므로 Responses API 추론 모델은 기본 medium에 맞는 AA 행, 그 외는 기본 행을 사용합니다(`src/account/model-quality.ts`). 비용은 AA 공식 가격 기준 작업당 비용 × 현재 가성비 설정의 가격 계수(사용 가능한 공개 그룹 배수 × 판매 배수)입니다. 저렴한 가격은 최저, 품질은 최고, 균형은 중간을 쓰고 기업 전용 그룹은 제외합니다. 로그아웃·미지원은 균형으로 계산합니다. 슬라이더로 모델을 전환하며 이름을 누르면 전체 목록에서 직접 선택합니다. 지점에 없는 모델은 사용자 지정으로 표시하고 지점이 두 개 미만이면 목록만 보여 줍니다. 계산은 `ui/lib/frontier.js`에 있습니다.
-- AA 데이터는 `assets/model-quality.json`(`updatedAt`, `source`, 필요한 필드만, Modelflare ID 매핑 완료)에 포함합니다. `node scripts/update-model-quality.mjs`는 공개 순위 https://artificialanalysis.ai/leaderboards/models 와 Modelflare 공개 가격표를 읽습니다. `AA_API_KEY`가 있으면 공식 API를 사용합니다(키로 반환 필드를 아직 검증하지 않음). `--html <file>`, `--pricing <file>`은 저장한 파일을 사용하고 `--dry-run`은 출력만 합니다. 열 누락, 행 형식 변경, 숫자 변환 실패, 행·매핑 모델 수 부족 시 문제를 알리고 종료 코드 1로 끝내며 기존 스냅샷은 유지합니다. 규칙으로 매핑되지 않는 이름은 스크립트의 `OVERRIDES`에 지정합니다. 데이터 출처 Artificial Analysis는 선택기 하단에 표시합니다.
-- 출처 표시: Modelflare 요청에는 `X-Modelflare-Skill: anymodel-bot/<version>`, 링크에는 `utm_source=anymodelbot&utm_campaign=amb_<placement>`를 넣습니다. 앱은 `amb_signup`, `amb_topup`, `amb_console` 등, README·저장소 문서는 `amb_readme`, 웹사이트는 `amb_homepage`를 사용합니다. `test/utm.unit.test.ts`가 형식을 검사합니다.
-- API 도메인: 설정 → 모델 → API 도메인에서 `https://modelflare.dev/v1`, `https://origin.modelflare.dev/v1`, `https://cf.modelflare.dev/v1`을 선택합니다. 수동 검사는 앱 실행 기기에서 세 도메인의 `/v1/models`에 인증 없이 세 번 요청해 중앙 응답 시간과 성공 횟수를 표시합니다. HTTP 401은 API 응답으로 계산하며 키 유효성이나 생성 속도의 증거가 아닙니다. 자동 전환은 없습니다. 기존 설정 `auto`/`global`은 기본 도메인, `cn`은 origin, `cf`는 cf에 대응하며 지역·품질 의미가 아닙니다.
+- AA 데이터는 `assets/model-quality.json`(`updatedAt`, `source`, 필요한 필드만, Okinto ID 매핑 완료)에 포함합니다. `node scripts/update-model-quality.mjs`는 공개 순위 https://artificialanalysis.ai/leaderboards/models 와 Okinto 공개 가격표를 읽습니다. `AA_API_KEY`가 있으면 공식 API를 사용합니다(키로 반환 필드를 아직 검증하지 않음). `--html <file>`, `--pricing <file>`은 저장한 파일을 사용하고 `--dry-run`은 출력만 합니다. 열 누락, 행 형식 변경, 숫자 변환 실패, 행·매핑 모델 수 부족 시 문제를 알리고 종료 코드 1로 끝내며 기존 스냅샷은 유지합니다. 규칙으로 매핑되지 않는 이름은 스크립트의 `OVERRIDES`에 지정합니다. 데이터 출처 Artificial Analysis는 선택기 하단에 표시합니다.
+- 출처 표시: Okinto 요청에는 `X-Okinto-Skill: anymodel-bot/<version>`, 링크에는 `utm_source=anymodelbot&utm_campaign=amb_<placement>`를 넣습니다. 앱은 `amb_signup`, `amb_topup`, `amb_console` 등, README·저장소 문서는 `amb_readme`, 웹사이트는 `amb_homepage`를 사용합니다. `test/utm.unit.test.ts`가 형식을 검사합니다.
+- API 도메인: 설정 → 모델 → API 도메인에서 `https://api.okinto.com/v1`, `https://origin.api.okinto.com/v1`, `https://cf.api.okinto.com/v1`을 선택합니다. 수동 검사는 앱 실행 기기에서 세 도메인의 `/v1/models`에 인증 없이 세 번 요청해 중앙 응답 시간과 성공 횟수를 표시합니다. HTTP 401은 API 응답으로 계산하며 키 유효성이나 생성 속도의 증거가 아닙니다. 자동 전환은 없습니다. 기존 설정 `auto`/`global`은 기본 도메인, `cn`은 origin, `cf`는 cf에 대응하며 지역·품질 의미가 아닙니다.
 - 설정 → 모델: 계정, 잔액·충전, 잔액 알림, 사용량, 알림, 초대, 가성비, 추론 강도, 기본 모델, 모델 목록 새로고침을 제공합니다.
 - 입력창 오른쪽의 모델 버튼은 현재 세션의 모델을 바꾸거나 봇 기본값으로 설정합니다. `/model`, `/reset`, `/new`, `/status`, `/stop`, `/help`도 사용할 수 있습니다.
 - 작업 내역: 모델 요청의 시간·토큰, 도구 인수·출력, 재시도, 하위 에이전트 등 모든 단계를 답변 위 시간 표시줄에 접어 둡니다. 클릭하면 펼칩니다. WeChat/Feishu 세션은 정보 패널 → 최근 세션에서 진행 상황을 실시간으로 보고 중지할 수 있습니다.
@@ -138,10 +138,10 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 - 대화별 모델: 하나의 에이전트 프로세스 안에서도 대화마다 모델과 API를 달리 사용합니다(API별 provider, 모델별 컨텍스트·최대 출력). 모델을 바꿔도 프로세스를 다시 시작하지 않으며 초기 패치에 없던 모델은 실행 중 추가합니다.
 - 프로세스 교체: DSH SDK는 세션 닫기를 지원하지 않아 백그라운드 작업·규칙 실행의 세션이 재시작까지 남습니다(완료 후 유휴 세션당 실측 약 0.25~0.45MB). 100개를 초과하면 완전히 유휴일 때 교체합니다. 대화, 실행·정리 중인 작업이나 규칙, 승인, 압축, 백그라운드 명령이 없어야 합니다. 기존 세션은 이어지고 중단이나 사용자 알림은 없습니다. 문제 해결 상태의 `taskSessions`, `recycles`로 확인하며 `AMB_DSH_RECYCLE_SESSIONS`로 기준을 바꿉니다.
 - 재시작 안내: 앱 종료·충돌 당시 처리 중이던 메시지는 대화별 DB 표시로 추적하고 완료 시 제거합니다. 다음 시작에 해당 대화로 ‘앱이 다시 시작되어 마지막 메시지의 처리를 완료하지 못했습니다. 다시 보내 주세요’라고 한 번 알립니다. 자동 재전송하지 않습니다. 웹은 기록에 추가하고 WeChat은 저장한 context_token과 기존 발신 한도를 사용합니다. 24시간·횟수 제한에 걸리면 다음 수신 메시지의 답변 앞에 알립니다. Feishu는 원래 대화로 보냅니다.
-- 에이전트 API: Modelflare 공개 목록의 지원 정보에 따라 Responses API 모델(GPT-5.4 이상, Grok 4.5 이상, DeepSeek V4, GLM-5, Kimi K3 등)은 `/v1/responses`를 사용합니다(추론 기본 medium, 암호화된 추론을 기록과 함께 재전송). Responses 없이 Anthropic Messages를 지원하는 Claude는 `/v1/messages`, 나머지·목록 조회 실패·외부 엔드포인트는 Chat Completions입니다. 프로세스가 모델을 처음 쓸 때 선택하며 문제 해결 상태에 마지막 차례의 `api`와 모델 목록을 표시합니다. `AMB_AGENT_API=chat`으로 전체를 Chat Completions로 강제할 수 있고 일반 대화는 계속 이를 사용합니다. 상위 서비스가 Responses/Messages를 거부하면(HTTP 400/404/405/415/422 또는 unsupported parameter/endpoint) 해당 모델은 24시간 Chat Completions로 전환합니다. 요청 제한·잔액·권한·서비스 장애·컨텍스트 초과는 제외합니다. 데이터 폴더 `dsh/api-fallback.json`에 기록하고 로그에 경고하며 상태에 `openai-completions (fallback: reason)`을 표시합니다. 도구를 아직 호출하지 않았다면 프로세스 재시작 없이 현재 차례를 Chat으로 자동 재시도합니다. 이미 호출했다면 오류를 알리고 다음 차례부터 Chat을 사용합니다.
+- 에이전트 API: Okinto 공개 목록의 지원 정보에 따라 Responses API 모델(GPT-5.4 이상, Grok 4.5 이상, DeepSeek V4, GLM-5, Kimi K3 등)은 `/v1/responses`를 사용합니다(추론 기본 medium, 암호화된 추론을 기록과 함께 재전송). Responses 없이 Anthropic Messages를 지원하는 Claude는 `/v1/messages`, 나머지·목록 조회 실패·외부 엔드포인트는 Chat Completions입니다. 프로세스가 모델을 처음 쓸 때 선택하며 문제 해결 상태에 마지막 차례의 `api`와 모델 목록을 표시합니다. `AMB_AGENT_API=chat`으로 전체를 Chat Completions로 강제할 수 있고 일반 대화는 계속 이를 사용합니다. 상위 서비스가 Responses/Messages를 거부하면(HTTP 400/404/405/415/422 또는 unsupported parameter/endpoint) 해당 모델은 24시간 Chat Completions로 전환합니다. 요청 제한·잔액·권한·서비스 장애·컨텍스트 초과는 제외합니다. 데이터 폴더 `dsh/api-fallback.json`에 기록하고 로그에 경고하며 상태에 `openai-completions (fallback: reason)`을 표시합니다. 도구를 아직 호출하지 않았다면 프로세스 재시작 없이 현재 차례를 Chat으로 자동 재시도합니다. 이미 호출했다면 오류를 알리고 다음 차례부터 Chat을 사용합니다.
 - 내장 게이트웨이: magpie는 데이터 폴더 안의 독립 HOME·설정으로 `--gateway` 모드에서 실행합니다. 컴퓨터의 기존 Claude/Codex 구독 인증 정보를 **읽지 않고**, 에이전트 설정을 **수정하지 않으며**, 자동 업데이트·계정 검색도 끕니다. 앱 프로세스 내부에서만 호출하며 콘솔은 magpie 페이지나 `/v1`을 프록시하지 않습니다.
 - API 키는 격리된 게이트웨이 설정에만 저장합니다. 명령줄이나 로그에 기록하지 않고 프런트엔드에는 끝부분만 전달합니다.
-- 개발·테스트: `AMB_MAGPIE_BASE_URL`을 OpenAI 호환 엔드포인트로 지정하면 게이트웨이를 시작하지 않고 화면은 연결 상태가 되며 계정 기능은 사용할 수 없습니다. `AMB_MODELFLARE_BASE_URL`은 Modelflare 기본 URL, `AMB_MODELFLARE_ISSUER`는 로그인·계정 API를 로컬 모의 서버로 지정합니다.
+- 개발·테스트: `AMB_MAGPIE_BASE_URL`을 OpenAI 호환 엔드포인트로 지정하면 게이트웨이를 시작하지 않고 화면은 연결 상태가 되며 계정 기능은 사용할 수 없습니다. `AMB_MODELFLARE_BASE_URL`은 Okinto 기본 URL, `AMB_MODELFLARE_ISSUER`는 로그인·계정 API를 로컬 모의 서버로 지정합니다.
 
 ## 공식 API 키
 
@@ -149,7 +149,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 - 각각 내장 게이트웨이의 provider이며 ID는 `official-<제공업체>`, 모델 ID는 `official-<제공업체>/<모델>`입니다. Modelflare의 같은 이름 모델과 구분됩니다. 키는 명령줄 인수를 거치지 않고 게이트웨이 로컬 API의 요청 본문으로 격리된 설정에 기록됩니다.
 - 확인에는 게이트웨이의 모델 목록을 사용하고(프록시와 제공업체별 인증 방식은 게이트웨이에 있음), 통과해야만 저장합니다. 모델은 1시간마다 제공업체 목록과 대조하며 대화할 수 없는 모델(음성, 이미지, 임베딩 등)은 선택기에 넣지 않습니다.
 - 에이전트 API는 제공업체별로 정해집니다. OpenAI는 Responses, Anthropic은 Messages, 나머지는 Chat Completions입니다. 컨텍스트 길이, 가격, 추론 지원은 게이트웨이의 모델 목록(`/v1/models`)에서 가져옵니다. 공식 키만 있으면 Modelflare의 목록과 계정을 읽지 않습니다.
-- 공식 API 모델에는 `X-Modelflare-Skill`을 붙이지 않고, 서버 측 압축을 하지 않으며(압축 엔드포인트는 Modelflare 목록에서 옴), 봇 예산의 제한도 받지 않습니다(예산은 Modelflare 키의 한도입니다). 이미지·동영상 생성은 Modelflare에 연결된 동안에만 가능합니다.
+- 공식 API 모델에는 `X-Okinto-Skill`을 붙이지 않고, 서버 측 압축을 하지 않으며(압축 엔드포인트는 Okinto 목록에서 옴), 봇 예산의 제한도 받지 않습니다(예산은 Okinto 키의 한도입니다). 이미지·동영상 생성은 Modelflare에 연결된 동안에만 가능합니다.
 - 테스트: `AMB_OFFICIAL_BASE_URL`로 모든 제공업체를 로컬 모의 서버로 지정합니다(`test/official-providers.integration.test.ts`).
 
 ## 화면
@@ -161,7 +161,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 - 언어: 설정 → 일반 → 언어에서 중국어 간체·영어·일본어·한국어·러시아어·스페인어·포르투갈어(브라질)를 선택합니다. 첫 화면 오른쪽 위와 명령 팔레트에서도 바꿀 수 있습니다. 기본은 시스템 언어이며 미지원 언어는 영어입니다. 선택은 config.json의 `ui.lang`에 저장하고 트레이 메뉴, 서버 오류·상태, WeChat/Feishu의 `/help`·승인 안내 등 시스템 메시지에 적용됩니다. 명령줄·Docker의 시스템 언어는 `AMB_LANG`, `LC_ALL`/`LC_MESSAGES`/`LANG` 순이며 없으면 중국어 간체입니다. 로그, 모델 프롬프트, 사용자가 정한 봇 이름은 번역하지 않습니다.
   - 화면 문구는 `ui/locales/<lang>/<namespace>.js`에 있고 `t("namespace.key", { params })`로 사용합니다(`ui/lib/i18n.js`). 서버 문구는 `src/i18n/messages/<namespace>.ts`이며 키를 타입 검사합니다. 모든 화면 요청은 `x-amb-lang`을 보내며 서버도 해당 언어로 응답합니다.
   - 새 문구는 두 기준 언어에 모두 추가합니다. `node scripts/i18n-check.mjs [files…]`는 화면 코드의 중국어 잔여 문구, 없는 키, zh/en 불일치를 검사합니다(`npm test`의 `test/i18n.unit.test.ts`도 동일 검사). 글꼴 이름·중국어 입력 정규식처럼 필요한 중국어는 해당 줄에 `// i18n-ignore`를 붙입니다.
-- 시작 체크리스트: 빈 대화에는 인사, 모델 변경, WeChat 연결, 작업 맡기기, 기억하기, 이미지 생성의 여섯 단계가 나옵니다. 마지막 단계는 계정의 미디어 모델 여부와 무관하게 내장 데모만 재생합니다. 실제 기본 흐름처럼 즉시 생성해 대화에 보이지만 봇에 전송하지 않고 모델 호출·과금도 없습니다. 이미지는 `ui/assets/guide-demo.svg`입니다. 비용 없이 흐름을 배우도록 한 것이며 실제 이미지 요청·수신으로도 완료됩니다. 보내기를 누르면 직접 시도하고 이동하기 또는 왼쪽 아래 항목을 누르면 해당 제어 요소를 테두리로 강조하는 안내 카드가 나옵니다. 응답, 모델 변경, 파일·이미지 수신, 채널 연결, 기억 저장에 따라 자동 완료되며 config.json의 `ui.guide`(API `/amb/api/guide`)에 저장합니다. 기존 사용자가 이미 한 단계도 인정합니다. 왼쪽 아래로 접거나 완전히 숨길 수 있고 설정 → 일반 → 시작 체크리스트에서 다시 시작합니다. 인사는 실제 응답이 있어야 하고(오류 안내는 제외), 채널은 실제로 연결되어야 합니다(설정만으로는 완료되지 않음). ‘자주 쓰는 채팅 앱 연결’에서는 WeChat, Feishu, Telegram, Slack, Discord를 고를 수 있고 UI 언어는 추천 항목만 정합니다. ‘기억해…’라고 분명히 말하면 턴 후 기억 정리를 90초 기다리지 않고 바로 합니다. 진행 상황은 사용자별로 저장되며(Modelflare 로그인 시 계정별로 KV `guide.owner.*`, 로그인하지 않았으면 기존대로 config.json의 `ui.guide`), 모두 마치면 이후 자동으로 숨겨집니다. 스스로 나타나는 안내 카드는 입력창에 초안이 있거나 작업이 실행 중이면 기다립니다.
+- 시작 체크리스트: 빈 대화에는 인사, 모델 변경, WeChat 연결, 작업 맡기기, 기억하기, 이미지 생성의 여섯 단계가 나옵니다. 마지막 단계는 계정의 미디어 모델 여부와 무관하게 내장 데모만 재생합니다. 실제 기본 흐름처럼 즉시 생성해 대화에 보이지만 봇에 전송하지 않고 모델 호출·과금도 없습니다. 이미지는 `ui/assets/guide-demo.svg`입니다. 비용 없이 흐름을 배우도록 한 것이며 실제 이미지 요청·수신으로도 완료됩니다. 보내기를 누르면 직접 시도하고 이동하기 또는 왼쪽 아래 항목을 누르면 해당 제어 요소를 테두리로 강조하는 안내 카드가 나옵니다. 응답, 모델 변경, 파일·이미지 수신, 채널 연결, 기억 저장에 따라 자동 완료되며 config.json의 `ui.guide`(API `/amb/api/guide`)에 저장합니다. 기존 사용자가 이미 한 단계도 인정합니다. 왼쪽 아래로 접거나 완전히 숨길 수 있고 설정 → 일반 → 시작 체크리스트에서 다시 시작합니다. 인사는 실제 응답이 있어야 하고(오류 안내는 제외), 채널은 실제로 연결되어야 합니다(설정만으로는 완료되지 않음). ‘자주 쓰는 채팅 앱 연결’에서는 WeChat, Feishu, Telegram, Slack, Discord를 고를 수 있고 UI 언어는 추천 항목만 정합니다. ‘기억해…’라고 분명히 말하면 턴 후 기억 정리를 90초 기다리지 않고 바로 합니다. 진행 상황은 사용자별로 저장되며(Okinto 로그인 시 계정별로 KV `guide.owner.*`, 로그인하지 않았으면 기존대로 config.json의 `ui.guide`), 모두 마치면 이후 자동으로 숨겨집니다. 스스로 나타나는 안내 카드는 입력창에 초안이 있거나 작업이 실행 중이면 기다립니다.
 - 시각 디자인: 무채색과 구성 요소는 magpie(MIT)를 바탕으로 수정했고 강조색은 Modelflare의 형광 연두색 `#d7ff00`입니다. `ui/design/README.md`에 디자인 시스템을 설명합니다.
 
 ### 현지화와 릴리스 검사
@@ -220,7 +220,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 - **백그라운드 작업:** 대화 에이전트가 `task_start`로 전용 DSH 세션 `task-<id>`와 작업 공간 폴더 `tasks/<name>-<id6>/`를 만들고 할 일을 한 줄로 알립니다. 결과는 요청한 대화로 돌아오며 WeChat 인용·Feishu 답장으로 이어갑니다. 사용자 확인은 대화당 한 번에 한 질문입니다. 앱 재시작 후 계속하되 외부 동작을 반복하기 전에 확인합니다. `/tasks`로 작업·규칙을 나열하고 `/stop <number>`로 멈춥니다.
 - **규칙:** `rule_create` 또는 봇 설정 › 먼저 보내는 메시지 › 규칙에서 만듭니다. 사용자 문구가 권한 부여이므로 즉시 실행 모드가 되어 매번 확인하고 중요한 내용만 보냅니다. 문구 수정 후에도 실행 모드입니다. ‘우선 관찰해 줘’ 또는 편집기의 관찰을 선택하면 읽기 전용으로 보내지 않고 ‘전송 예정’을 기록합니다. 3회 관찰 후 ‘내 확인 필요’에서 실행 전환 여부를 묻습니다. 매 실행은 새 세션이며 기록은 Markdown으로 내보냅니다.
 - **보이되 시끄럽지 않게:** 정보 패널의 작업 그룹에 작업·규칙을 표시하고 끝난 작업은 종료 항목으로 접습니다. 출처, 최근 진행, 예산, 폴더, 실행 단계를 볼 수 있습니다. 기다리는 항목은 사이드바 ‘내 확인 필요’에 모읍니다. 결과·결정 요청·실패만 푸시합니다. 방해 금지(기본 22:00~08:00), 일일 한도(WeChat 3개, Feishu 5개), 묶음 알림은 봇 설정 › 먼저 보내는 메시지에 있습니다.
-- **예산:** 기본 작업당 $1, 규칙 실행당 $0.10, 규칙별 월 $3이며 Modelflare 참고 가격으로 추정합니다. 한도에 도달하면 멈추고 묻습니다. 작업 상세·규칙 편집기에서 바꿉니다. 봇 예산 키의 잔액이 20% 아래면 백그라운드를 중지해 대화용으로 남깁니다.
+- **예산:** 기본 작업당 $1, 규칙 실행당 $0.10, 규칙별 월 $3이며 Okinto 참고 가격으로 추정합니다. 한도에 도달하면 멈추고 묻습니다. 작업 상세·규칙 편집기에서 바꿉니다. 봇 예산 키의 잔액이 20% 아래면 백그라운드를 중지해 대화용으로 남깁니다.
 - **일시 중지:** 봇 설정 › 먼저 보내는 메시지 › 백그라운드 작업 일시 중지 또는 봇에게 요청하면 작업·규칙·푸시를 보류하고 대화는 계속합니다.
 - **보존:** 작업·기록은 30일 보관하며 30일 미사용 작업은 보관 처리합니다. 30일 미사용 폴더는 DSH 세션 파일(`dsh/<bot>/sessions/`)과 함께 삭제합니다. SDK에 삭제 기능이 없어 앱이 직접 지우며 프로세스에 열린 세션은 교체 후 삭제합니다. 별도 질문·알림은 없습니다. 27일째 삭제 예정일을 설정해 작업 상세에 표시하며 보관을 누르면 유지합니다. 예정일 설정 후 최소 3일 전에 삭제하지 않습니다. 상세에서 폴더 크기를 보고 폴더와 함께 작업을 삭제할 수도 있습니다.
 
@@ -269,7 +269,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 
 ```bash
 npm run typecheck
-npm test            # 단위+오프라인 종단 간(Feishu/iLink/Modelflare 모의, 스트리밍·중지 포함)+게이트웨이 통합(컴파일된 magpie 필요)
+npm test            # 단위+오프라인 종단 간(Feishu/iLink/Okinto 모의, 스트리밍·중지 포함)+게이트웨이 통합(컴파일된 magpie 필요)
 npm run docs:check  # README 검사: 자료 존재·크기, zh/en 구조, 상대 링크·앵커, 금지 문구, 대체 텍스트
 ```
 

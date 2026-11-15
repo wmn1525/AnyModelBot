@@ -8,6 +8,7 @@ import { AppMark } from "./app-mark.js";
 import { ATTENTION, appLabel, appsStore, loadApps, openConnect, openCustom, repairActions, stateText, stateTone } from "../lib/apps.js";
 import { useStore } from "../lib/store.js";
 import { t, useLang } from "../lib/i18n.js";
+import { appExample, fillChat } from "../lib/usage.js";
 
 /** 一次最多直接列出这么多工具，其余的展开「显示全部」再看（上百个工具的服务器不把设置页撑得没法滚） */
 const TOOLS_SHOWN = 40;
@@ -45,7 +46,7 @@ function ToolRows({ view, apps, onChange }) {
   </ul>`;
 }
 
-export function BotApps({ bot, apps, onPut, onOpenApps, onOpenSettings }) {
+export function BotApps({ bot, apps, readonly = false, onPut, onOpenApps, onOpenSettings }) {
   const lang = useLang();
   const s = useStore(appsStore);
   const [open, setOpen] = useState("");
@@ -85,6 +86,11 @@ export function BotApps({ bot, apps, onPut, onOpenApps, onOpenSettings }) {
           <div class="who">
             <label class="sheet-check apps-bot-name">${apps.mode === "selected" && html`<input type="checkbox" checked=${on} disabled=${!can} onChange=${(e) => pick(v.key, e.target.checked)} />`}<span class="name">${name}</span></label>
             <div class="sub"><span class=${`apps-state ${stateTone(v.state)}`}>${stateText(v.state, tools)}</span>${!can ? ` · ${t("apps.bot.notShared")}` : ""}</div>
+            ${on && (() => {
+              // 「试试这样说」：应用连上就能用，不经过重启，所以这里不另标生效状态（连接状态就在上一行）
+              const example = appExample(v, name, readonly);
+              return html`<button type="button" class="text skill-try" title=${t("chat.use.fillTitle")} onClick=${() => fillChat(bot.id, example)}>${t("chat.use.try", { example })}</button>`;
+            })()}
           </div>
           <div class="ctl">
             ${actions.map((a) => html`<${Button} key=${a.id} size="sm" onClick=${() => fix(v, a.id)}>${a.label}<//>`)}

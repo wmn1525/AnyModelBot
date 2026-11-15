@@ -29,9 +29,9 @@ export default {
     "viaToken": "Token",
     "viaOAuth": "Autorizado",
     "needsReauth": "A autorização expirou. Autorize de novo",
-    "dataMoved": "Contas de dados como Notion e Feishu foram movidas para Conectar apps.",
-    "dataMovedKeys": "contas de dados notion feishu conectar apps mcp data accounts connect",
-    "openApps": "Abrir Conectar apps",
+    "dataMoved": "Contas de dados como Notion e Feishu foram movidas para Apps e habilidades.",
+    "dataMovedKeys": "contas de dados notion feishu conectar apps mcp data accounts connect apps e habilidades",
+    "openApps": "Abrir Apps e habilidades",
     "reauthorize": "Autorizar de novo",
     "rename": "Renomear",
     "remove": "Remover",
@@ -195,10 +195,10 @@ export default {
     "reply": "Claro, e o tratamento de erros também fica mais claro. Com {b} ativado, a linha abaixo quebra:"
   },
   "logout": {
-    "title": "Sair do OKINTO?",
+    "title": "Sair do Okinto?",
     "body": "Isso revoga o acesso deste computador. Seus bots e conversas continuam aqui e retomam quando você entrar de novo.",
     "confirm": "Sair",
-    "notRevoked": "O servidor não confirmou a revogação. Você saiu aqui — pode revogar o acesso de novo em Apps autorizados, no site do OKINTO"
+    "notRevoked": "O servidor não confirmou a revogação. Você saiu aqui — pode revogar o acesso de novo em Apps autorizados, no site do Okinto"
   },
   "notifyDenied": "As notificações não estão permitidas. Permita-as para esta página nas configurações do sistema ou nas configurações do site no navegador",
   "rows": {
@@ -298,7 +298,7 @@ export default {
       "button": "Redefinir"
     },
     "account": {
-      "name": "Conta OKINTO",
+      "name": "Conta Okinto",
       "signedIn": "Sessão iniciada",
       "enterprise": "O uso de {name} é cobrado na carteira da sua organização",
       "signedOut": "Entre para ver o uso, as notificações e seu link de convite, e para definir orçamentos para cada bot",
@@ -313,9 +313,9 @@ export default {
       "subExternal": "Endpoint definido pela variável de ambiente AMB_MAGPIE_BASE_URL (desenvolvimento/testes)",
       "playground": "Use sua sessão do Playground do New API; as solicitações são cobradas no grupo selecionado",
       "nameSignedIn": "Conexão da conta",
-      "subSignedIn": "Usando sua conta OKINTO",
-      "sub": "Usando uma chave de API do site OKINTO",
-      "keys": "Modelos da conexão com chave de API da OKINTO",
+      "subSignedIn": "Usando sua conta Okinto",
+      "sub": "Usando uma chave de API do site Okinto",
+      "keys": "Modelos da conexão com chave de API da Okinto",
       "rekey": "Substituir chave de API",
       "disconnect": "Desconectar"
     },
@@ -349,7 +349,7 @@ export default {
     "notifications": {
       "name": "Notificações",
       "unread": "{count} não lidas",
-      "sub": "Notificações e comunicados do OKINTO",
+      "sub": "Notificações e comunicados do Okinto",
       "keys": "notificação notificacao comunicado aviso mensagem notification announcement message"
     },
     "invite": {
@@ -361,7 +361,7 @@ export default {
     "line": {
       "name": "Domínio da API",
       "sub": "Escolha um domínio ou compare os tempos de resposta. As alterações valem para novas requisições",
-      "keys": "domínio dominio velocidade latência latencia rede rota domain speed latency modelflare origin cf network route"
+      "keys": "domínio dominio velocidade latência latencia rede rota domain speed latency Okinto origin cf network route"
     },
     "defaultModel": {
       "name": "Modelo padrão",
@@ -401,7 +401,7 @@ export default {
       }
     },
     "console": {
-      "name": "Console do OKINTO",
+      "name": "Console do Okinto",
       "sub": "Cobrança e faturas",
       "keys": "console painel cobrança cobranca fatura dashboard billing invoice"
     },
@@ -428,7 +428,7 @@ export default {
     },
     "accountStorage": {
       "name": "Credenciais da conta",
-      "sub": "As credenciais de login do OKINTO ficam armazenadas apenas na pasta de dados, que só o seu usuário do sistema pode ler. A interface só vê o nome da sua conta",
+      "sub": "As credenciais de login do Okinto ficam armazenadas apenas na pasta de dados, que só o seu usuário do sistema pode ler. A interface só vê o nome da sua conta",
       "keys": "segurança seguranca login credenciais security sign in credentials"
     },
     "token": {
@@ -511,11 +511,11 @@ export default {
     }
   },
   "rekey": {
-    "title": "Alterar chave da OKINTO New API",
+    "title": "Alterar chave da Okinto New API",
     "submit": "Verificar e salvar"
   },
   "disconnect": {
-    "title": "Desconectar a OKINTO New API?",
+    "title": "Desconectar a Okinto New API?",
     "body": "Isso remove a chave de API deste computador. Seus bots e conversas são mantidos para quando você se conectar novamente.",
     "confirm": "Desconectar"
   }

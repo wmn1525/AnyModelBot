@@ -12,6 +12,10 @@ anymodel bot 自身以 MIT 许可发布（见 LICENSE）。以下组件随本程
 
 https://github.com/tailwindlabs/heroicons/releases/tag/v2.2.0
 
+## Lucide (panel-left / panel-right)
+
+左右面板入口的 `panel-left` / `panel-right` 使用 Lucide 1.73.0，保留上一版圆角方框加竖线的图形。源码与出处分别见 `ui/icons/lucide.js`、`ui/icons/lucide-source.json`；ISC / MIT 许可全文见 [ui/icons/lucide-LICENSE](./ui/icons/lucide-LICENSE)。
+
 ## magpie（内置模型网关，以二进制形式随附；界面样式部分改编自它）
 
 来源：https://github.com/yetone/magpie （vendor/magpie 子模块，v0.1.1720）

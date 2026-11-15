@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
-import { html, Button, Icon, Notice, Switch, autoGrow } from "../components/ui.js";
+import { html, Button, Icon, Notice, Seg, Switch, autoGrow } from "../components/ui.js";
 import { BotAvatar, AvatarPicker } from "../components/avatar.js";
 import { ModelButton } from "./bot-settings.js";
 import { shortModel, sameModel, strategyOf, useModelInfoRaw } from "../components/model-picker.js";
 import { api } from "../lib/api.js";
 import { failed, toast, useStore } from "../lib/store.js";
 import { getLang, t, useLang } from "../lib/i18n.js";
-import { TEMPLATE_META, TEMPLATE_ALIASES, templateRequestId, templateOf, availableName, recommendTemplate, capabilityState } from "../lib/templates.js";
+import { TEMPLATE_META, TEMPLATE_ALIASES, templateRequestId, templateOf, availableName, recommendTemplate, recommendationText, inTrial, capabilityState } from "../lib/templates.js";
 import { templateFlow, blankBotDraft, clearTemplatePreview } from "../lib/template-flow.js";
 import { appsStore, loadApps, builtinName } from "../lib/apps.js";
 import { fillComposer, guide, isActive } from "../lib/guide.js";
@@ -23,15 +23,15 @@ export function TemplateGallery({ bots }) {
   return html`<section class="discover templates" ref=${root} data-screen="templates">
     <header class="discover-head">${flow.entry && html`<button type="button" class="text" onClick=${() => { location.hash = flow.entry === "discover" ? "/discover" : "/new"; }}>${t(flow.entry === "discover" ? "templates.backDiscover" : "templates.backNew")}</button>`}
       <h1 class="t-page">${t("templates.title")}</h1><p>${t("templates.lead")}</p></header>
-    <div class="template-categories" role="group" aria-label=${t("templates.category")}>
-      ${categories.map((c) => html`<button type="button" class=${`btn sm${flow.category === c ? " primary" : " ghost"}`} aria-pressed=${flow.category === c} onClick=${() => templateFlow.set((s) => ({ ...s, category: c, scroll: 0 }))}>${t(`templates.categories.${c}`)}</button>`)}</div>
+    <div class="template-categories">
+      <${Seg} label=${t("templates.category")} value=${flow.category} onChange=${(c) => templateFlow.set((s) => ({ ...s, category: c, scroll: 0 }))} options=${categories.map((c) => [c, t(`templates.categories.${c}`)])} /></div>
     <div class="template-grid">${items.map((item) => html`<article class="template-card" key=${item.id}>
-      <button type="button" class="template-card-main" onClick=${() => preview(item.id)} aria-label=${t("templates.addLabel", { name: item.name, category: t(`templates.categories.${item.category}`) })}>
-        <span class="template-card-heading"><${BotAvatar} char=${item.avatar} size=${48} /><span><b>${item.name}</b><small>${t(`templates.categories.${item.category}`)}${bots.some((b) => (TEMPLATE_ALIASES[b.templateId] || b.templateId) === item.id) ? ` · ${t("templates.addedBefore")}` : ""}</small></span></span>
-        <span class="template-description">${item.desc}</span><span class="template-sample">${t("templates.try", { prompt: item.sample })}</span>
-        <span class="template-meta">${item.appIds.length ? html`<span title=${item.appIds.map((id) => appName(apps, id, lang)).join(", ")}>${t("templates.worksWith", { apps: item.appIds.map((id) => appName(apps, id, lang)).join(", ") })}</span>` : null}
-          ${item.rule && html`<span>${t("templates.includesRule")}</span>`}</span></button>
-      <button type="button" class="btn ghost sm template-add" onClick=${() => preview(item.id)} aria-label=${t("templates.addLabel", { name: item.name, category: t(`templates.categories.${item.category}`) })}><${Icon} name="plus" size="sm" />${t("templates.add")}</button>
+      <button type="button" class="template-card-open" onClick=${() => preview(item.id)} aria-label=${t("templates.addLabel", { name: item.name, category: t(`templates.categories.${item.category}`) })}></button>
+      <div class="template-card-heading"><${BotAvatar} char=${item.avatar} size=${48} /><span class="template-card-name"><b>${item.name}</b><small>${t(`templates.categories.${item.category}`)}${bots.some((b) => (TEMPLATE_ALIASES[b.templateId] || b.templateId) === item.id) ? ` · ${t("templates.addedBefore")}` : ""}</small></span>
+        <button type="button" class="btn sm template-add" onClick=${() => preview(item.id)} aria-label=${t("templates.addLabel", { name: item.name, category: t(`templates.categories.${item.category}`) })}><${Icon} name="plus" size="sm" />${t("templates.add")}</button></div>
+      <p class="template-description">${item.desc}</p><p class="template-sample"><span>${t("templates.try", { prompt: item.sample })}</span></p>
+      ${(item.appIds.length || item.rule) ? html`<div class="template-meta" onClick=${() => preview(item.id)}>${item.appIds.length ? html`<span title=${t("templates.worksWith", { apps: item.appIds.map((id) => appName(apps, id, lang)).join(", ") })}>${t("templates.worksWith", { apps: item.appIds.map((id) => appName(apps, id, lang)).join(", ") })}</span>` : null}
+        ${item.rule && html`<span title=${t("templates.includesRule")}>${t("templates.includesRule")}</span>`}</div>` : null}
     </article>`)}</div></section>`;
 }
 export function TemplatePreview({ id, bots, models, modelsError, reloadModels, defaultModel, account, onCreated }) {
@@ -55,7 +55,7 @@ export function TemplatePreview({ id, bots, models, modelsError, reloadModels, d
   useEffect(() => { loadApps(); }, []);
   useLayoutEffect(() => { templateFlow.set((s) => ({ ...s, preview: draft })); }, [draft]);
   useEffect(() => autoGrow(prompt.current, 1000), [draft?.persona]);
-  const rec = useMemo(() => item ? !g.loaded ? { model: "", reason: "unavailable" } : recommendTemplate(item, models, info, strategyOf(account), defaultModel, isActive(g)) : null, [id, models, info, account?.keyQuality?.strategy, defaultModel, g.loaded, g.hidden, g.seen]);
+  const rec = useMemo(() => item ? !g.loaded ? { model: "", reason: "unavailable" } : recommendTemplate(item, models, info, strategyOf(account), defaultModel, inTrial(account, isActive(g))) : null, [id, models, info, account?.keyQuality?.strategy, account?.state, account?.billedToEnterprise, defaultModel, g.loaded, g.hidden, g.seen]);
   useEffect(() => { if (rec && !draft?.modelTouched && !draft?.busy) setDraft((d) => ({ ...d, model: rec.model })); }, [rec?.model, rec?.reason]);
   const patch = (value) => setDraft((d) => { const next = { ...d, ...value }; templateFlow.set((s) => ({ ...s, preview: next })); return next; });
   if (!item || !draft) return html`<section class="empty-state"><p>${t("templates.errors.missing")}</p><button class="btn" onClick=${back}>${t("templates.back")}</button></section>`;
@@ -80,7 +80,8 @@ export function TemplatePreview({ id, bots, models, modelsError, reloadModels, d
   };
   const connectedApp = (id) => apps.apps.some((a) => a.key === id && a.state === "connected");
   const appStatus = (id) => !apps.loaded || apps.error ? t("templates.appUnknown") : t(connectedApp(id) ? "apps.state.connected" : "templates.notConnected");
-  const level = t(`templates.levels.${item.tier === 0 ? "low" : item.tier === 2 ? "medium" : "high"}`);
+  // 手动选过模型后，推荐理由保持打开时的那一句
+  const why = recommendationText(item, draft.recShown || rec);
   return html`<section class="template-preview" data-screen="template-preview">
     <header class="chat-head"><span>${t("templates.previewTitle")}</span></header>
     <form class="template-preview-body" onSubmit=${added}>
@@ -95,11 +96,11 @@ export function TemplatePreview({ id, bots, models, modelsError, reloadModels, d
             <textarea class="field" rows="10" ref=${prompt} value=${draft.persona} onInput=${(e) => patch({ persona: e.target.value })} /></label></div>
         <div class="template-details">
           <section><h2 class="list-head">${t("botSettings.model.head")}</h2>${list(html`<div class="row"><div class="who"><div class="name">${t("botSettings.model.default")}</div>
-            <div class="sub">${t(`templates.model.${rec?.reason || "unavailable"}`, { level })}</div></div>
+            <div class="sub">${why.reason}</div></div>
             <${ModelButton} value=${draft.model} models=${models} modelsError=${modelsError} reloadModels=${reloadModels}
               resetLabel=${t(defaultModel ? "botSettings.model.followGlobalWith" : "botSettings.model.followGlobal", { model: shortModel(defaultModel || "") })}
-              onChange=${(model) => patch({ model, modelTouched: true })} tiers=${{ account, onAccount: () => {}, effective: defaultModel, draftOnly: true }} /></div>`)}
-            ${rec?.reason !== "recommended" && html`<p class="hint">${t("templates.usualTier", { level })}</p>`}
+              onChange=${(model) => patch({ model, modelTouched: true, recShown: draft.recShown || rec })} tiers=${{ account, onAccount: () => {}, effective: defaultModel, draftOnly: true }} /></div>`)}
+            ${why.usual && html`<p class="hint">${why.usual}</p>`}
             ${capability !== "ok" && html`<${Notice} tone="amber">${t(`templates.capability.${capability}`)}<//>`}
             ${modelsError && html`<${Notice} tone="red" action=${html`<button type="button" class="btn" onClick=${reloadModels}>${t("common.retry")}</button>`}>${t("firstUse.modelFailed")}<//>`}</section>
           <section><h2 class="list-head">${t("templates.capabilities")}</h2>${list(html`<div class="row"><div class="who"><div class="name">${t("templates.memory")}</div><div class="sub">${item.memoryHint}</div></div>

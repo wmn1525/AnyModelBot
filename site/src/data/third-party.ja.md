@@ -12,6 +12,10 @@ anymodel bot 自体は MIT ライセンスで公開されています（LICENSE 
 
 https://github.com/tailwindlabs/heroicons/releases/tag/v2.2.0
 
+## Lucide (panel-left / panel-right)
+
+左右パネルの操作には Lucide 1.73.0 の `panel-left` / `panel-right` を使用し、以前の角丸の枠と縦線の図形を維持しています。ソースと出典は `ui/icons/lucide.js`、`ui/icons/lucide-source.json`、ISC / MIT ライセンス全文は [ui/icons/lucide-LICENSE](./ui/icons/lucide-LICENSE) にあります。
+
 ## magpie（内蔵モデルゲートウェイのバイナリ配布、一部の画面スタイルを改変利用）
 
 出典：<https://github.com/yetone/magpie>（vendor/magpie サブモジュール、v0.1.1720）

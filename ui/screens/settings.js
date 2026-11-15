@@ -416,7 +416,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
         ctl: html`<button type="button" class="text" onClick=${() => api("/desktop/open-in-browser", { method: "POST", body: {} }).catch(failed)}>${t("common.open")}</button>` },
       { tab: "general", group: "account", id: "account-session", name: signedIn ? t("settings.rows.account.name") : t("settings.rows.connection.name"),
         sub: signedIn ? acctName : t("firstUse.backConfigBody"), keys: `${t("settings.rows.account.keys")} ${t(signedIn ? "firstUse.logout" : "firstUse.backConfig")}`,
-        ctl: html`<button type="button" class="text" disabled=${leaving} onClick=${leaveAccount}>${t(signedIn ? "firstUse.logout" : "firstUse.backConfig")}</button>` },
+        ctl: html`<button type="button" class=${`text${signedIn ? " danger" : ""}`} disabled=${leaving} onClick=${leaveAccount}>${t(signedIn ? "firstUse.logout" : "firstUse.backConfig")}</button>` },
 
       { tab: "appearance", searchOnly: true, id: "theme", name: t("settings.rows.theme.name"), sub: t("settings.rows.theme.sub"), keys: t("settings.rows.theme.keys"),
         ctl: html`<${Seg} label=${t("settings.rows.theme.name")} value=${mode} onChange=${(m) => { setThemeMode(m); saved(); }} options=${THEMES()} />` },
@@ -552,7 +552,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       // 故障排查页是单独的面板（troubleshoot.js），这一行只给搜索用：搜"日志""测试模型"时能找到入口
       { tab: "troubleshoot", id: "troubleshoot", name: t("settings.tabs.troubleshoot"), sub: t("settings.rows.troubleshoot.sub"), keys: t("settings.rows.troubleshoot.keys"),
         ctl: html`<button type="button" class="text" onClick=${() => { setQ(""); onTab?.("troubleshoot"); }}>${t("common.open")}</button>` },
-      { tab: "about", id: "links", name: "OKINTO New API", sub: t("settings.rows.links.sub"),
+      { tab: "about", id: "links", name: "Okinto New API", sub: t("settings.rows.links.sub"),
         ctl: html`<a class="text" href=${MF_CONSOLE} target="_blank" rel="noopener noreferrer">api.okinto.com ↗</a><a class="text" href=${MF_DOCS_LINK} target="_blank" rel="noopener noreferrer">${t("settings.rows.links.docs")}</a>` },
     ].filter(Boolean);
   }, [s, mf, mode, p, models, modelsError, cu, status, update, bots, acct, invite, unread, g, media, lang, langPref, conn.accounts, conn.channelAccounts, effort, official, leaving, balanceRefreshing]);

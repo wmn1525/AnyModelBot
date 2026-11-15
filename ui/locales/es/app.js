@@ -20,7 +20,7 @@ export default {
     "botSettings": "Ajustes de “{name}”",
     "botSettingsKeys": "ajustes del bot configurar configuración bot settings configure",
     "modelflare": "Ajustes de modelos",
-    "modelflareKeys": "modelos clave oficial api models modelflare official key api",
+    "modelflareKeys": "modelos clave oficial api models Okinto official key api",
     "appearance": "Ajustes de apariencia",
     "appearanceKeys": "apariencia fuente texto tamaño movimiento animación vidrio desenfoque ancho appearance font text size motion animation glass blur width",
     "themeSystem": "Tema: sistema",
@@ -33,7 +33,7 @@ export default {
     "langKeys": "idioma lengua inglés chino japonés coreano ruso español portugués language english chinese japanese korean russian spanish portuguese 中文 English 日本語 한국어 Русский Español Português",
     "switchBot": "Cambiar a “{name}”"
   },
-  "lowBalance": "Tu saldo de OKINTO bajó a ${amount}",
+  "lowBalance": "Tu saldo de Okinto bajó a ${amount}",
   "serviceDown": "No se puede conectar con el servicio local: {error}",
   "resizeSide": "Cambiar el tamaño de la barra lateral",
   "resizePanel": "Cambiar el tamaño del panel derecho",

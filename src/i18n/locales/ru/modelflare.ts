@@ -4,10 +4,10 @@ export default {
   timeout: "время истекло",
   invalid_key: "Ключ недействителен или отозван",
   forbidden: "Этому ключу запрещён доступ к модели или группе",
-  unavailable: "OKINTO New API временно недоступен (HTTP {status}){retry}",
+  unavailable: "Okinto New API временно недоступен (HTTP {status}){retry}",
   retry_after: "; повторите через {s} с",
-  bad_models: "Не удалось прочитать список моделей, возвращённый OKINTO New API",
+  bad_models: "Не удалось прочитать список моделей, возвращённый Okinto New API",
 
   "balance_failed": "Не удалось получить баланс (HTTP {status})",
-  "bad_balance": "Не удалось прочитать ответ о балансе OKINTO New API"
+  "bad_balance": "Не удалось прочитать ответ о балансе Okinto New API"
 } satisfies TranslatedCatalog["modelflare"];

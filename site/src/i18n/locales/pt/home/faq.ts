@@ -5,8 +5,8 @@ export default {
   "more": "Não encontrou? Consulte a documentação",
   "items": [
     {
-      "q": "Como importo minhas próprias habilidades?",
-      "a": "Abra as configurações do bot → Habilidades → Importar ZIP, veja a prévia e adicione. Cada ZIP contém um SKILL.md e pode ter até 20 MB; scripts e referências são preservados. A importação não acessa o GitHub. Os requisitos de software e de rede dependem da habilidade. Para substituir uma habilidade, importe de novo com o mesmo nome e confirme."
+      "q": "Como adiciono habilidades a um bot?",
+      "a": "São três jeitos: copie uma instrução de instalação da biblioteca em Apps e habilidades ou envie ao bot o link do GitHub de uma habilidade e confirme o cartão; importe um ZIP com um SKILL.md (até 20 MB) em configurações do bot → Habilidades → Importar ZIP; ou, quando um bot faz algo do jeito certo, diga “salvar como habilidade” ou envie /skill e confirme o rascunho para guardar em Minhas habilidades, onde dá para ativar em outros bots, exportar como ZIP ou agendar. Segredos nunca entram numa habilidade; os programas e a conexão necessários dependem de cada habilidade."
     },
     {
       "q": "Como encontro uma conversa antiga?",
@@ -38,7 +38,7 @@ export default {
     },
     {
       "q": "Os bots podem trabalhar com meus apps, como Notion ou GitHub?",
-      "a": "Sim, depois que você os conectar. Use Conectar apps no menu do avatar: GitHub, Notion, Linear, Atlassian e Canva já vêm integrados, e você pode adicionar conectores MCP personalizados. Dá para conectar várias contas do mesmo app e perguntar a qualquer bot sobre elas pelo número ou pelo apelido. Ferramentas somente leitura rodam na hora, gravações pedem sua confirmação antes, e exclusões ou qualquer coisa enviada a outras pessoas sempre pedem confirmação. Bots somente leitura só podem ler."
+      "a": "Sim, depois que você os conectar. Use Apps e habilidades no menu do avatar: GitHub, Notion, Linear, Atlassian e Canva já vêm integrados, e você pode adicionar conectores MCP personalizados. Dá para conectar várias contas do mesmo app e perguntar a qualquer bot sobre elas pelo número ou pelo apelido. Ferramentas somente leitura rodam na hora, gravações pedem sua confirmação antes, e exclusões ou qualquer coisa enviada a outras pessoas sempre pedem confirmação. Bots somente leitura só podem ler."
     },
     {
       "q": "E se eu não tiver uma conta OKINTO?",

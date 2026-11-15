@@ -302,6 +302,18 @@ describe("工具分类", () => {
   });
 });
 
+describe("过程区按应用的 key 显示名字（keyOf）", () => {
+  it("内置应用认 id 和中英文名，自定义连接器认 key 和名称（名称可以只写一部分）；认不出时没有", async () => {
+    const f = await newFake("header");
+    const { apps } = setup();
+    const saved = await apps.saveCustom({ name: "团队文档库", transport: "http", url: f.url, auth: "headers", headers: [["x-key", "good"]] }, { redirectUri: REDIRECT });
+    const key = saved.app.key;
+    expect(["notion", "Notion", "飞书", "Feishu", "tencent-docs", "Tencent Docs"].map((x) => apps.keyOf(x))).toEqual(["notion", "notion", "feishu", "feishu", "tencent-docs", "tencent-docs"]);
+    expect([apps.keyOf(key), apps.keyOf("团队文档库"), apps.keyOf("文档库")]).toEqual([key, key, key]);
+    expect([apps.keyOf("custom:nope"), apps.keyOf("没有这个"), apps.keyOf(" ")]).toEqual([undefined, undefined, undefined]);
+  });
+});
+
 describe("自定义连接器", () => {
   it("请求头：密钥不对也保存，但保持关闭、状态是密钥被拒；改对之后已连接、开启，工具分好类", async () => {
     const f = await newFake("header");

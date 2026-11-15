@@ -1,7 +1,7 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
   external_mode:
-    "При использовании внешнего адреса модели подключения OKINTO New API не управляются",
+    "При использовании внешнего адреса модели подключения Okinto New API не управляются",
   bot_not_found: "Бот не найден",
   magpie_failed: "Не удалось запустить magpie: {message}",
   default_bot_name: "Мой помощник",

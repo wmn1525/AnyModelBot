@@ -56,9 +56,15 @@ export function chatRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
           const messages = app.store.listGroupMessages(groupId).filter((x) => !(turn && x.conversationId === turn.conversationId && x.id > turn.afterMessageId));
           return send(res, 200, {
             group: publicGroup(group),
+            models: Object.fromEntries(app.store.groupConversations(groupId).map((c) => [c.botId, app.store.getConversation(c.id)?.model || ""])),
             messages: messages.map(publicMessage),
             live: turn ? { botId: turn.botId, conversationId: turn.conversationId, ...turn.snapshot() } : null,
             pending: app.store.groupConversations(groupId).flatMap((c) => app.store.listApprovals({ status: "pending", conversationId: c.id, limit: 50 }).map((r) => publicApproval(r, app.store))),
+            // 成员出的技能安装卡片：按时间插进群的时间线
+            installs: [
+              ...app.skillInstalls.list(app.store.groupConversations(groupId).map((c) => c.id)).map((c) => ({ id: c.id, botId: c.botId, at: c.createdAt })),
+              ...app.skillDrafts.list(app.store.groupConversations(groupId).map((c) => c.id)).map((c) => ({ id: c.id, botId: c.botId, at: c.createdAt, kind: "skill_draft" })),
+            ],
             canOpen: !!app.desktop?.openPath,
           });
         }
@@ -87,6 +93,20 @@ export function chatRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
         if (!text) throw new HttpError(400, t("web.emptyText"));
         if (!group.members.some((id) => app.store.getBot(id))) throw new HttpError(400, t("web.groupTooFew"));
         groups.send(groupId, text);
+        return send(res, 200, { ok: true });
+      }
+      if (seg.length === 3 && seg[2] === "retry" && m === "POST") {
+        const body = await readJson(req);
+        const result = groups.retry(groupId, Number(body.messageId), body.allowRepeatedActions === true);
+        if (result !== "started") return send(res, result === "missing" ? 404 : 409, { error: result, code: result });
+        return send(res, 200, { ok: true });
+      }
+      if (seg.length === 4 && seg[2] === "model" && m === "PUT") {
+        const botId = decodeURIComponent(seg[3]);
+        if (!group.members.includes(botId)) throw new HttpError(404, t("web.botNotFound"));
+        const body = await readJson(req);
+        const conversation = app.store.ensureConversation(botId, "web", `group:${groupId}`, group.name, "group");
+        app.store.setConversationModel(conversation.id, String(body.model || ""));
         return send(res, 200, { ok: true });
       }
       // 接着这个群：先发正在答的那一轮，之后转发事件（turn、同 chat/stream 的事件、turnEnd），都答完了发 idle 结束

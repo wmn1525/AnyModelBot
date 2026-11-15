@@ -5,8 +5,8 @@ export default {
   "more": "Didn’t find it? Dig into the docs",
   "items": [
     {
-      "q": "How do I import my own skills?",
-      "a": "Go to the bot's settings → Skills → Import ZIP, preview it, then add it. Each ZIP contains one SKILL.md and can be up to 20 MB; scripts and references are preserved. Importing does not contact GitHub. Software and network requirements depend on the skill. Import the same name again to confirm replacement."
+      "q": "How do I add skills to a bot?",
+      "a": "Three ways: copy an install prompt from the skill library in Apps & skills, or send the bot a skill's GitHub link, then confirm the card; import a ZIP containing a SKILL.md (up to 20 MB) under the bot's settings → Skills → Import ZIP; or, once a bot gets something right, say \"save as skill\" or send /skill and confirm the draft card to keep it in My skills, where you can turn it on for other bots, export it as a ZIP or schedule it. Secrets are never written into a skill; the software and internet access a skill needs depend on the skill."
     },
     {
       "q": "How do I find an older conversation?",
@@ -38,7 +38,7 @@ export default {
     },
     {
       "q": "Can bots work with my apps, such as Notion or GitHub?",
-      "a": "Yes, once you connect them. Use Connect apps in the avatar menu: GitHub, Notion, Linear, Atlassian and Canva are built in, and you can add custom MCP connectors. You can connect several accounts of the same app and ask any bot about them by number or alias. Read-only tools run right away, writes ask you first, and deletes or anything sent to other people always ask. Read-only bots can only read."
+      "a": "Yes, once you connect them. Use Apps & skills in the avatar menu: GitHub, Notion, Linear, Atlassian and Canva are built in, and you can add custom MCP connectors. You can connect several accounts of the same app and ask any bot about them by number or alias. Read-only tools run right away, writes ask you first, and deletes or anything sent to other people always ask. Read-only bots can only read."
     },
     {
       "q": "I don't have a okinto account.",

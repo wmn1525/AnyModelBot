@@ -30,7 +30,7 @@
   },
   "model": {
     "recommended": "Inteligencia recomendada: {level}",
-    "starter": "Al empezar se usa el modelo global. Puedes elegir otro.",
+    "downgraded": "Con el crédito de prueba, este bot empieza con inteligencia {actualTier}. Esta plantilla suele funcionar mejor con inteligencia {originalTier}.",
     "unranked": "Faltan datos para elegir un nivel; se usa el modelo global.",
     "incompatible": "No hay un modelo compatible en el nivel recomendado; se usa el global.",
     "unavailable": "No hay recomendaciones disponibles. Reintenta o elige un modelo disponible."
@@ -67,10 +67,10 @@
   "keepEditing": "Seguir editando",
   "newEntry": "¿No sabes qué escribir? Empieza con una plantilla",
   "entryHint": "Roles con personalidad y ejemplos listos. Revísalos antes de añadirlos.",
-  "browse": "Explorar →",
+  "browse": "Explorar",
   "orTemplate": "O empieza con una plantilla",
   "discoverEntry": "También puedes empezar con una plantilla",
-  "seeAll": "Ver todas las plantillas →",
+  "seeAll": "Ver todas las plantillas",
   "errors": {
     "fields": "La solicitud incluye ajustes que la plantilla no puede cambiar.",
     "request": "Solicitud inválida. Vuelve a abrir la plantilla.",

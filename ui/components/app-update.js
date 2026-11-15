@@ -7,6 +7,12 @@ import { openWhatsNew } from "./whats-new.js";
 
 export const updateError = (error) => t(`updates.errors.${error?.data?.code || "failed"}`);
 
+/** 账户按钮和菜单使用同一句动作说明。 */
+export function updateActionLabel(update) {
+  if (["checking", "downloading", "installing"].includes(update?.phase)) return updateDescription(update);
+  return t(update?.phase === "ready" ? "updates.restartVersion" : update?.supported ? "updates.downloadVersion" : "updates.browserVersion", { version: update?.latest || "" });
+}
+
 export function updateDescription(update) {
   if (!update) return "";
   if (update.phase === "checking") return t("updates.checking");

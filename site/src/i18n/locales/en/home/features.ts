@@ -18,8 +18,8 @@ export default {
         "body": "Preview files and websites in the right panel without changing its width when switching tabs. Supports Markdown, text, PDFs, images and HTML, with download and external-opening options."
       },
       {
-        "title": "Import your own skills",
-        "body": "Import a ZIP in the bot's settings to add workflows like reports or document processing. You can turn each skill on, off, or replace it."
+        "title": "Skills: install them or save your own",
+        "body": "Pick a skill from the library, send a bot a GitHub link or import a ZIP. After a bot gets something right, say \"save as skill\" to reuse it next time or put it on a schedule."
       },
       {
         "title": "Search chat history",
