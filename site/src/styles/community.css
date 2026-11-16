@@ -83,6 +83,12 @@
   /* 首页 FAQ 左栏：去文档的链接下面，一句"也可以到社群里问问" + 胶囊 */
   .faq-wrap__community { display: grid; justify-items: start; gap: 10px; margin-top: 4px; }
   .faq-wrap__community > p { margin: 0; color: var(--text-2); font-size: var(--fs-sm); }
+  @media (max-width: 1023px) {
+    /* The new community block must not size the bot's auto-width grid column. */
+    .faq-wrap__aside { grid-template-areas: "bot bubble" "bot more" "community community"; }
+    .faq-wrap__community { grid-area: community; min-width: 0; max-width: 100%; }
+  }
+
 
   /* 收尾横幅开源那一行的末尾："加入社群" + 小圆钮。这一行的链接本来是正文色、带下划线、inline-flex（sections.css），圆钮不要这些 */
   .final__community { display: inline-flex; align-items: center; gap: 4px; }
