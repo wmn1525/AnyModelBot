@@ -19,7 +19,7 @@ export default {
   nameTitle: "{name}：{title}",
   tryLine: "触发方式：「{text}」",
   copy: "复制安装指令",
-  copied: "已复制",
+  copied: "已复制 ✓",
   copyLabel: "复制 {name} 的安装指令",
   openRepoLabel: "在 GitHub 打开 {name}",
   filterAuthorLabel: "只看 {name} 的技能",

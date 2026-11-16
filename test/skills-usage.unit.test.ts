@@ -127,7 +127,7 @@ describe("过程区：这一步用到了哪个技能、哪个应用", () => {
   });
 
   it("ActivityLog 给步骤标上 use：应用名换成 key；技能没用成时只在「装了还没生效」时说明，其余不显示", () => {
-    const log = new ActivityLog(undefined, "m", { chat: true, uses: { appKey: (s) => (s === "Notion" ? "notion" : undefined), skillPending: (n) => n === "new-skill" } });
+    const log = new ActivityLog(undefined, "m", { chat: true, uses: { appKey: (s) => (s === "Notion" ? "notion" : undefined), toolTitle: (app, tool) => (app === "notion" && tool === "fetch" ? "读取页面" : undefined), skillPending: (n) => n === "new-skill" } });
     const call = (id: string, name: string, args: string, isError = false, text = "ok") => {
       log.apply("tool/call", { callId: id, name, arguments: args });
       log.apply("tool/result", { message: { toolCallId: id, isError, content: [{ type: "text", text }] } });
@@ -137,7 +137,8 @@ describe("过程区：这一步用到了哪个技能、哪个应用", () => {
     call("3", "skill", '{"name":"new-skill"}', true, "Error: unknown skill");
     call("4", "skill", '{"name":"made-up"}', true, "Error: unknown skill");
     call("5", "bash", '{"command":"ls"}');
-    expect(log.steps.map((s) => s.use)).toEqual([{ kind: "skill", name: "xhs-title" }, { kind: "app", app: "notion", tool: "search", reason: "denied" }, { kind: "skill", name: "new-skill", reason: "loading" }, undefined, undefined]);
+    call("6", "app_call", '{"app":"Notion","tool":"fetch"}');
+    expect(log.steps.map((s) => s.use)).toEqual([{ kind: "skill", name: "xhs-title" }, { kind: "app", app: "notion", tool: "search", reason: "denied" }, { kind: "skill", name: "new-skill", reason: "loading" }, undefined, undefined, { kind: "app", app: "notion", tool: "fetch", toolTitle: "读取页面" }]);
   });
 
   it("不是网页聊天的活动记录（任务、规则）不标", () => {
@@ -146,21 +147,24 @@ describe("过程区：这一步用到了哪个技能、哪个应用", () => {
     expect(log.steps[0].use).toBeUndefined();
   });
 
-  it("「已使用」：按第一次出现的顺序，同一项只算一次，用成过一次就算用上；旧消息没有 use 时现认，没用成的技能不显示", () => {
+  it("「已使用」：按第一次出现的顺序；技能同一项只算一次，应用按「应用 + 工具」算；用成过一次就算用上；旧消息没有 use 时现认，没用成的技能不显示", () => {
     const step = (o: Partial<ActivityStep>): ActivityStep => ({ id: Math.random().toString(), kind: "tool", title: "x", status: "ok", at: 0, ...o });
     const steps = [
-      step({ title: "app_call", status: "error", use: { kind: "app", app: "notion", tool: "search", reason: "failed" } }),
+      step({ title: "app_call", status: "error", use: { kind: "app", app: "notion", tool: "search", toolTitle: "搜索页面", reason: "failed" } }),
       step({ title: "skill", use: { kind: "skill", name: "xhs-title" } }),
-      step({ title: "app_call", use: { kind: "app", app: "notion", tool: "search" } }),
+      step({ title: "app_call", use: { kind: "app", app: "notion", tool: "search", toolTitle: "搜索页面" } }),
+      step({ title: "app_call", use: { kind: "app", app: "notion", tool: "fetch" } }),
+      step({ title: "app_call", use: { kind: "app", app: "notion", tool: "fetch" } }),
       step({ title: "app_call", status: "error", use: { kind: "app", app: "linear", tool: "x", reason: "connection" } }),
       step({ title: "skill", input: '{\n  "name": "old"\n}' }),
       step({ title: "skill", status: "error", input: '{"name":"ghost"}' }),
       step({ kind: "model", title: "skill" }),
     ];
     expect(usedSummary(steps)).toEqual([
-      { kind: "app", name: "notion", status: "ok" },
+      { kind: "app", name: "notion", tool: "search", toolTitle: "搜索页面", status: "ok" },
       { kind: "skill", name: "xhs-title", status: "ok" },
-      { kind: "app", name: "linear", status: "error", reason: "connection" },
+      { kind: "app", name: "notion", tool: "fetch", status: "ok" },
+      { kind: "app", name: "linear", tool: "x", status: "error", reason: "connection" },
       { kind: "skill", name: "old", status: "ok" },
     ]);
   });
@@ -179,7 +183,7 @@ describe("过程区：这一步用到了哪个技能、哪个应用", () => {
       ]);
       store.addMessage(conv.id, "assistant", "没用工具", [{ id: "m2", kind: "model", title: "gpt", status: "ok", at: 5 }]);
       const [, used, plain] = store.listMessages(conv.id);
-      expect(used.used).toEqual([{ kind: "skill", name: "xhs-title", status: "ok" }, { kind: "app", name: "notion", status: "ok" }]);
+      expect(used.used).toEqual([{ kind: "skill", name: "xhs-title", status: "ok" }, { kind: "app", name: "notion", tool: "notion_search", status: "ok" }]);
       expect(used.steps).toBe(4);
       expect(plain.used).toBeUndefined();
       expect(store.getMessage(used.id)?.used).toEqual(used.used);
@@ -219,7 +223,7 @@ describe("界面：过程区的名字和往输入框里填一句话（ui/lib/usa
     expect(usage.insertPhrase("草稿 ", { selectionStart: 3, selectionEnd: 3 }, "示例")).toEqual({ text: "草稿 示例", start: 5, end: 5 });
   });
 
-  it("进行中按步骤上的 use 汇总，和服务端同一套规则；结束后一行写已使用 / 没能使用", () => {
+  it("进行中按步骤上的 use 汇总，和服务端同一套规则；结束后一行写已使用 / 没能使用", async () => {
     i18n.changeLang("zh-CN");
     const items = usage.usedFromSteps([
       { kind: "tool", status: "error", use: { kind: "app", app: "notion", reason: "denied" } },
@@ -228,6 +232,26 @@ describe("界面：过程区的名字和往输入框里填一句话（ui/lib/usa
       { kind: "tool", status: "error", use: { kind: "app", app: "linear", reason: "connection" } },
     ]);
     expect(items).toEqual([{ kind: "app", name: "notion", status: "running" }, { kind: "skill", name: "xhs-title", status: "ok" }, { kind: "app", name: "linear", status: "error", reason: "connection" }]);
+    // 同一应用的不同工具各一行，同一工具多次调用只算一行；有显示名称时带上
+    expect(usage.usedFromSteps([
+      { kind: "tool", status: "ok", use: { kind: "app", app: "notion", tool: "notion-search", toolTitle: "搜索页面" } },
+      { kind: "tool", status: "ok", use: { kind: "app", app: "notion", tool: "notion-search", toolTitle: "搜索页面" } },
+      { kind: "tool", status: "running", use: { kind: "app", app: "notion", tool: "notion-fetch" } },
+    ])).toEqual([{ kind: "app", name: "notion", tool: "notion-search", toolTitle: "搜索页面", status: "ok" }, { kind: "app", name: "notion", tool: "notion-fetch", status: "running" }]);
+    // 应用名来自应用目录（测试里没读到目录时就是 key 原文）
+    // @ts-expect-error Unbundled browser module.
+    const apps = await import("../ui/lib/apps.js");
+    apps.appsStore.set((v: any) => ({ ...v, loaded: true, catalog: [{ id: "notion", name: { zh: "Notion", en: "Notion" } }] }));
+    expect(usage.usedName({ kind: "app", name: "notion", tool: "notion-search", toolTitle: "搜索页面" })).toBe("Notion · 搜索页面");
+    expect(usage.usedName({ kind: "app", name: "notion", tool: "notion-fetch" })).toBe("Notion · notion-fetch");
+    expect(usage.usedName({ kind: "app", name: "notion" })).toBe("Notion");
+    expect(usage.usedLine({ kind: "app", name: "notion", status: "running" }, "Notion · 搜索页面")).toBe("正在使用 Notion · 搜索页面");
+    expect(usage.usedLine({ kind: "app", name: "notion", status: "error", reason: "connection" }, "Notion · 搜索页面")).toBe("没能使用 Notion · 搜索页面。请检查「Notion」的连接。");
+    expect(usage.usedSummaryText([{ status: "ok", label: "Notion · 搜索页面" }, { status: "ok", label: "Notion · 读取页面" }])).toBe("已使用：Notion · 搜索页面、Notion · 读取页面");
+    i18n.changeLang("en");
+    expect(usage.usedLine({ kind: "app", name: "notion", status: "running" }, "Notion · Search")).toBe("Using Notion · Search");
+    expect(usage.usedSummaryText([{ status: "ok", label: "Notion · Search" }, { status: "ok", label: "Notion · Fetch" }])).toBe("Used: Notion · Search, Notion · Fetch");
+    i18n.changeLang("zh-CN");
     const skills = [{ name: "xhs-title", title: "小红书爆款标题" }];
     expect(usage.skillLabel("xhs-title", skills)).toBe("小红书爆款标题");
     expect(usage.skillLabel("amb-app", skills)).toBe("");

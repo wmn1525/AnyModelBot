@@ -46,6 +46,8 @@ export default {
   "runNotFound": "실행 기록을 찾을 수 없습니다",
   "taskAlreadyStopped": "이미 중지된 작업입니다",
   "badGroup": "group은 working, needs 또는 ended여야 합니다",
+  "collabSignIn": "Okinto 계정에 로그인해야 봇 협업 설정을 바꿀 수 있어요",
+  "collabChoice": "목록에서 골라 주세요",
   "windowsOnly": "Windows에서만 필요합니다",
   "recordNotFound": "기록을 찾을 수 없습니다",
   "requestAlreadyHandled": "이미 처리된 요청입니다",

@@ -4,6 +4,60 @@
 
 Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, consulta las [versiones publicadas en GitHub](https://github.com/wmn1525/AnyModelBot/releases).
 
+## 0.1.40 - 2026-11-15
+
+### Novedades
+
+- **Biblioteca de tareas:** la página Programado añade 20 tareas listas para noticias, trabajo, aprendizaje, vida diaria y finanzas. Elige una, completa los campos, selecciona el bot y el destino y actívala; también puedes pedirlo en el chat. Las revisiones se pueden probar antes: el resultado solo aparece en el diálogo de prueba y el registro, sin enviarse a los canales de chat. El ordenador y la app deben estar encendidos.
+- **Vista previa de archivos:** el código incorpora números de línea, resaltado y ajuste de líneas; JSON permite formatear y plegar; CSV / TSV ofrece tablas, ordenación, búsqueda y selección de codificación. Markdown admite imágenes, listas de tareas, índice y texto fuente; las imágenes permiten ampliar y desplazar, y HTML alterna entre vista previa y código.
+
+### Mejoras y correcciones
+
+- **Controles y actualización de la vista previa:** las pestañas tienen iconos de tipo de archivo y menú contextual; «+» muestra los archivos entregados en la conversación. Puedes ampliar el panel a toda la ventana y conservar la vista, el zoom y el ajuste de líneas. La vista se actualiza al cambiar el archivo. En escritorio puedes guardar como, mostrar en la carpeta y abrir HTML en el navegador.
+- **Horarios y resultados:** se añaden recordatorios anuales y avisos unos días antes de fechas mensuales o anuales. Las revisiones de la biblioteca pueden enviar resúmenes de varias líneas, el costo de las pruebas cuenta en el mes y los horarios cron habituales se muestran de forma más clara.
+- **Web:** el menú de comunidad se abre al pasar el cursor o enfocarlo con el teclado. Se simplifica la sección de funciones de inicio y el historial solo muestra versiones publicadas.
+
+- Incluye upstream 0.1.37–0.1.40: Acerca de mí, colaboración de bots, biblioteca de tareas, vistas previas y correcciones. Conserva el inicio de sesión de Okinto, grupos, saldos y comprobaciones en siete idiomas.
+
+## 0.1.39 - 2026-11-15
+
+### Novedades
+
+- **Sabes qué decir en cuanto lo instalas:** al importar el ZIP de una habilidad o asignar una app a un bot en **Habilidades y apps**, el aviso añade un ejemplo **Prueba decir** con **Insertar en el mensaje** y **Copiar**.
+
+### Mejoras y correcciones
+
+- **Las conversaciones nuevas empiezan al instante:** el botón de conversación nueva, **Nueva conversación** en el menú + y escribir /new pasan de inmediato a una conversación nueva y dejan en el chat una línea «Se inició una conversación nueva» (sigue en su lugar al recargar o reiniciar). Ya no aparece una burbuja «/new» atascada en «Pensando». Dónde se quedaron se resume en segundo plano en una nota de traspaso, y el primer mensaje de la conversación nueva la espera como máximo 8 segundos. Mientras hay una respuesta en curso, el botón se ve en gris. En las apps de chat, /new también responde al instante.
+- **Tu nombre y tu foto en la zona de la cuenta:** al iniciar sesión en Okinto, la esquina inferior izquierda y el menú de la cuenta muestran tu apodo y tu foto de perfil (si no hay apodo, tu nombre de usuario y luego tu correo; si no hay foto, la primera letra del nombre), en lugar de «Cuenta Okinto». Al reiniciar, se ve enseguida el último nombre.
+- **El proceso muestra qué herramienta se usó:** cada herramienta de una app tiene su propia línea, como «Usando Notion · Buscar páginas», que al terminar la respuesta se resume en «Usado: Notion · Buscar páginas, Notion · Leer página».
+- **Una lista de habilidades más clara:** **Apps y habilidades › Habilidades** ahora muestra tarjetas. Las fotos de los autores empiezan con sus iniciales, aparecen con un fundido al cargar y se guardan en tu dispositivo para mostrarse al instante la próxima vez. **GitHub ↗** y **Copiar instrucción de instalación** siempre están a la vista y ya no estrechan el título.
+- **En la configuración se ve qué se puede tocar:** las acciones de Configuración y de la configuración del bot son pequeños botones en forma de píldora, con Eliminar, Quitar y Cerrar sesión en rojo. Una fila con un solo «Ver» se puede tocar completa, y cada fila tiene como máximo dos botones; el resto va en «⋯».
+- **Selectores y pequeños arreglos:** el selector de **Proveedor** en la página **Usar tu propia clave de API** y el selector de Vista previa mantienen la flecha en el borde derecho y se abren desde cualquier punto de la fila. Una habilidad instalada que aún no está activa ahora dice «Activa desde tu próximo mensaje». En los bots integrados que aún no usaste, el «⋯» de la barra lateral ya no tapa el punto de «nuevo».
+
+## 0.1.38 - 2026-11-15
+
+### Novedades
+
+- **Vuelve al modelo real:** si antes elegiste un modelo que en realidad era «auto/…» (el predeterminado general, el de un bot o uno cambiado en un chat), al iniciar se cambia solo al modelo real correspondiente o, si no lo hay, vuelve al predeterminado.
+
+### Mejoras y correcciones
+
+- **Ya no aparecen modelos «auto/…» en la lista:** cuando un modelo lo ofrecía más de una fuente (por ejemplo, un bot con presupuesto propio o una clave de API oficial además de Okinto), la lista mostraba una entrada igual a la original que en realidad se llamaba «auto/nombre-del-modelo», y al elegirla las solicitudes fallaban porque el modelo no existía. Ya no se muestra ni se envía.
+
+## 0.1.37 - 2026-11-15
+
+### Novedades
+
+- **Sobre mí:** la memoria del equipo ahora se llama Sobre mí y guarda lo que todos tus bots comparten sobre ti. Dilo una vez en cualquier chat (por ejemplo, «Soy Melody») y todos tus bots lo sabrán; una línea bajo la respuesta te permite deshacerlo. Los bots preguntan antes de guardar una dirección, un teléfono o un correo, no revierten las líneas que editaste y no vuelven a agregar las que borraste. Míralo y edítalo en Configuración › Sobre mí, donde puedes deshacer cualquier cambio de los últimos 30 días. Tu memoria del equipo anterior se mueve sola.
+- **Los bots se envían mensajes:** en la app, dile a un bot «pásale esto a Asistente de producto» y le enviará la tarea, el contexto y los archivos a ese bot. El otro bot trabaja en segundo plano con su propio modelo, permisos y presupuesto, te pide aprobación en el mismo chat con su nombre y responde al terminar. El primer bot revisa el resultado, pide que lo rehaga si hace falta y luego te avisa. Haz clic en la línea gris del chat para ver su conversación. Requiere iniciar sesión en Okinto y que ambos bots usen modelos de Okinto.
+- **Configuración de colaboración entre bots:** en Configuración › Colaboración entre bots puedes desactivarla, fijar límites de gasto, tiempo, solicitudes diarias y veces para rehacer, y ver las conversaciones entre bots y lo que costaron.
+
+### Mejoras y correcciones
+
+- **Configuración del bot y pestaña Memoria:** el interruptor «Permitir escribir en la memoria del equipo» de cada bot se reemplaza por un acceso a Sobre mí. La pestaña Memoria muestra cuántas líneas tiene Sobre mí, y desde ahí puedes verlas o borrarlas.
+- **Revisión de memoria:** lo que tiene que ver contigo ya no se guarda en la memoria de un solo bot; si hay conflicto, manda Sobre mí.
+- **En las apps de mensajería:** cuando un bot anota algo sobre ti en un chat privado de WeChat o Feishu, se agrega una línea después de la respuesta y responder «deshacer» lo revierte. Las direcciones, teléfonos y correos solo se usan en ese chat.
+
 ## 0.1.36 - 2026-11-15
 
 ### Novedades

@@ -1,6 +1,6 @@
 <h1 align="center">okbot</h1>
 
-> 0.1.36 · Biblioteca de habilidades, salvar trabalhos como habilidades e instalar pelo chat. Interface, mensagens em sete idiomas e ferramentas usam Okinto; conexões existentes preservadas e links de atualização corrigidos.
+> 0.1.40 · Inclui upstream 0.1.37–0.1.40: Sobre mim, colaboração de bots, biblioteca de tarefas, prévias e correções. Preserva login da Okinto, grupos, saldos e verificações em sete idiomas.
 
 <p align="center"><b>Uma equipe de bots de IA no seu próprio computador. Qualquer modelo, pagamento por uso.</b></p>
 
@@ -31,6 +31,9 @@
 [![Plataformas][platform-shield]][releases-link]
 [![Preços][pricing-shield]][pricing-link]
 [![Okinto][okinto-shield]][okinto-link]
+
+[![Discord][discord-shield]][discord-link]
+[![Telegram][telegram-shield]][telegram-link]
 
 </div>
 
@@ -146,6 +149,7 @@ Um bot é mais do que uma janela de chat: ele tem uma persona, um modelo padrão
 - **Cartões de aprovação, sem surpresas.** Ações que gravam fora do espaço de trabalho param e aguardam a sua resposta.
 - **Aviso após reiniciar.** Uma mensagem que ainda estava em andamento quando o app foi fechado ou travou é sinalizada na conversa na próxima inicialização, para que você possa enviá-la de novo; nada é refeito por conta própria.
 - **Conversas em grupo.** Crie um grupo e adicione alguns bots. Responde quem você mencionar com @; sem @, continua o bot que respondeu por último. Os bots também podem mencionar outro membro com @ para passar a vez. Cada bot mantém seu próprio modelo, espaço de trabalho e memória, e os custos são contabilizados por bot.
+- **Bots que trocam mensagens.** No app, diga a um bot «passa isso para B»: B trabalha em segundo plano com o próprio modelo, permissões e orçamento e responde ao terminar, e o primeiro bot confere o resultado antes de contar para você. B pede aprovações na mesma conversa com o nome dele, e você pode ler a troca entre eles quando quiser. É preciso entrar na Okinto, com os dois bots em modelos da Okinto.
 - **Pesquise o histórico de conversas.** Pesquise pela barra lateral todas as mensagens salvas no seu dispositivo, filtre por bot, conversa, canal ou data e vá direto à mensagem original. `Ctrl/Cmd+Shift+F` abre a pesquisa global; `Ctrl/Cmd+F` pesquisa no chat atual. As pesquisas não chamam nenhum modelo. Antes de você digitar, a janela de pesquisa lista os chats recentes por data.
 - **Comandos de barra** como `/model` e `/reset` funcionam no app e em todos os canais de chat. Em um canal de chat, `/bot` troca para outro bot.
 
@@ -203,7 +207,7 @@ O runtime é construído sobre o [DeepSeek Harness](https://github.com/deepseek-
 
 ## 🧠 Memória e acesso de qualquer lugar
 
-- **Memória que permanece.** Cada bot, grupo e equipe tem sua própria memória, guardada em Markdown e mantida separada. Conteúdo que pareça senha ou chave não é salvo.
+- **Memória que permanece.** O que é sobre você fica em Sobre mim, compartilhado por todos os seus bots: diga uma vez e todos sabem, e dá para ver, editar ou desfazer nas Configurações. Os bots perguntam antes de salvar endereço, telefone ou e-mail. Cada bot e grupo também tem sua própria memória, guardada em Markdown e mantida separada. Conteúdo que pareça senha ou chave não é salvo.
 - **Chats longos continuam utilizáveis.** Um gestor de contexto compacta a conversa ou começa um novo trecho com um resumo de transição antes que a janela de contexto fique cheia.
 - **Contas compartilhadas por todos os bots.** Adicione as contas de chat do WeChat, Feishu, Telegram, Slack e Discord uma única vez em Configurações › Canais de chat. Todos os bots as compartilham, e cada canal pode ter várias contas com apelidos. Envie `/bot name` uma vez em um app de chat para falar com outro bot.
 - **Conectar apps.** O item Apps e habilidades no menu do avatar traz conectores para Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian e Canva, e você pode adicionar conectores MCP personalizados (servidores remotos ou comandos locais). Conecte uma vez e todos os bots podem usar por padrão; restrinja por bot e por ferramenta. Ferramentas somente leitura rodam na hora, gravações perguntam antes, e exclusões ou qualquer envio para outras pessoas sempre perguntam.

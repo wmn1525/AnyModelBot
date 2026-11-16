@@ -1,7 +1,7 @@
 /** 需要你、后台任务、规则、审批。 */
 import fs from "node:fs";
 import type { RuleMode } from "../../store/db.js";
-import { normalizeSchedule, parseSchedule, previewSchedule, type Schedule } from "../../tasks/schedule.js";
+import { describe, normalizeSchedule, parseSchedule, previewSchedule, type Schedule } from "../../tasks/schedule.js";
 import type { StageGroup } from "../../tasks/stage.js";
 import { normalizeLang, t, withLang, t as tr } from "../../i18n/index.js";
 import { HttpError, readJson, send, sendMarkdown, publicApproval, type Route, type WebContext } from "../http.js";
@@ -33,6 +33,7 @@ export function tasksRoutes(ctx: WebContext): Route {
       else if (item.kind === "rule" && action === "continue") ok = !app.tasks.addRuleBudget(item.ruleId!).error;
       else if (action === "continue") ok = !(await app.tasks.addBudget(item.taskId!, undefined, "web")).error;
       else if (action === "retry") ok = !(await app.tasks.retry(item.taskId!)).error;
+      else if (action === "stop" && app.store.getTask(item.taskId!)?.handoffId) ok = app.collab.stopFromAttention(item.taskId!);
       else if (action === "stop") ok = await app.tasks.stopTask(item.taskId!, "web");
       if (!ok) throw new HttpError(409, tr("web.couldntComplete"));
       app.attention.kick();
@@ -125,7 +126,8 @@ export function tasksRoutes(ctx: WebContext): Route {
           ? parseSchedule(`once ${b.schedule.local.replace("T", " ")}`, b.schedule.tz || app.delivery.timeZone, now)
           : normalizeSchedule(b.schedule, app.delivery.timeZone, now);
         if (!r.schedule) throw new HttpError(400, r.error || t("rules.badSchedule"));
-        return send(res, 200, { schedule: r.schedule, ...previewSchedule(r.schedule, now) });
+        // when：给人看的频率（任务库「用起来」只露时刻时，写在说明里）
+        return send(res, 200, { schedule: r.schedule, ...previewSchedule(r.schedule, now), when: describe(r.schedule) });
       }
       if (seg[1] === "actions") {
         if (seg.length === 2 && m === "GET" && url.searchParams.get("group")) {

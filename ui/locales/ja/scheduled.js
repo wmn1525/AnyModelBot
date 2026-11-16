@@ -1,4 +1,6 @@
 export default {
+  "yearly": "毎年",
+  "beforeDays": {"other": "{count} 日前"},
   "emptyTitle": "ルールはまだありません",
   "emptyNeedsTitle": "対応が必要なルールはありません",
   "emptyNeedsHint": "対応が必要なルールがここに表示されます。",

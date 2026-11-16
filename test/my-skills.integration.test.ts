@@ -51,7 +51,7 @@ describe.skipIf(!locateDshRuntime(findAppRoot()))("存成技能（真 DSH）", (
     });
     app = new App(loadConfig({ dataDir: dir, env: { AMB_MAGPIE_BASE_URL: llm.url + "/v1", AMB_MAGPIE_API_KEY: "local-test", AMB_UI_PORT: "0", AMB_DEFAULT_MODEL: "mock-agent", AMB_WEIXIN_API_BASE: "http://127.0.0.1:9", AMB_LANG: "zh-CN" } }), { printQrToTerminal: false });
     await app.start();
-    app.store.updateBot("default", { settings: { ...app.store.getBot("default")!.settings, computerUse: { enabled: false, backend: "cua", approval: "auto" }, memory: { enabled: false, review: false, teamWrite: false }, steward: { enabled: false } } });
+    app.store.updateBot("default", { settings: { ...app.store.getBot("default")!.settings, computerUse: { enabled: false, backend: "cua", approval: "auto" }, memory: { enabled: false, review: false }, steward: { enabled: false } } });
     fs.mkdirSync(path.join(dir, "workspaces/default"), { recursive: true });
     fs.writeFileSync(path.join(dir, "workspaces/default/notes.txt"), "今天的笔记：三件事");
     api = app.web!.url.replace(/\/$/, "") + "/amb/api";

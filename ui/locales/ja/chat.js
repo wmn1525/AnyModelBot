@@ -2,6 +2,13 @@ export default {
   "aria": "{name} との会話",
   "infoPanel": "右パネル（⌘⇧I）",
   "newConvCmd": "新しい会話（/new）",
+  "newConv": {
+    "divider": "新しい会話を始めました",
+    "already": "すでに新しい会話です",
+    "busy": "返信が終わると新しい会話を始められます",
+    "agentOff": "エージェントモードがオフのため、新しい会話を始められません。「コンテキストを消去」でやり直せます。",
+    "failed": "新しい会話を始められませんでした：{error}",
+  },
   "toBottom": "一番下にスクロール",
   "copyMessage": "メッセージをコピー",
   "commandsLabel": "コマンド",
@@ -75,6 +82,7 @@ export default {
     "noMatch": "一致する項目はありません",
     "prefill": "{name}を使って{cursor}…",
     "appExample": "{app}を使って…",
+    "appTool": "{app} · {tool}",
     "readonlyDesc": "読み取り専用：検索と閲覧のみ",
     "readonlyNo": "読み取り専用のため、書き込みはできません",
     "noSkills": "このボットにはまだ使えるスキルがありません。",
@@ -103,7 +111,7 @@ export default {
     "sep": "、",
     "state": {
       "active": "有効",
-      "waiting": "現在のタスク終了後に有効",
+      "waiting": "次のメッセージから有効",
       "loading": "読み込み中"
     },
     "try": "こう言ってみましょう：{example}",

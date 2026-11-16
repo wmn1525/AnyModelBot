@@ -1,5 +1,17 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
+  yearly: "매년 {date} {time}",
+  beforeDays: { other: "{text} ({count}일 전)" },
+  cronHoursWeekdays: { other: "평일 {from}–{to} {count}시간마다" },
+  cronHoursDaily: { other: "매일 {from}–{to} {count}시간마다" },
+  whyTrialInterrupted: "시험 실행이 중단되었습니다",
+  briefTruncated: "전체 내용은 데스크톱에서 볼 수 있습니다",
+  trialRemind: "알림은 시험 실행할 필요가 없습니다.",
+  trialBusy: "이 규칙이 실행 중입니다. 끝난 뒤 다시 시도하세요.",
+  libraryMissing: "이 작업은 작업 라이브러리에 더 이상 없습니다.",
+  botGone: "이 봇은 더 이상 없습니다. 다른 봇을 선택하세요.",
+  libraryField: "먼저 '{field}' 항목을 입력하세요",
+  libraryApp: "먼저 {app}을(를) 연결하세요",
   lateLabel: "늦게 보냄(예정 {time})",
   updatedCard: "규칙 수정됨 · {name}",
   undoButton: "취소",

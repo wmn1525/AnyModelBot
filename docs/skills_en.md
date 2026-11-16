@@ -36,6 +36,7 @@ Names use lowercase English letters, digits and single hyphens, up to 64 charact
 
 - A skill applies only to the bot you add it to (see My skills below). That bot uses the same skills in the app and through chat channels.
 - View instructions, enable, disable or delete skills in the list. Changes wait until the bot is idle.
+- After an import, the confirmation says when the skill is ready (from your next message, after the current task, or once it has loaded) and shows a **Try saying** example with **Insert into the input** (opens this bot's chat) and **Copy**. It stays until you use a button or close it.
 - Import a skill with the same name again, review it and click Replace skill. Replacement preserves its enabled or disabled state.
 - Deleting a skill removes its files and keeps output already generated in the workspace.
 - Built-in names such as `media`, `computer-use` and `amb-app`, and skills supplied by catalog bots, cannot be overwritten by imported packages.
@@ -45,8 +46,8 @@ Skills run with the bot's existing permissions. A skill that needs Python, other
 ## Use in a chat
 
 - Click **+** › **Skills & apps** at the left of the message box to see the skills and apps this bot can use now. Click one to put "Use {name} to help me…" in the message box, finish the sentence and send it. The bot decides whether to use it.
-- In settings, each skill shows **Active**, **Active after the current task** or **Loading** next to its name, with a **Try saying** line below. Click that line to put the example in this bot's message box.
-- While the bot uses a skill or app, the process above its reply shows "Using skill · {name}" or "Using {app}". When the reply ends, this folds into one line, "Used: …", which you can expand to see every step.
+- In settings, each skill shows **Active**, **Ready from your next message** or **Loading** next to its name, with a **Try saying** line below. Click that line to put the example in this bot's message box.
+- While the bot uses a skill or app, the process above its reply shows "Using skill · {name}", or one line per tool for apps: "Using {app} · {tool}" (with the tool's display name when the app provides one). When the reply ends, this folds into one line, "Used: …", which you can expand to see every step.
 - Ask the bot "What skills do you have?" or "What apps do you have?" and it lists the ones it can use now, each with an example you can send.
 - A skill whose `SKILL.md` sets `disable-model-invocation: true` is never used by the bot on its own and doesn't appear in **Skills & apps**. Write `/skill-name` in a message to use it.
 

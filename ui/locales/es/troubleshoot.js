@@ -8,11 +8,13 @@ export default {
   "logFileSub": "Rota por tamaño; conserva los 4 archivos más recientes",
   "logFileOff": "No habilitado",
   "test": "Probar",
+  "testing": "Probando…",
   "model": "Modelo: {model}",
   "none": "(ninguno)",
   "copyReport": "Copiar diagnóstico",
   "copied": "Diagnóstico copiado (sin claves)",
   "note": "El diagnóstico copiado incluye el estado de arriba, los resultados de las pruebas más recientes y los registros. Las claves de API, los tokens y otros secretos se reemplazan por ***, así que puedes enviarlo directamente al soporte.",
+  "community": "¿Sigue sin funcionar? Pregunta en la comunidad",
   "secs": "{s} s",
   "restarts": {
     "one": "Se reinició {count} vez",
@@ -152,6 +154,7 @@ export default {
     "name": "Reiniciar proceso del agente",
     "sub": "Úsalo cuando las respuestas se quedan cargando sin fin: detiene el proceso del agente y anula la espera para reintentar. Se reinicia con el siguiente mensaje",
     "button": "Reiniciar",
+    "restarting": "Reiniciando…",
     "done": "Proceso del agente reiniciado",
     "notRunning": "El proceso del agente aún no se ha iniciado; se iniciará con el siguiente mensaje"
   },

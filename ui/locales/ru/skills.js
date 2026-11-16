@@ -19,7 +19,7 @@ export default {
   nameTitle: "{name}: {title}",
   tryLine: "Попробуйте: «{text}»",
   copy: "Скопировать запрос",
-  copied: "Скопировано",
+  copied: "Скопировано ✓",
   copyLabel: "Скопировать запрос на установку {name}",
   openRepoLabel: "Открыть {name} на GitHub",
   filterAuthorLabel: "Показать навыки автора {name}",

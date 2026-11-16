@@ -19,7 +19,7 @@ export default {
   nameTitle: "{name}：{title}",
   tryLine: "使い方：「{text}」",
   copy: "インストール指示をコピー",
-  copied: "コピーしました",
+  copied: "コピーしました ✓",
   copyLabel: "{name} のインストール指示をコピー",
   openRepoLabel: "{name} を GitHub で開く",
   filterAuthorLabel: "{name} のスキルだけを表示",

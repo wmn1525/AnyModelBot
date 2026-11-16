@@ -1,7 +1,7 @@
 export default {
   "tag": "Long-term memory",
   "h2": "It remembers you — and knows what not to keep.",
-  "layersLine": "Each bot, group, and team has its own memory, kept separate.",
+  "layersLine": "Things about you are shared by all your bots in About me; each bot and group also keeps its own memory, kept separate.",
   "points": [
     {
       "title": "Plain Markdown files",

@@ -19,6 +19,8 @@ export type { Schedule };
 export const MIN_EVERY_MIN = 15;
 /** 错过之后最多多久内还补跑 */
 export const MAX_GRACE_MS = 12 * 3600_000;
+/** 每月、每年的提醒最多提前几天 */
+export const MAX_BEFORE_DAYS = 30;
 
 const MIN = 60_000;
 const DAY_MS = 86_400_000;
@@ -115,10 +117,15 @@ function cronDay(c: Cron, day: { mo: number; d: number; weekday: number }): bool
 
 /** 这一天里到点的分钟（本地），从小到大；这一天不跑就是空的 */
 function minutesOn(s: Schedule, day: { y: number; mo: number; d: number; weekday: number }, cron?: Cron): number[] {
-  if (s.kind === "monthly") {
-    const last = new Date(Date.UTC(day.y, day.mo, 0)).getUTCDate();
+  if (s.kind === "monthly" || s.kind === "yearly") {
     const minute = minuteOf(s.time);
-    return day.d === (s.day === "last" ? last : Math.min(s.day, last)) && minute !== undefined ? [minute] : [];
+    if (minute === undefined) return [];
+    // 提前几天：这一天往后数 before 天是不是到期日
+    const due = s.before ? new Date(Date.UTC(day.y, day.mo - 1, day.d + s.before)) : new Date(Date.UTC(day.y, day.mo - 1, day.d));
+    const y = due.getUTCFullYear(), mo = due.getUTCMonth() + 1, d = due.getUTCDate();
+    if (s.kind === "yearly" && mo !== s.month) return [];
+    const last = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+    return d === (s.kind === "monthly" && s.day === "last" ? last : Math.min(s.day as number, last)) ? [minute] : [];
   }
   if (s.kind === "daily" || s.kind === "weekly") {
     const m = minuteOf(s.time);
@@ -259,12 +266,22 @@ export function normalizeSchedule(raw: unknown, tz: string, now: number, l: Lang
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const zone = typeof r.tz === "string" && validZone(r.tz) ? r.tz : tz;
   switch (r.kind) {
-    case "monthly": {
+    case "monthly":
+    case "yearly": {
       const time = hhmm(String(r.time ?? ""));
-      const day = r.day === "last" ? "last" : Number(r.day);
+      const day = r.kind === "monthly" && r.day === "last" ? "last" : Number(r.day);
+      const before = r.before === undefined || r.before === "" ? 0 : Number(r.before);
       if (!time) return { error: tl(l, "rules.timeFormat") };
+      if (!Number.isInteger(before) || before < 0 || before > MAX_BEFORE_DAYS) return { error: tl(l, "rules.needTime") };
+      const extra = before ? { before } : {};
+      if (r.kind === "yearly") {
+        const month = Number(r.month);
+        // 闰年才有的 2 月 29 日也收：平年落在 2 月 28 日
+        if (!Number.isInteger(month) || month < 1 || month > 12 || !Number.isInteger(day) || (day as number) < 1 || (day as number) > new Date(Date.UTC(2024, month, 0)).getUTCDate()) return { error: tl(l, "rules.needTime") };
+        return { schedule: { kind: "yearly", time, month, day: day as number, ...extra, tz: zone } };
+      }
       if (day !== "last" && (!Number.isInteger(day) || day < 1 || day > 31)) return { error: tl(l, "rules.needTime") };
-      return { schedule: { kind: "monthly", time, day, tz: zone } };
+      return { schedule: { kind: "monthly", time, day, ...extra, tz: zone } };
     }
     case "once": {
       const at = Number(r.at);
@@ -319,6 +336,11 @@ export function parseSchedule(text: string, tz: string, now: number): { schedule
   if (kind === "monthly") {
     const m = /^(last|\d{1,2}) (\d{1,2}[:：]\d{2})$/.exec(tail);
     return m ? normalizeSchedule({ kind: "monthly", day: m[1], time: m[2] }, tz, now, "en") : { error: "Use monthly 1–31 HH:MM or monthly last HH:MM" };
+  }
+  if (kind === "yearly") {
+    const m = /^(\d{1,2})-(\d{1,2}) (\d{1,2}[:：]\d{2})$/.exec(tail);
+    const r = m ? normalizeSchedule({ kind: "yearly", month: m[1], day: m[2], time: hhmm(m[3]) ?? m[3] }, tz, now, "en") : undefined;
+    return r?.schedule ? r : { error: "Use yearly MM-DD HH:MM" };
   }
   const bad = { error: `Unrecognized schedule "${t}". Use one of: once YYYY-MM-DD HH:MM | daily HH:MM | weekdays HH:MM | weekly mon,thu HH:MM | every 30m | cron M H DOM MON DOW` };
   if (kind === "daily" || kind === "weekdays" || kind === "weekends") {
@@ -381,8 +403,23 @@ export function describe(s: Schedule, withZone = false, l: Lang = currentLang())
     const date = new Intl.DateTimeFormat(l, { month: l === "en" ? "short" : "long", day: "numeric", timeZone: s.tz }).format(s.at);
     text = tl(l, "rules.once", { date, time: `${pad(Math.floor(m / 60))}:${pad(m % 60)}` });
   } else if (s.kind === "monthly") text = tl(l, s.day === "last" ? "rules.monthlyLast" : "rules.monthlyDay", { day: s.day, time: s.time });
-  else if (s.kind === "daily" || s.kind === "weekly") text = daysText(s.days, s.time, l);
+  else if (s.kind === "yearly") {
+    const date = new Intl.DateTimeFormat(l, { month: l === "en" ? "short" : "long", day: "numeric", timeZone: "UTC" }).format(Date.UTC(2024, s.month - 1, s.day));
+    text = tl(l, "rules.yearly", { date, time: s.time });
+  } else if (s.kind === "daily" || s.kind === "weekly") text = daysText(s.days, s.time, l);
   else if (s.kind === "every") text = s.minutes % 60 === 0 ? tl(l, "rules.everyHour", { count: s.minutes / 60 }) : tl(l, "rules.everyMin", { count: s.minutes });
-  else text = tl(l, "rules.cron", { cron: s.cron });
+  else text = cronText(s.cron, l) ?? tl(l, "rules.cron", { cron: s.cron });
+  if ((s.kind === "monthly" || s.kind === "yearly") && s.before) text = tl(l, "rules.beforeDays", { text, count: s.before });
   return withZone ? tl(l, "rules.withZone", { text, tz: s.tz }) : text;
+}
+
+/** 好读的那种 cron：整点区间里每隔几小时（0 10-18/2 * * 1-5 → 每个工作日 10:00–18:00 每 2 小时）；别的照原样 */
+function cronText(cron: string, l: Lang): string | undefined {
+  const m = /^(\d{1,2}) (\d{1,2})-(\d{1,2})\/(\d{1,2}) \* \* (\*|1-5)$/.exec(cron.trim());
+  if (!m || !parseCron(cron)) return undefined;
+  const time = (h: number) => `${pad(h)}:${pad(Number(m[1]))}`;
+  const from = Number(m[2]);
+  const step = Number(m[4]);
+  const to = from + Math.floor((Number(m[3]) - from) / step) * step;
+  return tl(l, m[5] === "1-5" ? "rules.cronHoursWeekdays" : "rules.cronHoursDaily", { from: time(from), to: time(to), count: step });
 }

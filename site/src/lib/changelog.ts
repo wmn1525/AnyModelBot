@@ -31,3 +31,25 @@ export function parseChangelog(markdown: string): ChangelogRelease[] {
   }
   return out;
 }
+
+const SEMVER = /^\d+\.\d+\.\d+$/;
+
+/** 版本号比较（x.y.z）。a 更新返回正数。 */
+export function cmpVersion(a: string, b: string): number {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < 3; i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d) return d;
+  }
+  return 0;
+}
+
+/**
+ * 官网只列出已经发布的版本。更新日志可以提前写好下一版，比 releases.json 新的先不出现在页面上。
+ * 已发布版本还是占位符、或不是 x.y.z 时不过滤。
+ */
+export function releasedChangelog(entries: ChangelogRelease[], published: string): ChangelogRelease[] {
+  if (!SEMVER.test(published)) return entries;
+  return entries.filter((e) => !SEMVER.test(e.version) || cmpVersion(e.version, published) <= 0);
+}

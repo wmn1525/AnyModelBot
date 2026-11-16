@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { html, Button, Icon, Sheet, Switch, Skeleton } from "./ui.js";
 import { openGithub } from "./skill-library.js";
 import { api, uploadSkillZip } from "../lib/api.js";
-import { confirmSheet, failed, saved, toast } from "../lib/store.js";
+import { confirmSheet, failed, saved } from "../lib/store.js";
 import { t, has } from "../lib/i18n.js";
-import { fillChat, loadBotSkills, setBotSkills, useBotSkills } from "../lib/usage.js";
+import { fillChat, installedExample, loadBotSkills, readyToast, setBotSkills, useBotSkills } from "../lib/usage.js";
 import { CHIPS, LIST_FOLD_AT, LIST_SEARCH_AT, chipCounts, inChip, kindOf, matches, openSkillDetail, skillsFilter, sortSkills } from "../lib/my-skills.js";
 import { useLang } from "../lib/i18n.js";
 
@@ -20,7 +20,7 @@ function SourceLine({ source }) {
   return html`<div class="sub skill-source-line">${t("botSettings.skills.sourceGithub", { repo: "" })}<a href=${source.url} onClick=${(e) => (e.preventDefault(), openGithub(source.url))}>${repo}<${Icon} name="ext" size="xs" /></a></div>`;
 }
 
-/** 名字旁的生效状态：已生效 / 当前任务结束后生效 / 加载中（关掉的不标） */
+/** 名字旁的生效状态：已生效 / 下一条消息起生效（机器人正在跑任务） / 加载中（关掉的不标） */
 function StateBadge({ state }) {
   if (!["active", "waiting", "loading"].includes(state)) return null;
   return html`<span class=${`badge ${state === "active" ? "ok" : "warn"} skill-state`}>${t(`chat.use.state.${state}`)}</span>`;
@@ -96,8 +96,10 @@ export function Skills({ botId, botName = "", onBrowse }) {
     setError("");
     const added = r.skills.find((x) => x.name === detail.name);
     setDetail(null);
-    // 写明什么时候能用：已生效 / 当前任务结束后 / 加载中（加载完之前不说已经可用）
-    toast(t(`botSettings.skills.imported.${added?.state === "waiting" || added?.state === "loading" ? added.state : "active"}`, { name: added?.title || detail.name }));
+    // 写明什么时候能用：已生效 / 当前任务结束后 / 加载中（加载完之前不说已经可用）；下面一行示例和「填入输入框」「复制」。
+    // 填入时切到这个机器人的对话（它最近的那条）再填
+    const name = added?.title || detail.name;
+    readyToast(t(`botSettings.skills.imported.${added?.state === "waiting" || added?.state === "loading" ? added.state : "active"}`, { name }), botId, installedExample(added || detail, name));
     setFresh(detail.name);
   });
   const toggle = (skill, enabled) => run(async () => {

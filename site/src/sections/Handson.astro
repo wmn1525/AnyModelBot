@@ -19,7 +19,6 @@ const w = t.home.window;
 const m = t.home.memory;
 const handsonIcons = ["shield", "lock", "pointer"] as const;
 const memoryIcons = ["doc", "shield", "layers"] as const;
-const more = t.home.features.more;
 const lineAt = (i: number) => String(500 + i * 650);
 const secretAt = 500 + m.lines.length * 650 + 300;
 const chapters = [
@@ -93,13 +92,5 @@ const chapters = [
         <EyesMark size={320} variant="ring" mode="static" class="story__mark" />
       </div>
     </div>
-
-    <!-- 英文首页省略补充能力清单，其余语言继续使用现有内容。 -->
-    {lang !== "en" && <div class="caps" aria-labelledby="caps-h3">
-      <h3 class="subhead" id="caps-h3">{more.h3}</h3>
-      <ul class="caps__list" role="list">
-        {more.items.map((p) => <li><b>{p.title}</b>{p.body}</li>)}
-      </ul>
-    </div>}
   </div>
 </section>

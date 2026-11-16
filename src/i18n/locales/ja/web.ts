@@ -46,6 +46,8 @@ export default {
   "runNotFound": "実行記録が見つかりません",
   "taskAlreadyStopped": "このタスクはすでに停止しています",
   "badGroup": "group は working、needs、ended のいずれかにしてください",
+  "collabSignIn": "Okinto アカウントにサインインすると、ボット連携の設定を変更できます",
+  "collabChoice": "一覧から選んでください",
   "windowsOnly": "Windows でのみ必要です",
   "recordNotFound": "記録が見つかりません",
   "requestAlreadyHandled": "このリクエストは対応済みです",

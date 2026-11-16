@@ -16,6 +16,12 @@ https://github.com/tailwindlabs/heroicons/releases/tag/v2.2.0
 
 左右パネルの操作には Lucide 1.73.0 の `panel-left` / `panel-right` を使用し、以前の角丸の枠と縦線の図形を維持しています。ソースと出典は `ui/icons/lucide.js`、`ui/icons/lucide-source.json`、ISC / MIT ライセンス全文は [ui/icons/lucide-LICENSE](./ui/icons/lucide-LICENSE) にあります。
 
+## highlight.js（プレビューパネルのコード色分け）
+
+プレビューパネルのコード表示と Markdown のコードブロックは highlight.js 11.12.0 で色分けしています。同梱するのはコアとよく使う 31 言語だけで（npm パッケージ `@highlightjs/cdn-assets` の公式 ES モジュール版）、`ui/vendor/hljs/` にあり、`scripts/vendor-hljs.mjs` でコピーしています。BSD-3-Clause ライセンスで、著作権は Ivan Sagalaev とコントリビューターに帰属します。ライセンス全文は [ui/vendor/hljs/LICENSE](./ui/vendor/hljs/LICENSE) にあります。
+
+https://github.com/highlightjs/highlight.js
+
 ## magpie（内蔵モデルゲートウェイのバイナリ配布、一部の画面スタイルを改変利用）
 
 出典：<https://github.com/yetone/magpie>（vendor/magpie サブモジュール、v0.1.1720）

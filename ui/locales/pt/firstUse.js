@@ -30,6 +30,7 @@ export default {
   "signIn": "Entrar no Okinto",
   "signInSub": "Mais modelos. Suas chaves atuais continuam funcionando.",
   "feedback": "Feedback",
+  "community": "Comunidade",
   "checkUpdate": "Verificar atualizações",
   "checking": "Verificando…",
   "latest": "Você está com a versão mais recente",

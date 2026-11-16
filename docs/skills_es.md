@@ -36,6 +36,7 @@ Los nombres usan letras minúsculas del alfabeto inglés, dígitos y guiones sim
 
 - Una habilidad solo se aplica al bot al que la agregas (sobre Mis habilidades, ver abajo). Ese bot usa las mismas habilidades en la app y en los canales de chat.
 - Desde la lista, puedes ver las instrucciones y activar, desactivar o eliminar habilidades. Los cambios esperan a que el bot esté inactivo.
+- Tras importar, el aviso dice cuándo estará lista la habilidad (desde tu próximo mensaje, cuando termine la tarea actual o cuando termine de cargar) y muestra un ejemplo **Prueba decir** con **Insertar en el mensaje** (abre el chat de este bot) y **Copiar**. Se queda hasta que uses un botón o lo cierres.
 - Para reemplazar una habilidad, vuelve a importar una con el mismo nombre, revísala y haz clic en Reemplazar habilidad. El reemplazo conserva su estado activado o desactivado.
 - Al eliminar una habilidad se borran sus archivos, pero se conserva lo que ya se generó en el espacio de trabajo.
 - Los nombres integrados como `media`, `computer-use` y `amb-app`, así como las habilidades que aportan los bots del catálogo, no se pueden sobrescribir con paquetes importados.
@@ -45,8 +46,8 @@ Las habilidades se ejecutan con los permisos que ya tiene el bot. Una habilidad 
 ## Usar en un chat
 
 - Haz clic en **+** › **Habilidades y apps**, a la izquierda del cuadro de mensaje, para ver las habilidades y apps que este bot puede usar ahora. Al elegir una, se escribe "Usa {nombre} para ayudarme a…" en el cuadro; completa la frase y envíala. El bot decide si la usa.
-- En la configuración, cada habilidad muestra **Activa**, **Activa cuando termine la tarea actual** o **Cargando** junto a su nombre, y debajo una línea **Prueba decir**. Haz clic en esa línea para ponerla en el cuadro de mensaje de este bot.
-- Mientras el bot usa una habilidad o una app, el proceso sobre su respuesta muestra "Usando la habilidad · {nombre}" o "Usando {app}". Al terminar la respuesta, se resume en una línea, "Usado: …", que puedes expandir para ver todos los pasos.
+- En la configuración, cada habilidad muestra **Activa**, **Activa desde tu próximo mensaje** o **Cargando** junto a su nombre, y debajo una línea **Prueba decir**. Haz clic en esa línea para ponerla en el cuadro de mensaje de este bot.
+- Mientras el bot usa una habilidad o una app, el proceso sobre su respuesta muestra "Usando la habilidad · {nombre}" y, para las apps, una línea por herramienta: "Usando {app} · {herramienta}" (con el nombre visible de la herramienta cuando la app lo ofrece). Al terminar la respuesta, se resume en una línea, "Usado: …", que puedes expandir para ver todos los pasos.
 - Pregúntale al bot "¿Qué habilidades tienes?" o "¿Qué apps tienes?" y te dirá cuáles puede usar ahora, cada una con un ejemplo que puedes enviar.
 - Una habilidad cuyo `SKILL.md` indica `disable-model-invocation: true` nunca la usa el bot por su cuenta y no aparece en **Habilidades y apps**. Escribe `/nombre-de-la-habilidad` en un mensaje para usarla.
 

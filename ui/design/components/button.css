@@ -41,7 +41,14 @@
   --btn-bg: var(--red); --btn-bg-hover: color-mix(in srgb, var(--red) 88%, var(--fg)); --btn-bg-press: color-mix(in srgb, var(--red) 78%, var(--fg));
   --btn-fg: var(--on-danger);
 }
+/* 小胶囊（小号按钮）：比下拉框矮一档，宽度随文字；指针为手形 */
 .btn.sm { --btn-h: var(--ctl-sm); --btn-px: var(--ctl-px-sm); }
+.btn.sm:not(:disabled) { cursor: pointer; }
+/* 危险胶囊：浅灰底、红字，悬停换成浅红底，按下再深一档（和红底白字的 .btn.danger 是两种分量：这一种放在行里） */
+.btn.danger.soft {
+  --btn-bg: var(--pill); --btn-bg-hover: var(--red-soft); --btn-bg-press: color-mix(in srgb, var(--red) 18%, transparent);
+  --btn-fg: var(--red); --btn-fg-hover: var(--red);
+}
 .btn.lg { --btn-h: var(--ctl-xl); --btn-px: var(--ctl-px-xl); --btn-fs: var(--fs-lg); }
 .btn.block { width: 100%; }
 
@@ -84,3 +91,7 @@
 
 /* 复制成功：变绿 */
 .icon-btn.copy.done { color: var(--green); background: var(--green-soft); }
+
+/* 行最右侧的「⋯」（MoreButton）：平时只有三个点，悬停出现浅灰圆底（.icon-btn 的悬停层），按下再深一档 */
+.more-btn:not(:disabled) { cursor: pointer; }
+.more-btn .spinner { width: 14px; height: 14px; }

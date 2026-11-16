@@ -42,7 +42,7 @@ export function DomainConnection({ value, onChange, disabled = false }) {
   return html`<div class="domain-connection">
     <div class="domain-actions">
       <${MenuButton} label=${t("onboarding.line.label")} options=${lineOptions()} value=${value === "auto" ? "global" : value} onChange=${onChange} disabled=${disabled} />
-      <button type="button" class="text" disabled=${disabled || busy} onClick=${test}>
+      <button type="button" class="btn sm" disabled=${disabled || busy} aria-busy=${busy || undefined} onClick=${test}>
         ${busy && html`<${Spinner} />`}${busy ? t("onboarding.line.testing") : t("onboarding.line.test")}
       </button>
     </div>

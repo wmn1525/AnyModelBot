@@ -1,7 +1,7 @@
 export default {
   "tag": "Memoria a largo plazo",
   "h2": "Te recuerda, y sabe qué no debe guardar.",
-  "layersLine": "Cada bot, grupo y equipo tiene su propia memoria, separada de las demás.",
+  "layersLine": "Lo que tiene que ver contigo lo comparten todos tus bots en Sobre mí; cada bot y grupo también tiene su propia memoria, separada de las demás.",
   "points": [
     {
       "title": "Archivos Markdown sencillos",

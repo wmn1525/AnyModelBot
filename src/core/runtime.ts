@@ -15,7 +15,7 @@ import { promptButtons, promptText, questionsOf } from "../agent/approvals.js";
 import { segmentInput, type ChatPlace } from "../agent/prompts/index.js";
 import { clearInflight, markInflight, takeNotice } from "./recovery.js";
 import { pwshProbe, pwshStatusLine } from "../tools/pwsh/index.js";
-import { isBotProviderModel } from "../providers/modelflare.js";
+import { isBotProviderModel, isGatewayGroupModel } from "../providers/modelflare.js";
 import type { ApprovalRow, Conversation } from "../store/db.js";
 import type { AccessControl } from "./access.js";
 import { takeTaskNotes } from "./task-notes.js";
@@ -198,6 +198,9 @@ export class TurnSaid {
  */
 export type Replier = (conv: Conversation, handle: Record<string, string> | undefined, key: string) => { out: ReplySession; done?: () => void } | undefined;
 
+/** 开新对话的结果（BotRuntime.newConversation / 渠道的 /new） */
+export type NewConversation = { status: "started"; at: number } | { status: "already" | "off" } | { status: "failed"; error: string };
+
 /** 会话最近收到的那条消息的回复句柄（飞书回复要它） */
 const REPLY_TO = "reply-to:";
 
@@ -258,7 +261,8 @@ export class BotRuntime {
   async listModels(force = false): Promise<string[]> {
     if (!force && this.modelCache && Date.now() - this.modelCache.at < 30_000) return this.modelCache.list;
     // 机器人预算 Key 的 provider 列出同一批模型，只展示共用连接的那份
-    const list = (await this.opts.models.listModels()).filter((m) => !isBotProviderModel(m));
+    // 内置网关自己合成的组（auto/<模型名>）也不列：选了它会把 auto/… 原样发给 Modelflare
+    const list = (await this.opts.models.listModels()).filter((m) => !isBotProviderModel(m) && !isGatewayGroupModel(m));
     this.modelCache = { at: Date.now(), list };
     return list;
   }
@@ -580,6 +584,11 @@ export class BotRuntime {
     if (draftReply?.handled) return draftReply;
     const r = agent.approvals.handleReply(convId, text, `${ev.channel}:${ev.sender.id}`, { ...tasks?.replyContext(convId), ...(quote ? { quote, plain } : {}) });
     if (r.handled) return r;
+    // 聊天软件里回「撤销」：撤销机器人上一条回复里记到关于我的（网页对话里点按钮，不认文字）
+    if (ev.channel !== "web" && UNDO_WORDS.test(text.trim()) && agent.readsAboutMe?.(ev.botId, convId)) {
+      const undone = agent.aboutMe.undoRecent(convId, this.opts.store.lastUserMessageAt(convId));
+      if (undone.length) return { handled: true, ack: t("aboutMe.undone") };
+    }
     // 引用了后台任务推来的结果或失败那句（微信），或发在任务请求那条消息的回复链里（飞书）：直接交给那个任务，不经聊天代理
     const follow = tasks?.followUp(convId, { text: quote ? plain : text, ...(quote ? { quote } : {}), ...ev.thread });
     if (follow?.handled) return follow;
@@ -765,9 +774,13 @@ export class BotRuntime {
         }
       }
       if (signal.aborted) return await stoppedEarly();
+      // 新对话的第一句：交接便条还在后台写就等一会儿（最多 8 秒，期间照常「思考中」/「正在输入」）
+      if (!store.getAgentSession(convId)) await agent.seedReady?.(convId);
+      if (signal.aborted) return await stoppedEarly();
       const first = store.getAgentSession(convId) ? text : firstInput(agent, botId, convId, text, place);
-      // 后台任务的结果发出去之后，下一条聊天消息带上那张便条：聊天代理知道发生了什么
-      const notes = takeTaskNotes(store, convId);
+      // 后台任务的结果发出去之后，下一条聊天消息带上那张便条：聊天代理知道发生了什么；
+      // 关于我在这段开始之后变了（别的机器人刚记下的）：带上新的全文
+      const notes = [takeTaskNotes(store, convId), store.getAgentSession(convId) ? (agent.aboutMeUpdate?.(botId, convId) ?? "") : "", agent.collab?.chatNote(botId, convId) ?? ""].filter(Boolean).join("\n\n");
       const input = notes ? `${notes}\n\n${first}` : first;
       const runOnce = async () => {
         // runTurn 同步登记回合，之后的停止交给代理（TurnStopped，会重启代理进程）
@@ -813,6 +826,11 @@ export class BotRuntime {
       const ruleChanges = agent.tasks?.pendingRuleActions(convId) || [];
       const replyChannel = store.getConversation(convId)?.channel;
       if (ruleChanges.length && replyChannel !== "web" && replyChannel !== "feishu") reply.text += `\n\n${t("rules.undoHint")}`;
+      // 关于我：聊天软件里没有按钮，记下、改了、删了的那一行直接写在回复后面，回「撤销」可撤回（网页对话里是带按钮的一行）
+      if (replyChannel !== "web") {
+        const lines = aboutMeLines(agent, convId, inflight.since);
+        if (lines) reply.text += `\n\n${lines}`;
+      }
       const replyId = store.addMessage(convId, "assistant", reply.text, [...steps.values()], { interim: reply.interim, files: r.files });
       agent.tasks?.finishRuleActions(convId, replyId);
       await out.apply({ type: "stream.finish", text: reply.text });
@@ -931,6 +949,54 @@ export class BotRuntime {
     } finally { done.leave(); reply?.done?.(); }
   }
 
+  /**
+   * 机器人之间发消息：B 回消息后 A 开一轮核对、汇总（collab/service.ts）。排在这个会话正在处理的消息后面（你正和 A 说别的时先回完当前这条），
+   * 这一轮不接受并进来的新消息。界面上不实时显示：结束后 keep() 为真才把 A 的回复存进对话（A 让 B 重做时这一轮的话不给用户看），
+   * 存下的那条的 id 返回给调用方。代理不可用、出错时返回 error。
+   */
+  async collabTurn(botId: string, convId: string, input: string, keep: () => boolean): Promise<{ messageId?: number; text?: string; error?: string }> {
+    const { store } = this.opts;
+    const agent = this.opts.agent;
+    const conv = store.getConversation(convId);
+    const bot = store.getBot(botId);
+    if (this.closing || !agent?.available || !conv || !bot) return { error: "unavailable" };
+    const fl: Inflight = { botId, since: Date.now(), abort: new AbortController(), userStored: true };
+    const { prior, leave } = this.enter(convId, fl);
+    try {
+      await prior;
+      // 前面的消息并进了回合、或是代理自己醒来的一轮：等那一轮也结束
+      for (let i = 0; agent.turnsInProgress.has(convId) && i < 7200; i++) await new Promise((r) => setTimeout(r, 1000));
+      if (this.closing) return { error: "closing" };
+      fl.since = Date.now();
+      const steps = new Map<string, ActivityStep>();
+      const model = conv.model || bot.defaultModel || this.opts.defaultModel();
+      const routed = model && this.opts.route ? this.opts.route(botId, model) : model;
+      agent.holdSteer(convId, true);
+      let r: Awaited<ReturnType<AgentManager["runTurn"]>>;
+      const halt = () => agent.stopTurn(convId);
+      fl.abort.signal.addEventListener("abort", halt, { once: true });
+      try {
+        if (!store.getAgentSession(convId)) await agent.seedReady?.(convId);
+        const first = store.getAgentSession(convId) ? input : firstInput(agent, botId, convId, input, { channel: conv.channel, kind: conv.kind === "group" ? "group" : "dm" });
+        const notes = [takeTaskNotes(store, convId), store.getAgentSession(convId) ? (agent.aboutMeUpdate?.(botId, convId) ?? "") : "", agent.collab?.chatNote(botId, convId) ?? ""].filter(Boolean).join("\n\n");
+        r = await agent.runTurn(botId, { conversationId: convId, text: notes ? `${notes}\n\n${first}` : first, model: routed, onStep: (step) => void steps.set(step.id, step), observer: {} });
+      } catch (e) {
+        log.warn("collab turn failed", { bot: botId, message: (e as Error).message.slice(0, 200) });
+        return { error: (e as Error).message };
+      } finally {
+        agent.holdSteer(convId, false);
+        fl.abort.signal.removeEventListener("abort", halt);
+      }
+      const text = (r.text || "").trim();
+      if (!keep()) return { text };
+      const messageId = store.addMessage(convId, "assistant", text || t("runtime.doneNoText"), [...steps.values()], { files: r.files });
+      return { messageId, text };
+    } finally {
+      leave();
+      this.answered(convId, fl);
+    }
+  }
+
   async wake(botId: string, convId: string): Promise<void> {
     const { store } = this.opts;
     const agent = this.opts.agent;
@@ -1019,6 +1085,39 @@ export class BotRuntime {
     }
   }
 
+  /**
+   * 开新对话（渠道里的 /new、应用里的新建按钮和 /new 共用）：代理没启用 → off；还没有代理会话（分隔线后没发过消息、从没聊过）→ already；
+   * 开新段本身出错 → failed；否则 started，at 是分隔线的位置（应用里画「已开始新对话」）。
+   */
+  private async startNew(botId: string, convId: string, convModel: string, botModel: string): Promise<NewConversation> {
+    const a = this.opts.agent;
+    if (!a?.available) return { status: "off" };
+    if (!this.opts.store.getAgentSession(convId)) return { status: "already" };
+    try {
+      const at = a.newSegment(botId, convId, await this.resolveModel(convModel, botModel).catch(() => ""));
+      return at === undefined ? { status: "already" } : { status: "started", at };
+    } catch (e) {
+      return { status: "failed", error: (e as Error).message.slice(0, 200) };
+    }
+  }
+
+  /**
+   * 应用里的「开始新对话」（新建按钮、加号菜单、手动输入 /new）：不发消息、不出回复，排在这个会话里还没处理完的消息后面
+   * （界面在回复进行中会先置灰按钮、把手动输入的 /new 排到回复结束后）。
+   */
+  async newConversation(botId: string, convId: string): Promise<NewConversation> {
+    const { store } = this.opts;
+    const run: Inflight = { botId, since: Date.now(), abort: new AbortController(), release: KeyedQueue.releaser() };
+    const done = this.enter(convId, run);
+    try {
+      await done.prior;
+      const conv = store.getConversation(convId);
+      return await this.startNew(botId, convId, conv?.model ?? "", store.getBot(botId)?.defaultModel ?? "");
+    } finally {
+      done.leave();
+    }
+  }
+
   /** 返回 null 表示不是已知命令，按普通消息处理。 */
   private switchBot(ev: InboundEvent, account: string, wanted: string | undefined): string {
     const { store } = this.opts;
@@ -1044,15 +1143,10 @@ export class BotRuntime {
         this.opts.agent?.resetConversation(convId);
         return t("runtime.resetDone");
       case "/new": {
-        const a = this.opts.agent;
-        if (!a?.available) return t("runtime.newAgentOnly");
-        if (!this.opts.store.getAgentSession(convId)) return t("runtime.alreadyNew");
-        try {
-          await a.newSegment(botId, convId, await this.resolveModel(convModel, botModel));
-        } catch (e) {
-          return t("runtime.newFailed", { error: (e as Error).message.slice(0, 200) });
-        }
-        return t("runtime.newDone");
+        // 后面的文字忽略；立即回复，交接便条在后台写（新对话的第一句最多等它 8 秒）
+        const r = await this.startNew(botId, convId, convModel, botModel);
+        if (r.status === "failed") return t("runtime.newFailed", { error: r.error });
+        return r.status === "started" ? t("runtime.newDone") : r.status === "already" ? t("runtime.alreadyNew") : t("runtime.newAgentOnly");
       }
       case "/status":
         return this.statusText(botId, convId, convModel, botModel);
@@ -1091,8 +1185,16 @@ export class BotRuntime {
  * 放进系统提示词的话每记一条都会让整段前缀缓存失效，而且各会话（群记忆）不一样。
  */
 export function firstInput(agent: AgentManager, botId: string, convId: string, text: string, place?: ChatPlace): string {
-  const memory = agent.settings(botId).memory.enabled ? agent.memoryPrefix(botId, convId) : undefined;
+  const memory = agent.settings(botId).memory.enabled ? agent.memoryPrefix(botId, convId, { mark: true }) : undefined;
   return segmentInput({ place, memory, handoff: agent.takeSeed(convId), text });
+}
+
+/** 聊天软件里这一轮关于我的变化（回复后面那几行）；没有就是空串 */
+export function aboutMeLines(agent: AgentManager, convId: string, since: number): string {
+  const changes = agent.aboutMe?.forConversation(convId, since).changes.filter((h) => h.by === "bot" && !h.undoOf) ?? [];
+  return changes
+    .map((h) => t(h.op === "delete" ? "aboutMe.removedChannel" : h.op === "edit" ? "aboutMe.changedChannel" : "aboutMe.addedChannel", { line: (h.op === "delete" ? h.before?.text : h.after?.text) ?? "" }))
+    .join("\n");
 }
 
 /** 审批/提问 → 出站交互操作（文本渠道用 prompt；卡片渠道用 buttons）。 */
@@ -1113,6 +1215,9 @@ export function quoteOf(ev: InboundEvent): { quote: string; plain: string } {
   const plain = eventText({ ...ev, parts: ev.parts.filter((p) => p.type !== "quote") });
   return { quote, plain };
 }
+
+/** 聊天软件里撤销关于我的那句话 */
+const UNDO_WORDS = /^(撤销|撤回|撤銷|undo|取り消し|元に戻す|취소|отменить|deshacer|desfazer)[。.!！]?$/i;
 
 const clipLine = (s: string, n = 80) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 

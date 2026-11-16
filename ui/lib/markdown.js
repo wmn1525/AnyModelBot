@@ -3,8 +3,9 @@ import { localFilePath } from "./resource-preview.js";
 // 助手消息的 Markdown 子集 → 纯数据 AST（不产出 HTML 字符串）。
 // 渲染层用 h() 把 AST 变成节点，文本永远是文本节点，所以不需要另做 HTML 清洗；
 // 唯一会进入属性的是链接地址，只放行 http(s): 与 mailto:（safeHref）。
-// 支持：段落（软换行保留）、# 标题、``` 代码块（流式中未闭合也按代码块显示）、- / 1. 列表（可嵌套）、
-// > 引用、GFM 表格、分隔线；行内：`code`、**粗**、*斜*、~~删~~、[文字](链接)、<链接>、裸链接、\ 转义。
+// 支持：段落（软换行保留）、# 标题（一到六级）、``` 代码块（流式中未闭合也按代码块显示）、- / 1. 列表（可嵌套，- [ ] / - [x] 任务列表）、
+// > 引用、GFM 表格、分隔线；行内：`code`、**粗**、*斜*、~~删~~、[文字](链接)、![说明](图片地址 "标题")、<链接>、裸链接、\ 转义。
+// 图片只记下地址，能不能加载、怎么加载由渲染层按地址决定（components/markdown.js 的 imageSource）。
 
 const FENCE = /^ {0,3}(`{3,}|~{3,})\s*([^`\s]*)[^`]*$/;
 const HEADING = /^ {0,3}(#{1,6})(?:\s+(.*?))?\s*#*\s*$/;
@@ -151,7 +152,11 @@ function parseLines(lines, depth, fileLinks) {
       out.push({
         t: ordered ? "ol" : "ul",
         start: ordered ? parseInt(li[2], 10) : undefined,
-        items: items.map((it) => ({ c: parseInline(it.first.join("\n"), fileLinks), sub: it.sub.length && depth < 6 ? parseLines(it.sub, depth + 1, fileLinks) : [] })),
+        items: items.map((it) => {
+          const task = /^\[( |x|X)\]\s+/.exec(it.first[0]);
+          const first = task ? [it.first[0].slice(task[0].length), ...it.first.slice(1)] : it.first;
+          return { c: parseInline(first.join("\n"), fileLinks), sub: it.sub.length && depth < 6 ? parseLines(it.sub, depth + 1, fileLinks) : [], ...(task ? { task: task[1] !== " " } : {}) };
+        }),
       });
       continue;
     }
@@ -226,8 +231,9 @@ function matchLink(s, i) {
   }
   if (k >= s.length) return null;
   const inner = s.slice(j + 2, k).trim();
-  const url = inner.replace(/\s+("[^"]*"|'[^']*')$/, "");
-  return { text: s.slice(i + 1, j), url, end: k + 1 };
+  const title = /\s+("([^"]*)"|'([^']*)')$/.exec(inner);
+  const url = (title ? inner.slice(0, title.index) : inner).replace(/^<(.*)>$/, "$1");
+  return { text: s.slice(i + 1, j), url, title: title ? (title[2] ?? title[3]) : "", end: k + 1 };
 }
 
 export function parseInline(src, fileLinks = false) {
@@ -266,6 +272,15 @@ export function parseInline(src, fileLinks = false) {
       text += run;
       i += run.length;
       continue;
+    }
+    if (ch === "!" && s[i + 1] === "[") {
+      const m = matchLink(s, i + 1);
+      if (m) {
+        flush();
+        out.push({ t: "img", alt: m.text.replace(/\\([!-/:-@[-`{-~])/g, "$1"), src: m.url.trim(), title: m.title });
+        i = m.end;
+        continue;
+      }
     }
     if (ch === "[") {
       const m = matchLink(s, i);

@@ -8,6 +8,7 @@ AnyModelBot을 더 나은 앱으로 만드는 데 함께해 주셔서 감사합�
 
 - **질문, 아이디어, 사용 사례:** [GitHub Discussions](https://github.com/modelflare-ai/AnyModelBot/discussions)
 - **버그 및 기능 요청:** 템플릿을 사용해 [GitHub Issues](https://github.com/modelflare-ai/AnyModelBot/issues)에 제출
+- **커뮤니티 채팅:** [Discord](https://discord.gg/umBN6wX3zJ) · [Telegram](https://t.me/+Tx6Payfzxqk2ZGVl)
 - **보안 문제:** 공개 이슈를 열지 말고 [보안 정책](./SECURITY_ko.md)에 따라 비공개 신고
 - **그 밖의 문의:** [support@anymodel.bot](mailto:support@anymodel.bot)
 

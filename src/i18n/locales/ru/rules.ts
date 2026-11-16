@@ -1,5 +1,17 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
+  yearly: "Каждый год {date} в {time}",
+  beforeDays: { one: "{text} (за {count} день)", few: "{text} (за {count} дня)", many: "{text} (за {count} дней)", other: "{text} (за {count} дня)" },
+  cronHoursWeekdays: { one: "По будням {from}–{to}, каждый {count} час", few: "По будням {from}–{to}, каждые {count} часа", many: "По будням {from}–{to}, каждые {count} часов", other: "По будням {from}–{to}, каждые {count} часа" },
+  cronHoursDaily: { one: "Ежедневно {from}–{to}, каждый {count} час", few: "Ежедневно {from}–{to}, каждые {count} часа", many: "Ежедневно {from}–{to}, каждые {count} часов", other: "Ежедневно {from}–{to}, каждые {count} часа" },
+  whyTrialInterrupted: "Пробный запуск прерван",
+  briefTruncated: "Полный текст — в настольном приложении",
+  trialRemind: "Напоминаниям пробный запуск не нужен.",
+  trialBusy: "Это правило сейчас выполняется. Попробуйте, когда оно закончит.",
+  libraryMissing: "Этой задачи больше нет в библиотеке задач.",
+  botGone: "Этого бота больше нет. Выберите другого.",
+  libraryField: "Сначала заполните «{field}»",
+  libraryApp: "Сначала подключите {app}",
   lateLabel: "С опозданием (план: {time})",
   updatedCard: "Правило изменено · {name}",
   undoButton: "Отменить",

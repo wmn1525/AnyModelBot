@@ -6,6 +6,8 @@
  * 聊天规则改编自 dsh-superagent（MIT，DeepSeek）的注意力原则：少占用户的注意力，多给有用的结果。
  */
 
+import { collabRules } from "./collab.js";
+
 /** 机器人段在 DSH 系统提示词里的名字与位置：排在 DSH 所有段之后，人设改了也不动前面的部分（前缀缓存） */
 export const BOT_SECTION = "amb:bot";
 export const BOT_SECTION_ORDER = 20_000;
@@ -42,12 +44,12 @@ export const CHAT_RULES = [
 /** 长期记忆的用法（只在本机器人开着长期记忆时放进系统提示词；快照在每段对话的第一条消息里） */
 export const MEMORY_GUIDE = [
   "# 长期记忆",
-  "你有跨对话的长期记忆，用 remember / forget / recall 三个工具管理：",
-  "- 用户明确让你记住、或透露了以后用得上的稳定信息（偏好、身份、约定）时，用 remember 记下，一条一句；",
-  "- 信息过时或用户要求忘记时，用 forget；",
-  "- 在回答「不知道」「不记得」之前，先用 recall 查一下；",
-  "- 不要把密码、密钥、令牌、证件号写进记忆。",
-  "每段对话的第一条消息附有当时的记忆快照；之后记下或忘掉的内容用 recall 查最新的。",
+  "你有跨对话的长期记忆，用 remember / forget / recall 三个工具管理，分两处：",
+  "- 关于我（scope: me）：所有机器人共用、关于用户本人的事（称呼、身份、偏好、习惯、常用信息）。标准是换一个机器人、换一件事，这句话还成立。听到用户本人的新事实或纠正就记下，一条一句自然的话，一次回复最多 3 句；不推测用户没明说的。和已有的一句冲突时用 replaces 指出旧句，以最新为准。",
+  "- 你自己的记忆（scope: own，群里是本群）：项目约定、工作上的事、别人的信息。",
+  "- 用户说忘掉时用 forget；在回答「不知道」「不记得」之前，先用 recall 查一下。",
+  "- 不要记密码、密钥、令牌、证件号、银行卡号；地址、电话、邮箱照常调用 remember，应用会先问用户。工具的回执怎么说就怎么做。",
+  "每段对话的第一条消息附有当时的记忆快照；之后关于我有变化时，消息前面会带上新的全文。",
 ].join("\n");
 
 export interface BotPromptInput {
@@ -59,10 +61,12 @@ export interface BotPromptInput {
   memory: boolean;
   /** 用户的其他机器人：用户问起时它要答得上来，也能指路 */
   others?: Array<{ name: string; persona: string }>;
+  /** 机器人之间能发消息（已登录 Modelflare、机器人协作开着）：这时才建议交给别的机器人；undefined = 不写协作规则 */
+  collab?: boolean;
 }
 
 /** 其他机器人的名单和怎么切换。只有一个机器人时不写，免得系统提示词多一段没用的话 */
-export function botTeam(others: Array<{ name: string; persona: string }>): string {
+export function botTeam(others: Array<{ name: string; persona: string }>, collab?: boolean): string {
   if (!others.length) return "";
   const lines = others.map((o) => {
     const blurb = o.persona.trim().split("\n")[0].slice(0, 60);
@@ -73,6 +77,7 @@ export function botTeam(others: Array<{ name: string; persona: string }>): strin
     "用户还有这些机器人，各有各的人设和记忆，和你共用用户授权的账号：",
     ...lines,
     "用户问有哪些机器人、某件事该找谁、怎么换时，照这里回答。在微信、飞书这些聊天软件里，发一次 /bot 名字 就换过去了，之后这个会话一直和它聊，不用每句都带；只发 /bot 能看到列表。在 okbot 的窗口里，在左侧选机器人。你不能替用户切换。",
+    ...(collab === undefined ? [] : [collabRules(collab)]),
   ].join("\n");
 }
 
@@ -115,5 +120,5 @@ export function botIdentity(name: string, persona: string): string {
  * 顺序按变化频率从低到高：聊天规则（随应用升级）→ 记忆说明（随开关）→ 其他机器人（增删或改名时）→ 名字与人设（用户随时改）。
  */
 export function botPrompt(o: BotPromptInput): string {
-  return [CHAT_RULES, o.memory ? MEMORY_GUIDE : "", botTeam(o.others ?? []), botIdentity(o.name, o.persona)].filter(Boolean).join("\n\n");
+  return [CHAT_RULES, o.memory ? MEMORY_GUIDE : "", botTeam(o.others ?? [], o.collab), botIdentity(o.name, o.persona)].filter(Boolean).join("\n\n");
 }

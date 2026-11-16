@@ -228,7 +228,8 @@ export function approvalItems(store: Store, rows: ApprovalRow[]): AttentionItem[
       since: r.createdAt,
       severity: "warn",
       // 连接应用的卡片：不是批不批的事，给「去连接」（界面打开连接弹窗）和「拒绝」（先不连）
-      actions: connect ? ["connect", "deny"] : r.kind === "approval" ? ["approve", "deny"] : ["answer"],
+      // 别的机器人发来的事：在「需要你」里也能叫停（R10）
+      actions: connect ? ["connect", "deny"] : [...(r.kind === "approval" ? (["approve", "deny"] as const) : (["answer"] as const)), ...(task?.handoffId ? (["stop"] as const) : [])],
       ...(connect ? { appConnect: connect } : {}),
       conversationId: r.conversationId,
       channel,

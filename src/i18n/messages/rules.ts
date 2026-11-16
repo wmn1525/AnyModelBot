@@ -4,6 +4,19 @@
 import type { Catalog } from "../types.js";
 
 export const zh = {
+  // 任务库（PRD 2026-11-15）：每年、提前几天、好读的 cron、试跑、简报截断、「用起来」的报错
+  yearly: "每年 {date} {time}",
+  beforeDays: { other: "{text}（提前 {count} 天）" },
+  cronHoursWeekdays: { other: "工作日 {from}–{to} 每 {count} 小时" },
+  cronHoursDaily: { other: "每天 {from}–{to} 每 {count} 小时" },
+  whyTrialInterrupted: "试跑被打断",
+  briefTruncated: "完整内容在桌面端",
+  trialRemind: "提醒不用试跑。",
+  trialBusy: "这条规则正在运行，等它跑完再试。",
+  libraryMissing: "任务库里没有这个任务了。",
+  botGone: "这个机器人已经不在了，换一个吧。",
+  libraryField: "先填「{field}」",
+  libraryApp: "先连接{app}",
   lateLabel: "补发（原定 {time}）",
   updatedCard: "规则已修改 · {name}",
   undoButton: "撤销",
@@ -132,6 +145,18 @@ export const zh = {
 } satisfies Catalog;
 
 export const en: Catalog<typeof zh> = {
+  yearly: "Every year on {date} at {time}",
+  beforeDays: { one: "{text} (1 day early)", other: "{text} ({count} days early)" },
+  cronHoursWeekdays: { one: "Weekdays {from}–{to}, every hour", other: "Weekdays {from}–{to}, every {count} hours" },
+  cronHoursDaily: { one: "Daily {from}–{to}, every hour", other: "Daily {from}–{to}, every {count} hours" },
+  whyTrialInterrupted: "The trial was interrupted",
+  briefTruncated: "See the full result on desktop",
+  trialRemind: "Reminders don't need a trial.",
+  trialBusy: "This rule is running. Try again when it's done.",
+  libraryMissing: "This task is no longer in the task library.",
+  botGone: "This bot no longer exists. Pick another one.",
+  libraryField: "Fill in \"{field}\" first",
+  libraryApp: "Connect {app} first",
   lateLabel: "Sent late (due {time})",
   updatedCard: "Rule updated \u00b7 {name}",
   undoButton: "Undo",

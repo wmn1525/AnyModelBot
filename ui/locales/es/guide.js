@@ -84,13 +84,13 @@ export default {
     },
     "memory": {
       "title": "Haz que te recuerde",
-      "desc": "Cuéntale tus preferencias y los datos que usas a menudo. Los recuerda en chats nuevos y en WeChat, pero nunca guarda contraseñas, claves ni cosas similares.",
+      "desc": "Cuéntale tus preferencias y los datos que usas a menudo. Todos tus bots los recuerdan, en chats nuevos y en WeChat, pero nunca guardan contraseñas, claves ni cosas similares.",
       "how": [
         "Solo di “Recuerda…”. También anota por su cuenta las cosas importantes mientras chatean",
         "Para que lo olvide, di “Olvida…” o elimínalo en “Memoria”, en el panel derecho"
       ],
       "try": "Recuerda: da respuestas breves y empieza por la conclusión.",
-      "doneText": "Entendido. Puedes verlo o eliminarlo en “Memoria”, en el panel derecho."
+      "doneText": "Entendido. Ya lo saben todos tus bots. Puedes verlo o editarlo en Configuración › Sobre mí."
     },
     "media": {
       "title": "Genera una imagen",

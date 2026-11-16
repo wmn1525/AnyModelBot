@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { AddressInfo } from "node:net";
+import { accountProfile, type AccountProfile } from "./profile.js";
 import { ApiError, type AppKey } from "./client.js";
 import type { AccountHooks, AccountStatus, AlertSettings, BotBudget, UsageSummary } from "./manager.js";
 import { startOfLocalDay, summarizeUsage } from "./manager.js";
@@ -25,6 +26,7 @@ export class NewApiAccountManager {
   private state: AccountStatus["state"] = "signed_out";
   private error = "";
   private name = "";
+  private profile: AccountProfile = { name: "", email: "", avatar: "" };
   private balance: number | null = null;
   private used: number | null = null;
   private updatedAt = 0;
@@ -57,7 +59,7 @@ export class NewApiAccountManager {
   init(): void {
     const saved = this.o.store.getKV(SESSION);
     if (saved) {
-      try { const record = JSON.parse(saved); if (record.origin === this.o.origin) { this.state = "signing_in"; this.name = record.name ?? ""; } } catch { /* stale metadata */ }
+      try { const record = JSON.parse(saved); if (record.origin === this.o.origin) { this.state = "signing_in"; this.name = typeof record.name === "string" ? record.name : ""; this.profile = accountProfile(record.profile ? { ...record.profile, ...(record.profile.nameFrom === "nickname" ? { display_name: record.profile.name } : {}) } : { name: this.name }); } } catch { /* stale metadata */ }
     }
   }
   async restore(): Promise<void> { if (this.state === "signing_in") await this.refresh(); }
@@ -74,7 +76,7 @@ export class NewApiAccountManager {
   get active(): boolean { return !!this.bundle && this.attached; }
   status(): AccountStatus {
     const alerts = this.o.alerts();
-    return { bot: null, topupUrl: `${this.o.origin}/console/topup`, state: this.state, name: this.name, profileReady: !!this.name || !!this.error, profileUrl: `${this.o.origin}/console/personal`, source: this.signedIn ? "account" : this.keyBalance ? "key" : "none", balanceUsd: this.signedIn ? this.balance : this.keyBalance?.available ?? null, usedUsd: this.signedIn ? this.used : this.keyBalance?.used ?? null,
+    return { bot: null, topupUrl: `${this.o.origin}/console/topup`, state: this.state, ...this.profile, name: this.name, profileReady: !!this.name || !!this.error, profileUrl: `${this.o.origin}/console/personal`, source: this.signedIn ? "account" : this.keyBalance ? "key" : "none", balanceUsd: this.signedIn ? this.balance : this.keyBalance?.available ?? null, usedUsd: this.signedIn ? this.used : this.keyBalance?.used ?? null,
       balanceUnit: this.signedIn ? "USD" : this.keyBalance?.unit ?? "USD", balanceScope: this.signedIn ? "account" : this.keyBalance?.scope, unlimitedBalance: !this.signedIn && this.keyBalance?.unlimited, billedToEnterprise: false, updatedAt: this.updatedAt, error: this.error,
       loginUrl: this.login ? `${this.o.origin}/login` : "", alerts, keyQuality: { strategy: "balanced", supported: false }, lowBalance: !this.keyBalance?.unlimited && (this.keyBalance?.unit ?? "USD") === "USD" && (this.signedIn ? this.balance : this.keyBalance?.available) != null && alerts.lowBalanceUsd > 0 && (this.signedIn ? this.balance! : this.keyBalance!.available!) < alerts.lowBalanceUsd,
       ...(this.active ? { loginMethod: "newapi-playground" as const, capabilities: { groups: true, usage: true, budgets: false, notifications: false, invite: false, media: true } } : {}),
@@ -166,13 +168,13 @@ export class NewApiAccountManager {
       if (!status.ok || !Number.isFinite(quota) || quota <= 0 || !Number.isFinite(user.quota) || !Number.isFinite(user.used_quota)) throw new ApiError("账户余额返回格式无效", 502);
       if (generation !== this.loginGeneration || this.stopped) return this.status();
       this.keyBalance = undefined;
-      this.quotaPerUnit = quota; this.name = user.display_name || user.username;
+      this.quotaPerUnit = quota; this.profile = accountProfile({ ...user }); this.name = this.profile.name;
       this.balance = user.quota / quota; this.used = user.used_quota / quota;
       this.error = ""; this.updatedAt = Date.now();
       await this.loadGroups(!this.attached);
       if (generation !== this.loginGeneration || this.stopped) return this.status();
       this.state = "signed_in";
-      this.o.store.setKV(SESSION, JSON.stringify({ origin: this.o.origin, name: this.name }));
+      this.o.store.setKV(SESSION, JSON.stringify({ origin: this.o.origin, name: this.name, profile: this.profile }));
       this.alertLowBalance();
     } catch (error) {
       if (generation !== this.loginGeneration || this.stopped) return this.status();
@@ -439,7 +441,7 @@ export class NewApiAccountManager {
       const res = await this.raw("/api/user/auth/logout", { method: "POST", headers: { "content-type": "application/json", ...(this.bundle ? { Authorization: `Bearer ${this.bundle.access_token}` } : {}), ...(this.bundle?.session?.sid ? { "X-Auth-Session": this.bundle.session.sid } : {}) }, body: "{}" });
       revoked = res.ok;
     } catch { revoked = false; }
-    await this.o.desktop.clear(); await this.expire(); this.error = ""; this.name = "";
+    await this.o.desktop.clear(); await this.expire(); this.error = ""; this.name = ""; this.profile = { name: "", email: "", avatar: "" };
     return { revoked };
   }
   async close(): Promise<void> {

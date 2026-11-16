@@ -164,15 +164,20 @@ describe("服务端", () => {
     fs.writeFileSync(path.join(dir, "app", "index.html"), '<link rel="stylesheet" href="style.css"><h1>Site</h1>');
     fs.writeFileSync(path.join(dir, "app", "style.css"), "h1 { color: blue; }");
     fs.writeFileSync(path.join(dir, "outside.md"), "outside app/");
-    expect((await api(`/bots/${inst}/app/preview?path=app%2Freport.md`)).body).toMatchObject({ kind: "markdown", text: "# Workbench report" });
+    expect((await api(`/bots/${inst}/app/preview?path=app%2Freport.md`)).body).toMatchObject({ kind: "text", text: "# Workbench report" });
     for (const p of ["outside.md", "app/../outside.md", "../../anymodel.db"]) expect((await api(`/bots/${inst}/app/preview?path=${encodeURIComponent(p)}`)).status).toBe(404);
     const website = await api(`/bots/${inst}/app/preview?path=app%2Findex.html`);
     expect(website.body.kind).toBe("html");
     const page = new URL(website.body.url, base);
     expect(await (await fetch(page)).text()).toContain("<h1>Site</h1>");
     expect(await (await fetch(new URL("style.css", page))).text()).toContain("color: blue");
+    // SVG 按图片显示（<img> 不运行脚本；单独打开时 CSP sandbox 也不让它运行）
     const svg = await api(`/bots/${inst}/app/preview?path=app%2Fout%2Fp.svg`);
-    expect(svg.body.kind).toBe("html");
+    expect(svg.body.kind).toBe("image");
+    const svgFile = await fetch(`${base}/amb/api/bots/${inst}/app/download?path=app%2Fout%2Fp.svg`);
+    expect(svgFile.headers.get("content-type")).toBe("image/svg+xml");
+    expect(svgFile.headers.get("content-security-policy")).toBe("sandbox");
+    await svgFile.arrayBuffer();
     const download = await fetch(`${base}/amb/api/bots/${inst}/app/download?path=app%2Freport.md&download=1`);
     expect(download.headers.get("content-disposition")).toContain("attachment");
     await download.arrayBuffer();

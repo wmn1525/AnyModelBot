@@ -22,4 +22,9 @@ export default {
   featuredLess: "折りたたむ",
   fieldHint: "クリックして全員に話しかける",
   fieldModel: "頭脳",
+  community: {
+    title: "コミュニティ",
+    scan: "QQ でスキャンして参加",
+    number: "グループ番号"
+  },
 };

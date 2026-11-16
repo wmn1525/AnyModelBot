@@ -4,8 +4,9 @@
  * 只给两种文件：这个会话交付过的，和这个机器人工作区里的。都按解析符号链接之后的真实路径判断，路径里不许有 ..；
  * 数据目录里工作区以外的地方（数据库、令牌、密钥、别的机器人）一律不给。硬链接也不给：看不出它指向哪里。
  *
- * 代理生成的内容不在应用的源里运行：浏览器里直接显示的只有图片（SVG 除外）、PDF 和纯文本，其余一律下载（attachment）；
- * 全部带 nosniff，PDF 以外都加 CSP sandbox（浏览器自带的 PDF 阅读器在 sandbox 里打不开）。
+ * 代理生成的内容不在应用的源里运行：浏览器里直接显示的只有图片、PDF 和纯文本，其余一律下载（attachment）；
+ * 全部带 nosniff，PDF 以外都加 CSP sandbox（浏览器自带的 PDF 阅读器在 sandbox 里打不开）。SVG 也直接显示（预览和 Markdown 图片用 <img> 引用，
+ * 不运行脚本；单独打开时 CSP sandbox 同样不让它运行脚本）。
  * 桌面版里打开就会运行的文件（.exe、.bat、脚本…）不直接打开，只在文件夹中显示。
  */
 import type http from "node:http";
@@ -35,6 +36,7 @@ const TEXT = "text/plain; charset=utf-8";
 /** 浏览器里可以直接显示的类型；其余一律下载 */
 const INLINE_TYPES: Record<string, string> = {
   ...IMAGE_TYPES,
+  ".svg": "image/svg+xml",
   ".pdf": "application/pdf",
   ".txt": TEXT,
   ".log": TEXT,

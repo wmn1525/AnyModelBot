@@ -1,0 +1,29 @@
+---
+// 社群入口：一排 QQ 群 / Telegram / Discord 链接（哪些语言放哪几个见 data/community.ts），样式在 styles/community.css。
+//   chips：品牌标志 + 名字的胶囊（页脚、首页 FAQ、手机抽屉）。
+//          qr 打开时，QQ 那颗被指到或键盘聚焦时，上方浮出二维码卡（CommunityQr：扫码 + 群号 + 复制）；点胶囊本身去加群页，手机上会唤起 QQ。
+//   icons：只有标志的小圆钮，名字在 aria-label 和悬停提示里（收尾横幅那一行灰字）。
+// 平时标志是灰的，指到时才换成品牌色（--brand）：和页脚收录徽章"平时灰、指到上色"一个规矩，也守住"收尾横幅只有下载按钮用品牌色"。
+import "../styles/community.css";
+import Icon from "./Icon.astro";
+import CommunityQr from "./CommunityQr.astro";
+import { dict, type Lang } from "../i18n";
+import { communityFor } from "../data/community";
+interface Props { lang: Lang; location: string; variant?: "chips" | "icons"; qr?: boolean; class?: string }
+const { lang, location, variant = "chips", qr = false, class: cls } = Astro.props;
+const c = dict(lang).footer.community;
+const links = communityFor(lang);
+const icons = variant === "icons";
+---
+<ul class:list={["cm", `cm--${variant}`, cls]} role="list" aria-label={c.title}>
+  {links.map((l) => (
+    <li class:list={["cm__item", { "cm__item--qr": qr && l.id === "qq" }]} style={`--brand:${l.color}`}>
+      <a class="cm__link" href={l.url} target="_blank" rel="noopener" aria-label={icons ? l.name : undefined} data-tip={icons ? l.name : undefined}
+        data-track="community_click" data-track-channel={l.id} data-track-location={location}>
+        <Icon name={l.id} size={16} />
+        {!icons && <span>{l.name}</span>}
+      </a>
+      {qr && l.id === "qq" && <div class="cm__pop"><CommunityQr lang={lang} size={136} /></div>}
+    </li>
+  ))}
+</ul>

@@ -78,7 +78,7 @@
 
 .side-group { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--side-row-px) var(--space-1); border-radius: var(--r-row); }   /* 侧栏里的一行：圆角和别的行一样，不是文字按钮的胶囊 */
 .side-group .text { color: var(--fg-2); }
-.thread-new-dot { width: var(--space-2); height: var(--space-2); border-radius: 50%; background: var(--signal); flex: none; }
+.thread-new-dot { width: var(--space-2); height: var(--space-2); border-radius: 50%; background: var(--signal); flex: none; transition: opacity var(--t-fast); }
 /* 侧栏分组（screens/sidebar.js、lib/sections.js）：标题点一下折叠；悬停时右边出现"更多"，盖住折叠箭头（和行上的"更多"盖住时间一样）。
    标题和行都能拖：落点是一条 2px 的线（--accent），画在两行 / 两个分组之间的空隙里；拖进分组的空处（放到末尾）时标题亮一层底；拖着的那一项变淡 */
 .side-sec { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--side-row-gap); }

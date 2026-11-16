@@ -1,6 +1,6 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
-  help: "Comandos:\n/model — lista los modelos disponibles (numerados)\n/model <número o nombre> — cambia el modelo de esta conversación\n/reset — borra el contexto de esta conversación (en modo agente, también inicia una nueva sesión del agente; la memoria a largo plazo se conserva)\n/skill — guarda lo que acabamos de hacer como habilidad (agrega una nota para guardar solo una parte)\n/new — inicia una conversación nueva: la anterior se archiva con una nota de traspaso; la memoria a largo plazo se conserva\n/bot — lista los bots; /bot <número o nombre> — habla con otro bot (solo en apps de chat)\n/status — muestra el modelo actual, el estado del agente y cuánto avanzó el mensaje en curso\n/stop — detiene el mensaje en curso (solo en esta conversación; las demás conversaciones del bot siguen)\n/tasks — lista las tareas en segundo plano y las reglas de esta conversación\n/stop <número> — detiene una tarea en segundo plano o una regla de la lista de /tasks\n/help — muestra esta ayuda",
+  help: "Comandos:\n/model — lista los modelos disponibles (numerados)\n/model <número o nombre> — cambia el modelo de esta conversación\n/reset — borra el contexto de esta conversación (en modo agente, también inicia una nueva sesión del agente; la memoria a largo plazo se conserva)\n/skill — guarda lo que acabamos de hacer como habilidad (agrega una nota para guardar solo una parte)\n/new — inicia una conversación nueva: una nota de traspaso guarda dónde nos quedamos y la memoria a largo plazo se conserva\n/bot — lista los bots; /bot <número o nombre> — habla con otro bot (solo en apps de chat)\n/status — muestra el modelo actual, el estado del agente y cuánto avanzó el mensaje en curso\n/stop — detiene el mensaje en curso (solo en esta conversación; las demás conversaciones del bot siguen)\n/tasks — lista las tareas en segundo plano y las reglas de esta conversación\n/stop <número> — detiene una tarea en segundo plano o una regla de la lista de /tasks\n/help — muestra esta ayuda",
   botList: "Bots con los que puedes hablar:\n{list}\n\nEnvía /bot <número o nombre> para cambiar.",
   botCurrent: " (actual)",
   botMissing: "No hay ningún bot “{name}”. Envía /bot para ver la lista.",
@@ -49,10 +49,10 @@ export default {
   agentFailed: "⚠️ Falló la ejecución del agente: {error}",
   localProxyRefused: "El proxy de red local en {address} rechazó la conexión. Inicia tu app de proxy y revisa su puerto, o quita el proxy que no usas de los ajustes del sistema o de las variables de entorno. Luego cierra okbot por completo y vuelve a abrirlo para reintentar.",
   resetDone: "✅ Se borró el contexto de esta conversación",
-  newAgentOnly: "⚠️ /new solo funciona en modo agente; en el modo solo chat, usa /reset",
-  alreadyNew: "Esta ya es una conversación nueva",
-  newFailed: "⚠️ No se pudo iniciar una conversación nueva: {error}",
-  newDone: "✅ Se inició una conversación nueva (la anterior se archivó con una nota de traspaso; la memoria a largo plazo se conserva)",
+  newAgentOnly: "El modo agente está desactivado, así que no se puede iniciar una conversación nueva. Envía /reset para borrar el contexto.",
+  alreadyNew: "Ya estás en una conversación nueva.",
+  newFailed: "No se pudo iniciar una conversación nueva: {error}",
+  newDone: "Se inició una conversación nueva. Recordaré dónde nos quedamos y la memoria a largo plazo se conserva.",
   modelListFailed: "⚠️ No se pudo obtener la lista de modelos: {error}",
   modelListEmpty: "No hay modelos disponibles: primero inicia sesión en Okinto o agrega una clave de API oficial (Ajustes → Modelos).",
   modelListHead: "Modelos disponibles (responde /model <número> para cambiar):",

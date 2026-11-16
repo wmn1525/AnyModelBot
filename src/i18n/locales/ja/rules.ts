@@ -1,5 +1,17 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
+  yearly: "毎年 {date} {time}",
+  beforeDays: { other: "{text}（{count} 日前）" },
+  cronHoursWeekdays: { other: "平日 {from}–{to} {count} 時間ごと" },
+  cronHoursDaily: { other: "毎日 {from}–{to} {count} 時間ごと" },
+  whyTrialInterrupted: "お試し実行が中断されました",
+  briefTruncated: "全文はデスクトップで確認できます",
+  trialRemind: "リマインダーはお試し実行の必要がありません。",
+  trialBusy: "このルールは実行中です。終わってからもう一度お試しください。",
+  libraryMissing: "このタスクはタスクライブラリにありません。",
+  botGone: "このボットはもうありません。別のボットを選んでください。",
+  libraryField: "先に「{field}」を入力してください",
+  libraryApp: "先に{app}を接続してください",
   lateLabel: "遅延送信（予定 {time}）",
   updatedCard: "ルールを変更しました · {name}",
   undoButton: "取り消す",

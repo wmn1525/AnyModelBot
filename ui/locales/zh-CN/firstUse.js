@@ -30,6 +30,7 @@ export default {
   "signIn": "登录 Okinto",
   "signInSub": "使用更多模型，当前 Key 照常保留",
   "feedback": "意见和反馈",
+  "community": "加入社群",
   "checkUpdate": "检查更新",
   "checking": "检查中…",
   "latest": "已是最新版本",

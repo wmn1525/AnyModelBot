@@ -16,6 +16,12 @@ https://github.com/tailwindlabs/heroicons/releases/tag/v2.2.0
 
 Los controles de los paneles izquierdo y derecho usan `panel-left` / `panel-right` de Lucide 1.73.0, conservando el rectángulo redondeado con una línea vertical de la versión anterior. Código y procedencia: `ui/icons/lucide.js` y `ui/icons/lucide-source.json`. Licencias ISC / MIT completas: [ui/icons/lucide-LICENSE](./ui/icons/lucide-LICENSE).
 
+## highlight.js (resaltado de código en el panel de vista previa)
+
+La vista de código del panel de vista previa y los bloques de código de Markdown se resaltan con highlight.js 11.12.0. Solo se distribuyen el núcleo y 31 lenguajes comunes (la compilación oficial en módulos ES del paquete npm `@highlightjs/cdn-assets`), en `ui/vendor/hljs/`, copiados por `scripts/vendor-hljs.mjs`. highlight.js usa la licencia BSD-3-Clause, con derechos de autor de Ivan Sagalaev y colaboradores; la licencia completa está en [ui/vendor/hljs/LICENSE](./ui/vendor/hljs/LICENSE).
+
+https://github.com/highlightjs/highlight.js
+
 ## magpie (gateway de modelos integrado, distribuido como binario; parte de los estilos de la interfaz se adaptó de él)
 
 Fuente: https://github.com/yetone/magpie (submódulo vendor/magpie, v0.1.1720)

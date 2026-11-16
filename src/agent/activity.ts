@@ -61,7 +61,7 @@ export class ActivityLog {
   constructor(
     private onChange?: (step: ActivityStep) => void,
     private model = "",
-    private opts: { chat?: boolean; uses?: { appKey?: (selector: string) => string | undefined; skillPending?: (name: string) => boolean } } = {},
+    private opts: { chat?: boolean; uses?: { appKey?: (selector: string) => string | undefined; toolTitle?: (app: string, tool: string) => string | undefined; skillPending?: (name: string) => boolean } } = {},
   ) {}
 
   get last(): ActivityStep | undefined {
@@ -249,7 +249,10 @@ export class ActivityLog {
     if (!uses) return undefined;
     const use = stepUse(tool, args);
     if (use?.kind !== "app") return use;
-    return { ...use, app: uses.appKey?.(use.app) ?? use.app };
+    const app = uses.appKey?.(use.app) ?? use.app;
+    // 工具的显示名称（应用给了才有），过程区写「{应用} · {工具}」；没有时界面用工具名原文
+    const toolTitle = use.tool ? uses.toolTitle?.(app, use.tool) : undefined;
+    return { ...use, app, ...(toolTitle && toolTitle !== use.tool ? { toolTitle } : {}) };
   }
 
   /** 没用成：技能只在「装了还没生效」时说明，其余（模型编的名字、关掉的技能）不显示；应用按结果文字分原因 */

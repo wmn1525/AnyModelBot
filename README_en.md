@@ -1,6 +1,6 @@
 <h1 align="center">okinto 中转</h1>
 
-> 0.1.36 · Skill library, saving work as skills and installing skills in chat; software labels, seven-language messages and tool descriptions now use Okinto, with fork update links and existing connection compatibility preserved.
+> 0.1.40 · Includes upstream 0.1.37–0.1.40: About me, bot collaboration, the task library, richer file previews and fixes; preserves Okinto sign-in, model groups, balances and seven-language branding checks.
 > App connectors and custom MCP, sidebar groups, right-panel tabs, and Spanish and Portuguese (Brazil); preserves Okinto sign-in, balances, model groups and image generation.
 > Added a What’s new dialog and changelog in About. Version checks, update downloads and release notes all use this repository.
 
@@ -34,6 +34,9 @@
 [![Platform][platform-shield]][releases-link]
 [![Pricing][pricing-shield]][pricing-link]
 [![okinto 中转][okinto-shield]][okinto-link]
+
+[![Discord][discord-shield]][discord-link]
+[![Telegram][telegram-shield]][telegram-link]
 
 </div>
 
@@ -125,6 +128,7 @@ A bot is more than a chat window: it has a persona, a default model, its own wor
 - **Approval cards, not surprises.** Actions that write outside the workspace stop and wait for your answer.
 - **Told after a restart.** A message still in progress when the app quit or crashed is flagged in its conversation at the next start, so you can send it again; nothing is redone on its own.
 - **Group chats.** Create a group and add a few bots. Whoever you @ answers; with no @, the bot that answered last carries on. Bots can also @ another member to hand off. Each bot keeps its own model, workspace and memory, and costs are tracked per bot.
+- **Bots that message each other.** In the app, tell a bot "hand this to B": B works in the background with its own model, permissions and budget and replies when done, and the first bot checks the result before telling you. B asks for approvals in the same chat under its own name, and you can read their conversation any time. Requires signing in to Okinto, with both bots on Okinto models.
 - **Search chat history.** Search all messages saved on your device from the sidebar, filter by bot, conversation, channel or date, and jump to the original message. `Ctrl/Cmd+Shift+F` opens global search; `Ctrl/Cmd+F` searches the current chat. Searches do not call a model. Before you type, the search dialog lists recent chats by date.
 - **Slash commands** such as `/model` and `/reset` work in the app and in every chat channel. In a chat channel, `/bot` switches to another bot.
 
@@ -168,7 +172,7 @@ The full story, in Chinese: [okinto 中转 超级智能体](./docs/blog/superage
 
 ## 🧠 Memory, and reachable from anywhere
 
-- **Memory that carries over.** Each bot, group, and team has its own memory, kept as Markdown and kept separate. Content that looks like passwords or keys isn't saved.
+- **Memory that carries over.** Things about you live in About me, shared by all your bots: say it once and every bot knows, and you can view, edit or undo it in Settings. Bots ask before saving an address, phone number or email. Each bot and group also has its own memory, kept as Markdown and kept separate. Content that looks like passwords or keys isn't saved.
 - **Long chats stay usable.** A context steward compacts or starts a fresh segment with a hand-off summary before the window fills up.
 - **Accounts shared by all bots.** Add WeChat, Feishu, Telegram, Slack and Discord chat accounts once under Settings › Chat channels. Every bot shares them, and each channel can have several accounts with aliases. Send `/bot name` once in a chat app to talk to a different bot.
 - **Connect apps.** Apps & skills in the avatar menu comes with connectors for Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian and Canva, and you can add custom MCP connectors (remote servers or local commands). Connect once and every bot can use it by default; narrow it per bot and per tool. Read-only tools run right away, writes ask you first, and deletes or anything sent to other people always ask.

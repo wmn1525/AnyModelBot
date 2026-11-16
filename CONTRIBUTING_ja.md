@@ -8,6 +8,7 @@ AnyModelBot の改善にご協力いただきありがとうございます。�
 
 - **質問、アイデア、活用事例：** [GitHub Discussions](https://github.com/modelflare-ai/AnyModelBot/discussions)
 - **不具合と機能要望：** テンプレートを使って [GitHub Issues](https://github.com/modelflare-ai/AnyModelBot/issues) へ
+- **コミュニティチャット：** [Discord](https://discord.gg/umBN6wX3zJ) · [Telegram](https://t.me/+Tx6Payfzxqk2ZGVl)
 - **セキュリティの問題：** 公開 Issue は作成せず、[セキュリティポリシー](./SECURITY_ja.md) に従って非公開で報告してください
 - **その他：** [support@anymodel.bot](mailto:support@anymodel.bot)
 

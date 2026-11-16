@@ -383,3 +383,63 @@ describe("recycling the agent process: only after more than RECYCLE_AFTER_SESSIO
     store.close();
   });
 });
+
+describe("/new: the new conversation starts right away, the handoff note is written in the background", () => {
+  /** 一段聊过几轮的对话（有代理会话）；note 是写交接便条的模型怎么答 */
+  function chatted(note: () => Promise<string>) {
+    const store = new Store(":memory:");
+    store.createBot({ id: "b", name: "b" });
+    const conv = store.ensureConversation("b", "web", "console");
+    for (let i = 1; i <= 8; i++) store.addMessage(conv.id, i % 2 ? "user" : "assistant", `第 ${i} 条`);
+    store.setAgentSession(CONV, "b", "S1");
+    const mgr = new AgentManager({ store, dataDir: dir, runtimeDir: "/rt", upstream: () => ({ baseUrl: "", apiKey: "" }), enabled: true, reviewDelayMs: 1e9, complete: () => note() });
+    return { store, mgr };
+  }
+
+  it("keeps the last 6 messages as a fallback at once, then swaps in the note when it is ready", async () => {
+    let finish!: (v: string) => void;
+    const { store, mgr } = chatted(() => new Promise((r) => (finish = r)));
+    const at = mgr.newSegment("b", CONV, "m");
+    expect(typeof at).toBe("number");
+    expect(store.getAgentSession(CONV)).toBeUndefined();
+    const fallback = store.getKV(`seed:${CONV}`) ?? "";
+    expect(fallback).toContain("第 8 条");
+    expect(fallback).not.toContain("第 2 条");
+    expect(store.manualSegmentTimes(CONV)).toEqual([at]);
+    expect(mgr.newSegment("b", CONV, "m")).toBeUndefined(); // already a new conversation
+    finish("交接便条：在聊周报");
+    await mgr.seedReady(CONV);
+    expect(mgr.takeSeed(CONV)).toBe("交接便条：在聊周报");
+    expect(store.listSegments(CONV)[0].handoff).toBe("交接便条：在聊周报");
+  });
+
+  it("the first message waits at most 8 s; a note that arrives later is not used", async () => {
+    vi.useFakeTimers();
+    let finish!: (v: string) => void;
+    const { store, mgr } = chatted(() => new Promise((r) => (finish = r)));
+    mgr.newSegment("b", CONV, "m");
+    const fallback = store.getKV(`seed:${CONV}`);
+    let waited = false;
+    const p = mgr.seedReady(CONV).then(() => (waited = true));
+    await vi.advanceTimersByTimeAsync(7_900);
+    expect(waited).toBe(false);
+    await vi.advanceTimersByTimeAsync(200);
+    await p;
+    expect(waited).toBe(true);
+    expect(mgr.takeSeed(CONV)).toBe(fallback);
+    finish("迟到的便条");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.getKV(`seed:${CONV}`)).toBe("");
+  });
+
+  it("a note that fails (model unavailable) silently keeps the fallback", async () => {
+    const { store, mgr } = chatted(async () => {
+      throw new Error("insufficient balance");
+    });
+    mgr.newSegment("b", CONV, "m");
+    const fallback = store.getKV(`seed:${CONV}`);
+    await mgr.seedReady(CONV);
+    expect(mgr.takeSeed(CONV)).toBe(fallback);
+    expect(fallback).toContain("第 7 条");
+  });
+});

@@ -1,6 +1,8 @@
 export default {
   "tabs": {
     "general": "General",
+    "aboutMe": "Sobre mí",
+    "collab": "Colaboración entre bots",
     "appearance": "Apariencia",
     "modelflare": "Modelos",
     "computer": "Uso de la computadora",
@@ -504,6 +506,13 @@ export default {
     "troubleshoot": {
       "sub": "Estado del gateway y del proceso del agente, pruebas de modelo y de agente, registros recientes y copia del diagnóstico",
       "keys": "registro registros prueba agente atascado cargando colgado diagnóstico reiniciar comandos lentos log logs test agent stuck spinning hang diagnostics restart PowerShell pwsh slow commands"
+    },
+    "community": {
+      "name": "Comunidad",
+      "sub": "Haz preguntas, comparte comentarios e intercambia consejos con otros usuarios",
+      "keys": "comunidad chat grupo discord telegram community",
+      "copyQq": "Copiar el número del grupo de QQ",
+      "qq": "Grupo de QQ"
     },
     "links": {
       "sub": "Sitio web y documentación",

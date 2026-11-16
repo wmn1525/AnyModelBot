@@ -3,6 +3,7 @@ export default {
   "h2dim": "Straight answers.",
   "ask": "Got a question? Open it up.",
   "more": "Didn’t find it? Dig into the docs",
+  "community": "Or ask in the community",
   "items": [
     {
       "q": "How do I add skills to a bot?",

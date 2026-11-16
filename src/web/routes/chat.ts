@@ -1,8 +1,9 @@
 /** 消息搜索、应用内群聊、会话（停止、活动记录）。 */
 import path from "node:path";
 import { SseReply } from "../sse-reply.js";
-import { botWorkspace, resolveFile, runnable, sendFile } from "../files.js";
+import { botWorkspace, describeFile, resolveFile, runnable, sendFile } from "../files.js";
 import { FilePreviews } from "../file-previews.js";
+import { watchFiles, type WatchTarget } from "../preview-watch.js";
 import { groupPeer } from "../../store/db.js";
 import { ChatSearchInputError } from "../../store/chat-search.js";
 import { t } from "../../i18n/index.js";
@@ -146,9 +147,10 @@ export function chatRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
         return send(res, 200, { stopped: stopConversation(decodeURIComponent(seg[1])) });
       }
       // 交付的文件（web/files.ts）：GET file?path= 发给浏览器（图片、PDF、纯文本直接显示，其余下载）；
-      // 桌面版 POST file/open 用系统的默认程序打开（打开就会运行的只在文件夹中显示），file/reveal 在文件夹中显示。
+      // 桌面版 POST file/open 用系统的默认程序打开（打开就会运行的只在文件夹中显示），file/reveal 在文件夹中显示，file/save 另存为，
+      // file/browser 用系统默认浏览器打开网页（.html 的默认程序可能是编辑器）。
       // 只给这个会话交付过的文件和这个机器人工作区里的文件
-      if (seg[2] === "file" && (seg.length === 3 ? m === "GET" : seg.length === 4 && (seg[3] === "preview" ? m === "GET" : (seg[3] === "open" || seg[3] === "reveal") && m === "POST"))) {
+      if (seg[2] === "file" && (seg.length === 3 ? m === "GET" : seg.length === 4 && (seg[3] === "preview" ? m === "GET" : (seg[3] === "open" || seg[3] === "reveal" || seg[3] === "save" || seg[3] === "browser") && m === "POST"))) {
         const conv = app.store.getConversation(decodeURIComponent(seg[1]));
         if (!conv) throw new HttpError(404, t("web.conversationNotFound"));
         const desktop = app.desktop;
@@ -157,9 +159,18 @@ export function chatRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
         const ws = botWorkspace(cfg.dataDir, conv.botId);
         const f = ws ? resolveFile(String(input ?? ""), { workspace: ws, dataDir: cfg.dataDir, delivered: app.store.deliveredFiles(conv.id) }) : undefined;
         if (!f) throw new HttpError(404, t("web.fileNotFound"));
-        if (m === "GET" && seg[3] === "preview") return send(res, 200, await previews.describe(f, { workspace: ws!, dataDir: cfg.dataDir, delivered: app.store.deliveredFiles(conv.id) }));
+        if (m === "GET" && seg[3] === "preview") return send(res, 200, await previews.describe(f, { workspace: ws!, dataDir: cfg.dataDir, delivered: app.store.deliveredFiles(conv.id) }, { encoding: url.searchParams.get("encoding") || undefined }));
         if (m === "GET") return sendFile(req, res, f, undefined, url.searchParams.get("download") === "1");
-        if (seg[3] === "open" && !runnable(f)) {
+        if (seg[3] === "save") {
+          if (!desktop!.saveFileAs) throw new HttpError(400, t("web.desktopOnly"));
+          return send(res, 200, await desktop!.saveFileAs(f.path, path.basename(f.path)));
+        }
+        if (seg[3] === "browser" && /\.html?$/i.test(f.path)) {
+          if (desktop!.openFileInBrowser) await desktop!.openFileInBrowser(f.path);
+          else desktop!.openPath!(f.path);
+          return send(res, 200, { ok: true });
+        }
+        if ((seg[3] === "open" || seg[3] === "browser") && !runnable(f)) {
           desktop!.openPath!(f.path);
           return send(res, 200, { ok: true });
         }
@@ -168,6 +179,47 @@ export function chatRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
         return send(res, 200, { ok: true, revealed: true });
       }
     }
+    // 右侧预览：本对话（群聊是每个成员的会话）交付过的文件，新→旧，带交付时间；不在了的标 gone
+    if (seg.length === 1 && seg[0] === "delivered-files" && m === "GET") {
+      const ids = url.searchParams.getAll("conv").filter((id) => app.store.getConversation(id)).slice(0, 32);
+      return send(res, 200, { files: app.store.deliveredFileTimes(ids).slice(0, 200).map((d) => ({ ...describeFile(d.path), conv: d.conversationId, at: d.at })) });
+    }
+    // 右侧预览的 HTML 页还开着：续上它读取同目录资源的授权
+    if (seg.length === 2 && seg[0] === "preview-grants" && seg[1] === "renew" && m === "POST") {
+      return send(res, 200, { ok: previews.renew((await readJson(req)).url) });
+    }
+    // 右侧预览的自动刷新：t = base64url(JSON [{ k, conv, path } | { k, bot, path }])，已打开的标签（网址除外）。
+    // 文件变了推 change（{ key, size, mtimeMs }），确认消失推 gone（{ key, gone }）；标签增减时界面重新订阅
+    if (seg.length === 1 && seg[0] === "preview-watch" && m === "GET") {
+      let list: unknown;
+      try { list = JSON.parse(Buffer.from(url.searchParams.get("t") || "", "base64url").toString("utf8")); } catch { list = []; }
+      const targets = (Array.isArray(list) ? list : []).slice(0, 48).map((x) => watchTarget(x)).filter((x): x is WatchTarget => !!x);
+      const out = new SseReply(res);
+      out.send("ready", { count: targets.length });
+      const off = watchFiles(targets, (e) => out.send(e.gone ? "gone" : "change", e));
+      res.on("close", off);
+      return true;
+    }
     return false;
   };
+
+  /** 能监听的文件：这个会话交付过的、这个机器人工作区里的，或专业 Bot 的 app/ 下；文件可以暂时不在（先删再写、被移走后又出现） */
+  function watchTarget(x: unknown): WatchTarget | undefined {
+    if (!x || typeof x !== "object") return undefined;
+    const { k, conv, bot, path: input } = x as Record<string, unknown>;
+    if (typeof k !== "string" || typeof input !== "string" || !input || input.includes("\0") || input.split(/[\\/]/).includes("..")) return undefined;
+    if (typeof bot === "string") {
+      const ws = app.store.getBot(bot) ? botWorkspace(cfg.dataDir, bot) : undefined;
+      return ws && input.startsWith("app/") ? { key: k, file: path.join(ws, ...input.split("/")) } : undefined;
+    }
+    const c = typeof conv === "string" ? app.store.getConversation(conv) : undefined;
+    const ws = c ? botWorkspace(cfg.dataDir, c.botId) : undefined;
+    if (!c || !ws) return undefined;
+    const delivered = app.store.deliveredFiles(c.id);
+    const found = resolveFile(input, { workspace: ws, dataDir: cfg.dataDir, delivered });
+    if (found) return { key: k, file: found.path };
+    const file = path.resolve(ws, input);
+    const inWs = path.relative(ws, file).split(path.sep)[0] !== ".." && !path.isAbsolute(path.relative(ws, file));
+    return inWs || delivered.some((d) => path.resolve(d) === file) ? { key: k, file } : undefined;
+  }
 }

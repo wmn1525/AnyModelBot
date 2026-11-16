@@ -228,12 +228,12 @@
   .toast[data-kind="error"] { background: var(--danger); color: var(--on-danger); }
 
   /* —— 导航：一条通栏 ——
-     和正文用同一个容器：logo、下载按钮分别对齐页面内容的左右边线；链接在正中（三栏网格，两侧等分）。
+     和正文用同一个容器：logo、下载按钮分别对齐页面内容的左右边线；产品链接紧跟在 logo 后面（三栏网格：logo、链接、工具）。
      停在页面顶上时透明，和 Hero 的光连成一片；往下滚之后铺一层半透明底色 + 毛玻璃，底边一根细线和内容分开。
      一套尺寸到底：所有控件都是 32 高的圆角胶囊，文字 14 / 500（下载 600），图标 16。链接之间 2px；
-     右侧的 GitHub、语言、外观是三个 32×32 的图标按钮（间隔 4px，悬停 / 键盘聚焦时下方出提示），工具组和下载之间 12px。
+     右侧最前面是文字链接"合作伙伴"，接着 GitHub 图标、「加入社群」文字（指上去展开）、语言和外观两个 32×32 的图标按钮（间隔 4px，悬停 / 键盘聚焦时下方出提示），各组之间 12px。
      右侧不加分隔线和平台菜单。
-     悬停 / 当前位置：链接下面的底色 .nav__pill 跟着悬停滑动，停在当前章节上（client.ts），文字换成正文色。 */
+     悬停 / 当前位置：链接下面的底色 .nav__pill 跟着悬停滑动，平时停在当前页上（client.ts），文字换成正文色。 */
   /* 底色和毛玻璃画在 ::before 上：导航本身不带 backdrop-filter，里面的语言 / 外观菜单才能透过它模糊到页面内容 */
   .nav { position: sticky; top: 0; z-index: var(--z-nav); height: var(--nav-h); }
   .nav::before {
@@ -245,7 +245,7 @@
     background-color: var(--nav-bg); background-image: var(--grain); box-shadow: inset 0 -1px 0 var(--line);
     -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   }
-  .nav__bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-6); height: 100%; }
+  .nav__bar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-8); height: 100%; }
   .logo { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font-weight: 600; font-size: 20px; letter-spacing: -.015em; white-space: nowrap; }
   .logo:hover { color: var(--text); text-decoration: none; }
   .logo .amb-mark { --mark-size: 28px; }
@@ -257,7 +257,7 @@
     border-radius: var(--r-btn); color: var(--text-2); font-size: var(--fs-sm); font-weight: 500; line-height: 1; white-space: nowrap; text-decoration: none;
     transition: color var(--dur-fast);
   }
-  .nav__link:hover, .nav__link.is-hot, .nav__link.is-active, .nav__link[aria-current="page"] { color: var(--text); text-decoration: none; }
+  .nav__link:hover, .nav__link.is-hot, .nav__link[aria-current="page"] { color: var(--text); text-decoration: none; }
   .nav__ext { width: 12px; height: 12px; margin-right: -2px; opacity: .5; transition: opacity var(--dur-fast); }
   .nav__link:hover .nav__ext { opacity: .8; }
   .nav__pill {
@@ -276,7 +276,7 @@
     border-radius: var(--r-btn); color: var(--text-2); font-size: var(--fs-sm); font-weight: 500; line-height: 1; white-space: nowrap; text-decoration: none;
     transition: color var(--dur-fast), background var(--dur-fast);
   }
-  .nav__util:hover, .nav__util[aria-expanded="true"] { color: var(--text); background: var(--nav-pill); text-decoration: none; }
+  .nav__util:hover, .nav__util[aria-expanded="true"], .nav__util[aria-current="page"] { color: var(--text); background: var(--nav-pill); text-decoration: none; }
   .nav__util--icon { width: 32px; padding: 0; }
   .nav__util .icon { flex: none; width: 16px; height: 16px; }
   /* 图标按钮的提示：按钮正下方一枚反色小标签，悬停 0.35 秒后浮出（键盘聚焦立刻出）；菜单展开时收起 */
@@ -334,6 +334,11 @@
     .nav__tools { gap: var(--space-2); }
     .nav__burger { display: inline-flex; }
   }
+  /* 桌面宽度但一排放不下（长语言）：client.ts 打上 is-cramped，同样收进汉堡菜单 */
+  .nav.is-cramped .nav__bar { grid-template-columns: 1fr auto; }
+  .nav.is-cramped .nav__links, .nav.is-cramped .nav__tools .hide-md { display: none; }
+  .nav.is-cramped .nav__tools { gap: var(--space-2); }
+  .nav.is-cramped .nav__burger { display: inline-flex; }
   @media (max-width: 767px) {
     :root { --nav-h: 56px; }
   }
@@ -355,6 +360,10 @@
   .drawer__num { width: 24px; flex: none; font-family: var(--font-mono); font-size: var(--fs-eyebrow); font-weight: 400; letter-spacing: 0; color: var(--text-2); }
   .drawer__label { flex: 1; }
   .drawer__links a[aria-current="page"] .drawer__label { color: var(--accent-fg); }
+  /* 合作伙伴：和产品链接隔开一段，不编号、字小一号、次要色 */
+  .drawer__links a.drawer__aside { min-height: 52px; margin-top: 24px; border-bottom: 0; color: var(--text-2); font-size: var(--fs-body); letter-spacing: 0; }
+  .drawer__links a.drawer__aside:hover { color: var(--text); }
+  .drawer__aside .drawer__go { width: 16px; height: 16px; }
   .drawer__go { flex: none; width: 18px; height: 18px; color: var(--text-2); transition: transform var(--dur-fast) var(--ease-out), color var(--dur-fast); }
   .drawer__links a:hover .drawer__go, .drawer__links a:focus-visible .drawer__go { color: var(--accent-fg); transform: translateX(3px); }
   dialog.drawer[open] .drawer__links a { animation: drawer-item var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 35ms + 40ms); }

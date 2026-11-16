@@ -30,6 +30,7 @@ export default {
   "signIn": "Sign in to Okinto",
   "signInSub": "More models. Your current keys keep working.",
   "feedback": "Feedback",
+  "community": "Community",
   "checkUpdate": "Check for updates",
   "checking": "Checking…",
   "latest": "You are up to date",

@@ -5,7 +5,7 @@
 // - 每个机器人都有「概览」（渠道、待审批、最近会话；目录 Bot 再列出它能做什么、技能、权限）、「任务」、「记忆」（screens/info-panel.js）。
 //   还没有实例的目录 Bot 只有工作台和概览。只有当前标签挂载，看不见的标签不轮询。
 // 面板放在外壳的第三列（main.js）：开合、分隔条调宽、窄窗口的抽屉、Windows 标题栏的角都和原来的信息面板一样；
-// 有工作台时更宽（.app.panel-wide 用 --work-w），宽度单独记在 prefs.workW。
+// 有工作台时更宽（.app.panel-wide 用 --work-w），宽度单独记在 prefs.workW；「预览」有标签时用同一个宽尺寸（PRD R4），切回概览 / 任务 / 记忆时回到窄宽度。
 import { render } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { html, Icon } from "../components/ui.js";
@@ -63,7 +63,11 @@ function useTabsWrap(tabs) {
  * tabs：panelTabs() 的结果；tab：当前标签（不在 tabs 里时用第一个）；onTab(id) 切换。
  * entry：目录 Bot 的条目（概览里的说明）；onHost(el)：工作台那块宿主挂上 / 卸下时调用（ref 回调）。
  */
-export function WorkPanel({ bot, entry, tabs, tab, onTab, leaving, onClose, expanded, onExpand, onOpenBotSettings, onOpenChat, onOpenConnections, onHost, resources, onSelectResource, onRemoveResource }) {
+/**
+ * 预览（resources）：resources 是这一套标签，onResources(fn) 改它；convs 是本对话的会话（「+」菜单列交付的文件）；desktop 桌面版。
+ * 「预览」有标签时顶栏多一个「放大」（previewExpanded / onPreviewExpand）：铺满整个应用窗口，Esc 或再点一次退出。
+ */
+export function WorkPanel({ bot, entry, tabs, tab, onTab, leaving, onClose, expanded, onExpand, onOpenBotSettings, onOpenChat, onOpenConnections, onOpenSettings, onHost, resources, onResources, convs, desktop, previewExpanded, onPreviewExpand }) {
   const cur = tabs.includes(tab) ? tab : tabs[0];
   const wrap = useTabsWrap(tabs);
   // 标签条的键盘：← → 换到相邻的标签（选中即切换），Home / End 到两头
@@ -86,13 +90,15 @@ export function WorkPanel({ bot, entry, tabs, tab, onTab, leaving, onClose, expa
       </div>
       <span class="grow"></span>
       ${tabs.includes("app") && html`<button type="button" class="text work-expand" aria-pressed=${!!expanded} onClick=${() => onExpand(!expanded)}>${t(expanded ? "info.restoreWorkspace" : "info.expandWorkspace")}</button>`}
+      ${cur === "resources" && resources?.items.length > 0 && html`<button type="button" class="icon-btn pv-expand" title=${t(previewExpanded ? "info.preview.exitExpand" : "info.preview.expand")} aria-label=${t(previewExpanded ? "info.preview.exitExpand" : "info.preview.expand")}
+        aria-pressed=${!!previewExpanded} onClick=${() => onPreviewExpand(!previewExpanded)}><${Icon} name=${previewExpanded ? "shrink" : "expand"} size="md" /></button>`}
       ${bot && html`<button type="button" class="icon-btn" title=${t("info.botSettings")} aria-label=${t("info.botSettings")} onClick=${onOpenBotSettings}><${Icon} name="gear" size="md" /></button>`}
       <button type="button" class="icon-btn panel-close" title=${t("info.closeTitle")} aria-label=${t("info.closeAria")} onClick=${onClose}><${Icon} name="close" size="md" /></button>
     </div>
     ${tabs.includes("app") && html`<div class="work-host" ...${pane("app")} hidden=${cur !== "app"} ref=${onHost}></div>`}
-    ${cur === "resources" && html`<div class="preview-pane" ...${pane("resources")}><${ResourcePreview} state=${resources} onSelect=${onSelectResource} onRemove=${onRemoveResource} /></div>`}
+    ${cur === "resources" && html`<div class="preview-pane" ...${pane("resources")}><${ResourcePreview} state=${resources} onState=${onResources} convs=${convs} desktop=${desktop} onToggleExpand=${() => onPreviewExpand(!previewExpanded)} /></div>`}
     ${cur === "overview" && html`<div class="panel-body" ...${pane("overview")}><${OverviewTab} bot=${bot} entry=${entry} onOpenChat=${onOpenChat} onOpenConnections=${onOpenConnections} /></div>`}
     ${cur === "tasks" && bot && html`<div class="panel-body" ...${pane("tasks")}><${TasksTab} bot=${bot} onOpenChat=${onOpenChat} /></div>`}
-    ${cur === "memory" && bot && html`<div class="panel-body" ...${pane("memory")}><${MemoryTab} bot=${bot} /></div>`}
+    ${cur === "memory" && bot && html`<div class="panel-body" ...${pane("memory")}><${MemoryTab} bot=${bot} onOpenAboutMe=${() => onOpenSettings?.("aboutMe")} /></div>`}
   </aside>`;
 }

@@ -39,6 +39,8 @@ import {
   MODELFLARE_PROVIDER,
   bareModel,
   botProviderId,
+  isGatewayGroupModel,
+  resolveGroupModel,
   modelflareBaseUrl,
   fetchKeyBalance,
   modelflareIssuer,
@@ -68,6 +70,7 @@ import { UserSkills } from "./skills/service.js";
 import { SkillInstalls } from "./skills/installs.js";
 import { SkillDrafts } from "./skills/drafts.js";
 import { skillState } from "./skills/display.js";
+import { CollabService } from "./collab/service.js";
 import { TaskService } from "./tasks/service.js";
 import { RuleEvents } from "./tasks/rule-events.js";
 import { lockDataDir, type DataDirLock } from "./store/lock.js";
@@ -91,6 +94,13 @@ export interface DesktopHooks {
   openPath?(p: string): void;
   /** 在系统的文件管理器里显示一个文件（选中它） */
   showItemInFolder?(p: string): void;
+  /**
+   * 右侧预览的「另存为…」：弹出系统保存对话框（默认原文件名，默认位置是上次另存的文件夹，第一次是「下载」），
+   * 把磁盘上的原文件复制过去。取消返回 { canceled: true }；复制失败抛错
+   */
+  saveFileAs?(src: string, name: string): Promise<{ canceled: true } | { canceled?: false; path: string; folder: string }>;
+  /** 右侧预览 HTML 的「在浏览器中打开」：用系统默认浏览器打开本机网页（.html 的默认程序可能是编辑器） */
+  openFileInBrowser?(p: string): Promise<void>;
   openInBrowser(): void;
   /** 在系统浏览器里打开外部链接（OKINTO 登录、充值） */
   openExternal(url: string): void;
@@ -205,6 +215,8 @@ export class App {
   readonly access: AccessControl;
   /** 后台任务：自己的会话和文件夹，结果经出站队列回到请求它的会话；规则（3d）也由它跑（定时器是 tasks.scheduler） */
   readonly tasks: TaskService;
+  /** 机器人之间发消息（collab/service.ts） */
+  readonly collab: CollabService;
   /** 事件触发的规则的入口：以后用户配置的 workload（事件源）在这里把事件交进来（见 tasks/rule-events.ts） */
   readonly ruleEvents: RuleEvents;
   /** "需要你"：所有机器人里在等人的事（侧栏、托盘角标、系统通知） */
@@ -356,6 +368,7 @@ export class App {
         },
         endpoint: (model) => this.compactEndpoint(model),
       },
+      defaultModel: () => this.config.llm.defaultModel,
       // 后台小任务（管家判定/交接/记忆整理）直接走 magpie，不经代理子进程
       complete: (botId, model, system, user) =>
         this.models.streamChat(
@@ -421,8 +434,37 @@ export class App {
         return c && b && this.store.getBot(botId)?.settings.budget.enabled ? { ...b, at: c.at } : undefined;
       },
       mySkills: this.userSkills.mine,
+      // 任务库：必需的应用连没连（没账号 = 没连；要用户处理凭证 = 要重新授权；其余算连着）
+      appState: (id) => {
+        const v = this.apps.view().apps.find((a) => a.key === id);
+        if (!v?.accounts.length) return "none";
+        return v.connected ? "connected" : (["needs-login", "key-rejected", "link-invalid", "expired"] as string[]).includes(v.state) ? "reauth" : "connected";
+      },
+      // 别的机器人发来的事：结果交给协作服务（下面建好后接上）
+      handoffs: {
+        canStart: (task, run) => this.collab?.hooks.canStart(task, run) ?? true,
+        started: (task, runId) => this.collab?.hooks.started(task, runId),
+        ended: (task, runId, outcome, report, error, halt) => this.collab?.hooks.ended(task, runId, outcome, report, error, halt),
+        approval: (task, e) => this.collab?.hooks.approval(task, e),
+      },
     });
     this.agent.tasks = this.tasks;
+    this.collab = new CollabService({
+      store: this.store,
+      tasks: this.tasks,
+      signedIn: () => !!this.account?.signedIn,
+      // Modelflare 的模型：经内置网关、不是自己 API Key 接入的官方模型；外部端点（没有内置网关）都不算
+      modelflareModel: (m) => !!this.magpie && !!m && !officialOf(m),
+      defaultModel: () => this.config.llm.defaultModel,
+      workspace: (botId) => path.join(config.dataDir, "workspaces", botId),
+      settings: (botId) => this.agent.settings(botId),
+      slots: (botId) => this.agent.settings(botId).taskSlots,
+      turn: (botId, conv, input, keep) => this.runtime.collabTurn(botId, conv, input, keep),
+      timeZone: () => this.delivery.timeZone,
+      onChange: () => this.attention.kick(),
+    });
+    this.agent.collab = this.collab;
+    this.agent.collabOn = () => !!this.account?.signedIn && this.collab.settings().enabled;
     // 「我的技能」改了：用它的规则按情况暂停；在哪些机器人上打开变了、版本变了的，空闲后换新的代理进程
     this.userSkills.mine.onChange = (e) => {
       try {
@@ -536,6 +578,12 @@ export class App {
    */
   routeModel(botId: string, model: string): string {
     if (!this.magpie) return model;
+    // 以前选进来的内置网关合成组（auto/<模型名>）：换回真实的模型 id 再发，不把 auto/… 发给上游
+    if (isGatewayGroupModel(model)) {
+      const real = resolveGroupModel(model, this.gatewayModels());
+      if (real) model = real;
+      else log.warn("a gateway group model has no matching model; sending it unchanged", { model });
+    }
     if (officialOf(model)) return model.trim();
     if (this.account instanceof NewApiAccountManager && this.account.active) {
       const selected = parsePlaygroundModel(model);
@@ -547,6 +595,55 @@ export class App {
     if (shared) return routeModel(name, shared);
     const other = this.magpie.officialProviderIds().find((id) => this.magpie!.modelPicks(id).includes(name));
     return other ? `${other}/${name}` : routeModel(model, MODELFLARE_PROVIDER);
+  }
+
+  /** 内置网关里真实可用的对话模型（Modelflare 的和官方 API 的，同步读 providers.json）：把 auto/<模型名> 换回真实 id 用 */
+  private gatewayModels(): string[] {
+    const m = this.magpie;
+    if (!m) return [];
+    const shared = m.modelflareProviderId;
+    return [...(shared ? m.modelPicks(shared) : []), ...m.officialProviderIds().flatMap((id) => m.modelPicks(id).map((x) => `${id}/${x}`))];
+  }
+
+  /**
+   * 以前选进来的内置网关合成组（auto/<模型名>）：全局默认、机器人的默认模型和后台小任务模型、会话里的模型、进行中的任务，
+   * 换回模型列表里对应的真实 id（找不到就清空，改回跟随默认）。启动时和每小时同步模型时做；没有就什么都不改。
+   */
+  private async fixGroupModels(): Promise<void> {
+    const store = this.store;
+    const stored = [
+      this.config.llm.defaultModel,
+      ...store.listBots().flatMap((b) => [b.defaultModel, b.settings.utilityModel]),
+      ...store.conversationsOnGroupModels().map((c) => c.model),
+      ...store.listTasks({ open: true, limit: 500 }).map((t) => t.model),
+    ];
+    if (!stored.some((x) => x && isGatewayGroupModel(x))) return;
+    const list = await this.runtime.listModels(true).catch(() => [] as string[]);
+    if (!list.length) return;
+    const fix = (m: string) => (m && isGatewayGroupModel(m) ? resolveGroupModel(m, list) : m);
+    const changed: string[] = [];
+    if (isGatewayGroupModel(this.config.llm.defaultModel)) {
+      changed.push(this.config.llm.defaultModel);
+      this.setDefaultModel(fix(this.config.llm.defaultModel));
+    }
+    for (const b of store.listBots()) {
+      const dm = fix(b.defaultModel);
+      const um = fix(b.settings.utilityModel);
+      if (dm === b.defaultModel && um === b.settings.utilityModel) continue;
+      changed.push(b.defaultModel, b.settings.utilityModel);
+      store.updateBot(b.id, { defaultModel: dm, settings: { ...b.settings, utilityModel: um } });
+    }
+    for (const c of store.conversationsOnGroupModels()) {
+      changed.push(c.model);
+      store.setConversationModel(c.id, fix(c.model));
+    }
+    for (const t of store.listTasks({ open: true, limit: 500 })) {
+      if (!isGatewayGroupModel(t.model)) continue;
+      changed.push(t.model);
+      store.updateTask(t.id, { model: fix(t.model) });
+    }
+    const n = changed.filter((x) => x && isGatewayGroupModel(x)).length;
+    if (n) log.info("replaced gateway group models with real model ids", { count: n, models: [...new Set(changed.filter((x) => x && isGatewayGroupModel(x)))] });
   }
 
   /**
@@ -616,7 +713,11 @@ export class App {
           if (!r.ok) throw new Error(r.message);
           this.store.deleteKV("connection.setup");
         },
-        disconnect: () => this.disconnectModelflare(),
+        // 退出登录（或授权在别处被撤销）：机器人之间进行中的事停下，重新登录后不自动继续
+        disconnect: async () => {
+          this.collab?.signedOut();
+          await this.disconnectModelflare();
+        },
         setBotKey: async (botId, key) => {
           if (!this.magpie) throw new Error(t("app.external_mode"));
           const baseUrl = modelflareBaseUrl(this.config.modelflare.line);
@@ -758,6 +859,8 @@ export class App {
   /** 删除机器人时一并删掉它的预算 Key */
   async deleteBot(botId: string, opts: { keepData?: boolean } = {}): Promise<void> {
     const bot = this.store.getBot(botId);
+    // 机器人之间发消息：和它有关的进行中的事停下（被删的是 B 时 A 告诉你），两人对话一起删除
+    this.collab.botDeleted(botId);
     this.tasks.dropBot(botId);
     // 渠道账号是全局的，不跟着机器人停：之后它们的消息交给别的机器人（core/routes.ts）
     await this.agent.stopBot(botId);
@@ -866,13 +969,14 @@ export class App {
     // 后台任务：上次没跑完的记为中断、带着恢复说明接着做（渠道已经上线，结果能发出去）；估算花费用的价格目录先读起来
     if (this.agent.available) {
       this.tasks.start();
+      this.collab.start();
       void this.modelInfo().catch(() => undefined);
     }
     if (!this.opts.noWeb) this.web = await startWebServer(this);
     if (this.magpie) {
       // 启动时和之后每小时核对一次启用的模型（新上架的加入，下架的移出）
-      void this.syncModelPicks();
-      this.picksTimer = setInterval(() => void this.syncModelPicks(), 3600_000);
+      void this.syncModelPicks().then(() => this.fixGroupModels()).catch((e) => log.warn("fixing gateway group models failed", { message: (e as Error).message }));
+      this.picksTimer = setInterval(() => void this.syncModelPicks().then(() => this.fixGroupModels()).catch(() => undefined), 3600_000);
       this.picksTimer.unref();
     }
     // Windows：选代理用的 PowerShell（系统里能用的 7 → 应用内置的 → 5.1），没有 7 时在后台自动装内置的；
@@ -949,6 +1053,7 @@ export class App {
     this.runtime.shutdown();
     // 后台任务不再开始新的 run；跑着的留在库里，下次启动时恢复
     this.tasks.stop();
+    this.collab.stop();
     this.attention.stop();
     this.offPwsh?.();
     this.updates.stop();

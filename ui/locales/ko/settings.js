@@ -1,6 +1,8 @@
 export default {
   "tabs": {
     "general": "일반",
+    "aboutMe": "내 정보",
+    "collab": "봇 협업",
     "appearance": "화면 설정",
     "modelflare": "모델",
     "computer": "컴퓨터 사용",
@@ -500,6 +502,13 @@ export default {
     "troubleshoot": {
       "sub": "게이트웨이 및 에이전트 프로세스 상태, 모델 및 에이전트 테스트, 최근 로그, 진단 정보 복사",
       "keys": "로그 테스트 에이전트 멈춤 로딩 진단 재시작 PowerShell pwsh 느림 명령"
+    },
+    "community": {
+      "name": "커뮤니티",
+      "sub": "질문하고 의견을 나누고, 다른 사용자와 사용 팁을 주고받아요",
+      "keys": "커뮤니티 채팅 그룹 discord telegram community",
+      "copyQq": "QQ 그룹 번호 복사",
+      "qq": "QQ 그룹",
     },
     "links": {
       "sub": "웹사이트 및 문서",

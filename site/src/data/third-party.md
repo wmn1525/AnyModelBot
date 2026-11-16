@@ -16,6 +16,12 @@ https://github.com/tailwindlabs/heroicons/releases/tag/v2.2.0
 
 左右面板入口的 `panel-left` / `panel-right` 使用 Lucide 1.73.0，保留上一版圆角方框加竖线的图形。源码与出处分别见 `ui/icons/lucide.js`、`ui/icons/lucide-source.json`；ISC / MIT 许可全文见 [ui/icons/lucide-LICENSE](./ui/icons/lucide-LICENSE)。
 
+## highlight.js（右侧预览的代码着色）
+
+右侧预览的代码视图和 Markdown 代码块使用 highlight.js 11.12.0 着色。只随应用分发核心和常用的 31 种语言（官方 ES 模块构建，来自 npm 包 `@highlightjs/cdn-assets`），见 `ui/vendor/hljs/`，由 `scripts/vendor-hljs.mjs` 复制。highlight.js 使用 BSD-3-Clause 许可，版权属于 Ivan Sagalaev 及贡献者；完整许可证见 [ui/vendor/hljs/LICENSE](./ui/vendor/hljs/LICENSE)。
+
+https://github.com/highlightjs/highlight.js
+
 ## magpie（内置模型网关，以二进制形式随附；界面样式部分改编自它）
 
 来源：https://github.com/yetone/magpie （vendor/magpie 子模块，v0.1.1720）

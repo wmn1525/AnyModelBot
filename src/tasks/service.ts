@@ -42,7 +42,7 @@ import { ResumeFailed, deliverables } from "../agent/host.js";
 import { RULE_APPROVAL_TTL_MS, answerLine, defaultLine, defaultOf, parseAnswer, promptButtons, questionsOf, taskPromptText, type ApprovalCenter, type ApprovalEvent, type QuestionItem, type ReplyContext } from "../agent/approvals.js";
 import { MESSENGER_LABEL, isMessenger, isPushChannel, type PushChannel } from "../core/types.js";
 import { actionCardSpec } from "../channels/feishu/transport.js";
-import { NUDGE, RULE_NUDGE, RULE_RERUN, RULE_RESULT_SYSTEM, attachmentsOf, rebrief, recoveryNote, resumeNote, retryNote, ruleBrief, ruleResultInput, ruleRules, taskBrief } from "../agent/prompts/index.js";
+import { NUDGE, RULE_BRIEF_MAX, RULE_BRIEF_SYSTEM, RULE_NUDGE, RULE_RERUN, RULE_RESULT_SYSTEM, attachmentsOf, rebrief, recoveryNote, resumeNote, retryNote, ruleBrief, ruleResultInput, ruleRules, taskBrief } from "../agent/prompts/index.js";
 import type { BotSettings } from "../domain/bot-settings.js";
 import type { ApprovalRow, Conversation, InputKind, RuleKind, RuleMode, RuleRow, RuleTrigger, RunCause, RunInputRow, RunOutcome, RunRow, Store, TaskReport, TaskRow } from "../store/db.js";
 import type { AttentionItem } from "./attention.js";
@@ -89,7 +89,8 @@ import {
   type RuleRunView,
   type RuleView,
 } from "./rules.js";
-import { t as tr } from "../i18n/index.js";
+import { lang as currentLang, t as tr, type Lang } from "../i18n/index.js";
+import { appName, defaultWhen, draftRule, libraryStrings, libraryTask, libraryTasks, sameParams, type ParamValues, type RoutineTask } from "./library.js";
 import { KEEP_MS, SWEEP_MS, WARN_MS, hasFiles, taskFolder } from "./retention.js";
 import { dirBytes } from "../agent/session-dirs.js";
 import { actions as storedActions, canUndo, saveAction, type RuleAction } from "./rule-actions.js";
@@ -145,6 +146,21 @@ export interface TaskHost {
   removeSessions?(botId: string, taskId: string): boolean;
 }
 
+/**
+ * 机器人之间发消息（collab/service.ts）：B 名下处理别的机器人发来的事的任务（tasks.handoff_id）。
+ * 名额、预算、时间上限、审批、重启恢复照任务的来；结果不发给用户，交给协作服务（它让 A 核对后再回复用户）。
+ */
+export interface HandoffHooks {
+  /** 排着的 run 现在能不能开始（B 同时最多接 3 件、开始前再查登录和模型）；false = 先排着（协作服务自己会作废它） */
+  canStart(task: TaskRow, run: RunRow): boolean;
+  /** 开始处理（这件事的第一个 run，或重做、补充、继续之后的 run） */
+  started(task: TaskRow, runId: string): void;
+  /** 一个 run 结束了；halt：被时间上限（cap）、预算（budget）停下 */
+  ended(task: TaskRow, runId: string, outcome: RunOutcome, report: TaskReport | undefined, error: string, halt?: "cap" | "budget"): void;
+  /** B 的审批、提问有了新的或有了决定（两人对话里记灰字） */
+  approval(task: TaskRow, e: ApprovalEvent): void;
+}
+
 /** DSH 的一条通知（SDK 的 session.event / session.status / subagent.*） */
 export interface TaskNotification {
   method: string;
@@ -189,7 +205,14 @@ export interface TaskServiceOptions {
   botBudget?: (botId: string) => { limitUsd: number; remainUsd: number; at: number } | undefined;
   /** 「我的技能」：「让它做件事」可以用技能；技能删掉、关掉、改动后用它的规则自动暂停（skills/mine.ts） */
   mySkills?: MySkills;
+  /** 机器人之间发消息：别的机器人发来的事（协作服务接上） */
+  handoffs?: HandoffHooks;
+  /** 任务库：内置应用连没连（connected 已连接、reauth 要重新授权、none 没连）；没有就当都没连 */
+  appState?: (appId: string) => "connected" | "reauth" | "none";
 }
+
+/** 渠道单条消息最长多少字（简报超过就截断，末尾说完整内容在桌面端） */
+const CHANNEL_MAX: Record<string, number> = { weixin: 4000, feishu: 4000, telegram: 4000, slack: 4000, discord: 2000 };
 
 /** 规则用的技能出了什么问题（暂停的原因，存进 rules.paused_reason） */
 export type RuleSkillProblem = { code: "skill_deleted" | "skill_off" | "skill_ask" | "skill_blocked" | "skill_unverified"; item?: string };
@@ -281,6 +304,8 @@ type Halt = "budget" | "cap" | "run" | "month" | "reserve";
 const hex = (n: number) => crypto.randomBytes(n).toString("hex");
 const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 const oneLine = (s: string) => s.replace(/\s+/g, " ").trim();
+/** 简报：保留换行和列表，去掉行尾空白、连着三行以上的空行和首尾空白 */
+const briefText = (s: string) => s.replace(/\r\n?/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 const pad2 = (n: number) => String(n).padStart(2, "0");
 /** 给模型看的时间：11月1日 08:00（规则的时区） */
 function stamp(ts: number, tz: string): string {
@@ -380,18 +405,20 @@ export class TaskService {
     this.catchupReadyAt = this.backAt + (this.o.catchupDelayMs ?? 60_000);
     this.unlisten ??= this.o.approvals?.listen((e) => this.onApproval(e));
     this.recover(undefined, tr("tasks.recoverAppRestart"));
+    // 排着还没开始的试跑：应用退出打断了它，不自动再跑（弹窗、运行记录里写「试跑被打断」）
+    for (const r of this.store.listRuns({ states: ["queued"] })) if (r.ruleId && r.cause === "trial") this.store.updateRun(r.id, { state: "ended", outcome: "interrupted", error: RUN_ERROR.trialInterrupted, endedAt: this.now() });
     for (const r of this.store.listRuns({ states: ["ended"] })) {
       if (!r.taskId) continue;
       if (!r.delivery && (r.outcome === "done" || r.outcome === "failed")) {
         const task = this.store.getTask(r.taskId);
-        if (task) this.deliver(task, r.id, r.outcome, r.report, r.error);
+        if (task && !task.handoffId) this.deliver(task, r.id, r.outcome, r.report, r.error);
       } else if (r.outcome === "needs_you" && r.report?.question) {
         const task = this.store.getTask(r.taskId);
         if (task && task.endReason !== "stopped" && this.store.latestRun(task.id)?.id === r.id) this.ask(task, r.id, r.report.question);
       } else if (r.outcome === "budget") {
         // 停在预算上、还没问出去就退出了：补问一次
         const task = this.store.getTask(r.taskId);
-        if (task && task.endReason !== "stopped" && this.store.latestRun(task.id)?.id === r.id) this.askBudget(task, r.id);
+        if (task && !task.handoffId && task.endReason !== "stopped" && this.store.latestRun(task.id)?.id === r.id) this.askBudget(task, r.id);
       }
     }
     for (const conv of new Set((this.o.approvals?.pendingAll() ?? []).filter((r) => r.taskId).map((r) => r.conversationId))) this.pushNext(conv);
@@ -530,6 +557,61 @@ export class TaskService {
     this.changed(id);
     this.pump();
     return { task };
+  }
+
+  /**
+   * 别的机器人发来的事（协作服务调用）：B 名下的一个任务，请求它的会话是你和 A 的主对话（B 的审批、提问出现在那里）。
+   * 用 B 的模型、权限、预算和记忆；ask = 只问不做（只读、所有审批自动拒绝）。第一条输入是协作服务写好的说明
+   */
+  createHandoff(o: { handoffId: string; botId: string; conversationId: string; title: string; brief: (folder: string, memory: string | undefined) => string; budgetUsd: number; capMs: number; ask: boolean }): { task?: TaskRow; error?: string } {
+    const bot = this.store.getBot(o.botId);
+    if (!bot || !this.store.getConversation(o.conversationId)) return { error: "conversation not found" };
+    const id = `t_${hex(6)}`;
+    const now = this.now();
+    const title = clip(oneLine(o.title), 40) || "handoff";
+    const folder = `tasks/${slugOf(title)}-${id.slice(2, 8)}`;
+    const st = this.o.host.settings(o.botId);
+    const task = this.store.insertTask({
+      id,
+      botId: o.botId,
+      conversationId: o.conversationId,
+      originMessageId: 0,
+      originRef: "",
+      title,
+      brief: "",
+      sessionId: `task-${id}`,
+      folder,
+      model: bot.defaultModel || this.o.defaultModel?.() || "",
+      permission: o.ask ? "readonly" : st.permission,
+      budgetUsd: o.budgetUsd,
+      anytime: true,
+      handoffId: o.handoffId,
+      capMs: o.capMs,
+      createdAt: now,
+      updatedAt: now,
+    });
+    this.addInput(task.id, "brief", o.brief(folder, st.memory.enabled ? this.o.host.memoryPrefix(o.botId, o.conversationId) : undefined), true);
+    this.enqueue(task, "launch");
+    log.info("handoff task created", { bot: o.botId, task: id, handoff: o.handoffId });
+    this.changed(id);
+    this.pump();
+    return { task };
+  }
+
+  /** 别的机器人发来的事再给一份花费额度（说「继续」时）；时长上限按 run 算，新的 run 重新计时 */
+  extendHandoff(taskId: string, addUsd: number): void {
+    const task = this.store.getTask(taskId);
+    if (!task) return;
+    this.store.updateTask(taskId, { budgetUsd: Math.max(task.budgetUsd, task.spentUsd) + addUsd, updatedAt: this.now() });
+  }
+
+  /** 给别的机器人发来的事加一条输入（重做、补充、继续）：同人的追加 */
+  async handoffInput(taskId: string, text: string): Promise<{ how?: "steered" | "sent" | "queued" | "resumed"; error?: string }> {
+    const task = this.store.getTask(taskId);
+    if (!task || !task.handoffId) return { error: "task not found" };
+    if (task.endReason === "stopped") return { error: "stopped" };
+    const input = this.addInput(task.id, "followup", text, true);
+    return { how: await this.wake(task, input, "followup") };
   }
 
   /**
@@ -689,12 +771,20 @@ export class TaskService {
     return true;
   }
 
+  /** 别的机器人发来的事：B 手上已有 3 件、登录或模型不满足时先排着（由协作服务决定，作废也由它来） */
+  private heldByHandoff(run: RunRow): boolean {
+    const hooks = this.o.handoffs;
+    if (!hooks || !run.taskId) return false;
+    const task = this.store.getTask(run.taskId);
+    return !!task?.handoffId && !hooks.canStart(task, run);
+  }
+
   /** 有空名额就开始排队的 run（人的唤醒在前，见 slots.ts）；后台工作暂停了、预算留给聊天的机器人不开始新的 */
   pump(): void {
     if (!this.started || this.closing) return;
     const queued = this.store
       .listRuns({ states: ["queued"] })
-      .filter((r) => (r.taskId || (r.ruleId && !this.skipStale(r))) && !this.dropped.has(r.botId) && !this.heldByPause(r) && !this.heldByReserve(r));
+      .filter((r) => (r.taskId || (r.ruleId && !this.skipStale(r))) && !this.dropped.has(r.botId) && !this.heldByPause(r) && !this.heldByReserve(r) && !this.heldByHandoff(r));
     if (!queued.length) return;
     // 等批准的 run 让出名额（DSH 那次调用照样等着，批了就接着做）
     const blocked = new Set((this.o.approvals?.pendingAll() ?? []).filter((a) => a.taskId && a.blocking && a.kind === "approval").map((a) => a.taskId));
@@ -722,11 +812,13 @@ export class TaskService {
     if (task.spentUsd >= task.budgetUsd) {
       this.store.updateRun(runId, { state: "ended", outcome: "budget", startedAt: now, endedAt: now, sessionId: task.sessionId });
       log.info("background task is over its budget; asking before it continues", { task: task.id, run: runId });
-      this.askBudget(task, runId);
+      if (task.handoffId) this.o.handoffs?.ended(task, runId, "budget", undefined, "", "budget");
+      else this.askBudget(task, runId);
       this.changed(task.id);
       return;
     }
     this.store.updateRun(runId, { state: "running", startedAt: now, sessionId: task.sessionId });
+    if (task.handoffId) this.o.handoffs?.started(task, runId);
     const l: Live = {
       runId,
       taskId: task.id,
@@ -980,7 +1072,7 @@ export class TaskService {
       log.warn("background task used its budget; stopping it and asking the user", { task: l.taskId, run: l.runId, spentUsd: Math.round((this.store.getTask(l.taskId)?.spentUsd ?? 0) * 10_000) / 10_000 });
       this.end(l, "budget");
     } else if (why === "cap") {
-      const error = tr("tasks.timeCap", { hours: Math.round((this.o.taskRunCapMs ?? TASK_RUN_CAP_MS) / 3600_000) || 1 });
+      const error = tr("tasks.timeCap", { hours: Math.round(this.capOf(this.store.getTask(l.taskId)) / 3600_000) || 1 });
       l.activity.end(error, now);
       log.warn("background task run hit its time cap; stopping it", { task: l.taskId, run: l.runId });
       this.end(l, "failed", undefined, error);
@@ -1056,13 +1148,17 @@ export class TaskService {
   checkCaps(now = this.now()): void {
     if (!this.started || this.closing) return;
     for (const [sid, h] of this.halted) if (now > h.until) this.halted.delete(sid);
-    const cap = this.o.taskRunCapMs ?? TASK_RUN_CAP_MS;
     for (const l of [...this.live.values()]) {
       if (l.ruleId || l.final || this.live.get(l.runId) !== l) continue;
       const run = this.store.getRun(l.runId);
       if (!run?.startedAt) continue;
-      if (now - run.startedAt - this.waitedMs(l.runId, now) >= cap) this.halt(l, "cap");
+      if (now - run.startedAt - this.waitedMs(l.runId, now) >= this.capOf(this.store.getTask(l.taskId))) this.halt(l, "cap");
     }
+  }
+
+  /** 一次运行最长多久：别的机器人发来的事按发起时的设置（30 分钟到 4 小时），其余的 4 小时 */
+  private capOf(task: TaskRow | undefined): number {
+    return (task?.capMs || 0) > 0 ? task!.capMs : (this.o.taskRunCapMs ?? TASK_RUN_CAP_MS);
   }
 
   /** 这个 run 里等人批准（或回答阻塞着的提问）一共等了多久 */
@@ -1180,12 +1276,21 @@ export class TaskService {
     const task = this.store.getTask(l.taskId);
     if (task && outcome === "done") this.store.updateTask(task.id, { endedAt: now, endReason: "done", updatedAt: now });
     else if (task) this.store.updateTask(task.id, { updatedAt: now });
-    if (task && (outcome === "done" || outcome === "failed")) this.deliver(task, l.runId, outcome, report, error);
+    if (task && !task.handoffId && (outcome === "done" || outcome === "failed")) this.deliver(task, l.runId, outcome, report, error);
     // 做完了还没回答的提问：有默认回答的就是按默认做了（结果里说了），作废、撤回；失败了也一样（重试时它会再问）
     if (task && (outcome === "done" || outcome === "failed")) this.withdrawQuestions(task, outcome === "done" ? "default" : "failed");
     // 报 needs_you 时已经问了（report）；这里只是兜底（同一个 run 同一个问题不会问两次）
     if (task && outcome === "needs_you" && report?.question) this.ask(task, l.runId, report.question);
-    if (task && outcome === "budget") this.askBudget(task, l.runId);
+    if (task && outcome === "budget" && !task.handoffId) this.askBudget(task, l.runId);
+    // 别的机器人发来的事：结果交给协作服务（B 回消息给 A，A 核对后回复用户）
+    if (task?.handoffId) {
+      const halt = l.halted === "cap" || l.halted === "budget" ? l.halted : undefined;
+      try {
+        this.o.handoffs?.ended(this.store.getTask(task.id) ?? task, l.runId, outcome, report, error, halt);
+      } catch (e) {
+        log.warn("handoff hook failed", { task: task.id, message: (e as Error).message.slice(0, 200) });
+      }
+    }
     log.info("background task run ended", { task: l.taskId, run: l.runId, outcome, ...(error ? { error } : {}) });
     this.changed(l.taskId);
     this.pump();
@@ -1309,6 +1414,7 @@ export class TaskService {
         text: `Asked the user. Keep working on what does not depend on the answer; if they answer, it arrives as a message at your next step. If you finish first, use "${question.default}", say so in your message, and report done.`,
       };
     if (state === "needs_you") return { text: "Recorded. End your turn now: the app asks the user, and their answer arrives as your next message." };
+    if (this.store.getTask(l.taskId)?.handoffId) return { text: "Recorded. End your turn now: the app sends your reply (summary and files) back to the bot that asked." };
     return { text: `Recorded. End your turn now: the app sends your message to the user${state === "done" && !message ? " (you gave no message, so the user only hears that the task is done)" : ""}.` };
   }
 
@@ -1359,6 +1465,8 @@ export class TaskService {
         return this.ruleCreateTool(conv, a);
       case "rule_update":
         return this.ruleUpdateTool(conv, a);
+      case "routine":
+        return this.routineTool(conv, a);
       case "pause": {
         const paused = a.paused === true;
         if (typeof a.paused !== "boolean") return { error: "paused must be true or false" };
@@ -1376,7 +1484,7 @@ export class TaskService {
   private find(conversationId: string, ref: string): TaskRow | undefined {
     const r = ref.trim();
     if (!r) return undefined;
-    const list = this.store.listTasks({ conversationId, limit: 50 });
+    const list = this.store.listTasks({ conversationId, limit: 50, handoffs: false });
     return list.find((t) => t.id === r || t.sessionId === r) ?? list.find((t) => t.title.includes(r) || r.includes(t.title));
   }
 
@@ -1415,6 +1523,7 @@ export class TaskService {
     };
     a.create({ kind: "question", botId: task.botId, conversationId: task.conversationId, sessionId: task.sessionId, tool: "task_report", detail: q.question, reason: "", payload: JSON.stringify([item]), taskId: task.id, runId, blocking: false, ttlMs: 0 });
     log.info("background task asks the user", { task: task.id, run: runId, ...(q.default ? { keepsWorking: true } : {}) });
+    if (task.handoffId) return;
     const opts = q.options?.length ? `（${q.options.join(" / ")}）` : "";
     this.note(
       task.conversationId,
@@ -1440,6 +1549,13 @@ export class TaskService {
     if (!row.taskId) return;
     const task = this.store.getTask(row.taskId);
     if (!task) return;
+    if (task.handoffId) {
+      try {
+        this.o.handoffs?.approval(task, e);
+      } catch (err) {
+        log.warn("handoff approval hook failed", { task: task.id, message: (err as Error).message.slice(0, 200) });
+      }
+    }
     if (e.type === "decided" && row.kind === "question" && !row.blocking && row.status === "answered" && task.endReason !== "stopped") this.answered(task, row);
     // 有了决定（在桌面上回答了、批了，任务停了）：推给用户还没发出去的那条（排到早上、等微信窗口）不用再发了
     if (e.type === "decided") this.o.delivery?.withdraw(askId(row), tr(row.status === "answered" ? "tasks.withdrawAnswered" : "tasks.withdrawHandled"));
@@ -1687,7 +1803,7 @@ export class TaskService {
   attention(): AttentionItem[] {
     const out: AttentionItem[] = [];
     const since = this.now() - 7 * 86400_000;
-    const tasks = [...this.store.listTasks({ open: true, limit: 200 }), ...this.store.listTasks({ open: false, since, limit: 100 })];
+    const tasks = [...this.store.listTasks({ open: true, limit: 200, handoffs: false }), ...this.store.listTasks({ open: false, since, limit: 100, handoffs: false })];
     const asking = new Set((this.o.approvals?.pendingAll() ?? []).filter((a) => a.tool === BUDGET_TOOL).map((a) => a.taskId));
     for (const t of tasks) {
       const run = this.store.latestRun(t.id);
@@ -1796,7 +1912,7 @@ export class TaskService {
   list(o: { botId?: string; conversationId?: string; limit?: number; since?: number; group?: StageGroup[] } = {}): TaskView[] {
     const rank = { working: 0, needs: 1, ended: 2 } as const;
     return this.store
-      .listTasks({ botId: o.botId, conversationId: o.conversationId, limit: 200 })
+      .listTasks({ botId: o.botId, conversationId: o.conversationId, limit: 200, handoffs: false })
       .map((t) => this.view(t))
       .filter((v) => !o.group?.length || o.group.includes(v.stage.group))
       .filter((v) => !o.since || v.stage.group !== "ended" || v.updatedAt >= o.since)
@@ -2155,6 +2271,9 @@ export class TaskService {
     monthBudgetUsd?: number;
     /** 用「我的技能」做：技能名；原话可以不填（写成「按技能「{标题}」做」） */
     skill?: string;
+    /** 任务库：结果样式（简报只给任务库的检查用）、来源 */
+    resultStyle?: "line" | "brief";
+    source?: RuleRow["source"];
   }): { rule?: RuleRow; error?: string } {
     if (!this.store.getBot(o.botId)) return { error: "bot not found" };
     let skill: RuleRow["skill"];
@@ -2211,10 +2330,12 @@ export class TaskService {
       anytime: kind === "remind",
       ...budgets,
       ...(skill && kind === "check" ? { skill } : {}),
+      resultStyle: kind === "check" && o.resultStyle === "brief" ? "brief" : "line",
+      ...(o.source ? { source: o.source } : {}),
       createdAt: now,
       updatedAt: now,
     });
-    log.info("rule created", { bot: o.botId, rule: id, kind, mode, trigger: trigger.kind, conversationId: conv?.id, ...(skill ? { skill: skill.name } : {}) });
+    log.info("rule created", { bot: o.botId, rule: id, kind, mode, trigger: trigger.kind, conversationId: conv?.id, ...(skill ? { skill: skill.name } : {}), ...(o.source ? { library: o.source.id } : {}) });
     this.ruleChanged(id);
     return { rule };
   }
@@ -2225,7 +2346,9 @@ export class TaskService {
    */
   updateRule(
     id: string,
-    patch: { title?: string; instruction?: string; message?: string; schedule?: Schedule; mode?: RuleMode; conversationId?: string; runBudgetUsd?: number; monthBudgetUsd?: number; missedPolicy?: "catchup" | "skip"; sourceGroupId?: string; skill?: string | null },
+    patch: { title?: string; instruction?: string; message?: string; schedule?: Schedule; mode?: RuleMode; conversationId?: string; runBudgetUsd?: number; monthBudgetUsd?: number; missedPolicy?: "catchup" | "skip"; sourceGroupId?: string; skill?: string | null;
+      /** 任务库（「先试一次」后再改、用模板新建时改模板那条）：来源和结果样式 */
+      source?: RuleRow["source"]; resultStyle?: "line" | "brief" },
   ): { rule?: RuleRow; error?: string } {
     const found = this.store.getRule(id);
     if (!found || found.undoneUntil) return { error: "rule not found" };
@@ -2233,6 +2356,8 @@ export class TaskService {
     const now = this.now();
     const next: Partial<RuleRow> = { updatedAt: now, revision: (rule.revision ?? 1) + 1 };
     if (patch.missedPolicy !== undefined) next.missedPolicy = patch.missedPolicy;
+    if (patch.source !== undefined) next.source = patch.source;
+    if (patch.resultStyle !== undefined) next.resultStyle = rule.kind === "check" && patch.resultStyle === "brief" ? "brief" : "line";
     if (patch.sourceGroupId !== undefined) {
       if (patch.sourceGroupId && !this.store.getGroup(patch.sourceGroupId)?.members.includes(rule.botId)) return { error: tr("rules.groupMissing") };
       next.sourceGroupId = patch.sourceGroupId;
@@ -2369,6 +2494,123 @@ export class TaskService {
     this.fireRule(rule, "manual", this.now());
     this.pump();
     return {};
+  }
+
+  /**
+   * 任务库的「先试一次」（X2）：规则关着也能跑一次。只读（按观察跑），结果不发到任何会话，只进运行记录（标「试跑」）和弹窗；
+   * 花费照样计入本月。同一条规则同时只有一次试跑（还有没跑完的也不能试）。提醒不用试。不算连续失败，不会因此暂停。
+   */
+  trialRule(id: string): { run?: RunRow; error?: string } {
+    const rule = this.store.getRule(id);
+    if (!rule || rule.undoneUntil) return { error: tr("rules.notFound") };
+    if (rule.kind !== "check") return { error: tr("rules.trialRemind") };
+    if (this.paused(rule.botId)) return { error: tr("rules.isPaused") };
+    if (this.ruleBusy(id)) return { error: tr("rules.trialBusy") };
+    const problem = this.ruleSkillProblem(rule);
+    if (problem) return { error: this.skillProblemText(rule, problem) };
+    if (this.reserve(rule.botId)) return { error: tr("rules.whyReserve") };
+    if (this.monthSpent(rule) >= rule.monthBudgetUsd) return { error: tr("rules.monthUsed", { spent: usdText(this.monthSpent(rule)) }) };
+    const run = this.fireRule(rule, "trial", this.now());
+    this.pump();
+    return run ? { run: this.store.getRun(run.id) } : { error: tr("rules.trialBusy") };
+  }
+
+  /**
+   * 任务库「用起来」（R4、R5）：按任务和参数写好规则（名称、原话、时间表、结果样式、来源），on 时存成开着的（打开），
+   * 否则关着（先试一次之前）。ruleId：先试过一次的那条，用当前设置更新它（换了机器人就删掉它、在新机器人上建）；
+   * templateRule：刚用模板新建的机器人，任务标了 replacesTemplateRule 时改模板自带的那条同类规则，不另建（X4）。
+   * 同一个机器人上已经有同一任务、参数相同的规则时，不带 force 返回 duplicate（界面问「仍然新建」）。
+   */
+  async saveRoutine(o: {
+    taskId: string; params: ParamValues; botId: string; conversationId?: string; schedule?: Schedule;
+    missedPolicy?: "catchup" | "skip"; runBudgetUsd?: number; monthBudgetUsd?: number;
+    on: boolean; ruleId?: string; templateRule?: boolean; force?: boolean; lang?: Lang;
+  }): Promise<{ rule?: RuleRow; duplicate?: RuleRow; error?: string; code?: "bot_gone" | "params" | "app" | "schedule" | "missing" }> {
+    const task = libraryTask(o.taskId);
+    if (!task) return { error: tr("rules.libraryMissing"), code: "missing" };
+    const bot = this.store.getBot(o.botId);
+    if (!bot) return { error: tr("rules.botGone"), code: "bot_gone" };
+    const l = o.lang ?? currentLang();
+    const groups = this.store.listGroups().filter((g) => g.members.includes(o.botId)).map((g) => ({ id: g.id, name: g.name }));
+    const draft = draftRule(task, o.params ?? {}, { lang: l, tz: this.timeZone, now: this.now(), groups });
+    const bad = Object.keys(draft.errors)[0];
+    if (bad) return { error: tr("rules.libraryField", { field: libraryStrings(l).tasks[task.id]?.params[bad]?.label ?? bad }), code: "params" };
+    const missing = this.missingApp(task, draft.values);
+    if (missing) return { error: tr("rules.libraryApp", { app: appName(missing, l) }), code: "app" };
+    const schedule = o.schedule ?? draft.schedule;
+    if (!schedule) return { error: tr("rules.badSchedule"), code: "schedule" };
+    const mine = this.store.listRules({ botId: o.botId });
+    const previous = o.ruleId ? this.store.getRule(o.ruleId) : undefined;
+    const tried = previous?.source && !previous.undoneUntil ? previous : undefined;
+    if (!o.force) {
+      const dup = mine.find((r) => r.id !== tried?.id && r.source?.id === task.id && sameParams(r.source.params, draft.values));
+      if (dup) return { duplicate: dup };
+    }
+    const fields = {
+      title: draft.title,
+      instruction: draft.instruction,
+      ...(task.kind === "remind" ? { message: draft.message } : {}),
+      schedule,
+      conversationId: o.conversationId || `${o.botId}:web:console`,
+      missedPolicy: o.missedPolicy ?? "catchup",
+      ...(task.kind === "check" ? { runBudgetUsd: o.runBudgetUsd ?? task.budget?.runUsd, monthBudgetUsd: o.monthBudgetUsd ?? task.budget?.monthUsd } : {}),
+      ...(task.needs.group ? { sourceGroupId: String(draft.values.group ?? "") } : {}),
+      source: { id: task.id, version: task.version, params: draft.values },
+      resultStyle: draft.resultStyle,
+    };
+    const template = o.templateRule && task.replacesTemplateRule && bot.templateId === task.suggestedTemplate
+      ? mine.find((r) => !r.source && r.kind === task.kind && r.mode === "off" && !r.conversationId) : undefined;
+    const target = tried && tried.botId === o.botId ? tried : template;
+    let rule: RuleRow | undefined;
+    if (target) {
+      const r = this.updateRule(target.id, { ...fields, mode: o.on ? "act" : "off" });
+      if (!r.rule) return { error: r.error };
+      rule = r.rule;
+    } else {
+      // 先试过、又换了机器人：那条关着的试跑规则不要了
+      if (tried && tried.botId !== o.botId) await this.deleteRule(tried.id);
+      const r = this.createRule({ botId: o.botId, kind: task.kind, mode: o.on ? "act" : "off", ...fields, requiresGroup: !!task.needs.group });
+      if (!r.rule) return { error: r.error };
+      rule = r.rule;
+    }
+    if (o.on) {
+      // 给聊天代理留张便条：之后用户说「把早报改到 9 点」，它知道是哪条
+      const desk = this.store.ensureConversation(o.botId, "web", "console", "控制台");
+      const line = `用户从任务库打开了规则「${rule.title}」：${rule.instruction.split("\n")[0]}`;
+      this.note(desk.id, line);
+      if (rule.conversationId && rule.conversationId !== desk.id) this.note(rule.conversationId, line);
+    }
+    log.info("rule saved from the task library", { rule: rule.id, task: task.id, on: o.on, replaced: !!target });
+    return { rule };
+  }
+
+  /** 任务要的应用（必需的）还没连：返回第一个缺的应用 id（三选一的看用户选的那个，没选看三个里有没有连着的） */
+  private missingApp(task: RoutineTask, values: ParamValues): string | undefined {
+    for (const need of task.needs.apps ?? []) {
+      if (!need.required) continue;
+      const picked = task.params.some((p) => p.type === "app") && values.app ? [String(values.app)] : [need.id, ...(need.alternatives ?? [])];
+      if (!picked.some((id) => this.o.appState?.(id) === "connected")) return picked[0];
+    }
+    return undefined;
+  }
+
+  /** 停掉这条规则正在跑（或排队）的试跑 */
+  stopTrial(id: string): boolean {
+    let stopped = false;
+    for (const run of this.store.listRuns({ ruleId: id, states: ["queued", "running", "settling"] })) {
+      if (run.cause !== "trial") continue;
+      const live = this.live.get(run.id);
+      if (live) this.forget(live);
+      this.store.updateRun(run.id, { state: "ended", outcome: "stopped", endedAt: this.now(), ...(live ? { costUsd: live.costUsd, tokensIn: live.tokensIn, tokensOut: live.tokensOut, activity: JSON.stringify(live.activity.steps) } : {}) });
+      if (live) void this.o.host.stop(live.botId, live.sessionId).catch(() => undefined);
+      stopped = true;
+    }
+    if (stopped) {
+      log.info("rule trial stopped", { rule: id });
+      this.changed(id);
+      this.pump();
+    }
+    return stopped;
   }
 
   /** 删掉规则：正在跑的那次停掉，等着的批准作废，运行记录一起删 */
@@ -2533,14 +2775,16 @@ export class TaskService {
       return undefined;
     }
     if (rule.kind === "remind") return this.remind(rule, cause, at);
+    // 试跑：技能、本月预算在 trialRule 里查过了；关着的规则不因此暂停
+    const trial = cause === "trial";
     // 用的技能删了、关了、改动后跑不了：不跑，暂停到用户处理（进「需要处理」）
-    if (this.pauseForSkill(rule)) return undefined;
+    if (!trial && this.pauseForSkill(rule)) return undefined;
     // 本月的预算已经用完（预算调低了、这个月里又改回开着）：不跑，暂停到下个月
-    if (this.monthSpent(rule) >= rule.monthBudgetUsd) {
+    if (!trial && this.monthSpent(rule) >= rule.monthBudgetUsd) {
       this.pauseForMonth(rule);
       return undefined;
     }
-    const mode = runMode(rule);
+    const mode = trial ? "observe" : runMode(rule);
     const id = `r_${hex(6)}`;
     const group = this.groupBrief(rule, cause === "catchup" ? at : this.now());
     if (group.error || group.empty) {
@@ -2553,7 +2797,7 @@ export class TaskService {
     const run = this.store.insertRun({ id, botId: rule.botId, taskId: "", ruleId: rule.id, ruleVersion: rule.version, mode, sessionId: `rule-${rule.id}-${id.slice(2)}`, cause, queuedAt: at });
     const zone = rule.trigger.kind === "schedule" ? rule.trigger.schedule.tz : this.timeZone;
     const late = cause === "catchup" ? `[补跑]\n原定 ${stamp(at, zone)}，现在 ${stamp(this.now(), zone)}。日报按原定日期和截止时刻整理；普通检查按用户原话判断当前情况。\n\n` : "";
-    this.store.insertInput({ id: `i_${hex(6)}`, taskId: "", ruleId: rule.id, runId: id, kind: "schedule", text: late + this.ruleBriefFor(rule, mode, event) + (group.text || ""), fromPerson: cause === "manual", createdAt: this.now() });
+    this.store.insertInput({ id: `i_${hex(6)}`, taskId: "", ruleId: rule.id, runId: id, kind: "schedule", text: late + this.ruleBriefFor(rule, mode, event, trial) + (group.text || ""), fromPerson: cause === "manual" || trial, createdAt: this.now() });
     this.changed(rule.id);
     return run;
   }
@@ -2596,7 +2840,7 @@ export class TaskService {
   }
 
   /** 第一条输入：规则、用户原话、最近 3 次的结果（连续性靠它，每次是新会话）、事件、记忆快照、这次是观察还是执行 */
-  private ruleBriefFor(rule: RuleRow, mode: "observe" | "act", event?: { source: string; event: RuleEvent }): string {
+  private ruleBriefFor(rule: RuleRow, mode: "observe" | "act", event?: { source: string; event: RuleEvent }, trial = false): string {
     const tz = rule.trigger.kind === "schedule" ? rule.trigger.schedule.tz : this.timeZone;
     const recent = this.store
       .ruleRuns(rule.id, { limit: 10 })
@@ -2621,6 +2865,7 @@ export class TaskService {
       when: whenOf(rule, false, "zh-CN"),
       instruction: rule.instruction,
       mode,
+      trial,
       recent,
       ...(rule.skill ? { skill: { name: rule.skill.name, title: this.o.mySkills?.get(rule.skill.name)?.title ?? rule.skill.title } } : {}),
       ...(event ? { event: { source: event.source, payload } } : {}),
@@ -2652,11 +2897,11 @@ export class TaskService {
   private skipStale(run: RunRow): boolean {
     const rule = this.store.getRule(run.ruleId);
     const now = this.now();
-    if (!rule || rule.mode === "off" || rule.undoneUntil) {
+    if (!rule || (rule.mode === "off" && run.cause !== "trial") || rule.undoneUntil) {
       this.store.updateRun(run.id, { state: "ended", outcome: "stopped", endedAt: now });
       return true;
     }
-    if (run.cause === "catchup" || now - run.queuedAt <= Math.max(60_000, this.graceFor(rule, run.queuedAt))) return false;
+    if (run.cause === "catchup" || run.cause === "trial" || now - run.queuedAt <= Math.max(60_000, this.graceFor(rule, run.queuedAt))) return false;
     this.store.updateRun(run.id, { state: "ended", outcome: "skipped", error: RUN_ERROR.busy, endedAt: now });
     log.info("rule run skipped: no free slot within its grace period", { rule: rule.id, run: run.id });
     this.changed(rule.id);
@@ -2725,12 +2970,13 @@ export class TaskService {
   private ruleReport(l: Live, b: any): { text?: string; error?: string } {
     const state = String(b?.state ?? "");
     if (state !== "progress" && state !== "done" && state !== "failed") return { error: "state must be progress, done or failed (a rule run cannot ask the user)" };
-    const message = typeof b?.message === "string" ? oneLine(b.message) : "";
+    const brief = this.store.getRule(l.ruleId)?.resultStyle === "brief";
+    const message = typeof b?.message === "string" ? (brief ? briefText(b.message) : oneLine(b.message)) : "";
     const would = typeof b?.would === "string" ? clip(b.would.trim(), 1000) : "";
     const report: TaskReport = {
       state,
       summary: clip(String(b?.summary ?? "").trim(), 2000),
-      ...(message ? { message: clip(message, MESSAGE_MAX) } : {}),
+      ...(message ? { message: clip(message, brief ? RULE_BRIEF_MAX : MESSAGE_MAX) } : {}),
       ...(would ? { would } : {}),
       at: this.now(),
     };
@@ -2764,6 +3010,11 @@ export class TaskService {
    * 最后看本月的预算：用完了就暂停到下个月。
    */
   private afterRuleRun(rule: RuleRow, runId: string, mode: "observe" | "act", outcome: RunOutcome, report: TaskReport | undefined, error: string): void {
+    // 试跑：只把那一句写好给弹窗看（按真实发送的样子），不算连续失败、不因本月预算暂停、什么都不发
+    if (this.store.getRun(runId)?.cause === "trial") {
+      if (outcome === "done" && report?.message) void this.ruleResult(rule, runId, "observe", report);
+      return;
+    }
     if (outcome === "done") {
       this.store.updateRule(rule.id, { failures: 0 });
       if (this.store.getKV(`rule.missedPrompt:${rule.id}`)) this.dismissMissed(rule.id);
@@ -2835,10 +3086,12 @@ export class TaskService {
   private async ruleResult(rule: RuleRow, runId: string, mode: "observe" | "act", report: TaskReport): Promise<void> {
     let message = report.message ?? "";
     const main = this.mainModel(rule);
+    const brief = rule.resultStyle === "brief";
     if (this.o.complete && main && this.checkModel(rule) !== main) {
       try {
-        const out = await this.o.complete(rule.botId, main, RULE_RESULT_SYSTEM, ruleResultInput({ instruction: rule.instruction, summary: report.summary, draft: message }));
-        const line = clip(oneLine(out).replace(/^["“「]+|["”」]+$/g, ""), MESSAGE_MAX);
+        // 简报只润色，保留换行、列表和链接（X1）；一句话照旧压成一句
+        const out = await this.o.complete(rule.botId, main, brief ? RULE_BRIEF_SYSTEM : RULE_RESULT_SYSTEM, ruleResultInput({ instruction: rule.instruction, summary: report.summary, draft: message }));
+        const line = brief ? clip(briefText(out), RULE_BRIEF_MAX) : clip(oneLine(out).replace(/^["“「]+|["”」]+$/g, ""), MESSAGE_MAX);
         if (line) message = line;
       } catch (e) {
         log.warn("writing the rule result with the main model failed; sending the draft", { rule: rule.id, message: (e as Error).message.slice(0, 200) });
@@ -2869,7 +3122,13 @@ export class TaskService {
     const runId = id.split(":").at(-1)!;
     const run = this.store.getRun(runId);
     const zone = rule.trigger.kind === "schedule" ? rule.trigger.schedule.tz : this.timeZone;
-    const channelText = run?.cause === "catchup" ? `${tr("rules.lateLabel", { time: stamp(run.queuedAt, zone) })}\n${text}` : text;
+    let channelText = run?.cause === "catchup" ? `${tr("rules.lateLabel", { time: stamp(run.queuedAt, zone) })}\n${text}` : text;
+    // 简报在渠道里超过单条长度：截断，末尾说完整内容在桌面端（桌面对话照常存完整的）
+    const max = CHANNEL_MAX[conv.channel];
+    if (isPushChannel(conv.channel) && max && channelText.length > max) {
+      const more = `\n…\n${tr("rules.briefTruncated")}`;
+      channelText = channelText.slice(0, max - more.length).replace(/[\uD800-\uDBFF]$/, "") + more;
+    }
     if (isPushChannel(conv.channel) && this.o.delivery) {
       this.o.delivery.push({
         id,
@@ -2914,6 +3173,12 @@ export class TaskService {
   private recoverRule(run: RunRow): void {
     const rule = this.store.getRule(run.ruleId);
     if (!rule) return;
+    // 试跑被重启打断：不自动重跑，弹窗里写「试跑被打断」
+    if (run.cause === "trial") {
+      this.store.updateRun(run.id, { error: RUN_ERROR.trialInterrupted });
+      this.changed(rule.id);
+      return;
+    }
     const fresh = this.now() - run.queuedAt <= this.graceFor(rule, run.queuedAt);
     if (run.cause === "recover" || !fresh || rule.mode === "off" || rule.pausedReason || this.ruleBusy(rule.id)) {
       this.store.updateRun(run.id, { outcome: "skipped", error: RUN_ERROR.restart });
@@ -2930,10 +3195,11 @@ export class TaskService {
   }
 
   /** 插件（/dsh/task-config）：规则会话的配置——观察只读、去掉能改变什么的工具；执行最多可写工作区。宿主说了算 */
-  sessionConfig(b: any): { kind?: string; mode?: string; deny?: string[]; denyPrefix?: string[]; section?: string; permission?: string; error?: string } {
+  sessionConfig(b: any): { kind?: string; mode?: string; style?: string; deny?: string[]; denyPrefix?: string[]; section?: string; permission?: string; error?: string } {
     const l = this.bySession.get(String(b?.sessionId ?? ""));
     if (!l?.ruleId) return { error: "not a rule session the app is running" };
-    return { kind: "rule", mode: l.mode, deny: RULE_DENY[l.mode], denyPrefix: RULE_DENY_PREFIX, section: ruleRules(l.mode), permission: rulePermission(l.mode, this.o.host.settings(l.botId).permission) };
+    const style = this.store.getRule(l.ruleId)?.resultStyle === "brief" ? "brief" : "line";
+    return { kind: "rule", mode: l.mode, style, deny: RULE_DENY[l.mode], denyPrefix: RULE_DENY_PREFIX, section: ruleRules(l.mode, style), permission: rulePermission(l.mode, this.o.host.settings(l.botId).permission) };
   }
 
   /** 规则会话（或它的子代理）属于哪条规则、哪次运行、这次是观察还是执行（审批落到哪里、观察时自动拒绝） */
@@ -3105,6 +3371,84 @@ export class TaskService {
     return { text: `Created rule ${r.rule.id} 「${title}」 (${when}): each run checks and messages the user only when something matters. Tell the user in one sentence: 「${tr("rules.createdReply", { when, title })}」${wx}` };
   }
 
+  /**
+   * routine_library（R7.4）：不带 task 列出任务库（模型挑 2–3 条推荐）；带 task（id 或名称）和 fields（参数，JSON）按任务的原话模板
+   * 和默认时间建规则，走对话建规则的老路（规则卡、能撤销），带来源标记。缺参数、要先连应用时告诉模型该问什么、让用户连什么。
+   */
+  private routineTool(conv: Conversation, a: Record<string, unknown>): { text?: string; error?: string } {
+    const l = currentLang();
+    const strings = libraryStrings(l);
+    const now = this.now();
+    const listed = libraryTasks().filter((x) => !x.hidden || x.id === String(a.task ?? "").trim());
+    const label = (task: RoutineTask) => strings.tasks[task.id]?.title ?? task.id;
+    const ref = String(a.task ?? "").trim();
+    if (!ref) {
+      const lines = listed.filter((x) => !x.hidden).map((task) => {
+        const c = strings.tasks[task.id];
+        // * = 要问用户的（必填又没有默认值）；有默认的写出来，预填的提醒话不用问
+        const fields = task.params.map((p) => {
+          const def = p.prefill ? undefined : Array.isArray(p.default) ? p.default.join("/") : p.default;
+          const ask = p.required && def === undefined && !p.prefill;
+          return `${p.key}${ask ? "*" : ""} (${c.params[p.key]?.label ?? p.key}${p.options ? `: ${p.options.join("/")}` : ""}${def !== undefined ? `; default ${def}` : p.prefill ? "; has default text" : ""})`;
+        }).join(", ");
+        const needs = [task.needs.web ? "web search" : "", ...(task.needs.apps ?? []).map((x) => `${[x.id, ...(x.alternatives ?? [])].join("/")}${x.required ? "" : " optional"}`), task.needs.group ? "an in-app group this bot is in" : ""].filter(Boolean).join(", ");
+        return `- ${task.id} 「${c.title}」 ${c.oneLine}. ${defaultWhen(task, l, this.timeZone, now).text}. Fields: ${fields || "none"}.${needs ? ` Needs: ${needs}.` : ""}`;
+      });
+      return { text: `The app's task library (定时 › 任务库) has these ready-made scheduled tasks:\n${lines.join("\n")}\nRecommend 2–3 that fit the user and tell them they can browse all of them in the task library on the 定时 page. To set one up, call routine_library with task and fields (fields marked * are required; ask the user for any you don't know).` };
+    }
+    const low = ref.toLowerCase();
+    const task = listed.find((x) => x.id === ref) ?? listed.find((x) => [l, "zh-CN", "en"].some((g) => (libraryStrings(g as Lang).tasks[x.id]?.title ?? "").toLowerCase() === low))
+      ?? listed.find((x) => !x.hidden && [l, "zh-CN", "en"].some((g) => { const t = (libraryStrings(g as Lang).tasks[x.id]?.title ?? "").toLowerCase(); return !!t && (t.includes(low) || low.includes(t)); }));
+    if (!task) return { error: `No task "${ref}" in the library. Call routine_library without task to list them.` };
+    let fields: ParamValues = {};
+    if (typeof a.fields === "string" && a.fields.trim()) {
+      try {
+        fields = JSON.parse(a.fields);
+      } catch {
+        return { error: 'fields must be a JSON object of field values, e.g. {"city":"上海浦东"}' };
+      }
+    } else if (a.fields && typeof a.fields === "object") fields = a.fields as ParamValues;
+    if (!fields || typeof fields !== "object" || Array.isArray(fields)) fields = {};
+    const groups = this.store.listGroups().filter((g) => g.members.includes(conv.botId)).map((g) => ({ id: g.id, name: g.name }));
+    // 模型给的是名字时认一下：群名 → 群 id，选项的说法 → 选项
+    for (const p of task.params) {
+      const v = fields[p.key];
+      if (typeof v !== "string") continue;
+      if (p.type === "group") fields[p.key] = groups.find((g) => g.id === v || g.name === v)?.id ?? v;
+      if ((p.type === "select" || p.type === "app") && !(p.options ?? []).includes(v)) {
+        const hit = (p.options ?? []).find((o) => [l, "zh-CN", "en"].some((g) => (libraryStrings(g as Lang).tasks[task.id]?.params[p.key]?.options?.[o] ?? (p.type === "app" ? appName(o, g as Lang) : "")).toLowerCase() === v.toLowerCase()));
+        if (hit) fields[p.key] = hit;
+      }
+    }
+    const draft = draftRule(task, fields, { lang: l, tz: this.timeZone, now, groups });
+    const bad = Object.entries(draft.errors);
+    if (bad.length) {
+      const what = bad.map(([k, code]) => { const c = strings.tasks[task.id]?.params[k]; return `${k} (${c?.label ?? k}${c?.placeholder ? `, e.g. ${c.placeholder}` : ""}): ${code}`; }).join("; ");
+      return { error: `Ask the user for these fields of 「${label(task)}」, then call again: ${what}.${task.needs.group && !groups.length ? " This bot is in no in-app group yet, so this task can't run." : ""}` };
+    }
+    const missing = this.missingApp(task, draft.values);
+    if (missing) return { error: `「${label(task)}」 needs ${appName(missing, l)} connected first. Tell the user to connect it (you can offer app_connect), then set it up.${task.fallback ? ` Or use the web version, task ${task.fallback}, which only reads public pages.` : ""}` };
+    let schedule = draft.schedule;
+    if (typeof a.schedule === "string" && a.schedule.trim()) {
+      const parsed = parseSchedule(a.schedule, this.timeZone, now);
+      if (!parsed.schedule) return { error: parsed.error };
+      schedule = parsed.schedule;
+    }
+    if (!schedule) return { error: "This task's schedule depends on a field; ask the user for it." };
+    const r = this.createRule({
+      botId: conv.botId, conversationId: conv.id, kind: task.kind, mode: "act", title: draft.title, instruction: draft.instruction, message: draft.message, schedule,
+      ...(task.needs.group ? { sourceGroupId: String(draft.values.group ?? ""), requiresGroup: true } : {}),
+      ...(task.kind === "check" ? { runBudgetUsd: task.budget?.runUsd, monthBudgetUsd: task.budget?.monthUsd } : {}),
+      resultStyle: draft.resultStyle, source: { id: task.id, version: task.version, params: draft.values },
+    });
+    if (!r.rule) return { error: r.error };
+    this.recordRuleAction(conv, r.rule);
+    const when = whenOf(r.rule);
+    const wx = conv.channel === "weixin" ? ` This chat is WeChat, so also say: 「${tr("rules.weixinNote")}」` : "";
+    if (task.kind === "remind") return { text: `Created reminder ${r.rule.id} from the task library: ${when} the user gets 「${r.rule.message}」. Confirm in one sentence, e.g. 「${tr("rules.remindReply", { when })}」${wx}` };
+    return { text: `Created rule ${r.rule.id} 「${r.rule.title}」 (${when}) from the task library. Tell the user in one sentence: 「${tr("rules.createdReply", { when, title: r.rule.title })}」${wx}` };
+  }
+
   /** rule_update：改模式（执行 / 观察 / 关）、原话、时间表，或删掉 */
   private async ruleUpdateTool(conv: Conversation, a: Record<string, unknown>): Promise<{ text?: string; error?: string }> {
     const ref = String(a.rule ?? "").trim();
@@ -3148,7 +3492,8 @@ export class TaskService {
 
   ruleView(rule: RuleRow): RuleView {
     const live = this.store.listRuns({ ruleId: rule.id, states: ["queued", "running", "settling"], limit: 1 })[0];
-    const last = this.store.ruleRuns(rule.id, { limit: 5 }).find((r) => r.state === "ended");
+    // 试跑（任务库的「先试一次」）不算「最近一次」：它不发、不算失败，也不该让规则进「需要处理」
+    const last = this.store.ruleRuns(rule.id, { limit: 10 }).find((r) => r.state === "ended" && r.cause !== "trial");
     const monthlyRuns = rule.trigger.kind === "schedule" ? previewSchedule(rule.trigger.schedule, this.now()).monthlyRuns : 0;
     const recent = this.store.ruleRuns(rule.id, { limit: 20 }).filter((r) => r.startedAt && r.state === "ended" && r.outcome === "done").slice(0, 5);
     const cleared = this.store.getKV(`rule.attentionClearedRun:${rule.id}`);
@@ -3185,7 +3530,16 @@ export class TaskService {
       ...(live ? { live: { runId: live.id, state: live.state, since: live.startedAt || live.queuedAt } } : {}),
       ...(rule.skill ? { skill: { name: rule.skill.name, title: this.o.mySkills?.get(rule.skill.name)?.title ?? rule.skill.title, exists: !!this.o.mySkills?.get(rule.skill.name) } } : {}),
       ...(SKILL_PAUSES.has(rule.pausedReason) ? { pausedLine: this.skillProblemText(rule, this.ruleSkillProblem(rule) ?? { code: rule.pausedReason as RuleSkillProblem["code"] }) } : {}),
+      resultStyle: rule.resultStyle ?? "line",
+      ...(rule.source ? { source: this.sourceView(rule.source) } : {}),
     };
+  }
+
+  /** 来源给界面：任务名按当前语言；任务从数据里删了（下架）时 removed */
+  private sourceView(source: NonNullable<RuleRow["source"]>): NonNullable<RuleView["source"]> {
+    const task = libraryTask(source.id);
+    const title = task ? libraryStrings().tasks[task.id]?.title ?? "" : "";
+    return { id: source.id, version: source.version, params: source.params, ...(task && title ? { title } : { removed: true }) };
   }
 
   listRules(o: { botId?: string; conversationId?: string } = {}): RuleView[] {
@@ -3223,7 +3577,9 @@ export class TaskService {
       summary: r.report?.summary ?? "",
       message: r.report?.message ?? "",
       would: wouldText(r.would || r.report?.would || ""),
+      approvals: (r.would || "").split("\n").filter((x) => x.startsWith(WOULD_APPROVAL)).map((x) => x.slice(WOULD_APPROVAL.length)),
       error: errorText(r.error),
+      errorCode: r.error,
       version: r.ruleVersion,
       permission: permissionText(r.permission),
       steps: r.startedAt && r.outcome !== "skipped" ? this.activity(r.id).length : 0,

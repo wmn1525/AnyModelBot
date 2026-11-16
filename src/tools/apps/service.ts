@@ -1269,6 +1269,18 @@ export class AppService {
     return hit ? customKey(hit.id) : undefined;
   }
 
+  /**
+   * 过程区「正在使用 {应用} · {工具}」的工具名：应用给了显示名称（MCP 工具的 title）就用它；没有、或认不出这个工具时 undefined，
+   * 界面用工具名原文。key 是 keyOf 换出来的应用 key。
+   */
+  toolTitle(key: string, tool: string): string | undefined {
+    const name = tool.trim();
+    if (!name) return undefined;
+    const tools = isCustomKey(key) ? this.store.list(CUSTOM_APP).find((c) => customKey(c.id) === key)?.tools ?? [] : builtinApp(key) ? this.toolsOf(key) : [];
+    const hit = tools.find((x) => x.name === name) ?? tools.find((x) => x.name.toLowerCase() === name.toLowerCase());
+    return hit?.title?.trim() || undefined;
+  }
+
   /** 模型用 app 参数指一个应用：内置应用的 id 或名字，自定义连接器的名称 */
   private findApp(botId: string, input: Pick<GateInput, "apps" | "allowed">, selector: unknown): { key: string; app: string; name: string; accounts: AppAccount[]; tools: ToolInfo[]; legacyTools: string[] } {
     const raw = String(selector ?? "").trim();

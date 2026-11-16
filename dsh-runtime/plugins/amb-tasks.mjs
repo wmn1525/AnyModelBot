@@ -11,8 +11,10 @@
 //     input: with a default the task keeps working and the answer reaches its next step, without one the task ends
 //     its turn and waits),
 //   - refuses every tool call once the host has stopped the task.
-// Chat sessions get task_start / task_message / task_list, rule_create / rule_update and background_pause (pause or
-// resume all of the bot's background work); subagents get none of them.
+// Chat sessions get task_start / task_message / task_list, rule_create / rule_update, routine_library (the app's ready-made
+// scheduled tasks: list them, or set one up as a rule) and background_pause (pause or
+// resume all of the bot's background work); subagents get none of them, and neither tasks nor subagents get amb-collab's
+// message_bot / bot_request (a request another bot sent is handled in a task session, so it is never passed on again).
 //
 // Rule sessions (`rule-<rule>-<run>`, one fresh session per run of a standing rule, 3d) are decorated from the host's
 // answer to /dsh/task-config (the host owns the mode): the denied tools (observe denies everything that acts), the rule
@@ -34,7 +36,7 @@ export const inject = ['tools']
 
 /** Shared with amb-control: control-channel ops this plugin answers. */
 export const HANDLERS = Symbol.for('amb.control.handlers')
-export const CHAT_TOOLS = ['task_start', 'task_message', 'task_list', 'rule_create', 'rule_update', 'background_pause']
+export const CHAT_TOOLS = ['task_start', 'task_message', 'task_list', 'rule_create', 'rule_update', 'routine_library', 'background_pause', 'message_bot', 'bot_request']
 /** Tools a task session never gets (filtered to registered names before tools.restrict). */
 export const TASK_DENY = ['present', 'ask_user_question', ...CHAT_TOOLS]
 /** Shared with amb-permission: sessionId → DSH permission preset for rule sessions (and their subagents). */
@@ -158,6 +160,17 @@ export function apply(ctx) {
       execute: tool('rule_update'),
     }))
     ctx.tools.register(defineTool({
+      name: 'routine_library',
+      description: 'The app\'s ready-made scheduled tasks (任务库). No task: list them, to suggest 2–3 when the user asks what you can do on a schedule. With task: set it up as a rule.',
+      parameters: {
+        task: { type: 'string', description: 'Task id or name.' },
+        fields: { type: 'string', description: 'JSON of field values.' },
+        schedule: { type: 'string', description: 'Only to change the default time (rule_create format).' },
+      },
+      output: TEXT_OUT,
+      execute: tool('routine'),
+    }))
+    ctx.tools.register(defineTool({
       name: 'background_pause',
       description: 'Pause or resume all of this bot\'s background work when the user asks. Paused: no task or rule runs, pushed messages wait; chat still works.',
       parameters: {
@@ -195,13 +208,13 @@ export function apply(ctx) {
     execute: (args, exec) => host('/dsh/task-report', { sessionId: sessionOf(exec), ...args }, exec.signal),
   })
 
-  const ruleReportTool = (mode) => defineTool({
+  const ruleReportTool = (mode, style) => defineTool({
     name: 'task_report',
-    description: `Report this check to the app. done: finished; message is the one line for the user (at most 300 characters, in their language) only when they should hear about it${mode === 'observe' ? ' (observe mode: it is only recorded)' : ''}; leave it out to stay quiet. failed: you could not check, with the reason. progress is recorded, never sent. Then end your turn.`,
+    description: `Report this check to the app. done: finished; message is ${style === 'brief' ? 'the brief for the user (a list with source links, several lines, at most 1,500 characters, in their language)' : 'the one line for the user (at most 300 characters, in their language)'} only when they should hear about it${mode === 'observe' ? ' (observe mode: it is only recorded)' : ''}; leave it out to stay quiet. failed: you could not check, with the reason. progress is recorded, never sent. Then end your turn.`,
     parameters: {
       state: { type: 'string', required: true, enum: ['progress', 'done', 'failed'] },
       summary: { type: 'string', required: true, description: 'What you checked and found, for the record.' },
-      message: { type: 'string', description: 'For done: the one line for the user, or nothing.' },
+      message: { type: 'string', description: style === 'brief' ? 'For done: the brief for the user, or nothing.' : 'For done: the one line for the user, or nothing.' },
       ...(mode === 'observe' ? { would: { type: 'string', description: 'What you would have done if you could act.' } } : {}),
     },
     output: TEXT_OUT,
@@ -214,7 +227,7 @@ export function apply(ctx) {
     try {
       const r = await call('/dsh/task-config', { botId, sessionId: id }, AbortSignal.timeout(10_000))
       if (r?.error || r?.kind !== 'rule') throw new Error(String(r?.error ?? 'not a rule session'))
-      return { mode: r.mode === 'act' ? 'act' : 'observe', deny: r.deny ?? [], denyPrefix: r.denyPrefix ?? [], section: String(r.section ?? ''), permission: r.permission === 'workspace-write' ? 'workspace-write' : 'read-only' }
+      return { mode: r.mode === 'act' ? 'act' : 'observe', style: r.style === 'brief' ? 'brief' : 'line', deny: r.deny ?? [], denyPrefix: r.denyPrefix ?? [], section: String(r.section ?? ''), permission: r.permission === 'workspace-write' ? 'workspace-write' : 'read-only' }
     } catch (e) {
       ctx.logger?.warn?.(`amb-tasks: no config for rule session ${id}: ${e?.message ?? e}`)
       return RULE_FALLBACK
@@ -249,7 +262,7 @@ export function apply(ctx) {
         const cfg = await ruleConfig(id)
         applyRule(agent, id, cfg, id)
         if (cfg.section) agent.ctx.systemPrompt?.section({ name: SECTION, order: ORDER, interpolate: false, text: () => cfg.section })
-        if (call && !cfg.offline) agent.ctx.tools.register(ruleReportTool(cfg.mode))
+        if (call && !cfg.offline) agent.ctx.tools.register(ruleReportTool(cfg.mode, cfg.style))
       } else if (parent && ruleConfigs.has(String(parent))) {
         // a subagent of a rule session (or of its subagent): same sandbox and denied tools
         const cfg = ruleConfigs.get(String(parent))

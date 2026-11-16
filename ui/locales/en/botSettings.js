@@ -65,7 +65,6 @@ export default {
     "sameAsChat": "Same as chat model"
   },
   "budget": {
-    "playground": "Playground sign-in uses the account wallet. Use API key mode for separate bot quotas.",
     "name": "Budget",
     "signedOut": "Sign in to Okinto New API to set a separate spending limit for this bot",
     "signIn": "Sign in",
@@ -75,7 +74,8 @@ export default {
     "exhausted": "{used} used, nothing left, so the bot has paused model calls",
     "limit": "Limit (USD)",
     "limitSub": "Includes what's already spent. Raising it resumes the bot automatically.",
-    "limitLabel": "Budget limit (USD)"
+    "limitLabel": "Budget limit (USD)",
+    "playground": "Playground sign-in uses the account wallet. Use API key mode for separate bot quotas."
   },
   "perm": {
     "head": "Permissions",
@@ -91,10 +91,7 @@ export default {
     "head": "Memory",
     "name": "Long-term memory",
     "review": "Tidy up automatically after each turn",
-    "reviewLabel": "Auto-tidy memory",
-    "team": "Allow writing to team memory",
-    "teamSub": "Shared by all bots",
-    "teamLabel": "Team memory"
+    "reviewLabel": "Auto-tidy memory"
   },
   "context": {
     "head": "Context",

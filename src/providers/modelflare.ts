@@ -74,6 +74,30 @@ export function isBotProviderModel(model: string): boolean {
 }
 
 /**
+ * 内置网关自己合成的模型组：多个服务方提供同名模型时，magpie 把它们合成一组，列成 auto/<模型名>（旧写法 group/auto-<slug>）。
+ * 我们每个请求都明确指定服务方（预算才管得住），用不上这种组；它出现在模型列表里、被选中后会把 auto/<模型名> 原样发给 Modelflare。
+ */
+export function isGatewayGroupModel(model: string): boolean {
+  return /^(auto|group)\//.test(model.trim());
+}
+
+const slugOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+/**
+ * auto/<模型名>（或 group/auto-<slug>）对应回一个真实的模型 id：在 list 里按模型名找（最后一段，忽略大小写和 . _ - 空格的差别），
+ * Modelflare 的优先于官方 API 的；找不到、或是用户自己建的组时返回空串。
+ */
+export function resolveGroupModel(model: string, list: string[]): string {
+  const m = model.trim();
+  if (!isGatewayGroupModel(m)) return m;
+  const ref = m.slice(m.indexOf("/") + 1);
+  const want = m.startsWith("group/") ? (ref.startsWith("auto-") ? slugOf(ref.slice(5)) : "") : slugOf(ref.slice(ref.lastIndexOf("/") + 1));
+  if (!want) return "";
+  const hits = list.filter((x) => !isGatewayGroupModel(x) && slugOf(x.slice(x.lastIndexOf("/") + 1)) === want);
+  return hits.find((x) => !x.startsWith("official-")) ?? hits[0] ?? "";
+}
+
+/**
  * 把模型 id 限定到某个 provider。每个请求都显式带 provider：多个 provider 提供同名模型时，
  * 不带前缀的 id 会被内置网关当成一组在它们之间路由，预算就管不住了。
  */

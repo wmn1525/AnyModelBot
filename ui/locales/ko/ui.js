@@ -25,5 +25,8 @@ export default {
     "rejected": "거부됨",
     "answered": "답변됨",
     "denied": "거부됨"
-  }
+  },
+  /** "⋯" at the end of a row (MoreButton): hover hint and screen-reader name */
+  "more": "더 보기",
+  "moreFor": "'{name}' 추가 작업",
 };

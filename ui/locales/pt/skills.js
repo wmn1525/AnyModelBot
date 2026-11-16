@@ -19,7 +19,7 @@ export default {
   nameTitle: "{name}: {title}",
   tryLine: "Experimente: \"{text}\"",
   copy: "Copiar instrução de instalação",
-  copied: "Copiado",
+  copied: "Copiado ✓",
   copyLabel: "Copiar a instrução de instalação de {name}",
   openRepoLabel: "Abrir {name} no GitHub",
   filterAuthorLabel: "Ver só as habilidades de {name}",

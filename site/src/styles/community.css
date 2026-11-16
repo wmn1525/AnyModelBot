@@ -1,0 +1,92 @@
+@layer tokens, base, components, app, utilities;
+/* 社群入口（components/Community.astro、CommunityQr.astro，导航的社群菜单）。数据和显示规则在 data/community.ts。
+   规矩：平时标志和字都是次要色，指到 / 聚焦时标志换成品牌色 --brand，外圈和底色只透一点品牌色——安静，但一眼认得出是哪家。 */
+@layer components {
+  .cm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .cm__item { position: relative; display: flex; }
+  .cm__link { color: var(--text-2); text-decoration: none; transition: color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast); }
+  .cm__link .icon { flex: none; transition: color var(--dur-fast), scale var(--dur-fast) var(--ease-out); }
+  .cm__link:hover, .cm__link:focus-visible, .cm__item--qr:hover .cm__link { color: var(--text); text-decoration: none; }
+  .cm__link:is(:hover, :focus-visible) .icon, .cm__item--qr:hover .cm__link .icon { color: var(--brand); }
+
+  /* 胶囊：34 高，细边；指到时外圈和底色带一点品牌色，标志轻轻放大 */
+  .cm--chips .cm__link { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px 0 11px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); font-size: var(--fs-sm); font-weight: 500; line-height: 1; white-space: nowrap; }
+  .cm--chips .cm__link:is(:hover, :focus-visible), .cm--chips .cm__item--qr:hover .cm__link {
+    background: color-mix(in srgb, var(--brand) 8%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 45%, var(--line));
+  }
+  .cm--chips .cm__link:hover .icon { scale: 1.08; }
+
+  /* 小圆钮：28 见方，放在一行灰字里；名字用和导航图标按钮一样的反色小标签 */
+  .cm--icons { gap: 2px; }
+  .cm--icons .cm__link { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 999px; }
+  .cm--icons .cm__link:is(:hover, :focus-visible) { background: color-mix(in srgb, var(--brand) 12%, transparent); }
+  .cm--icons [data-tip] { position: relative; }
+  .cm--icons [data-tip]::after {
+    content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; z-index: var(--z-float);
+    padding: 6px 8px; border-radius: var(--r-item); background: var(--text); color: var(--bg);
+    font-family: var(--font-sans); font-size: var(--fs-eyebrow); font-weight: 500; line-height: 1; letter-spacing: 0; white-space: nowrap;
+    opacity: 0; transform: translate(-50%, 3px); pointer-events: none;
+    transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+  }
+  .cm--icons [data-tip]:hover::after { opacity: 1; transform: translate(-50%, 0); transition-delay: .25s; }
+  .cm--icons [data-tip]:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+
+  /* QQ 胶囊上方的二维码卡：和导航菜单同一种玻璃质感，但底下垫一层页面底色，是实心的——它常盖在文字上（FAQ 的去文档链接、页脚的一句话），透出来会花。
+     指到胶囊或键盘进到里面时浮出；卡和胶囊之间垫一条看不见的桥，鼠标移上去不会断 */
+  .cm__pop {
+    position: absolute; bottom: calc(100% + 10px); left: 0; z-index: var(--z-float); padding: 12px;
+    border-radius: var(--r-pop); background: var(--grain), linear-gradient(var(--glass-strong), var(--glass-strong)), var(--bg);
+    box-shadow: var(--glass-ring), 0 18px 48px -12px var(--shadow-c);
+    opacity: 0; visibility: hidden; transform: translateY(4px) scale(.98); transform-origin: bottom left;
+    transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out), visibility 0s linear var(--dur-fast);
+  }
+  .cm__pop::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 12px; }
+  .cm__item--qr:is(:hover, :focus-within) .cm__pop { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  .cm__pop .cm-qr { display: grid; justify-items: center; gap: 10px; text-align: center; }
+
+  /* 二维码 + 文字。浮出卡里竖排，导航菜单里横排（见下） */
+  .cm-qr__code { flex: none; display: block; border-radius: 8px; box-shadow: 0 0 0 1px var(--line); }
+  .cm-qr__text { display: grid; gap: 4px; }
+  .cm-qr__scan { margin: 0; color: var(--text); font-size: var(--fs-sm); font-weight: 500; line-height: 1.3; white-space: nowrap; }
+  .cm-qr__num { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--text-2); font-size: var(--fs-xs); line-height: 1; white-space: nowrap; }
+  .cm-qr__num .mono { color: var(--text); letter-spacing: .02em; }
+  .cm-qr__copy { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-left: -2px; border-radius: 6px; color: var(--text-2); transition: color var(--dur-fast), background var(--dur-fast); }
+  .cm-qr__copy:hover, .cm-qr__copy:focus-visible { color: var(--text); background: var(--hover); }
+  .cm-qr__copy[data-state="copied"] { color: var(--ok); }
+
+  /* 导航的社群菜单：沿用 .nav .menu 的行；左边品牌标志（指到上色），右边群号或外链箭头；中文站底下再接一块二维码。
+     按钮和菜单之间空 6px，用一条看不见的桥接上，鼠标斜着移进去不会断。桥比菜单稍宽，对齐按钮右边。 */
+  .nav__menu--hover::before { content: ""; position: absolute; z-index: 1; right: 0; top: 100%; width: 280px; height: 10px; }
+  .nav .menu.cm-menu { min-width: 248px; }
+  .cm-menu a .menu__ico { transition: color var(--dur-fast); }
+  .cm-menu a:is(:hover, :focus-visible) .menu__ico { color: var(--brand); }
+  .cm-menu__meta { flex: none; color: var(--text-2); opacity: .8; }
+  .cm-menu__meta.mono { font-size: var(--fs-xs); letter-spacing: .02em; }
+  .cm-menu .cm-qr { display: flex; align-items: center; gap: 12px; margin: 4px 0 0; padding: 10px 10px 6px; border-top: 1px solid var(--line); }
+  .cm-menu .cm-qr__text { justify-items: start; }
+  /* 菜单里的 button 会被 .nav .menu button 拉成整行，复制钮要改回小方块 */
+  .nav .menu .cm-qr__copy { width: 24px; min-height: 24px; height: 24px; padding: 0; justify-content: center; border-radius: 6px; }
+
+  /* 手机抽屉：标题在左，胶囊在右，和语言 / 外观那一排对齐 */
+  .drawer__community { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; }
+  .drawer__community-title { color: var(--text-2); font-size: var(--fs-sm); font-weight: 500; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cm__pop { transform: none; }
+    .cm--chips .cm__link:hover .icon { scale: none; }
+  }
+}
+
+/* 首页各节里的位置：sections.css 在 app 层，这里也得在 app 层才盖得住 */
+@layer app {
+  /* 首页 FAQ 左栏：去文档的链接下面，一句"也可以到社群里问问" + 胶囊 */
+  .faq-wrap__community { display: grid; justify-items: start; gap: 10px; margin-top: 4px; }
+  .faq-wrap__community > p { margin: 0; color: var(--text-2); font-size: var(--fs-sm); }
+
+  /* 收尾横幅开源那一行的末尾："加入社群" + 小圆钮。这一行的链接本来是正文色、带下划线、inline-flex（sections.css），圆钮不要这些 */
+  .final__community { display: inline-flex; align-items: center; gap: 4px; }
+  /* 那条规则写在 :is() 里，按最重的一项（.models__pricing .pcard__link）算权重，所以这里多套一层 .cm */
+  .final__oss .cm .cm__link { display: grid; color: var(--text-2); text-decoration: none; }
+  .final__oss .cm .cm__link:is(:hover, :focus-visible) { color: var(--text); }
+}

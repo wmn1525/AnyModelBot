@@ -229,6 +229,8 @@ export interface AgentHostOptions {
   apiFallbacks?: ApiFallbacks;
   /** 代理自己醒来开了一轮（后台命令结束）：调用方用 followTurn 跟踪它，把回复发到会话里 */
   onWake?: (conversationId: string, sessionId: string) => void;
+  /** 机器人之间能不能发消息（已登录 Modelflare、机器人协作开着）；缺省不写协作规则 */
+  collab?: () => boolean;
   /** 后台任务会话（task-*）和它们子代理的通知：root 是任务会话 id（任务服务据此记步骤、判断这一轮结束） */
   onTaskEvent?: (root: string, n: SdkNotification) => void;
   /** 宿主这边也空闲（没有在跑或收尾的任务、规则 run，没有等批准的，没有在压缩的会话）：开过的会话多了可以换新的子进程 */
@@ -820,6 +822,9 @@ export class AgentHost {
       // 宿主 → 代理进程的指令通道：按会话中止、插话、按会话选模型；长命令转后台后等它的结果
       "    - id: amb-control",
       `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-control.mjs"))}`,
+      // 机器人之间发消息：聊天会话的 message_bot / bot_request（任务、规则会话和子代理里由 amb-tasks 去掉，只发一层）
+      "    - id: amb-collab",
+      `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-collab.mjs"))}`,
       // 后台任务：聊天会话的 task_start / task_message / task_list；任务会话的限定工具、任务规则、task_report、收尾
       "    - id: amb-tasks",
       `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-tasks.mjs"))}`,
@@ -1166,7 +1171,9 @@ exec "$REAL" "$@"
     const apps = this.allows("accounts") ? (this.o.apps?.().prompt ?? "") : "";
     // 「我的技能」：全部列出（标同一件事时要用名字），没在这里打开的注明
     const mine = mySkillsPrompt({ bot: bot?.name ?? "", skills: this.userSkills.mine.list().map((s) => ({ name: s.name, title: s.title, on: s.bots.includes(this.o.botId) })) });
-    const text = [botPrompt({ name: bot?.name ?? "", persona: bot?.systemPrompt ?? "", memory: this.settings().memory.enabled, others }), apps, botSkills(this.liveSkills(), !!apps), mine].filter(Boolean).join("\n\n");
+    // 机器人之间发消息：已登录、开着时才建议交给别的机器人（登录状态、开关变了下一次模型请求就跟着变）
+    const collab = this.o.collab?.();
+    const text = [botPrompt({ name: bot?.name ?? "", persona: bot?.systemPrompt ?? "", memory: this.settings().memory.enabled, others, collab }), apps, botSkills(this.liveSkills(), !!apps), mine].filter(Boolean).join("\n\n");
     if (!force && text === this.promptText) return;
     try {
       fs.mkdirSync(path.dirname(this.promptFile), { recursive: true, mode: 0o700 });

@@ -22,6 +22,8 @@ import { SkillInstallCard } from "../components/skill-install-card.js";
 import { SkillDraftCard } from "../components/skill-draft-card.js";
 import { ConversationFind, HistoryBar, HistoryPageButton, useMessageHistory } from "../components/chat-search.js";
 import { chatView, saveChatView, useChatDraft } from "../lib/chat-view.js";
+import { AboutMeNotes, aboutMeByItem } from "../components/about-me.js";
+import { replyAfter } from "../lib/collab.js";
 
 const NEAR_BOTTOM = 80;
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
@@ -112,6 +114,15 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
   const [pending, setPending] = useState([]);
   const [canOpen, setCanOpen] = useState(false);
   const [running, setRunning] = useState(false);
+  // 关于我：群里同样会记（R1）。每个成员在群里有自己的会话，提示行挂在它那一轮的回复下面
+  const [aboutMe, setAboutMe] = useState({});
+  const loadAboutMe = useCallback(() => Promise.all(group.members.map((id) => {
+    const conv = `${id}:web:group:${group.id}`;
+    return api(`/about-me/chat?conversation=${encodeURIComponent(conv)}`).then((d) => [conv, d]).catch(() => [conv, null]);
+  })).then((list) => setAboutMe(Object.fromEntries(list))), [group.id, group.members.join(",")]);
+  useEffect(() => {
+    if (!running) loadAboutMe();
+  }, [running, loadAboutMe]);
   const [stopping, setStopping] = useState(false);
   const [loadErr, setLoadErr] = useState("");
   const [text, setText] = useChatDraft(viewId);
@@ -334,6 +345,11 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
     if (stick.current && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
   };
   const files = (it) => html`<${DeliveredFiles} files=${it.files} conv=${it.conv} canOpen=${canOpen} onLoad=${onMedia} />`;
+  const notes = useMemo(() => {
+    const map = new Map();
+    for (const [conv, d] of Object.entries(aboutMe)) for (const [k, v] of aboutMeByItem(d, (items || []).filter((x) => x.conv === conv), replyAfter)) map.set(k, v);
+    return map;
+  }, [aboutMe, items]);
   const rows = useMemo(() => {
     const out = [];
     let prev = null;
@@ -387,6 +403,7 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
           ${it.ruleSource && html`<${RuleSource} source=${it.ruleSource} botId=${it.botId} />`}
           ${shown && html`<div class="msg"><${Markdown} text=${shown} conv=${it.conv} canOpen=${canOpen} /></div>`}
           ${files(it)}
+          <${AboutMeNotes} list=${notes.get(it.id)} onChanged=${loadAboutMe} />
           ${ruleActions.filter((a) => a.messageId === it.mid).map((a) => html`<${RuleCard} key=${a.id} action=${a} />`)}
           ${!it.live && html`<${MsgActions} text=${shown} at=${it.at} />`}
         </div>`);
@@ -397,7 +414,7 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
     const shownIds = new Set((live?.prompts || []).map((p) => p.requestId));
     for (const p of pending) if (!shownIds.has(p.id)) out.push(html`<div class="msg-row assistant" key=${"p" + p.id}><${PromptCard} requestId=${p.id} fallback="" /></div>`);
     return out;
-  }, [items, history.context, live, pending, stopping, canOpen, bots, lang, ruleActions, running, account?.topupUrl, defaultModel, memberModels]);
+  }, [items, history.context, live, pending, stopping, canOpen, bots, lang, ruleActions, running, account?.topupUrl, defaultModel, memberModels, notes]);
 
   // 示例按真实成员生成（第 17 项）：名字里像"写作助手"的用起草的例子，否则用第一位成员的通用例子。
   // 只用在群里不重名的成员：填进去的 @名字 要能被服务端的点名解析（core/groups.ts mentionsIn）认成这个人

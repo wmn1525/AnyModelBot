@@ -16,6 +16,12 @@ https://github.com/tailwindlabs/heroicons/releases/tag/v2.2.0
 
 좌우 패널 버튼은 Lucide 1.73.0의 `panel-left` / `panel-right`를 사용하며, 이전의 둥근 사각형과 세로 구분선 모양을 유지합니다. 소스와 출처는 `ui/icons/lucide.js`, `ui/icons/lucide-source.json`에, ISC / MIT 라이선스 전문은 [ui/icons/lucide-LICENSE](./ui/icons/lucide-LICENSE)에 있습니다.
 
+## highlight.js (미리보기 패널의 코드 색상 표시)
+
+미리보기 패널의 코드 보기와 Markdown 코드 블록은 highlight.js 11.12.0으로 색상을 표시합니다. 코어와 자주 쓰는 31개 언어만 포함하며(npm 패키지 `@highlightjs/cdn-assets`의 공식 ES 모듈 빌드), `ui/vendor/hljs/`에 있고 `scripts/vendor-hljs.mjs`로 복사합니다. BSD-3-Clause 라이선스를 따르며 저작권은 Ivan Sagalaev와 기여자에게 있습니다. 전체 라이선스는 [ui/vendor/hljs/LICENSE](./ui/vendor/hljs/LICENSE)에 있습니다.
+
+https://github.com/highlightjs/highlight.js
+
 ## magpie(내장 모델 게이트웨이, 바이너리 배포 및 일부 화면 스타일 수정)
 
 출처: https://github.com/yetone/magpie (vendor/magpie 서브모듈, v0.1.1720)

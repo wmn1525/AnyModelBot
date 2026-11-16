@@ -169,6 +169,7 @@ export class MagpieSupervisor {
     settings.noAutoUpdate = true;
     settings.noAccountDiscovery = true;
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), { mode: 0o600 });
+    this.noAutoGroups(cfgDir);
 
     const keysPath = path.join(this.root, "keys.json");
     try {
@@ -180,6 +181,30 @@ export class MagpieSupervisor {
     registerSecret(this.keys.webKey);
     registerSecret(this.keys.gatewayKey);
     this.registerProviderKeys();
+  }
+
+  /**
+   * 关掉 magpie 自己合成的模型组（providers.json 的 noAutoGroups）：多个服务方提供同名模型时（共用的 Modelflare 和机器人的预算 Key、
+   * Modelflare 和官方 API），它会合成 auto/<模型名> 列进模型列表，选了就把 auto/… 原样发给上游。我们每个请求都明确指定服务方，用不上。
+   * 读不懂的文件不动（magpie 自己有备份可退）。
+   */
+  private noAutoGroups(cfgDir: string): void {
+    const f = path.join(cfgDir, "providers.json");
+    let j: Record<string, unknown> = { providers: [] };
+    try {
+      if (fs.existsSync(f)) {
+        const parsed = JSON.parse(fs.readFileSync(f, "utf8").replace(/^\uFEFF/, ""));
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
+        j = parsed;
+      }
+    } catch {
+      return;
+    }
+    if (j.noAutoGroups === true) return;
+    j.noAutoGroups = true;
+    const tmp = `${f}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(j, null, 2), { mode: 0o600 });
+    fs.renameSync(tmp, f);
   }
 
   /** 上游 API Key（providers.json 里的 key 字段）登记为密钥，日志里出现时替换成 *** */

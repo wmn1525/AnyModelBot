@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { html, Icon, Button, Sheet, Seg, Spinner } from "../components/ui.js";
 import { RuleEditor, RuleRow } from "../components/rules.js";
 import { failed, useStore } from "../lib/store.js";
-import { loadRules, openScheduled, scheduled, RULES_CHANGED } from "../lib/scheduled.js";
+import { loadRules, openScheduled, scheduled, ruleFocus, RULES_CHANGED } from "../lib/scheduled.js";
+import { libraryFrom, openLibrary } from "../lib/routines.js";
+import { RoutineSuggestions, TryLibrary } from "./routines.js";
 import { sideLayout, keyOfBot } from "../lib/sections.js";
 import { t, useLang } from "../lib/i18n.js";
 import { BotAvatar } from "../components/avatar.js";
@@ -53,6 +55,7 @@ export function NewRuleHost({ bots }) {
     buttons[i < 0 ? (e.key === "ArrowDown" ? 0 : buttons.length - 1) : (i + (e.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length].focus();
   };
   return html`<${Sheet} class="rule-picker-sheet" title=${t("scheduled.chooseBot")} onClose=${() => setOpen(false)}>
+    <p class="hint rule-library-link"><button type="button" class="text" onClick=${() => { setOpen(false); openLibrary(); }}>${t("routines.notSure")}</button></p>
     ${bots.length > 8 && html`<div class="rule-bot-search" onKeyDown=${move}><${Icon} name="search" size="md" /><input class="field" data-autofocus value=${query} aria-label=${t("scheduled.searchBots")} placeholder=${t("scheduled.searchBots")} onInput=${(e) => setQuery(e.target.value)} /></div>`}
     <div class="rule-bot-picker" ref=${list} onKeyDown=${move}>${ordered.map((bot, i) => html`<button type="button" class="rule-bot-option" key=${bot.id} data-autofocus=${bots.length <= 8 && i === 0 ? "" : undefined} onClick=${() => setBotId(bot.id)}><${BotAvatar} bot=${bot} size=${32} /><span><b>${bot.name}</b>${bot.systemPrompt?.trim() && html`<small>${bot.systemPrompt.trim().split(/\r?\n/)[0]}</small>`}</span></button>`)}
       ${!ordered.length && html`<p class="hint">${t("scheduled.noBotsMatch", { query })}</p>`}</div>
@@ -63,6 +66,17 @@ export function ScheduledPage({ bots }) {
   const layout = useStore(sideLayout);
   const [filter, setFilter] = useState("all");
   const [open, setOpen] = useState("");
+  // 回到「定时」页：之后打开的「用起来」不再默认右侧面板的那个机器人
+  useEffect(() => libraryFrom.set(null), []);
+  // 从任务库「查看规则」、详情的「已在用 · 查看」过来：展开那条规则并滚到它
+  const focus = useStore(ruleFocus);
+  const focused = useRef(0);
+  useEffect(() => {
+    if (!focus || focused.current === focus.at || !data.rules.some((r) => r.id === focus.id)) return;
+    focused.current = focus.at; setFilter("all"); setOpen(focus.id);
+    const timer = setTimeout(() => { const el = document.querySelector(`.scheduled-page [data-rule-id="${CSS.escape(focus.id)}"]`); el?.scrollIntoView({ block: "center" }); el?.classList.add("rule-locate"); setTimeout(() => el?.classList.remove("rule-locate"), 1800); }, 80);
+    return () => clearTimeout(timer);
+  }, [focus, data.rules.length]);
   const keys = layout?.sections?.flatMap((s) => s.items) || [];
   const position = (bot) => { const i = keys.indexOf(keyOfBot(bot)); return i < 0 ? keys.length : i; };
   const ordered = [...bots].sort((a, b) => position(a) - position(b));
@@ -70,13 +84,15 @@ export function ScheduledPage({ bots }) {
   const refresh = () => loadRules().catch(failed);
   const rows = data.rules.filter((r) => filter !== "needs" || r.needsAttention);
   return html`<section class="scheduled-page" data-screen="scheduled">
-    <header class="scheduled-head"><div><h1>${t("scheduled.title")}</h1><p class="hint">${t("scheduled.description", { zone: data.timeZone })}</p></div><${Button} variant="primary" icon="plus" onClick=${newRule}>${t("scheduled.newRule")}<//></header>
+    <header class="scheduled-head"><div><h1>${t("scheduled.title")}</h1><p class="hint">${t("scheduled.description", { zone: data.timeZone })}</p></div><div class="scheduled-head-actions"><${Button} icon="library" onClick=${() => openLibrary()}>${t("routines.library")}<//><${Button} variant="primary" icon="plus" onClick=${newRule}>${t("scheduled.newRule")}<//></div></header>
     <${Seg} label=${t("scheduled.title")} options=${[["all", `${t("scheduled.all")} ${data.rules.length}`], ["needs", `${t("scheduled.needs")} ${count}`]]} value=${filter} onChange=${setFilter} />
     ${!data.loaded && html`<${Spinner} />`}
-    ${data.loaded && !rows.length && html`<div class="page-empty"><span class="page-empty-icon"><${Icon} name=${filter === "needs" ? "check" : "clock"} size="lg" /></span><h2>${t(filter === "needs" ? "scheduled.emptyNeedsTitle" : "scheduled.emptyTitle")}</h2><p>${t(filter === "needs" ? "scheduled.emptyNeedsHint" : "scheduled.example")}</p>${filter !== "needs" && html`<${Button} icon="plus" onClick=${newRule}>${t("scheduled.newRule")}<//>`}</div>`}
+    ${data.loaded && !data.rules.length && html`<${RoutineSuggestions} />`}
+    ${data.loaded && data.rules.length > 0 && !rows.length && html`<div class="page-empty"><span class="page-empty-icon"><${Icon} name=${filter === "needs" ? "check" : "clock"} size="lg" /></span><h2>${t(filter === "needs" ? "scheduled.emptyNeedsTitle" : "scheduled.emptyTitle")}</h2><p>${t(filter === "needs" ? "scheduled.emptyNeedsHint" : "scheduled.example")}</p>${filter !== "needs" && html`<${Button} icon="plus" onClick=${newRule}>${t("scheduled.newRule")}<//>`}</div>`}
     ${ordered.map((bot) => {
       const rules = rows.filter((r) => r.botId === bot.id).sort((a, b) => Number(a.mode === "off") - Number(b.mode === "off") || (a.nextRunAt || Infinity) - (b.nextRunAt || Infinity) || a.createdAt - b.createdAt);
       return rules.length ? html`<section class="scheduled-group" key=${bot.id}><h2>${bot.name}</h2>${rules.map((rule) => html`<${RuleRow} key=${rule.id} full rule=${rule} timeZone=${data.timeZone} open=${open === rule.id} onToggle=${() => setOpen(open === rule.id ? "" : rule.id)} onChanged=${refresh} />`)}</section>` : null;
     })}
+    ${data.loaded && data.rules.length > 0 && filter === "all" && html`<${TryLibrary} />`}
   </section>`;
 }

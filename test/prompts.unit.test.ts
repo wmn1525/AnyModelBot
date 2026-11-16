@@ -62,7 +62,7 @@ async function loadPlugins(): Promise<{ chat: ToolDef[]; task: { tools: ToolDef[
     const tools: any[] = [];
     const created: Array<(e: any) => void> = [];
     const ctx = { tools: { register: (t: any) => tools.push(t), get: (n: string) => tools.find((t) => t.name === n) ?? (n === "present" ? {} : undefined) }, inject: () => {}, on: (ev: string, fn: any) => ev === "agent/created" && created.push(fn), get: () => undefined };
-    for (const f of ["amb-memory.mjs", "amb-media.mjs", "amb-tasks.mjs"]) (await import(path.join(runtime!, "plugins", f))).apply(ctx);
+    for (const f of ["amb-memory.mjs", "amb-media.mjs", "amb-collab.mjs", "amb-tasks.mjs"]) (await import(path.join(runtime!, "plugins", f))).apply(ctx);
     // 任务会话建出来（或重启后恢复）：amb-tasks 给它限定工具、加规则段、注册 task_report
     const task = { tools: [] as ToolDef[], sections: [] as any[], deny: [] as string[][] };
     const agent = { id: "task-t_1", ctx: { tools: { restrict: (f: any) => task.deny.push(f.deny), register: (t: any) => task.tools.push(def(t)), guard: () => {} }, systemPrompt: { section: (s: any) => task.sections.push(s) } } };
@@ -185,7 +185,7 @@ const RULES: [rule: string, part: string, says: string[], gone?: string[]][] = [
   ["用户写的人设在最后，冲突时以人设为准", "bot", ["你叫「小蓝」", "以人设为准", PERSONA]],
   ["机器人段：规则、记忆说明、人设，人设最后", "section", [CHAT_RULES, MEMORY_GUIDE, botIdentity("小蓝", PERSONA)]],
   ["关着记忆时不提记忆工具", "section memory-off", [CHAT_RULES], ["remember", "recall"]],
-  ["记忆：先 recall 再说不知道；不记密钥", "memory", ["先用 recall 查一下", "不要把密码、密钥、令牌、证件号写进记忆"]],
+  ["记忆：先 recall 再说不知道；不记密钥；关于用户本人的事记到关于我，地址电话邮箱由应用先问", "memory", ["先用 recall 查一下", "不要记密码、密钥、令牌、证件号、银行卡号", "关于我（scope: me）", "换一个机器人、换一件事，这句话还成立", "一次回复最多 3 句", "replaces", "应用会先问用户"]],
   ["每段第一条消息：渠道、记忆快照、交接、用户消息；人设和记忆说明不在这里", "segment",
     ["[对话渠道]\n微信私聊（手机上看，只显示纯文本）", "[长期记忆快照]", "- 用户叫小王", "[交接]", "[用户消息]\n继续"], ["[机器人设定]", "remember / forget / recall"]],
   // 生图：直接生成，只在花费高（超过 $0.5）或设成每次都问时由应用问；不因为换了模型、要求不明确而问，代理自己也不问
@@ -255,7 +255,8 @@ describe.skipIf(!runtime)("提示词约定", () => {
   it("任务会话：只去掉注册了的聊天专用工具，规则段在机器人段之后（优先），有 task_report；子代理拿不到任务工具", async () => {
     const { task } = await loadPlugins();
     // 只有 present 和聊天的任务、规则工具是"注册了的"：ask_user_question 在这个假环境里没有，不能交给 restrict（它会抛错）
-    expect(task.deny).toEqual([["present", "task_start", "task_message", "task_list", "rule_create", "rule_update", "background_pause"]]);
+    // 机器人之间发消息的两个工具也去掉：别的机器人发来的事在任务会话里处理，不能再发给别人（只发一层）
+    expect(task.deny).toEqual([["present", "task_start", "task_message", "task_list", "rule_create", "rule_update", "routine_library", "background_pause", "message_bot", "bot_request"]]);
     expect(task.sections).toHaveLength(1);
     expect(task.sections[0]).toMatchObject({ name: TASK_SECTION, order: TASK_SECTION_ORDER, interpolate: false });
     expect(TASK_SECTION_ORDER).toBeGreaterThan(BOT_SECTION_ORDER);
@@ -268,7 +269,7 @@ describe.skipIf(!runtime)("提示词约定", () => {
     expect(o.calls).toBe(1);
     // 只交注册了的：present、ask_user_question、聊天的任务和规则工具、生图、记忆的 remember / forget（recall 留着）
     expect(o.rule.deny).toHaveLength(1);
-    expect(new Set(o.rule.deny[0])).toEqual(new Set(["present", "ask_user_question", "task_start", "task_message", "task_list", "rule_create", "rule_update", "background_pause", "generate_image", "generate_video", "media_models", "media_docs", "remember", "forget"]));
+    expect(new Set(o.rule.deny[0])).toEqual(new Set(["present", "ask_user_question", "task_start", "task_message", "task_list", "rule_create", "rule_update", "routine_library", "background_pause", "generate_image", "generate_video", "media_models", "media_docs", "remember", "forget"]));
     expect(o.rule.sections).toHaveLength(1);
     expect(o.rule.sections[0]).toMatchObject({ name: TASK_SECTION, order: TASK_SECTION_ORDER, interpolate: false });
     expect(o.rule.sections[0].text()).toBe(ruleRules("observe"));
@@ -308,9 +309,13 @@ describe.skipIf(!runtime)("提示词约定", () => {
    * 少问（产品负责人 2026-11-01）：生图、生视频去掉 confirm 参数，rule_create 加上 mode，聊天规则写清什么时候才问，
    * 之后 10,145（提示词 981 + 工具 9,164），上限调低到 10,450。
    * 0.1.23 的生图/视频恢复增加 request_id 定义，共 499 字符；当前基线 10,644，上限同步增加到 10,949。
+   * 关于我（PRD 2026-11-15 R1–R4）：记忆说明写清「关于我」和自己的记忆怎么分、remember 加 replaces、scope 换成 me（提示词 1,158）；
+   * 机器人之间发消息（R5–R12）：message_bot、bot_request 两个工具（约 1,000）。这两个是功能本身，之后 12,204，上限跟着调高到 12,550。
+   * 任务库（PRD 2026-11-15 R7）：机器人要知道任务库、能照任务建规则，routine_library（约 470）是功能本身；清单本身只在调用时给，
+   * 不进提示词。之后 12,676，上限跟着调高到 12,900。
    * 缩短了就调低；要调高，在提交说明里写清原因。
    */
-  const BUDGET = 10_949;
+  const BUDGET = 12_900;
   it("我们的提示词加工具定义不超过字符数上限", async () => {
     const prompt = agentPersona({ computerUse: true }).length + botPrompt({ name: "小蓝", persona: PERSONA, memory: true }).length;
     const tools = JSON.stringify(await ourTools()).length;

@@ -8,7 +8,7 @@
 // 添加和管理是两个弹窗。添加只做一件事：照步骤连上，然后告诉你下一步做什么；管理才有别名、默认机器人、谁能用、更换连接方式。
 // 关掉添加弹窗就取消进行中的扫码，不会过一会儿冒出一个账号。
 import { useEffect, useRef, useState } from "preact/hooks";
-import { html, Badge, Button, Icon, MenuButton, Sheet, Skeleton, Spinner } from "../components/ui.js";
+import { html, Badge, Button, Icon, MenuButton, MoreButton, Sheet, Skeleton, Spinner } from "../components/ui.js";
 import { api } from "../lib/api.js";
 import { accountName, channelName, sourceLabel } from "../lib/access.js";
 import { fmtAgo, fmtTime } from "../lib/format.js";
@@ -119,8 +119,8 @@ function channelRows({ channelAccounts, setSheet }, bots) {
         sub: parts.filter(Boolean).join(" · "),
         keys: `${channelName(channel)} ${a.label}`,
         ctl: html`${a.status && html`<${Badge} s=${state} />`}
-          ${problem && channel === "weixin" && html`<button type="button" class="btn" onClick=${() => setSheet({ kind: "channel", channel, accountKey: a.key, fix: true })}>${t("info.weixin.relogin")}</button>`}
-          <button type="button" class="text" onClick=${() => setSheet({ kind: "channel", channel, accountKey: a.key })}>${t("settings.connections.manage")}</button>`,
+          ${problem && channel === "weixin" && html`<button type="button" class="btn sm" onClick=${() => setSheet({ kind: "channel", channel, accountKey: a.key, fix: true })}>${t("info.weixin.relogin")}</button>`}
+          <button type="button" class="btn sm" onClick=${() => setSheet({ kind: "channel", channel, accountKey: a.key })}>${t("settings.connections.manage")}</button>`,
       });
     }
   }
@@ -132,7 +132,7 @@ function channelRows({ channelAccounts, setSheet }, bots) {
       name: channelName(channel),
       sub: t(`settings.connections.how.${channel}`),
       keys: keysOf(channel),
-      ctl: html`<button type="button" class="btn" onClick=${() => add(channel)}>${t("settings.connections.connect")}</button>`,
+      ctl: html`<button type="button" class="btn sm" onClick=${() => add(channel)}>${t("settings.connections.connect")}</button>`,
     });
   }
   if (linked.length) {
@@ -142,7 +142,9 @@ function channelRows({ channelAccounts, setSheet }, bots) {
       name: t("settings.connections.addAnother"),
       sub: t("settings.connections.addAnotherSub"),
       keys: linked.map(keysOf).join(" "),
-      ctl: linked.map((channel) => html`<button type="button" class="text" key=${channel} onClick=${() => add(channel)}>${channelName(channel)}</button>`),
+      // 一行最多两个胶囊：渠道超过两个时，其余收进最右侧的「⋯」
+      ctl: html`${linked.slice(0, 2).map((channel) => html`<button type="button" class="btn sm" key=${channel} onClick=${() => add(channel)}>${channelName(channel)}</button>`)}
+        ${linked.length > 2 && html`<${MoreButton} name=${t("settings.connections.addAnother")} items=${linked.slice(2).map((channel) => ({ label: channelName(channel), onSelect: () => add(channel) }))} />`}`,
     });
   }
   return rows;
@@ -155,8 +157,10 @@ function dataRows(_conn, onOpenApps) {
     group: "data",
     id: "data-moved",
     name: t("settings.connections.dataMoved"),
+    sub: t("settings.connections.openApps"),
     keys: t("settings.connections.dataMovedKeys"),
-    ctl: html`<button type="button" class="btn" onClick=${() => onOpenApps?.()}>${t("settings.connections.openApps")}</button>`,
+    // 只有一个「打开」：整行可点，右侧 ›
+    go: () => onOpenApps?.(),
   }];
 }
 

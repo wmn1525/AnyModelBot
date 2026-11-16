@@ -247,6 +247,161 @@
       "icon": "swatch",
       "path": "optimized/24/outline/swatch.svg",
       "sha256": "1a913cfbe4c5e51ea30705a55108b8267699236266facef9479b7b586018e819"
+    },
+    "user": {
+      "icon": "user-circle",
+      "path": "optimized/24/outline/user-circle.svg",
+      "sha256": "e7b3b12455abf9c50021cd2fe1dd7de469d80f04c3eb011a142e0c126083ce95"
+    },
+    "chats": {
+      "icon": "chat-bubble-left-right",
+      "path": "optimized/24/outline/chat-bubble-left-right.svg",
+      "sha256": "5dc168c09ec779289f87d199d298c56a6ce25535cb1405a5775d1e5ba58f3d78"
+    },
+    "expand": {
+      "icon": "arrows-pointing-out",
+      "path": "optimized/24/outline/arrows-pointing-out.svg",
+      "sha256": "c56d582414b52df330e6c3633a7604440a3743da8dbd5598818497ba3dcbc3f7"
+    },
+    "shrink": {
+      "icon": "arrows-pointing-in",
+      "path": "optimized/24/outline/arrows-pointing-in.svg",
+      "sha256": "d0490257683a31c840bb2cdbf4f0a004457cf3bcf76d99f4815fd3260b030f25"
+    },
+    "doc": {
+      "icon": "document",
+      "path": "optimized/24/outline/document.svg",
+      "sha256": "6d658dd55cae69e7632111d1cf989ae74db5c158938d5426b2a5be94b0ce35b0"
+    },
+    "table": {
+      "icon": "table-cells",
+      "path": "optimized/24/outline/table-cells.svg",
+      "sha256": "657ebdc1af89b6ba39ae33995cec570e68ed26bc76a34c6ab29f0d23f84ee603"
+    },
+    "photo": {
+      "icon": "photo",
+      "path": "optimized/24/outline/photo.svg",
+      "sha256": "7097d901bd73841390a5a73f99193af198d3392bc84371e7063e520956eb7360"
+    },
+    "pdf": {
+      "icon": "book-open",
+      "path": "optimized/24/outline/book-open.svg",
+      "sha256": "dc4fab6a62dcebe7c1c31096a7062151363b803b62919ba47ef32ba37ad127df"
+    },
+    "download": {
+      "icon": "arrow-down-tray",
+      "path": "optimized/24/outline/arrow-down-tray.svg",
+      "sha256": "03f6611b7a55dfc2f4fe9ab62da600ddab28e5aa418a168adfb066a76c23e44a"
+    },
+    "zoomIn": {
+      "icon": "magnifying-glass-plus",
+      "path": "optimized/24/outline/magnifying-glass-plus.svg",
+      "sha256": "e70f02ce2cfc55925205cc79e55aeadba4796ae35ecd85f1d80bfadba026afc9"
+    },
+    "outline": {
+      "icon": "list-bullet",
+      "path": "optimized/24/outline/list-bullet.svg",
+      "sha256": "6e70f09f757531fed3d79c222b60fc1220eddedde99055155a6ee007de611bbb"
+    },
+    "wrap": {
+      "icon": "arrow-turn-down-left",
+      "path": "optimized/24/outline/arrow-turn-down-left.svg",
+      "sha256": "50dd483cd47cb24b5be11ac6fb299c0f2abfaee714f4f016e1fef93278e647c9"
+    },
+    "minus": {
+      "icon": "minus",
+      "path": "optimized/24/outline/minus.svg",
+      "sha256": "d43ac758080df7e19855e135edb168d178818ad0ec3f6f397102a72fded7f47d"
+    },
+    "library": {
+      "icon": "book-open",
+      "path": "optimized/24/outline/book-open.svg",
+      "sha256": "dc4fab6a62dcebe7c1c31096a7062151363b803b62919ba47ef32ba37ad127df"
+    },
+    "newspaper": {
+      "icon": "newspaper",
+      "path": "optimized/24/outline/newspaper.svg",
+      "sha256": "6781875d79a1f5f2af86298ffd868f427eea0edbdcf7a20b51d8f86aa18e80b3"
+    },
+    "chip": {
+      "icon": "cpu-chip",
+      "path": "optimized/24/outline/cpu-chip.svg",
+      "sha256": "7a26bbe0641421d26cf2d3b7daba200d10e780f03c8bd28ccb616bc870eb0c6f"
+    },
+    "office": {
+      "icon": "building-office",
+      "path": "optimized/24/outline/building-office.svg",
+      "sha256": "4a86b5de8f41b466a624ec70c5b00b624481ed59a92a067229295eb98c429064"
+    },
+    "scale": {
+      "icon": "scale",
+      "path": "optimized/24/outline/scale.svg",
+      "sha256": "b44f8c01b85efbf5d84cc1b057c30f37ddc109a0e1d75e336bab54132c6096ad"
+    },
+    "star": {
+      "icon": "star",
+      "path": "optimized/24/outline/star.svg",
+      "sha256": "d7f53fcaf090cc5af38ff938003ec3edf1b2ec02417da563406e76ed310a53c2"
+    },
+    "calendar": {
+      "icon": "calendar-days",
+      "path": "optimized/24/outline/calendar-days.svg",
+      "sha256": "98b9507200c6dd5387144db83d1fffea868acdf49d344353e4579f3df93c2c68"
+    },
+    "atSign": {
+      "icon": "at-symbol",
+      "path": "optimized/24/outline/at-symbol.svg",
+      "sha256": "83b552551f0480442ad2779497ecdbb84323084fdd8f34404e1d83c381c8747a"
+    },
+    "clipboardCheck": {
+      "icon": "clipboard-document-check",
+      "path": "optimized/24/outline/clipboard-document-check.svg",
+      "sha256": "6aae9896d66e7dc77a12538438dde68914e62daa7cb676b6b4673caaa4613e0a"
+    },
+    "language": {
+      "icon": "language",
+      "path": "optimized/24/outline/language.svg",
+      "sha256": "b4ca8610f42c3f861a0a8001b42f47e26b9484da4ac6163dee466256cb128de4"
+    },
+    "bulb": {
+      "icon": "light-bulb",
+      "path": "optimized/24/outline/light-bulb.svg",
+      "sha256": "9c46baf011e3e38f45992459e4a692a972426e2e3478fa2f3d6514e0e318066f"
+    },
+    "cap": {
+      "icon": "academic-cap",
+      "path": "optimized/24/outline/academic-cap.svg",
+      "sha256": "f4e740e96f30637d617f4370e237b7d4f7f997c33d082cdb8bda348a213176e6"
+    },
+    "sun": {
+      "icon": "sun",
+      "path": "optimized/24/outline/sun.svg",
+      "sha256": "e55df00558e838b63e6aeebc4af511b37a427f739ce1c4a63a8116a558b1b12e"
+    },
+    "heart": {
+      "icon": "heart",
+      "path": "optimized/24/outline/heart.svg",
+      "sha256": "831a60fdfd1a900dad099b77f4335291cc0d49ed7d890039c7a8a784318fea7b"
+    },
+    "card": {
+      "icon": "credit-card",
+      "path": "optimized/24/outline/credit-card.svg",
+      "sha256": "bab549fa012728652be63cac5022fdde99c84b2c557c600693bcad41f5ee34ec"
+    },
+    "cake": {
+      "icon": "cake",
+      "path": "optimized/24/outline/cake.svg",
+      "sha256": "2626c782f331969075e246248c2dc4e379a622be0f4fcfbbc08cf5091c329ff8"
+    },
+    "trend": {
+      "icon": "arrow-trending-up",
+      "path": "optimized/24/outline/arrow-trending-up.svg",
+      "sha256": "95be57e0f5913b87a3927a0c1c361c1b9c0b363b35447865b510f3d86eb1a781"
+    },
+    "banknotes": {
+      "icon": "banknotes",
+      "path": "optimized/24/outline/banknotes.svg",
+      "sha256": "ac63f5d5b977cdf15075c29c816392d2b3f9b8392a9b61cf958dfbcde1664a82"
     }
   }
 }

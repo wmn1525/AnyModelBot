@@ -1,14 +1,17 @@
 // AnyModelBot 界面：Preact + htm，无构建步骤（原生 ES 模块）。
 // 没有任何模型来源（OKINTO 或官方 API Key）→ 整页引导；已连接 → 侧栏 + 对话（信息面板按需），设置与机器人设置占满主区。
 import { render } from "preact";
-import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import { html, Icon, IconButton, DialogHost, Notice, Toasts, Splitter, tokenPx } from "./components/ui.js";
 import { Sidebar, SideRail } from "./screens/sidebar.js";
 import { ChatScreen } from "./screens/chat.js";
 import { ScheduledPage, ScheduledSync, NewRuleHost, newRule } from "./screens/scheduled.js";
 import { openScheduled } from "./lib/scheduled.js";
+import { RoutineLibraryPage, RoutineHost } from "./screens/routines.js";
+import { loadRoutines, openLibrary, openRoutine, routines } from "./lib/routines.js";
 import { PermissionSync } from "./components/cu-permission.js";
 import { WorkPanel, panelTabs } from "./screens/work-panel.js";
+import { previewToast } from "./screens/resource-preview.js";
 import { SettingsScreen, SettingsSide, TABS } from "./screens/settings.js";
 import { BotSettingsScreen } from "./screens/bot-settings.js";
 import { TemplateGallery, TemplatePreview } from "./screens/templates.js";
@@ -19,6 +22,8 @@ import { BotAppScreen } from "./screens/bot-app.js";
 import { DiscoverScreen } from "./screens/discover.js";
 import { AppsScreen } from "./screens/apps.js";
 import { AppDialogHost } from "./components/app-dialogs.js";
+import { PairChatHost } from "./components/collab.js";
+import { setKnownBots } from "./lib/collab.js";
 import { appsStore, loadApps } from "./lib/apps.js";
 import { GroupScreen, GroupSheet } from "./screens/group.js";
 import { MessageSearchScreen, ConversationHistoryScreen } from "./screens/message-search.js";
@@ -32,7 +37,7 @@ import { clearCatalogRemoved } from "./lib/catalog.js";
 import { loadGuide, leaveGuideSession, refreshGuide, isActive, focusStep, stepBlock, templateDraft } from "./lib/guide.js";
 import { restoreRelaunchDrafts } from "./lib/relaunch.js";
 import { previewText } from "./lib/errors.js";
-import { PREVIEW_EVENT, addResource, emptyResources, removeResource } from "./lib/resource-preview.js";
+import { PREVIEW_EVENT, addResource, emptyResources } from "./lib/resource-preview.js";
 import { setThemeMode } from "./lib/theme.js";
 import { failed, toast, useStore } from "./lib/store.js";
 import { prefs, setPrefs } from "./lib/prefs.js";
@@ -54,7 +59,7 @@ function parseHash() {
   if (kind === "templates") return { view: a ? "template-preview" : "templates", catalogId: a };
   if (kind === "needs") return { view: "needs" };
   if (kind === "discover") return { view: "discover" };
-  if (kind === "scheduled") return { view: "scheduled" };
+  if (kind === "scheduled") return { view: "scheduled", sub: a === "library" ? "library" : "" };
   if (kind === "apps") return { view: "apps", tab: a === "connected" ? "connected" : "all" };
   if (kind === "skills") return { view: "apps", tab: "skills" };
   if (kind === "app" && a) return { view: "app", botId: a };
@@ -67,6 +72,8 @@ const go = (path) => {
 };
 
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+/** 这次启动后放大过「预览」没有（只在第一次提示怎么退出） */
+let previewHinted = false;
 const mod = (e) => (isMac ? e.metaKey : e.ctrlKey);
 /** 窗口窄到右侧面板变成浮在对话上的抽屉（和 shell.css 的 @media 同一个断点） */
 const drawerMode = () => window.matchMedia("(max-width: 1180px)").matches;
@@ -119,7 +126,8 @@ function Palette({ commands, onClose }) {
   const input = useRef(null);
   useEffect(() => input.current?.focus(), []);
   const needle = q.trim().toLowerCase();
-  const hits = commands.filter((c) => !needle || `${c.label} ${c.keys || ""}`.toLowerCase().includes(needle));
+  // searchOnly：只在搜的时候出现（任务库里的每条任务）
+  const hits = commands.filter((c) => (!needle ? !c.searchOnly : `${c.label} ${c.keys || ""}`.toLowerCase().includes(needle)));
   const run = (c) => {
     onClose();
     c.run();
@@ -182,6 +190,9 @@ function App() {
   useInterval(reloadCatalog, 600_000);
   // OKINTO 账户与余额：后端每 5 分钟读一次；界面每分钟取快照，切回窗口时请后端立刻刷新
   const [account, , , setAccount] = useLoader(() => api("/account"), [connected]);
+  // 任务库：命令面板里能搜到每条任务（界面语言变了重新取）
+  const library = useStore(routines);
+  useEffect(() => { if (connected) loadRoutines().catch(() => {}); }, [connected, lang]);
   const managed = !!(mf && mf.mode === "managed");
   // 登录 / 退出 / 回到接入配置：重新读连接状态、设置、模型和账户。用 ref 拿最新的加载函数：
   // loadModels 跟着 connected 变，事件处理里不能留着第一次渲染时的那个（那时可能还没连上，读不到模型）
@@ -211,10 +222,12 @@ function App() {
   // 没动过的按默认来——窗口够宽就开着，窄窗口里面板是盖住对话的抽屉，先不开。当前标签两类各记一个
   const [infoOpen, setInfoOpen] = useState(false);
   const [appPanels, setAppPanels] = useState({});
-  const [expandedScope, setExpandedScope] = useState("");
+  // 铺满窗口：{ scope, via }。via = "app" 是工作台的「展开工作台」，"preview" 是「预览」的「放大」（只在预览有标签时）
+  const [expandedState, setExpandedState] = useState(null);
   const [panelTab, setPanelTab] = useState({ chat: "overview", app: "app" });
   const [resourcePanels, setResourcePanels] = useState({});
-  const [extraPanelOpen, setExtraPanelOpen] = useState(false);
+  // 群聊、历史消息搜索结果的面板只有「预览」：开着的是哪个范围（换到别的群或别的会话时不跟过去）
+  const [extraPanelOpen, setExtraPanelOpen] = useState("");
   const [appEntry, setAppEntry] = useState(null); // 专业 Bot 的目录条目 { catalogId, entry }（BotAppScreen 读到后给，概览里列出说明）
   const [workHost, setWorkHost] = useState(null); // 面板「工作台」标签的宿主节点，BotAppScreen 把界面渲染进去
   const [palette, setPalette] = useState(false);
@@ -293,6 +306,8 @@ function App() {
   }, [account]);
 
   const bots = botsData ? botsData.bots : null;
+  // 灰色小字、两人对话、别的机器人署名的审批卡片要画头像和名字
+  useEffect(() => setKnownBots(bots || []), [bots]);
   const appReturn = useRef(null);
   const wanted = route.botId || lastBot;
   const bot = bots && (bots.find((b) => b.id === wanted) || bots[0]);
@@ -322,19 +337,38 @@ function App() {
   const resourceScope = appCatalogId ? `app:${appCatalogId}` : route.view === "chat" && bot ? `chat:${bot.id}` : `${route.view}:${route.groupId || route.conversationId || route.botId || ""}`;
   const resources = resourcePanels[resourceScope] || emptyResources();
   const appPanel = !!appCatalogId && (appPanels[appCatalogId] ?? !drawerMode());
-  const panelOpen = panelKind === "chat" ? infoOpen : panelKind === "app" ? appPanel : extraPanelOpen && resources.items.length > 0;
-  const workExpanded = panelKind === "app" && panelOpen && expandedScope === resourceScope;
-  useEffect(() => { setExpandedScope(""); }, [resourceScope, panelOpen]);
+  const panelOpen = panelKind === "chat" ? infoOpen : panelKind === "app" ? appPanel : extraPanelOpen === resourceScope;
+  const kindTabs = panelTabs({ app: panelKind === "app", bot: panelKind === "chat" ? bot : panelKind === "app" ? appBot : null, resourcesOnly: panelKind === "resources" });
+  const curPanelTab = kindTabs.includes(panelTab[panelKind]) ? panelTab[panelKind] : kindTabs[0];
+  const previewShown = curPanelTab === "resources" && resources.items.length > 0;
+  const workExpanded = panelOpen && expandedState?.scope === resourceScope && (expandedState.via === "app" ? panelKind === "app" : previewShown);
+  const previewExpanded = workExpanded && expandedState.via === "preview";
+  useEffect(() => { setExpandedState(null); }, [resourceScope, panelOpen]);
+  // 关掉最后一个标签：退出放大
+  useEffect(() => { if (!resources.items.length) setExpandedState((x) => (x?.via === "preview" ? null : x)); }, [resources.items.length]);
   const setPanelOpen = (open) => {
     if (panelKind === "chat") setInfoOpen(open);
     else if (panelKind === "app") setAppPanels((m) => ({ ...m, [appCatalogId]: typeof open === "function" ? open(appPanel) : open }));
-    else setExtraPanelOpen(open);
+    else setExtraPanelOpen((typeof open === "function" ? open(panelOpen) : open) ? resourceScope : "");
   };
+  const expandPreview = (on) => {
+    setExpandedState(on ? { scope: resourceScope, via: "preview" } : null);
+    // 每次启动后第一次放大：提示怎么退出
+    if (on && !previewHinted) {
+      previewHinted = true;
+      previewToast(t("info.preview.expandHint"), "ok", 3000);
+    }
+  };
+  // 本对话的会话：「+」菜单和空状态列它们交付的文件（群聊是每个成员在群里的会话）
+  const previewConvs = panelKind === "chat" && bot ? [`${bot.id}:web:console`]
+    : panelKind === "app" ? (appBot ? [`${appBot.id}:web:console`] : [])
+    : route.view === "group" ? ((groupsData?.groups || []).find((g) => g.id === route.groupId)?.members || []).map((id) => `${id}:web:group:${route.groupId}`)
+    : route.view === "conversation" && route.conversationId ? [route.conversationId] : [];
   const togglePanel = () => setPanelOpen((v) => !v);
   useEffect(() => {
     const onOpen = (event) => {
       const item = event.detail;
-      if (!item?.id || !["file", "website"].includes(item.type)) return;
+      if (!item?.id || !["file", "website", "webimage"].includes(item.type)) return;
       event.preventDefault();
       setResourcePanels((all) => ({ ...all, [resourceScope]: addResource(all[resourceScope], item) }));
       setPanelTab((tabs) => ({ ...tabs, [panelKind]: "resources" }));
@@ -343,14 +377,28 @@ function App() {
     window.addEventListener(PREVIEW_EVENT, onOpen);
     return () => window.removeEventListener(PREVIEW_EVENT, onOpen);
   }, [resourceScope, panelKind, appCatalogId]);
+  // 宽尺寸（--work-w）：工作台，或「预览」有标签时；概览 / 任务 / 记忆和没有标签的「预览」用窄宽度
+  const panelWide = curPanelTab === "app" || previewShown;
   const panel = panelOpen
     ? panelKind === "app"
-      ? { kind: "app", key: resourceScope, bot: appBot, entry: appEntry?.catalogId === appCatalogId ? appEntry.entry : null, resources }
-      : { kind: panelKind, key: resourceScope, bot: panelKind === "chat" ? bot : null, entry: null, resources }
+      ? { kind: "app", key: resourceScope, bot: appBot, entry: appEntry?.catalogId === appCatalogId ? appEntry.entry : null, resources, wide: panelWide, convs: previewConvs }
+      : { kind: panelKind, key: resourceScope, bot: panelKind === "chat" ? bot : null, entry: null, resources, wide: panelWide, convs: previewConvs }
     : null;
   const panelFx = usePresence(!!panel, "--dur-slow");
   const lastPanel = useRef(null);
   if (panel) lastPanel.current = panel;
+  // 面板开着时换宽度（切到预览 / 切回概览）不做动画：这一帧先去掉列宽的过渡（开合面板的滑动照旧）
+  const snapShown = !!(panelFx.mounted && (panel || lastPanel.current));
+  const snapWide = !!(panelFx.mounted && (panel || lastPanel.current)?.wide);
+  const lastWide = useRef({ wide: snapWide, shown: snapShown });
+  useLayoutEffect(() => {
+    const was = lastWide.current;
+    lastWide.current = { wide: snapWide, shown: snapShown };
+    const el = appRef.current;
+    if (!el || !was.shown || !snapShown || was.wide === snapWide) return;
+    el.classList.add("width-snap");
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove("width-snap")));
+  }, [snapWide, snapShown]);
   // 侧栏 / 右侧面板的宽度：拖分隔条调整，存在本机偏好里（lib/prefs.js 把它写成 <html> 上的 --side-w-user / --panel-w-user / --work-w-user；
   // 带工作台的面板更宽，宽度单独记）。侧栏收起也存在这里；设置页的侧栏是分页导航，不跟着收起
   const { sideW, panelW, workW, sideHidden, notify: notifyEnabled } = useStore(prefs);
@@ -604,7 +652,7 @@ function App() {
         else if (route.view === "new" && !typing && bots && bots.length) openChat();
         else if (route.view === "settings" && !typing) openChat();
         else if ((route.view === "needs" || route.view === "discover" || route.view === "apps") && !typing) openChat();
-        else if (workExpanded && !typing) setExpandedScope("");
+        else if (workExpanded && !typing) setExpandedState(null);
         else if (panelOpen && !typing) setPanelOpen(false);
       }
     };
@@ -618,6 +666,8 @@ function App() {
   const commands = [
     { label: t("scheduled.command"), keys: "定时 规则 提醒 routine schedule rule", run: openScheduled }, // i18n-ignore: multilingual command search keywords
     { label: t("scheduled.newRule"), keys: "新规则 new routine schedule rule", run: newRule }, // i18n-ignore: multilingual command search keywords
+    { label: t("routines.library"), keys: "任务库 定时任务 模板 library routine routines task templates", run: () => openLibrary() }, // i18n-ignore: multilingual command search keywords
+    ...library.tasks.filter((x) => !x.hidden).map((x) => ({ label: t("routines.paletteTask", { task: x.title }), keys: x.search, searchOnly: true, run: () => openRoutine(x.id) })),
     { label: t("search.title"), kbd: isMac ? "⌘⇧F" : "Ctrl+Shift+F", keys: t("search.commandKeys"), run: () => openSearch() },
     { label: t("app.cmd.settings"), kbd: isMac ? "⌘," : "Ctrl+,", keys: t("app.cmd.settingsKeys"), run: () => openSettings() },
     { label: t("templates.title"), keys: "template role 模板 角色", run: () => openTemplates() }, // i18n-ignore: search aliases
@@ -663,8 +713,8 @@ function App() {
   const appChatTarget = returnTarget && (returnTarget.target?.startsWith("group:") ? groups.some((g) => g.id === returnTarget.id) : (bots || []).some((b) => b.id === returnTarget.id)) ? returnTarget : null;
   const routedGroup = view === "group" ? groups.find((g) => g.id === route.groupId) : null;
   const shownPanel = panelFx.mounted ? panel || lastPanel.current : null;
-  // 宽度由面板类型决定，切换标签沿用同一宽度与拖动设置；关闭过渡也保持原宽度。
-  const wide = shownPanel?.kind === "app" || shownPanel?.kind === "resources";
+  // 宽度跟着当前标签（工作台、有标签的预览用宽尺寸），换宽度不做动画；关闭过渡保持原宽度。
+  const wide = !!shownPanel?.wide;
   const routedBot = view === "bot-settings" && bots ? bots.find((b) => b.id === route.botId) : null;
   const sideOff = sideHidden;
   const sideView = view === "chat" && bots && !bots.length ? "new" : view;
@@ -692,10 +742,10 @@ function App() {
       ${view === "discover" && html`<${DiscoverScreen} catalog=${catalog} onOpen=${openCatalog} onTemplates=${() => openTemplates("discover")} />`}
       ${view === "templates" && html`<${TemplateGallery} bots=${bots || []} />`}
       ${view === "template-preview" && html`<${TemplatePreview} key=${route.catalogId} id=${route.catalogId} bots=${bots || []} models=${models} modelsError=${modelsError} reloadModels=${reloadModels} defaultModel=${settings?.defaultModel || ""} account=${account} onCreated=${onCreated} />`}
-      ${view === "scheduled" && html`<${ScheduledPage} bots=${bots || []} />`}
+      ${view === "scheduled" && (route.sub === "library" ? html`<${RoutineLibraryPage} />` : html`<${ScheduledPage} bots=${bots || []} />`)}
       ${view === "apps" && html`<${AppsScreen} initialTab=${route.tab} />`}
       ${appCatalogId && html`<${BotAppScreen} key=${appCatalogId} catalogId=${appCatalogId} bot=${appBot}
-        expanded=${workExpanded} onExpand=${(open) => setExpandedScope(open ? resourceScope : "")}
+        expanded=${workExpanded && expandedState?.via === "app"} onExpand=${(open) => setExpandedState(open ? { scope: resourceScope, via: "app" } : null)}
         frameHost=${workHost} panelOpen=${panelOpen} onTogglePanel=${togglePanel} onEntry=${(entry) => setAppEntry({ catalogId: appCatalogId, entry })}
         onInstalled=${onInstalled} onBotUpdated=${onBotUpdated} onOpenBotSettings=${openBotSettings} onOpenSettings=${openSettings}
         chatProps=${{ models, modelsError, reloadModels, defaultModel: settings && settings.defaultModel, onWorking, pending: (bot && pending[bot.id]) || 0, serverBusy: !!(bot && agentWorking[bot.id]), onOpenSettings: openSettings, onOpenBotSettings: openBotSettings, onBotUpdated, account: managed ? account : null, onAccount: setAccount, cuBlocked: !!(bot && cuBlocked.includes(bot.id)) }} />`}
@@ -726,18 +776,26 @@ function App() {
       onCommit=${(v) => setPrefs(wide ? { workW: v } : { panelW: v })} />`}
     ${shownPanel && html`<div class=${`panel-scrim${panelFx.leaving ? " leaving" : ""}`} onClick=${() => setPanelOpen(false)}></div>`}
     ${shownPanel && html`<${WorkPanel} key=${shownPanel.key} bot=${shownPanel.bot} entry=${shownPanel.entry} tabs=${panelTabs({ app: shownPanel.kind === "app", bot: shownPanel.bot, resourcesOnly: shownPanel.kind === "resources" })}
-      expanded=${workExpanded} onExpand=${(open) => setExpandedScope(open ? resourceScope : "")}
-      tab=${panelTab[shownPanel.kind]} onTab=${(id) => setPanelTab((p) => ({ ...p, [shownPanel.kind]: id }))} leaving=${panelFx.leaving} onClose=${() => setPanelOpen(false)} onHost=${setWorkHost}
-      resources=${shownPanel.resources}
-      onSelectResource=${(active) => setResourcePanels((all) => ({ ...all, [shownPanel.key]: { ...all[shownPanel.key], active } }))}
-      onRemoveResource=${(id) => setResourcePanels((all) => ({ ...all, [shownPanel.key]: removeResource(all[shownPanel.key], id) }))}
-      onOpenBotSettings=${() => shownPanel.bot && openBotSettings(shownPanel.bot.id)} onOpenChat=${panelToChat} onOpenConnections=${(row) => openSettings("connections", row || "")} />`}
+      expanded=${workExpanded && expandedState?.via === "app"} onExpand=${(open) => setExpandedState(open ? { scope: resourceScope, via: "app" } : null)}
+      tab=${panelTab[shownPanel.kind]} leaving=${panelFx.leaving} onClose=${() => setPanelOpen(false)} onHost=${setWorkHost}
+      onTab=${(id) => {
+        setPanelTab((p) => ({ ...p, [shownPanel.kind]: id }));
+        // 切到其他页签：退出「预览」的放大
+        if (id !== "resources") setExpandedState((x) => (x?.via === "preview" ? null : x));
+      }}
+      resources=${shownPanel.resources} convs=${shownPanel.convs} desktop=${!!settings?.desktop}
+      onResources=${(fn) => setResourcePanels((all) => ({ ...all, [shownPanel.key]: fn(all[shownPanel.key] || emptyResources()) }))}
+      previewExpanded=${previewExpanded} onPreviewExpand=${expandPreview}
+      onOpenBotSettings=${() => shownPanel.bot && openBotSettings(shownPanel.bot.id)} onOpenChat=${panelToChat} onOpenConnections=${(row) => openSettings("connections", row || "")} onOpenSettings=${(tab) => openSettings(tab)} />`}
+    ${workExpanded && html`<${Toasts} />`}
     <${CoachMark} bot=${!searchOpen && ["chat", "app"].includes(view) ? bot : null} view=${searchOpen ? "search" : view} infoOpen=${panelKind === "chat" && !!panel} busy=${Object.values(working).some(Boolean)} blocked=${!!guideStop} onConnections=${(channel) => openSettings("connections", `add-channel-${channel}`)} />
     <${ScheduledSync} /><${PermissionSync} /><${NewRuleHost} bots=${bots || []} /><${SkillDetailHost} />
     ${palette && html`<${Palette} commands=${commands} onClose=${() => setPalette(false)} />`}
     ${groupSheet && bots && html`<${GroupSheet} group=${groupSheet.group} bots=${bots} onClose=${() => setGroupSheet(null)}
       onSaved=${async (g) => { setGroupSheet(null); await reloadGroups(); openGroup(g.id); }} />`}
     <${WhatsNewHost} update=${update} onUpdateChanged=${reloadUpdate} />
+    <${PairChatHost} />
+    <${RoutineHost} bots=${bots || []} models=${models} defaultModel=${settings?.defaultModel || ""} account=${managed ? account : null} onBotsChanged=${reloadBots} />
     <${AppDialogHost} bots=${bots || []} chatBot=${!searchOpen ? appChatTarget : null} onOpenSettings=${(tab) => openSettings(tab)} />
     <${DialogHost} />
   </div>`;

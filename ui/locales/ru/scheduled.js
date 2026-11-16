@@ -1,4 +1,6 @@
 export default {
+  "yearly": "Ежегодно",
+  "beforeDays": {"one": "за {count} день", "few": "за {count} дня", "many": "за {count} дней", "other": "за {count} дня"},
   "emptyTitle": "Правил пока нет",
   "emptyNeedsTitle": "Нет правил, требующих внимания",
   "emptyNeedsHint": "Здесь появятся правила, требующие вашего участия.",

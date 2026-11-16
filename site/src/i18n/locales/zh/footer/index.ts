@@ -34,5 +34,10 @@ export default {
   "featuredMore": "展开全部 {count} 个",
   "featuredLess": "收起",
   "fieldHint": "点一下，给它们发条消息",
-  "fieldModel": "换脑"
+  "fieldModel": "换脑",
+  "community": {
+    "title": "加入社群",
+    "scan": "用 QQ 扫码加群",
+    "number": "群号"
+  }
 };

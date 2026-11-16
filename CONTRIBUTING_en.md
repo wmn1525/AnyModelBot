@@ -8,6 +8,7 @@ Thanks for helping make AnyModelBot better. Bug reports, fixes, docs and ideas a
 
 - **Questions, ideas, show and tell:** [GitHub Discussions](https://github.com/modelflare-ai/AnyModelBot/discussions)
 - **Bugs and feature requests:** [GitHub Issues](https://github.com/modelflare-ai/AnyModelBot/issues), using the templates
+- **Chat with the community:** [Discord](https://discord.gg/umBN6wX3zJ) · [Telegram](https://t.me/+Tx6Payfzxqk2ZGVl)
 - **Security problems:** do not open a public issue; report privately as described in [SECURITY.md](./SECURITY.md)
 - **Anything else:** email [support@anymodel.bot](mailto:support@anymodel.bot)
 

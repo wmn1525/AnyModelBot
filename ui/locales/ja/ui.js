@@ -26,5 +26,8 @@ export default {
     "rejected": "拒否済み",
     "answered": "回答済み",
     "denied": "拒否済み"
-  }
+  },
+  /** "⋯" at the end of a row (MoreButton): hover hint and screen-reader name */
+  "more": "その他",
+  "moreFor": "「{name}」のその他の操作",
 };

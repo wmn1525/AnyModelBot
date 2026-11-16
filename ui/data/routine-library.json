@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "industry-brief", "version": 1, "category": "news", "rank": 1, "kind": "check", "resultStyle": "brief", "quietWhenNothing": false, "icon": "newspaper",
+      "schedule": { "kind": "daily", "time": "08:30", "days": [1, 2, 3, 4, 5] },
+      "params": [
+        { "key": "field", "type": "text", "required": true, "max": 20 },
+        { "key": "count", "type": "select", "options": ["3", "5", "8"], "default": "5" },
+        { "key": "exclude", "type": "text", "max": 40 }
+      ],
+      "needs": { "web": true }, "suggestedTemplate": "researcher", "titleParam": "field", "minVersion": "0.1.40"
+    },
+    {
+      "id": "company-watch", "version": 1, "category": "news", "rank": 2, "kind": "check", "resultStyle": "brief", "quietWhenNothing": true, "icon": "office",
+      "schedule": { "kind": "daily", "time": "17:30" },
+      "params": [
+        { "key": "names", "type": "list", "required": true, "min": 1, "maxItems": 5, "max": 20 },
+        { "key": "focus", "type": "multiselect", "options": ["launch", "finance", "negative", "people"] }
+      ],
+      "needs": { "web": true }, "titleParam": "names", "minVersion": "0.1.40"
+    },
+    {
+      "id": "weekly-report-reminder", "version": 1, "category": "work", "rank": 3, "kind": "remind", "resultStyle": "line", "quietWhenNothing": false, "icon": "compose",
+      "schedule": { "kind": "weekly", "time": "16:30", "days": [5] },
+      "params": [{ "key": "message", "type": "text", "required": true, "max": 120, "prefill": true }],
+      "needs": {}, "suggestedTemplate": "work-report", "replacesTemplateRule": true, "minVersion": "0.1.40"
+    },
+    {
+      "id": "language-practice", "version": 1, "category": "learning", "rank": 4, "kind": "check", "resultStyle": "brief", "quietWhenNothing": false, "icon": "language",
+      "schedule": { "kind": "daily", "time": "20:00" },
+      "params": [
+        { "key": "language", "type": "select", "required": true, "options": ["en", "ja", "ko", "fr", "de", "es"], "default": "en" },
+        { "key": "level", "type": "select", "options": ["beginner", "intermediate", "advanced"], "default": "intermediate" },
+        { "key": "focus", "type": "text", "max": 20 }
+      ],
+      "needs": {}, "suggestedTemplate": "study-buddy", "titleParam": "language", "minVersion": "0.1.40"
+    },
+    {
+      "id": "weather", "version": 1, "category": "life", "rank": 5, "kind": "check", "resultStyle": "line", "quietWhenNothing": false, "icon": "sun",
+      "schedule": { "kind": "daily", "time": "07:30" },
+      "params": [{ "key": "city", "type": "text", "required": true, "max": 20 }],
+      "needs": { "web": true, "apps": [{ "id": "amap", "required": false }] }, "titleParam": "city", "minVersion": "0.1.40"
+    },
+    {
+      "id": "bill-reminder", "version": 1, "category": "life", "rank": 6, "kind": "remind", "resultStyle": "line", "quietWhenNothing": false, "icon": "card",
+      "schedule": { "kind": "monthly", "time": "09:00", "day": { "param": "day" }, "before": { "param": "advance" } },
+      "params": [
+        { "key": "item", "type": "text", "required": true, "max": 30 },
+        { "key": "day", "type": "dayOfMonth", "required": true },
+        { "key": "advance", "type": "select", "options": ["0", "1", "3"], "default": "0" }
+      ],
+      "needs": {}, "titleParam": "item", "minVersion": "0.1.40"
+    },
+    {
+      "id": "ai-tools-weekly", "version": 1, "category": "news", "rank": 7, "kind": "check", "resultStyle": "brief", "quietWhenNothing": false, "icon": "chip",
+      "schedule": { "kind": "weekly", "time": "09:30", "days": [1] },
+      "params": [{ "key": "scope", "type": "multiselect", "required": true, "min": 1, "options": ["llm", "coding", "media", "agents"], "default": ["llm", "coding"] }],
+      "needs": { "web": true }, "suggestedTemplate": "researcher", "budget": { "runUsd": 0.3 }, "minVersion": "0.1.40"
+    },
+    {
+      "id": "competitor-weekly", "version": 1, "category": "news", "rank": 8, "kind": "check", "resultStyle": "brief", "quietWhenNothing": false, "icon": "scale",
+      "schedule": { "kind": "weekly", "time": "10:00", "days": [1] },
+      "params": [
+        { "key": "rivals", "type": "list", "required": true, "min": 1, "maxItems": 5, "max": 60 },
+        { "key": "product", "type": "text", "max": 60 }
+      ],
+      "needs": { "web": true }, "suggestedTemplate": "researcher", "titleParam": "rivals", "budget": { "runUsd": 0.3 }, "minVersion": "0.1.40"
+    },
+    {
+      "id": "github-trending", "version": 1, "category": "news", "rank": 9, "kind": "check", "resultStyle": "brief", "quietWhenNothing": false, "icon": "star",
+      "schedule": { "kind": "weekly", "time": "10:00", "days": [1] },
+      "params": [
+        { "key": "topic", "type": "text", "required": true, "max": 30 },
+        { "key": "count", "type": "select", "options": ["3", "5", "10"], "default": "5" }
+      ],
+      "needs": { "web": true }, "suggestedTemplate": "coding-partner", "titleParam": "topic", "budget": { "runUsd": 0.3 }, "minVersion": "0.1.40"
+    },
+    {
+      "id": "today-agenda", "version": 1, "category": "work", "rank": 10, "kind": "check", "resultStyle": "brief", "quietWhenNothing": false, "icon": "calendar",
+      "schedule": { "kind": "daily", "time": "08:30", "days": [1, 2, 3, 4, 5] },
+      "params": [{ "key": "scope", "type": "select", "options": ["all", "important"], "default": "all" }],
+      "needs": { "apps": [{ "id": "dingtalk", "required": true }] }, "suggestedTemplate": "day-planner", "replacesTemplateRule": true, "minVersion": "0.1.40"
+    },
+    {
+      "id": "feishu-digest", "version": 1, "category": "work", "rank": 11, "kind": "check", "resultStyle": "brief", "quietWhenNothing": true, "icon": "atSign",
+      "schedule": { "kind": "daily", "time": "18:00", "days": [1, 2, 3, 4, 5] },
+      "params": [{ "key": "groups", "type": "list", "min": 0, "maxItems": 5, "max": 30 }],
+      "needs": { "apps": [{ "id": "feishu", "required": true }] }, "suggestedTemplate": "digest", "minVersion": "0.1.40"
+    },
+    {
+      "id": "group-digest", "version": 1, "category": "work", "rank": 12, "kind": "check", "resultStyle": "brief", "quietWhenNothing": false, "icon": "chats",
+      "schedule": { "kind": "daily", "time": "18:00", "days": [1, 2, 3, 4, 5] },
+      "params": [{ "key": "group", "type": "group", "required": true }],
+      "needs": { "group": true }, "suggestedTemplate": "digest", "replacesTemplateRule": true, "titleParam": "group", "minVersion": "0.1.40"
+    },
+    {
+      "id": "my-issues", "version": 1, "category": "work", "rank": 13, "kind": "check", "resultStyle": "brief", "quietWhenNothing": false, "icon": "clipboardCheck",
+      "schedule": { "kind": "daily", "time": "09:00", "days": [1, 2, 3, 4, 5] },
+      "params": [
+        { "key": "app", "type": "app", "required": true, "options": ["github", "linear", "atlassian"] },
+        { "key": "project", "type": "text", "max": 60 }
+      ],
+      "needs": { "apps": [{ "id": "github", "required": true, "alternatives": ["linear", "atlassian"] }] }, "suggestedTemplate": "coding-partner", "titleParam": "app", "minVersion": "0.1.40"
+    },
+    {
+      "id": "repo-activity", "version": 1, "category": "work", "rank": 14, "kind": "check", "resultStyle": "brief", "quietWhenNothing": true, "icon": "code",
+      "schedule": { "kind": "daily", "time": "18:30", "days": [1, 2, 3, 4, 5] },
+      "params": [{ "key": "repos", "type": "repo", "required": true, "min": 1, "maxItems": 3, "max": 100 }],
+      "needs": { "apps": [{ "id": "github", "required": true }] }, "suggestedTemplate": "coding-partner", "fallback": "repo-activity-web", "titleParam": "repos", "minVersion": "0.1.40"
+    },
+    {
+      "id": "repo-activity-web", "version": 1, "category": "work", "rank": 14, "kind": "check", "resultStyle": "brief", "quietWhenNothing": true, "icon": "code", "hidden": true,
+      "schedule": { "kind": "daily", "time": "18:30", "days": [1, 2, 3, 4, 5] },
+      "params": [{ "key": "repos", "type": "repo", "required": true, "min": 1, "maxItems": 3, "max": 100 }],
+      "needs": { "web": true }, "suggestedTemplate": "coding-partner", "titleParam": "repos", "minVersion": "0.1.40"
+    },
+    {
+      "id": "daily-concept", "version": 1, "category": "learning", "rank": 15, "kind": "check", "resultStyle": "brief", "quietWhenNothing": false, "icon": "bulb",
+      "schedule": { "kind": "daily", "time": "12:30" },
+      "params": [
+        { "key": "topic", "type": "text", "required": true, "max": 20 },
+        { "key": "depth", "type": "select", "options": ["intro", "advanced"], "default": "intro" }
+      ],
+      "needs": {}, "suggestedTemplate": "study-buddy", "titleParam": "topic", "minVersion": "0.1.40"
+    },
+    {
+      "id": "study-checkin", "version": 1, "category": "learning", "rank": 16, "kind": "remind", "resultStyle": "line", "quietWhenNothing": false, "icon": "cap",
+      "schedule": { "kind": "daily", "time": "21:00" },
+      "params": [{ "key": "message", "type": "text", "required": true, "max": 120, "prefill": true }],
+      "needs": {}, "suggestedTemplate": "study-buddy", "minVersion": "0.1.40"
+    },
+    {
+      "id": "water-break", "version": 1, "category": "life", "rank": 17, "kind": "remind", "resultStyle": "line", "quietWhenNothing": false, "icon": "heart",
+      "schedule": { "kind": "cron", "cron": "0 10-18/2 * * 1-5" },
+      "params": [{ "key": "message", "type": "text", "required": true, "max": 120, "prefill": true }],
+      "needs": {}, "minVersion": "0.1.40"
+    },
+    {
+      "id": "birthday-reminder", "version": 1, "category": "life", "rank": 18, "kind": "remind", "resultStyle": "line", "quietWhenNothing": false, "icon": "cake",
+      "schedule": { "kind": "yearly", "time": "09:00", "date": { "param": "date" }, "before": { "param": "advance" } },
+      "params": [
+        { "key": "who", "type": "text", "required": true, "max": 20 },
+        { "key": "type", "type": "select", "options": ["birthday", "anniversary"], "default": "birthday" },
+        { "key": "date", "type": "date", "required": true },
+        { "key": "advance", "type": "select", "options": ["0", "3", "7"], "default": "0" }
+      ],
+      "needs": {}, "titleParam": "who", "minVersion": "0.1.40"
+    },
+    {
+      "id": "watchlist-close", "version": 1, "category": "money", "rank": 19, "kind": "check", "resultStyle": "brief", "quietWhenNothing": false, "icon": "trend",
+      "schedule": { "param": "market", "map": {
+        "cn": { "kind": "daily", "time": "15:30", "days": [1, 2, 3, 4, 5] },
+        "hk": { "kind": "daily", "time": "16:30", "days": [1, 2, 3, 4, 5] },
+        "us": { "kind": "weekly", "time": "07:00", "days": [2, 3, 4, 5, 6] }
+      } },
+      "params": [
+        { "key": "symbols", "type": "list", "required": true, "min": 1, "maxItems": 10, "max": 20 },
+        { "key": "market", "type": "select", "options": ["cn", "hk", "us"], "default": "cn" }
+      ],
+      "needs": { "web": true }, "suggestedTemplate": "researcher", "titleParam": "symbols", "budget": { "runUsd": 0.2, "monthUsd": 4 }, "minVersion": "0.1.40"
+    },
+    {
+      "id": "price-alert", "version": 1, "category": "money", "rank": 20, "kind": "check", "resultStyle": "line", "quietWhenNothing": true, "icon": "banknotes",
+      "schedule": { "kind": "daily", "time": "10:00" },
+      "params": [
+        { "key": "item", "type": "select", "required": true, "options": ["usd", "eur", "jpy", "hkd", "gold"] },
+        { "key": "direction", "type": "select", "options": ["above", "below"], "default": "above" },
+        { "key": "price", "type": "number", "required": true, "max": 1000000 }
+      ],
+      "needs": { "web": true }, "titleParam": "item", "minVersion": "0.1.40"
+    }
+  ]
+}

@@ -69,6 +69,10 @@ export interface AccountStatus {
   name: string;
   avatar?: string;
   email?: string;
+  /** 名称是哪一种（profile.ts）：nickname 昵称 · username 自设用户名 · email 邮箱；没有名称时不给 */
+  nameFrom?: "nickname" | "username" | "email";
+  /** 首字头像选色用的稳定标识（账户标识摘要的前 12 位）：改昵称、改邮箱后同一账号还是同一种底色 */
+  avatarKey?: string;
   profileReady?: boolean;
   profileState?: "loading" | "ready" | "error";
   profileCached?: boolean;
@@ -141,7 +145,7 @@ export class AccountManager {
   private finishedLogin: LoginAttempt | undefined;
   /** 正在完成登录时读到的余额（还没写进快照）：首用模型按它算体验额度 */
   private loginBalanceUsd: number | null = null;
-  private snapshot: Pick<AccountStatus, "name" | "avatar" | "email" | "profileReady" | "source" | "balanceUsd" | "bot" | "usedUsd" | "billedToEnterprise" | "updatedAt" | "error" | "balanceUnit" | "balanceScope" | "unlimitedBalance"> = {
+  private snapshot: Pick<AccountStatus, "name" | "avatar" | "email" | "nameFrom" | "profileReady" | "source" | "balanceUsd" | "bot" | "usedUsd" | "billedToEnterprise" | "updatedAt" | "error" | "balanceUnit" | "balanceScope" | "unlimitedBalance"> = {
     name: "", avatar: "", email: "", profileReady: false,
     source: "none",
     balanceUsd: null,
@@ -209,6 +213,7 @@ export class AccountManager {
       ...this.snapshot,
       profileState: this.refreshing ? "loading" : this.snapshot.error ? "error" : this.snapshot.profileReady ? "ready" : "loading",
       profileCached: !!this.session?.record.profile,
+      ...(this.session?.record.ownerKey ? { avatarKey: this.session.record.ownerKey.slice(0, 12) } : {}),
       state: this.state,
       loginUrl: this.state === "signing_in" ? (this.login?.url ?? "") : "",
       alerts,

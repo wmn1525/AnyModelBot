@@ -84,13 +84,13 @@ export default {
     },
     "memory": {
       "title": "Deixe que ele se lembre de você",
-      "desc": "Conte suas preferências e as informações que você usa com frequência. Ele se lembra delas em novas conversas e no WeChat, mas nunca guarda senhas, chaves e coisas do tipo.",
+      "desc": "Conte suas preferências e as informações que você usa com frequência. Todos os seus bots se lembram delas, em novas conversas e no WeChat, mas nunca guardam senhas, chaves e coisas do tipo.",
       "how": [
         "É só dizer “Lembre-se…”. Ele também anota sozinho coisas importantes enquanto vocês conversam",
         "Para que ele esqueça, diga “Esqueça…” ou exclua em “Memória” no painel direito"
       ],
       "try": "Lembre-se: dê respostas curtas e comece pela conclusão.",
-      "doneText": "Anotado. Você pode ver ou excluir em “Memória” no painel direito."
+      "doneText": "Anotado. Agora todos os seus bots sabem. Você pode ver ou editar em Configurações › Sobre mim."
     },
     "media": {
       "title": "Gere uma imagem",

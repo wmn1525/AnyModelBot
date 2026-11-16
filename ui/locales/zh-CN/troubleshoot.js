@@ -9,12 +9,14 @@ export default {
   logFileSub: "按大小轮转，保留最近 4 个文件",
   logFileOff: "未启用",
   test: "测试",
+  testing: "测试中…",
   /** {model} 是模型 id */
   model: "模型 {model}",
   none: "（无）",
   copyReport: "复制诊断信息",
   copied: "诊断信息已复制（已去掉密钥）",
   note: "复制的诊断信息包含上面的状态、最近一次测试结果和日志，API Key、令牌等已替换成 ***，可以直接发给支持人员。",
+  community: "还没解决？到社群里问问",
   /** {s} 是秒数（可能带一位小数） */
   secs: "{s} 秒",
   restarts: "重启 {count} 次",
@@ -139,6 +141,7 @@ export default {
     name: "重启代理进程",
     sub: "回复一直转圈时用：结束代理进程并清掉重试等待，下一条消息重新启动",
     button: "重启",
+    restarting: "重启中…",
     done: "代理进程已重启",
     notRunning: "代理进程还没有启动，下一条消息时启动",
   },

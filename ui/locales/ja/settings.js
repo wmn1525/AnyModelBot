@@ -1,6 +1,8 @@
 export default {
   "tabs": {
     "general": "一般",
+    "aboutMe": "わたしについて",
+    "collab": "ボット連携",
     "appearance": "外観",
     "modelflare": "モデル",
     "computer": "コンピューター操作",
@@ -500,6 +502,13 @@ export default {
     "troubleshoot": {
       "sub": "ゲートウェイとエージェントプロセスの状態、モデルとエージェントのテスト、最近のログ、診断情報のコピー",
       "keys": "ログ テスト エージェント 停止 応答待ち 診断 再起動 PowerShell pwsh コマンドが遅い"
+    },
+    "community": {
+      "name": "コミュニティ",
+      "sub": "質問やフィードバック、使い方の情報交換に",
+      "keys": "コミュニティ チャット グループ discord telegram community",
+      "copyQq": "QQ グループ番号をコピー",
+      "qq": "QQ グループ",
     },
     "links": {
       "sub": "Web サイトとドキュメント",

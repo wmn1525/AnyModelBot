@@ -119,7 +119,9 @@ export function publicApproval(r: ApprovalRow, store?: Store) {
   const appTool = appToolOf(r);
   const appConnect = appConnectOf(r);
   const always = r.kind === "approval" && r.status === "allowed" && result === "always";
-  return { ...rest, questions, ...(taskTitle ? { taskTitle } : {}), ...(note ? { note } : {}), ...(appTool ? { appTool: { ...appTool, botName: store?.getBot(r.botId)?.name ?? "" } } : {}), ...(appConnect ? { appConnect } : {}), ...(always ? { always: true } : {}) };
+  // 别的机器人发来的事里 B 的审批、提问：卡片以 B 的名义（R9），不显示成「后台任务」
+  const handoff = r.taskId ? !!store?.getTask(r.taskId)?.handoffId : false;
+  return { ...rest, questions, ...(taskTitle && !handoff ? { taskTitle } : {}), ...(handoff ? { handoff: true } : {}), ...(note ? { note } : {}), ...(appTool ? { appTool: { ...appTool, botName: store?.getBot(r.botId)?.name ?? "" } } : {}), ...(appConnect ? { appConnect } : {}), ...(always ? { always: true } : {}) };
 }
 
 /** 允许名单 / 使用请求：界面要的字段（平台 id 只给末尾几位，界面不需要完整的） */

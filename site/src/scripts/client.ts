@@ -104,9 +104,9 @@ function switchLanguage(e: MouseEvent) {
 document.addEventListener("click", switchLanguage);
 document.addEventListener("auxclick", (event) => { if (event.button === 1) switchLanguage(event); });
 
-// —— 菜单（下载平台、主题） ——
+// —— 菜单（下载平台、主题；社群是悬停展开，见下） ——
 function closeMenus(except?: Element) {
-  $$("[data-menu-toggle][aria-expanded='true']").forEach((b) => {
+  $$("[data-menu-toggle][aria-expanded='true'], [data-menu-hover][aria-expanded='true']").forEach((b) => {
     if (b === except) return;
     b.setAttribute("aria-expanded", "false");
     const m = b.parentElement?.querySelector<HTMLElement>(".menu"); if (m) m.hidden = true;
@@ -124,13 +124,31 @@ document.addEventListener("click", (e) => {
     if (open) (m.querySelector<HTMLElement>('[aria-checked="true"]') ?? m.querySelector<HTMLElement>("a,button"))?.focus();
     return;
   }
+  // 社群靠悬停开关。点文字或菜单里的复制按钮都不要收起。
+  if (t.closest(".nav__menu--hover")) return;
   if (!t.closest(".menu")) closeMenus();
   else if (t.closest(".menu a, .menu button")) setTimeout(() => closeMenus(), 0);
 });
+let skipHoverOpen = false;
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    const open = document.querySelector<HTMLElement>("[data-menu-toggle][aria-expanded='true']");
-    if (open) { closeMenus(); open.focus(); }
+    const open = document.querySelector<HTMLElement>("[data-menu-toggle][aria-expanded='true'], [data-menu-hover][aria-expanded='true']");
+    if (open) {
+      // 社群菜单收回后焦点回到文字上。focus 会同步触发 focusin，这一下不要又展开。
+      if (open.hasAttribute("data-menu-hover")) skipHoverOpen = true;
+      closeMenus();
+      open.focus();
+      skipHoverOpen = false;
+    }
+  }
+  const hoverBtn = (e.target as Element).closest?.<HTMLElement>("[data-menu-hover]");
+  if (hoverBtn && e.key === "ArrowDown") {
+    e.preventDefault();
+    const m = hoverBtn.parentElement!.querySelector<HTMLElement>(".menu")!;
+    closeMenus(hoverBtn);
+    hoverBtn.setAttribute("aria-expanded", "true"); m.hidden = false;
+    m.querySelector<HTMLElement>("a,button")?.focus();
+    return;
   }
   const menu = (e.target as Element).closest?.(".menu");
   if (menu && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
@@ -138,6 +156,21 @@ document.addEventListener("keydown", (e) => {
     const items = $$("a,button", menu), i = items.indexOf(e.target as HTMLElement);
     items[(i + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus();
   }
+});
+
+// 社群：写成文字，指上去就展开，不用点。离开整块（含菜单）稍等再收，斜着移进去不会闪掉；键盘聚焦同样展开。
+$$("[data-menu-hover]").forEach((b) => {
+  const wrap = b.parentElement!;
+  const m = wrap.querySelector<HTMLElement>(".menu")!;
+  let timer = 0;
+  const show = () => { window.clearTimeout(timer); closeMenus(b); b.setAttribute("aria-expanded", "true"); m.hidden = false; };
+  const hide = () => { b.setAttribute("aria-expanded", "false"); m.hidden = true; };
+  // 键盘正在菜单里时不收。焦点只在文字按钮上时，鼠标离开仍然收起。
+  const hideSoon = () => { window.clearTimeout(timer); timer = window.setTimeout(() => { if (!m.contains(document.activeElement)) hide(); }, 150); };
+  wrap.addEventListener("pointerenter", show);
+  wrap.addEventListener("pointerleave", hideSoon);
+  wrap.addEventListener("focusin", () => { if (skipHoverOpen) return; show(); });
+  wrap.addEventListener("focusout", (e) => { if (!wrap.contains((e as FocusEvent).relatedTarget as Node | null)) hideSoon(); });
 });
 
 // —— 对话框 / 抽屉（原生 <dialog>：焦点陷阱与 Esc 自带） ——
@@ -159,14 +192,29 @@ const nav = document.querySelector("[data-nav]");
 if (nav) {
   const onScroll = () => nav.classList.toggle("is-scrolled", scrollY > 12);
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  // 俄语、西语这类文案长的语言，在窄一点的桌面宽度上一排放不下，右侧的下载按钮会被挤出屏幕。
+  // 放不下就打上 is-cramped，和 1023px 以下一样收进汉堡菜单（样式见 components.css）。
+  // 先摘掉类名按完整布局量一次再决定，同一帧里完成，不会闪
+  const bar = nav.querySelector<HTMLElement>(".nav__bar");
+  const tools = nav.querySelector<HTMLElement>(".nav__tools");
+  if (bar && tools) {
+    const fit = () => {
+      nav.classList.remove("is-cramped");
+      nav.classList.toggle("is-cramped", tools.getBoundingClientRect().right > bar.getBoundingClientRect().right + 1);
+    };
+    fit();
+    document.fonts?.ready.then(fit);
+    addEventListener("resize", fit, { passive: true });
+  }
 }
 
-// —— 导航链接：底色跟着悬停 / 焦点滑动，平时停在当前章节（首页滚动跟随）或当前页上 ——
+// —— 导航链接：底色跟着悬停 / 焦点滑动，平时停在当前页上 ——
 const navLinks = document.querySelector<HTMLElement>("[data-nav-links]");
 const navPill = navLinks?.querySelector<HTMLElement>(".nav__pill");
 if (navLinks && navPill) {
   const items = $$<HTMLAnchorElement>(".nav__link", navLinks);
-  let active: HTMLElement | null = items.find((a) => a.getAttribute("aria-current") === "page") ?? null;
+  const active = items.find((a) => a.getAttribute("aria-current") === "page") ?? null;
   let hot: HTMLElement | null = null;
   const place = () => {
     items.forEach((a) => a.classList.toggle("is-hot", a === hot));
@@ -184,25 +232,6 @@ if (navLinks && navPill) {
   navLinks.addEventListener("pointerleave", () => { hot = null; place(); });
   navLinks.addEventListener("focusin", (e) => { const a = (e.target as Element).closest<HTMLElement>(".nav__link"); if (a) { hot = a; place(); } });
   navLinks.addEventListener("focusout", (e) => { if (!navLinks.contains(e.relatedTarget as Node | null)) { hot = null; place(); } });
-
-  // 首页的章节锚点：视口中间一条窄带碰到哪一章，就标哪一章
-  const spy = items
-    .filter((a) => a.getAttribute("href")?.startsWith("#"))
-    .map((a) => ({ a, sec: document.getElementById(a.hash.slice(1)) }))
-    .filter((p): p is { a: HTMLAnchorElement; sec: HTMLElement } => !!p.sec);
-  if (spy.length && "IntersectionObserver" in window) {
-    const seen = new Set<Element>();
-    const io = new IntersectionObserver((es) => {
-      es.forEach((e) => (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target)));
-      const next = spy.find((p) => seen.has(p.sec))?.a ?? null;
-      if (next === active) return;
-      active?.classList.remove("is-active");
-      active = next;
-      active?.classList.add("is-active");
-      place();
-    }, { rootMargin: "-40% 0px -55% 0px" });
-    spy.forEach((p) => io.observe(p.sec));
-  }
   place();
   // 字体加载完、窗口尺寸变了，链接宽度会变，重新量一次
   document.fonts?.ready.then(place);

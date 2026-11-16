@@ -3,7 +3,8 @@
 // Registers remember / forget / recall. The memory files live in the host data directory,
 // which the agent's file and shell tools cannot read; every operation goes through the host
 // over the loopback bridge (AMB_BRIDGE_URL / AMB_BRIDGE_TOKEN), which resolves the session to
-// its conversation, picks the scope (bot / group / team) and enforces caps and the secret filter.
+// its conversation, picks the scope (About me, shared by all bots and only about the user; this bot; this group)
+// and enforces caps, the secret filter, the user's locks and confirmations.
 //
 // Steward hook: when the root agent goes idle, ask the host whether this session should be
 // condensed in place; if so run DSH's own compaction (compactNow) and report back.
@@ -30,8 +31,8 @@ function bridge() {
 
 const SCOPE = {
   type: 'string',
-  enum: ['own', 'group', 'team'],
-  description: 'Where: "own" (this bot), "group" (this group chat; the default inside a group), or "team" (shared by all bots).',
+  enum: ['me', 'own', 'group'],
+  description: '"me": About me (facts about the user, all bots). "own": this bot. "group": this group (default in groups).',
 }
 
 const TEXT_OUT = {
@@ -59,11 +60,12 @@ export function apply(ctx) {
 function registerTools(ctx, run) {
   ctx.tools.register(defineTool({
     name: 'remember',
-    description: 'Save one durable fact to long-term memory (one short sentence, at most 300 characters): a preference, who someone is, an agreement, a correction, a long-running project. Never store passwords, keys, tokens or ID numbers. Use topic for detail that need not be in every conversation.',
+    description: 'Save one durable fact, one short sentence (max 300 chars); facts about the user go to scope "me". Never store passwords, keys, tokens or ID numbers. topic: detail not needed in every chat.',
     parameters: {
       text: { type: 'string', required: true, description: 'The fact, one sentence.' },
       topic: { type: 'string', description: 'Optional topic file name (letters, digits, -, _; e.g. "project-x"). Omit for the main MEMORY.md.' },
       scope: SCOPE,
+      replaces: { type: 'string', description: 'scope me: part of the old line it replaces.' },
     },
     output: TEXT_OUT,
     execute: (args, exec) => run('remember', args, exec),

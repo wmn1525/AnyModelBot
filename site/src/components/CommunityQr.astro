@@ -1,0 +1,28 @@
+---
+// QQ 群二维码卡的内容：白底二维码 → "用 QQ 扫码加群" → 群号（等宽）+ 复制。页脚 / FAQ 的浮出卡和导航社群菜单共用，样式在 styles/community.css。
+// 二维码在两个主题下都是白底黑块，深色底上反色的码很多手机扫不出来。码本身是装饰（aria-hidden），读屏读下面的文字和群号。
+// menu：放在导航的 role=menu 里时，外层是 role=none，复制钮是一个 menuitem（群号在上面 QQ 那一项里已经读过）。
+import Icon from "./Icon.astro";
+import { dict, type Lang } from "../i18n";
+import { QQ_GROUP, QQ_QR } from "../data/community";
+interface Props { lang: Lang; size: number; menu?: boolean }
+const { lang, size, menu = false } = Astro.props;
+const t = dict(lang);
+const c = t.footer.community;
+// 四周留 2 个模块的白边（扫码要的安静区），用 viewBox 往外扩出来
+const box = `-2 -2 ${QQ_QR.size + 4} ${QQ_QR.size + 4}`;
+---
+<div class="cm-qr" role={menu ? "none" : undefined}>
+  <svg class="cm-qr__code" width={size} height={size} viewBox={box} shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+    <rect x="-2" y="-2" width={QQ_QR.size + 4} height={QQ_QR.size + 4} rx="2.5" fill="#fff" />
+    <path d={QQ_QR.d} stroke="#111" />
+  </svg>
+  <div class="cm-qr__text">
+    <p class="cm-qr__scan">{c.scan}</p>
+    <p class="cm-qr__num">
+      <span>{c.number}</span>
+      <span class="mono">{QQ_GROUP}</span>
+      <button type="button" class="cm-qr__copy" role={menu ? "menuitem" : undefined} data-copy-text={QQ_GROUP} aria-label={`${t.ui.copy} ${c.number} ${QQ_GROUP}`} title={t.ui.copy}><Icon name="copy" size={14} /></button>
+    </p>
+  </div>
+</div>

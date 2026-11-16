@@ -1,4 +1,6 @@
 export default {
+  "yearly": "Yearly",
+  "beforeDays": {"one": "{count} day early", "other": "{count} days early"},
   "emptyTitle": "No rules yet",
   "emptyNeedsTitle": "Nothing needs attention",
   "emptyNeedsHint": "Rules that need you will show up here.",

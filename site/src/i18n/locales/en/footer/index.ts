@@ -34,5 +34,10 @@ export default {
   "featuredMore": "Show all {count}",
   "featuredLess": "Show less",
   "fieldHint": "Click to message them all",
-  "fieldModel": "Brain"
+  "fieldModel": "Brain",
+  "community": {
+    "title": "Community",
+    "scan": "Scan with QQ to join",
+    "number": "Group no."
+  }
 };

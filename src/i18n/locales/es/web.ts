@@ -49,6 +49,8 @@ export default {
   runNotFound: "No se encontró la ejecución",
   taskAlreadyStopped: "La tarea ya se detuvo",
   badGroup: "group debe ser working, needs o ended",
+  "collabSignIn": "Inicia sesión en Okinto para cambiar la colaboración entre bots",
+  "collabChoice": "Elige uno de los valores de la lista",
   windowsOnly: "Solo se necesita en Windows",
   recordNotFound: "No se encontró el registro",
   requestAlreadyHandled: "Esta solicitud ya se gestionó",

@@ -84,13 +84,13 @@ export default {
     },
     "memory": {
       "title": "Let it remember you",
-      "desc": "Tell it your preferences and details you use often. It remembers them in new chats and in WeChat, but never stores passwords, keys and the like.",
+      "desc": "Tell it your preferences and details you use often. All your bots remember them, in new chats and in WeChat too, but never store passwords, keys and the like.",
       "how": [
         "Just say “Remember…”. It also notes important things on its own as you chat",
         "To make it forget, say “Forget…”, or delete it under “Memory” in the right panel"
       ],
       "try": "Remember: keep answers short and lead with the conclusion.",
-      "doneText": "Got it. You can view or delete it under “Memory” in the right panel."
+      "doneText": "Got it. All your bots know now. You can see or edit it in Settings › About me."
     },
     "media": {
       "title": "Generate an image",

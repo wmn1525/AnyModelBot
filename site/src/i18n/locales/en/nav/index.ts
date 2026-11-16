@@ -1,12 +1,9 @@
 export default {
   "main": "Main",
   "bots": "Bots",
-  "catalog": "Discover",
-  "features": "Features",
-  "data": "Data",
-  "models": "Models",
   "pricing": "Pricing",
   "docs": "Docs",
+  "partners": "Partners",
   "skip": "Skip to main content",
   "home": "okbot home",
   "menu": "Menu",

@@ -7,6 +7,7 @@ import { api } from "../lib/api.js";
 import { failed, toast } from "../lib/store.js";
 import { PWSH_INSTALL_URL, PWSH_WINGET, installPwsh, pwshInstalling, pwshProgress, recheckPwsh, setPwshMode } from "../lib/pwsh.js";
 import { t } from "../lib/i18n.js";
+import { CommunityLinks } from "../components/community.js";
 
 // 状态 → [文字, 圆点颜色]。文字跟着界面语言，渲染时再取（写成函数）
 const GATEWAY = () => ({
@@ -87,7 +88,7 @@ const psSource = (s) =>
 
 /**
  * PowerShell（只在 Windows 上，其他平台整行不出现）：一行说清代理现在用哪个、装没装好；
- * 最多一个主按钮（安装 / 重新安装），其余（重新检测、改回系统默认、手动安装）收在"⋯"菜单里
+ * 最多一个主按钮（墨底：安装 / 重新安装），其余（重新检测、改回系统默认、手动安装）收在"⋯"菜单里
  */
 function PwshRows({ ps, busy, onRecheck, onInstall, onMode }) {
   const more = useRef(null);
@@ -140,7 +141,7 @@ function PwshRows({ ps, busy, onRecheck, onInstall, onMode }) {
   const dis = !!busy || installing;
   return html`<${Row} id="pwsh" name="PowerShell" sub=${sub}>
     <span class="ts-state"><span class=${`dot ${kind}`}></span>${text}</span>
-    ${primary && html`<button type="button" class="text" disabled=${dis} aria-busy=${busy === "pwsh-install" || undefined} onClick=${primary[1]}>${busy === "pwsh-install" ? `${primary[0]}…` : primary[0]}</button>`}
+    ${primary && html`<${Button} size="sm" variant="primary" loading=${busy === "pwsh-install"} disabled=${dis} onClick=${primary[1]}>${busy === "pwsh-install" ? `${primary[0]}…` : primary[0]}<//>`}
     <button type="button" class="icon-btn" ref=${more} title=${t("troubleshoot.pwsh.more")} aria-label=${t("troubleshoot.pwsh.moreLabel")} aria-haspopup="menu" aria-expanded=${menu} disabled=${dis} onClick=${() => setMenu(!menu)}><${Icon} name="more" size="sm" /></button>
     ${menu && html`<${Menu} anchor=${more.current} align="right" width=${300} label="PowerShell" items=${items} onClose=${() => setMenu(false)} />`}
   <//>`;
@@ -247,7 +248,7 @@ export function TroubleshootPane({ bots, desktop }) {
       <//>
       <${Row} id="data-dir" name=${t("troubleshoot.dataDir")}>
         <span class="val" title=${st.dataDir}>${st.dataDir}</span><${CopyButton} text=${st.dataDir} label=${t("troubleshoot.copyPath")} />
-        ${desktop && html`<button type="button" class="text" onClick=${() => api("/desktop/open-data-dir", { method: "POST", body: {} }).catch(failed)}>${t("common.open")}</button>`}
+        ${desktop && html`<button type="button" class="btn sm" onClick=${() => api("/desktop/open-data-dir", { method: "POST", body: {} }).catch(failed)}>${t("common.open")}</button>`}
       <//>
       <${Row} id="log-file" name=${t("troubleshoot.logFile")} sub=${t("troubleshoot.logFileSub")}>
         <span class="val" title=${st.logFile || ""}>${st.logFile || t("troubleshoot.logFileOff")}</span>${st.logFile && html`<${CopyButton} text=${st.logFile} label=${t("troubleshoot.copyPath")} />`}
@@ -257,7 +258,7 @@ export function TroubleshootPane({ bots, desktop }) {
     <div class="set-part">${t("troubleshoot.checks")}</div>
     <div class="list">
       <${Row} id="test-model" name=${t("troubleshoot.testModel.name")} sub=${t("troubleshoot.testModel.sub")}>
-        <${Button} size="sm" loading=${busy === "model"} disabled=${!!busy} onClick=${testModel}>${t("troubleshoot.test")}<//>
+        <${Button} size="sm" loading=${busy === "model"} disabled=${!!busy} onClick=${testModel}>${busy === "model" ? t("troubleshoot.testing") : t("troubleshoot.test")}<//>
       <//>
       ${modelRes && html`
         <${Row} compact name=${modelRes.verdict} sub=${t("troubleshoot.model", { model: displayModel(modelRes.model) || t("troubleshoot.none") })}>
@@ -266,7 +267,7 @@ export function TroubleshootPane({ bots, desktop }) {
         <${ProbeRow} name=${t("troubleshoot.testModel.viaGateway")} p=${modelRes.gateway} />
         <${ProbeRow} name=${t("troubleshoot.testModel.direct")} p=${modelRes.direct} />`}
       <${Row} id="test-agent" name=${t("troubleshoot.testAgent.name")} sub=${t("troubleshoot.testAgent.sub")}>
-        <${Button} size="sm" loading=${busy === "agent"} disabled=${!!busy} onClick=${testAgent}>${t("troubleshoot.test")}<//>
+        <${Button} size="sm" loading=${busy === "agent"} disabled=${!!busy} onClick=${testAgent}>${busy === "agent" ? t("troubleshoot.testing") : t("troubleshoot.test")}<//>
       <//>
       ${agentRes && html`
         <${Row} compact name=${agentRes.ok ? t("troubleshoot.testAgent.ok") : t("troubleshoot.testAgent.stuckAt", { stage: (agentRes.stages.find((s) => s.id === agentRes.stuckAt) || {}).label || t("common.unknown") })}
@@ -277,16 +278,17 @@ export function TroubleshootPane({ bots, desktop }) {
           <${State} map=${stageMap} s=${s.status} />${s.ms !== undefined && html`<span class="val num">${ms(s.ms)}</span>`}
         <//>`)}`}
       <${Row} id="restart-agent" name=${t("troubleshoot.restart.name")} sub=${t("troubleshoot.restart.sub")}>
-        <${Button} size="sm" loading=${busy === "restart"} disabled=${!!busy} onClick=${restart}>${t("troubleshoot.restart.button")}<//>
+        <${Button} size="sm" loading=${busy === "restart"} disabled=${!!busy} onClick=${restart}>${busy === "restart" ? t("troubleshoot.restart.restarting") : t("troubleshoot.restart.button")}<//>
       <//>
     </div>
 
     <div class="set-part ts-log-head">
       <span>${t("troubleshoot.logs.title")}</span><span class="t-meta">${logs ? t("troubleshoot.logs.lines", { count: logs.lines.length }) : ""}</span><span class="grow"></span>
-      <button type="button" class="text" onClick=${loadLogs}><${Icon} name="refresh" size="sm" /> ${t("common.refresh")}</button>
+      <${Button} size="sm" icon="refresh" onClick=${loadLogs}>${t("common.refresh")}<//>
       <${Button} size="sm" icon="copy" loading=${busy === "copy"} disabled=${!!busy && busy !== "copy"} onClick=${copy}>${t("troubleshoot.copyReport")}<//>
     </div>
     <pre class="ts-log" ref=${logRef} tabindex="0" aria-label=${t("troubleshoot.logs.title")}>${logs ? logs.lines.join("\n") || t("troubleshoot.logs.empty") : t("common.loading")}</pre>
     <p class="ts-note">${t("troubleshoot.note")}</p>
+    <p class="ts-note ts-community"><span>${t("troubleshoot.community")}</span><${CommunityLinks} /></p>
   `;
 }

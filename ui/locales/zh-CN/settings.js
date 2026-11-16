@@ -1,6 +1,8 @@
 export default {
   "tabs": {
     "general": "常规",
+    "aboutMe": "关于我",
+    "collab": "机器人协作",
     "appearance": "外观",
     "modelflare": "Okinto New API",
     "computer": "电脑操作",
@@ -194,15 +196,6 @@ export default {
     "label": "预览",
     "reply": "好的，改写后错误处理也更直观。下面这行在开启{b}后会折行显示："
   },
-  "rekey": {
-    "title": "更换 Okinto New API 密钥",
-    "submit": "验证并保存"
-  },
-  "disconnect": {
-    "title": "断开 Okinto New API？",
-    "body": "会从本机删除这个 API Key。机器人和会话都会保留，重新连接后继续使用。",
-    "confirm": "断开"
-  },
   "logout": {
     "title": "退出 Okinto New API 账户？",
     "body": "会撤销这台电脑的授权，并删除登录时为它和各机器人签发的 API Key。机器人和会话都会保留。",
@@ -307,20 +300,20 @@ export default {
       "button": "恢复默认"
     },
     "account": {
-      "apiKey": "使用 api.okinto.com 的 API Key 连接",
       "name": "Okinto New API 账户",
       "signedIn": "已登录",
       "enterprise": "{name} 的费用由企业钱包支付",
       "signedOut": "登录后可以查看用量、通知和邀请链接，也能给机器人单独设预算",
       "keys": "登录 注册 账户 account login",
       "logout": "退出登录",
-      "noBrowserLogin": "API Key 连接",
-      "login": "登录 / 注册"
+      "login": "登录 / 注册",
+      "apiKey": "使用 api.okinto.com 的 API Key 连接",
+      "noBrowserLogin": "API Key 连接"
     },
     "connection": {
-      "playground": "使用登录会话调用 New API 游乐场，模型按所选分组计费",
       "name": "连接",
       "subExternal": "由环境变量 AMB_MAGPIE_BASE_URL 指定的端点（开发/测试）",
+      "playground": "使用登录会话调用 New API 游乐场，模型按所选分组计费",
       "nameSignedIn": "账户连接",
       "subSignedIn": "使用当前 Okinto 账户",
       "sub": "使用 Okinto 站点 API Key",
@@ -329,15 +322,15 @@ export default {
       "disconnect": "断开连接"
     },
     "balance": {
-      "fromToken": "当前 API Key 的剩余额度；账户钱包请到控制台查看",
-      "fromAccount": "New API 账户钱包余额",
       "name": "余额",
       "error": "读取失败：{error}",
-      "fromKey": "由 New API 账单接口返回；额度范围由站点设置决定",
       "updated": "更新于 {time}",
       "keys": "余额 充值 钱包 balance top up",
       "refresh": "刷新余额",
-      "topUp": "充值 ↗"
+      "topUp": "充值 ↗",
+      "fromToken": "当前 API Key 的剩余额度；账户钱包请到控制台查看",
+      "fromAccount": "New API 账户钱包余额",
+      "fromKey": "由 New API 账单接口返回；额度范围由站点设置决定"
     },
     "lowBalance": {
       "name": "余额提醒",
@@ -506,9 +499,25 @@ export default {
       "sub": "模型网关与代理进程的状态、测试模型、测试代理、最近日志、复制诊断信息",
       "keys": "日志 log 测试 test 代理 agent 卡住 转圈 诊断 diagnostics 重启 PowerShell pwsh 命令慢"
     },
+    "community": {
+      "name": "社群",
+      "sub": "提问、反馈，和其他用户交流用法",
+      "keys": "社群 交流群 QQ群 Telegram Discord community chat",
+      "copyQq": "复制 QQ 群号",
+      "qq": "QQ 群"
+    },
     "links": {
       "sub": "官网与文档",
       "docs": "文档 ↗"
     }
+  },
+  "rekey": {
+    "title": "更换 Okinto New API 密钥",
+    "submit": "验证并保存"
+  },
+  "disconnect": {
+    "title": "断开 Okinto New API？",
+    "body": "会从本机删除这个 API Key。机器人和会话都会保留，重新连接后继续使用。",
+    "confirm": "断开"
   }
 };

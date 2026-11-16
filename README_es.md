@@ -1,6 +1,6 @@
 <h1 align="center">okbot</h1>
 
-> 0.1.36 · Biblioteca de habilidades, guardar trabajos como habilidades e instalarlas desde el chat. La interfaz, mensajes en siete idiomas y herramientas usan Okinto; se conservan las conexiones existentes y se corrigen los enlaces de actualización.
+> 0.1.40 · Incluye upstream 0.1.37–0.1.40: Acerca de mí, colaboración de bots, biblioteca de tareas, vistas previas y correcciones. Conserva el inicio de sesión de Okinto, grupos, saldos y comprobaciones en siete idiomas.
 
 <p align="center"><b>Un equipo de bots de IA en tu propia computadora. Cualquier modelo, pago por uso.</b></p>
 
@@ -31,6 +31,9 @@
 [![Plataformas][platform-shield]][releases-link]
 [![Precios][pricing-shield]][pricing-link]
 [![Okinto][okinto-shield]][okinto-link]
+
+[![Discord][discord-shield]][discord-link]
+[![Telegram][telegram-shield]][telegram-link]
 
 </div>
 
@@ -146,6 +149,7 @@ Un bot es más que una ventana de chat: tiene una personalidad, un modelo predet
 - **Tarjetas de aprobación, no sorpresas.** Las acciones que escriben fuera del espacio de trabajo se detienen y esperan tu respuesta.
 - **Aviso después de un reinicio.** Si un mensaje seguía en curso cuando la app se cerró o falló, en el siguiente inicio queda marcado en su conversación para que puedas enviarlo de nuevo; nada se vuelve a ejecutar por su cuenta.
 - **Chats grupales.** Crea un grupo y agrega algunos bots. Responde el bot al que mencionas con @; si no mencionas a ninguno, continúa el último que respondió. Los bots también pueden mencionar con @ a otro miembro para pasarle el relevo. Cada bot conserva su propio modelo, espacio de trabajo y memoria, y los costos se registran por bot.
+- **Bots que se envían mensajes.** En la app, dile a un bot «pásale esto a B»: B trabaja en segundo plano con su propio modelo, permisos y presupuesto y responde al terminar, y el primer bot revisa el resultado antes de avisarte. B pide aprobaciones en el mismo chat con su nombre, y puedes leer su conversación cuando quieras. Requiere iniciar sesión en Okinto y que ambos bots usen modelos de Okinto.
 - **Búsqueda en el historial de chats.** Desde la barra lateral, busca en todos los mensajes guardados en tu dispositivo, filtra por bot, conversación, canal o fecha, y salta al mensaje original. `Ctrl/Cmd+Shift+F` abre la búsqueda global; `Ctrl/Cmd+F` busca en el chat actual. Las búsquedas no llaman a ningún modelo. Antes de que escribas, el cuadro de búsqueda muestra los chats recientes por fecha.
 - **Los comandos con barra**, como `/model` y `/reset`, funcionan en la app y en todos los canales de chat. En un canal de chat, `/bot` cambia a otro bot.
 
@@ -203,7 +207,7 @@ El entorno de ejecución está construido sobre [DeepSeek Harness](https://githu
 
 ## 🧠 Memoria y acceso desde cualquier lugar
 
-- **Memoria que perdura.** Cada bot, grupo y equipo tiene su propia memoria, guardada en Markdown y por separado. Lo que parece una contraseña o una clave no se guarda.
+- **Memoria que perdura.** Lo que tiene que ver contigo vive en Sobre mí, compartido por todos tus bots: lo dices una vez y todos lo saben, y puedes verlo, editarlo o deshacerlo en Configuración. Los bots preguntan antes de guardar una dirección, un teléfono o un correo. Cada bot y grupo también tiene su propia memoria, guardada en Markdown y por separado. Lo que parece una contraseña o una clave no se guarda.
 - **Los chats largos siguen siendo manejables.** Un gestor de contexto compacta la conversación o empieza un nuevo tramo con un resumen de traspaso antes de que se llene la ventana de contexto.
 - **Cuentas compartidas por todos los bots.** Agrega una sola vez tus cuentas de chat de WeChat, Feishu, Telegram, Slack y Discord en Ajustes › Canales de chat. Todos los bots las comparten, y cada canal puede tener varias cuentas con alias. Envía una vez `/bot nombre` en una app de chat para hablar con otro bot.
 - **Conectar apps.** Apps y habilidades, en el menú del avatar, incluye conectores para Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian y Canva, y puedes agregar conectores MCP personalizados (servidores remotos o comandos locales). Conecta una vez y todos los bots pueden usarlo de forma predeterminada; puedes restringirlo por bot y por herramienta. Las herramientas de solo lectura se ejecutan de inmediato, las escrituras te preguntan primero, y las eliminaciones o cualquier cosa que se envíe a otras personas siempre preguntan.

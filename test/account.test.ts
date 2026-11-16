@@ -18,7 +18,7 @@ import { normalizeSettings } from "../src/agent/settings.js";
 import { locateDshRuntime } from "../src/agent/host.js";
 import { findAppRoot } from "../src/magpie/supervisor.js";
 import { Store } from "../src/store/db.js";
-import { bareModel, isBotProviderModel, routeModel, skillHeader } from "../src/providers/modelflare.js";
+import { bareModel, isBotProviderModel, isGatewayGroupModel, resolveGroupModel, routeModel, skillHeader } from "../src/providers/modelflare.js";
 
 describe("回环 PKCE 登录", () => {
   let mf: Awaited<ReturnType<typeof mockModelflare>>;
@@ -253,7 +253,7 @@ describe("AccountManager", () => {
     await signIn();
     const again = make();
     expect(again.status()).toMatchObject({ state: "signed_in", name: "Ada", profileReady: true });
-    expect(AccountVault.at(dir).load()?.profile).toEqual({ name: "Ada", email: "", avatar: "" });
+    expect(AccountVault.at(dir).load()?.profile).toEqual({ name: "Ada", nameFrom: "nickname", email: "", avatar: "" });
     await again.refresh();
     expect(again.status().balanceUsd).toBe(12.5);
     expect(AccountVault.at(dir).load()!.refreshToken).toBe("rt-2");
@@ -627,6 +627,21 @@ describe("模型路由与归因", () => {
     expect(bareModel("mfb-b1/x")).toBe("x");
     expect(isBotProviderModel("mfb-b1/openai/gpt-x")).toBe(true);
     expect(isBotProviderModel("modelflare/openai/gpt-x")).toBe(false);
+  });
+
+  it("内置网关合成的组（auto/<模型名>）不是真实模型：认得出，并换回真实 id（Modelflare 的优先）", () => {
+    expect(isGatewayGroupModel("auto/grok-4.6")).toBe(true);
+    expect(isGatewayGroupModel("group/auto-grok-4-6")).toBe(true);
+    expect(isGatewayGroupModel("modelflare/xai/grok-4.6")).toBe(false);
+    expect(isGatewayGroupModel("xai/grok-4.6")).toBe(false);
+    const list = ["official-xai/grok-4.6", "modelflare/xai/grok-4.6", "modelflare/openai/gpt-x", "auto/grok-4.6"];
+    expect(resolveGroupModel("auto/grok-4.6", list)).toBe("modelflare/xai/grok-4.6");
+    expect(resolveGroupModel("auto/Grok_4.6", list)).toBe("modelflare/xai/grok-4.6");
+    expect(resolveGroupModel("group/auto-grok-4-6", list)).toBe("modelflare/xai/grok-4.6");
+    expect(resolveGroupModel("auto/grok-4.6", ["official-xai/grok-4.6"])).toBe("official-xai/grok-4.6");
+    expect(resolveGroupModel("auto/unknown-9", list)).toBe("");
+    expect(resolveGroupModel("group/my-own", list)).toBe("");
+    expect(resolveGroupModel("modelflare/openai/gpt-x", list)).toBe("modelflare/openai/gpt-x");
   });
 
   it("归因头只接受纯数字版本号", () => {
@@ -1007,6 +1022,22 @@ describe("amb-media 插件与 bridge", () => {
       await mgr.bridge.stop();
       store.close();
     }
+  });
+});
+
+describe("模型列表", () => {
+  it("不列机器人预算 Key 的模型，也不列内置网关合成的组（auto/<模型名>）", async () => {
+    const { BotRuntime } = await import("../src/core/runtime.js");
+    const store = new Store(":memory:");
+    const rt = new BotRuntime({
+      store,
+      models: { listModels: async () => ["auto/grok-4.6", "group/auto-gpt-x", "mfb-b1/xai/grok-4.6", "modelflare/xai/grok-4.6", "official-xai/grok-4.6"], streamChat: async () => "" },
+      defaultModel: () => "",
+      contextMessages: 10,
+      contextChars: 5000,
+    });
+    expect(await rt.listModels(true)).toEqual(["modelflare/xai/grok-4.6", "official-xai/grok-4.6"]);
+    store.close();
   });
 });
 

@@ -21,29 +21,39 @@
 .btn.apps-add-mine { background: var(--surface); box-shadow: inset 0 0 0 var(--hairline) var(--line); }   /* 描边：白底按钮要一道细边才认得出 */
 .btn.apps-add-mine:hover:not(:disabled) { background: var(--pill); }
 
-/* —— 「技能」标签：分节 + 两列列表（列表区窄于 720 时一列） —— */
-.skill-panel { --skill-avatar: 40px; --skill-act-w: 124px; display: grid; gap: var(--section-gap); min-width: 0; container: skills / inline-size; }
+/* —— 「技能」标签：分节 + 两列卡片（列表区窄于 720 时一列） —— */
+.skill-panel { --skill-avatar: 40px; display: grid; gap: var(--section-gap); min-width: 0; container: skills / inline-size; }
 .skill-sec { display: grid; gap: var(--heading-gap); min-width: 0; }
 .skill-sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); min-width: 0; }
 .skill-sec-count { font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; }
-.skill-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1) var(--space-4); }
+/* 两列同行等高（网格默认拉伸），卡片间距 12 */
+.skill-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
 @container skills (max-width: 720px) { .skill-grid { grid-template-columns: minmax(0, 1fr); } }
+/* 卡片：白底、细浅灰边、圆角。左边头像，右边标题 / 描述 / 触发方式，底部一行贴底：左边作者标签和标记，右边两个小胶囊。
+   悬停或键盘聚焦（卡片里任一处有焦点也算）时边框深一档、底色微灰，胶囊也深一档；标题宽度不变 */
 .skill-row {
-  position: relative; display: grid; grid-template-columns: var(--skill-avatar) minmax(0, 1fr) auto; align-items: start; gap: var(--space-3);
-  padding: var(--space-2-5); border-radius: var(--r-item); cursor: pointer; min-width: 0; transition: background var(--t-fast);
+  --skill-act-bg: var(--pill); --skill-act-hover: var(--pill-hover); --skill-act-press: var(--pill-press);
+  position: relative; display: grid; grid-template-columns: var(--skill-avatar) minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; gap: var(--space-3) var(--space-3);
+  padding: var(--space-3) var(--space-4); border-radius: var(--r-card); cursor: pointer; min-width: 0;
+  background: var(--surface); box-shadow: inset 0 0 0 var(--hairline) var(--line);   /* 描边：白底卡片要一道细边才分得出一张一张 */
+  transition: background var(--t-fast), box-shadow var(--t-fast);
 }
-.skill-row:hover, .skill-row:focus-within { background: var(--well-hover); }
+.skill-row:hover, .skill-row:focus-within {
+  --skill-act-bg: var(--pill-hover); --skill-act-hover: var(--pill-press); --skill-act-press: color-mix(in srgb, var(--fg) 16%, transparent);
+  background: color-mix(in srgb, var(--surface) 96%, var(--fg)); box-shadow: inset 0 0 0 var(--hairline) color-mix(in srgb, var(--fg) 22%, transparent);   /* 描边：悬停时卡片的边深一档 */
+}
 .skill-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
-.skill-row-avatar { all: unset; cursor: pointer; display: block; border-radius: var(--r-tile-sm); }
+.skill-row-avatar { all: unset; cursor: pointer; display: block; grid-row: 1; border-radius: var(--r-tile-sm); }
 .skill-row-avatar:focus-visible { outline: 2px solid var(--accent); outline-offset: var(--space-0-5); }
-.skill-row-text { display: grid; gap: var(--space-0-5); min-width: 0; }
+.skill-row-text { display: grid; gap: var(--space-0-5); min-width: 0; grid-row: 1; }
 .skill-row-title { font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--fg); line-height: var(--lh-snug); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .skill-row-sub { font-size: var(--fs-2xs); color: var(--muted); line-height: var(--lh-snug); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* 悬停或键盘聚焦时右侧出现两个按钮（上下排），文字区收窄 */
-.skill-row-actions { display: none; flex-direction: column; gap: var(--space-1); }
-.skill-row:hover .skill-row-actions, .skill-row:focus-within .skill-row-actions { display: flex; }
-.btn.skill-act { width: var(--skill-act-w); justify-content: center; gap: var(--space-1); background: var(--surface); }
-.btn.skill-act:hover:not(:disabled) { background: var(--pill); }
+/* 底部一行：和文字列左对齐、贴卡片底；放不下时换行，胶囊到下一行靠右 */
+.skill-row-foot { grid-column: 2; grid-row: 2; align-self: end; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; }
+.skill-row-foot > .skill-tags { margin-top: 0; flex: 0 1 auto; }
+.skill-row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-1-5); margin-left: auto; }
+/* 小胶囊：宽度跟着文字；卡片悬停时深一档，指着它再深一档（触屏上一直在，不靠悬停） */
+.btn.skill-act { --btn-bg: var(--skill-act-bg); --btn-bg-hover: var(--skill-act-hover); --btn-bg-press: var(--skill-act-press); gap: var(--space-1); cursor: pointer; }
 .skill-tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); margin-top: var(--space-1); min-width: 0; }
 .skill-tag {
   all: unset; cursor: pointer; display: inline-flex; align-items: center; height: var(--skill-tag-h, 20px); padding: 0 var(--space-2); max-width: 100%;
@@ -61,14 +71,16 @@
 .skill-loading { display: grid; place-items: center; padding: var(--space-12) 0; color: var(--muted); }
 .skill-empty p { margin: 0; color: var(--muted); }
 
-/* —— 头像：灰色占位 → 图片；取不到时首字母 —— */
+/* —— 头像：先显示首字母（白字彩色底，底色按作者固定），图片读到后原位淡入；读到过的直接显示（.instant 不淡入）；取不到一直是首字母 —— */
 .skill-avatar {
   position: relative; display: grid; place-items: center; flex: none; width: var(--skill-avatar, 40px); height: var(--skill-avatar, 40px);
-  border-radius: var(--r-tile-sm); background: var(--pill); color: var(--fg-2); font-size: var(--fs-lg); font-weight: var(--fw-semibold); overflow: hidden;
+  border-radius: var(--r-tile-sm); background: var(--skill-tone, var(--skill-tone-1)); color: var(--skill-avatar-fg); font-size: var(--fs-lg); font-weight: var(--fw-semibold); overflow: hidden;
 }
 .skill-avatar.big { --skill-avatar: 64px; border-radius: var(--r-tile); font-size: var(--fs-3xl); }
-.skill-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--t-fast); }
+.skill-avatar-initial { line-height: 1; user-select: none; }
+.skill-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--t-moderate); }
 .skill-avatar img.on { opacity: 1; }
+.skill-avatar.instant img { transition: none; }
 
 /* —— 作者浮层 —— */
 .skill-author-pop { display: grid; gap: var(--space-2); padding: var(--space-2); }

@@ -16,6 +16,11 @@
 .pick .ic { --ic-size: var(--ic-xs); color: var(--muted); transition: transform var(--t-fast); }
 .pick[aria-expanded="true"] { color: var(--accent); }
 .pick[aria-expanded="true"] .ic { transform: rotate(180deg); }
+/* 整行选择框（MenuButton block）：占满一行，整行（含右侧空白）都是这个按钮；文字靠左、超长末尾省略，
+   下拉三角固定在框内最右侧，离右边框的距离不随文字长短变。高度、圆角、底色由所在的地方定 */
+.pick.block { display: flex; width: 100%; max-width: none; min-width: 0; text-align: left; }
+.pick.block .v { flex: 1; min-width: 0; }
+.pick.block > .ic:last-child { flex: none; margin-left: auto; }
 
 /* —— 弹出层：只淡入，不位移、不缩放。挂在 <body> 下（ui.js 的 Popover），定位不受祖先的 backdrop-filter / transform 影响 —— */
 .pop {

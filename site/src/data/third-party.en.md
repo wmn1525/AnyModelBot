@@ -16,6 +16,12 @@ https://github.com/tailwindlabs/heroicons/releases/tag/v2.2.0
 
 The left and right panel controls use `panel-left` / `panel-right` from Lucide 1.73.0, preserving the previous rounded rectangle with a vertical divider. Source and provenance: `ui/icons/lucide.js` and `ui/icons/lucide-source.json`. Full ISC / MIT licenses: [ui/icons/lucide-LICENSE](./ui/icons/lucide-LICENSE).
 
+## highlight.js (code highlighting in the preview panel)
+
+The preview panel's code view and Markdown code blocks are highlighted with highlight.js 11.12.0. Only the core and 31 common languages are distributed (the official ES module build from the npm package `@highlightjs/cdn-assets`), in `ui/vendor/hljs/`, copied by `scripts/vendor-hljs.mjs`. highlight.js is licensed under BSD-3-Clause, copyright Ivan Sagalaev and contributors; the full license is in [ui/vendor/hljs/LICENSE](./ui/vendor/hljs/LICENSE).
+
+https://github.com/highlightjs/highlight.js
+
 ## magpie (built-in model gateway, shipped as a binary; parts of the UI styling are adapted from it)
 
 Source: https://github.com/yetone/magpie (vendor/magpie submodule, v0.1.1720)

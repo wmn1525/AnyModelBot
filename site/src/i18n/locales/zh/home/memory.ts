@@ -1,7 +1,7 @@
 export default {
   "tag": "长期记忆",
   "h2": "记得你，也不乱记。",
-  "layersLine": "机器人、群、团队各有自己的记忆，互不混用。",
+  "layersLine": "关于你本人的事所有机器人共用（关于我），机器人和群也各有自己的记忆，互不混用。",
   "points": [
     {
       "title": "就是 Markdown 文件",

@@ -19,7 +19,7 @@ export default {
   nameTitle: "{name}: {title}",
   tryLine: "이렇게 말해 보세요: “{text}”",
   copy: "설치 문구 복사",
-  copied: "복사됨",
+  copied: "복사됨 ✓",
   copyLabel: "{name} 설치 문구 복사",
   openRepoLabel: "GitHub에서 {name} 열기",
   filterAuthorLabel: "{name}의 스킬만 보기",

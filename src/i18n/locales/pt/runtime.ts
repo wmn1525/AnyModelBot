@@ -6,7 +6,7 @@ export default {
     "/model <número ou nome> — troca o modelo desta conversa",
     "/reset — limpa o contexto desta conversa (no modo agente, também inicia uma nova sessão do agente; a memória de longo prazo é mantida)",
     "/skill — salva o que acabamos de fazer como habilidade (acrescente uma nota para salvar só uma parte)",
-    "/new — inicia uma nova conversa: a anterior é arquivada com uma nota de transição; a memória de longo prazo é mantida",
+    "/new — inicia uma nova conversa: uma nota de transição guarda onde paramos, e a memória de longo prazo é mantida",
     "/bot — lista os bots; /bot <número ou nome> — fala com outro bot (só em apps de chat)",
     "/status — mostra o modelo atual, o estado do agente e o andamento da mensagem em processamento",
     "/stop — interrompe a mensagem em andamento (só nesta conversa; as outras conversas do bot continuam)",
@@ -66,11 +66,11 @@ export default {
   localProxyRefused:
     "O proxy de rede local em {address} recusou a conexão. Abra o app de proxy e verifique a porta dele, ou remova o proxy sem uso das configurações do sistema ou das variáveis de ambiente. Depois, encerre o okbot por completo e abra de novo para tentar outra vez.",
   resetDone: "✅ O contexto desta conversa foi limpo",
-  newAgentOnly: "⚠️ /new só funciona no modo agente; no modo somente chat, use /reset",
-  alreadyNew: "Esta já é uma conversa nova",
-  newFailed: "⚠️ Não foi possível iniciar uma nova conversa: {error}",
+  newAgentOnly: "O modo agente está desativado, então não dá para iniciar uma nova conversa. Envie /reset para limpar o contexto.",
+  alreadyNew: "Você já está em uma conversa nova.",
+  newFailed: "Não foi possível iniciar uma nova conversa: {error}",
   newDone:
-    "✅ Nova conversa iniciada (a anterior foi arquivada com uma nota de transição; a memória de longo prazo é mantida)",
+    "Nova conversa iniciada. Vou lembrar onde paramos, e a memória de longo prazo é mantida.",
   modelListFailed: "⚠️ Não foi possível obter a lista de modelos: {error}",
   modelListEmpty:
     "Nenhum modelo disponível: entre no Okinto ou adicione uma chave de API oficial primeiro (Configurações → Modelos).",

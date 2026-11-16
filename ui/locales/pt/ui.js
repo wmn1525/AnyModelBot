@@ -25,5 +25,7 @@ export default {
     "rejected": "Negado",
     "answered": "Respondido",
     "denied": "Negado"
-  }
+  },
+  "more": "Mais",
+  "moreFor": "Mais ações para {name}"
 };

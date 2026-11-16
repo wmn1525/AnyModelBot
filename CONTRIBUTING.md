@@ -8,6 +8,7 @@
 
 - **提问、想法、使用交流：** [GitHub Discussions](https://github.com/modelflare-ai/AnyModelBot/discussions)
 - **Bug 与功能建议：** [GitHub Issues](https://github.com/modelflare-ai/AnyModelBot/issues)，按模板填写
+- **实时交流：** [QQ 群 1132903119](https://qm.qq.com/q/yHN9KrvlGa) · [Telegram](https://t.me/+Tx6Payfzxqk2ZGVl) · [Discord](https://discord.gg/umBN6wX3zJ)
 - **安全问题：** 不要公开提 issue，按 [SECURITY.md](./SECURITY.md) 私下报告
 - **其他事情：** 发邮件到 [support@anymodel.bot](mailto:support@anymodel.bot)
 

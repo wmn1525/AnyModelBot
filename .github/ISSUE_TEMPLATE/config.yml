@@ -3,6 +3,15 @@ contact_links:
   - name: 提问与想法 · Questions and ideas
     url: https://github.com/modelflare-ai/AnyModelBot/discussions
     about: 使用问题、想法和交流请到 Discussions。Usage questions, ideas and show-and-tell go to Discussions.
+  - name: Discord · Community chat
+    url: https://discord.gg/umBN6wX3zJ
+    about: 和用户、维护者实时交流。Chat with other users and the maintainers.
+  - name: Telegram 群 · Telegram group
+    url: https://t.me/+Tx6Payfzxqk2ZGVl
+    about: 在 Telegram 上交流使用心得。Talk about AnyModelBot on Telegram.
+  - name: QQ 群 · QQ group
+    url: https://qm.qq.com/q/yHN9KrvlGa
+    about: 中文交流群，群号 1132903119。Chinese-language group, number 1132903119.
   - name: 安全问题 · Security vulnerability
     url: https://github.com/modelflare-ai/AnyModelBot/security/advisories/new
     about: 请私下报告，不要公开提 issue。Report privately; do not open a public issue.

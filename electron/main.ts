@@ -15,7 +15,8 @@ import { newApiDesktop } from "./newapi-login.js";
 import { modelflareIssuer } from "../src/providers/modelflare.js";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { execFile, spawn } from "node:child_process";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { loadConfig } from "../src/config.js";
 import { App } from "../src/app.js";
 import { DesktopUpdateService } from "../src/updates/desktop.js";
@@ -188,6 +189,29 @@ function createWindow(): void {
   if (!debugBuild) win.webContents.on("before-input-event", (event, input) => {
     const k = input.key.toLowerCase();
     if (k === "f12" || ((input.meta || input.control) && input.alt && ["i", "j", "c", "insert"].includes(k))) event.preventDefault();
+  });
+  // ⌘W / Ctrl+W：焦点在右侧预览面板时只关当前标签（界面里的 __ambPreviewCloseTab 说了算），否则照常关窗口（和菜单的「关闭」一样，按设置收进托盘）。
+  // 菜单快捷键先于网页收到按键，所以在这里拦下再问界面
+  // ⌘ / Ctrl 加减号、⌘0 / Ctrl+0：焦点在预览内容区时缩放内容（__ambPreviewKey），否则和菜单的放大 / 缩小 / 实际大小一样缩放整个窗口
+  win.webContents.on("before-input-event", (event, input) => {
+    if (input.type !== "keyDown" || input.alt) return;
+    if (!(process.platform === "darwin" ? input.meta && !input.control : input.control && !input.meta)) return;
+    const key = input.key.toLowerCase();
+    const wc = win?.webContents;
+    if (!wc) return;
+    if (key === "w" && !input.shift) {
+      event.preventDefault();
+      void wc.executeJavaScript("typeof window.__ambPreviewCloseTab === 'function' && window.__ambPreviewCloseTab() === true", true)
+        .catch(() => false)
+        .then((handled) => { if (!handled) win?.close(); });
+      return;
+    }
+    const zoom = key === "=" || key === "+" ? 0.5 : key === "-" || key === "_" ? -0.5 : key === "0" && !input.shift ? 0 : null;
+    if (zoom === null) return;
+    event.preventDefault();
+    void wc.executeJavaScript(`typeof window.__ambPreviewKey === 'function' && window.__ambPreviewKey(${JSON.stringify(key)}) === true`, true)
+      .catch(() => false)
+      .then((handled) => { if (!handled && !wc.isDestroyed()) wc.setZoomLevel(zoom === 0 ? 0 : wc.getZoomLevel() + zoom); });
   });
   // 只允许停留在本机管理界面；外部链接交给系统浏览器
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -379,6 +403,35 @@ async function boot(): Promise<void> {
     openDataDir: () => void shell.openPath(config.dataDir),
     openPath: (p) => void shell.openPath(p),
     showItemInFolder: (p) => shell.showItemInFolder(p),
+    // 右侧预览的「另存为…」：默认位置是上次另存的文件夹（记在数据库里，重启后还在），第一次是「下载」；同名由系统对话框问要不要替换
+    saveFileAs: async (src, name) => {
+      const last = core?.store.getKV("desktop.saveAsDir") || "";
+      const dir = last && fs.existsSync(last) ? last : app.getPath("downloads");
+      const opts = { defaultPath: path.join(dir, name), properties: ["createDirectory", "showOverwriteConfirmation"] as Array<"createDirectory" | "showOverwriteConfirmation"> };
+      const r = win ? await dialog.showSaveDialog(win, opts) : await dialog.showSaveDialog(opts);
+      if (r.canceled || !r.filePath) return { canceled: true as const };
+      if (path.resolve(r.filePath) !== path.resolve(src)) await fs.promises.copyFile(src, r.filePath);
+      const folder = path.dirname(r.filePath);
+      core?.store.setKV("desktop.saveAsDir", folder);
+      return { path: r.filePath, folder: path.basename(folder) || folder };
+    },
+    // 右侧预览 HTML 的「在浏览器中打开」：交给系统默认浏览器（.html 的默认程序可能是编辑器）；查不到默认浏览器时（Linux）按文件类型打开
+    openFileInBrowser: async (p) => {
+      const fallback = () => void shell.openPath(p);
+      let browser = "";
+      try { browser = (await app.getApplicationInfoForProtocol("https://"))?.path || ""; } catch { /* Linux 没有这个接口 */ }
+      if (browser && process.platform === "darwin") {
+        execFile("open", ["-a", browser, p], (err) => { if (err) fallback(); });
+        return;
+      }
+      if (browser && isWin && /\.exe$/i.test(browser)) {
+        const child = spawn(browser, [pathToFileURL(p).href], { detached: true, stdio: "ignore" });
+        child.once("error", fallback);
+        child.unref();
+        return;
+      }
+      fallback();
+    },
     openInBrowser: () => void shell.openExternal(entryUrl),
     openExternal: (url) => {
       if (/^https?:/i.test(url)) void shell.openExternal(url);

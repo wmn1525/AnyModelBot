@@ -26,8 +26,6 @@ export interface BotSettings {
     enabled: boolean;
     /** 回合结束后自动整理记忆 */
     review: boolean;
-    /** 是否允许写团队记忆（所有机器人共享） */
-    teamWrite: boolean;
   };
   steward: {
     enabled: boolean;
@@ -108,7 +106,7 @@ export function normalizeBotApps(raw: unknown): BotApps {
 
 export const DEFAULT_SETTINGS: BotSettings = {
   permission: "workspace",
-  memory: { enabled: true, review: true, teamWrite: false },
+  memory: { enabled: true, review: true },
   steward: { enabled: true },
   computerUse: { enabled: true, backend: "cua", approval: "auto" },
   media: { confirm: "auto" },
@@ -138,7 +136,6 @@ export function normalizeSettings(raw: unknown): BotSettings {
     memory: {
       enabled: b(m.enabled, DEFAULT_SETTINGS.memory.enabled),
       review: b(m.review, DEFAULT_SETTINGS.memory.review),
-      teamWrite: b(m.teamWrite, DEFAULT_SETTINGS.memory.teamWrite),
     },
     steward: { enabled: b(st.enabled, DEFAULT_SETTINGS.steward.enabled) },
     computerUse: {

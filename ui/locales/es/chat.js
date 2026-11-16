@@ -2,6 +2,13 @@ export default {
   "aria": "Conversación con {name}",
   "infoPanel": "Panel derecho (⌘⇧I)",
   "newConvCmd": "Nueva conversación (/new)",
+  "newConv": {
+    "divider": "Se inició una conversación nueva",
+    "already": "Ya estás en una conversación nueva",
+    "busy": "Podrás iniciar una conversación nueva cuando termine esta respuesta",
+    "agentOff": "El modo agente está desactivado, así que no se puede iniciar una conversación nueva. Usa «Borrar contexto» para empezar de nuevo.",
+    "failed": "No se pudo iniciar una conversación nueva: {error}"
+  },
   "toBottom": "Desplazarse al final",
   "copyMessage": "Copiar mensaje",
   "commandsLabel": "Comandos",
@@ -75,6 +82,7 @@ export default {
     "noMatch": "Sin resultados",
     "prefill": "Usa {name} para ayudarme a{cursor}…",
     "appExample": "Usa {app} para ayudarme a…",
+    "appTool": "{app} · {tool}",
     "readonlyDesc": "Solo lectura: puede buscar y leer",
     "readonlyNo": "Este bot es de solo lectura, así que no puede escribir",
     "noSkills": "Este bot todavía no tiene habilidades.",
@@ -103,7 +111,7 @@ export default {
     "sep": ", ",
     "state": {
       "active": "Activa",
-      "waiting": "Activa cuando termine la tarea actual",
+      "waiting": "Activa desde tu próximo mensaje",
       "loading": "Cargando"
     },
     "try": "Prueba decir: {example}",

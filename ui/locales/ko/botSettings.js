@@ -92,9 +92,6 @@ export default {
     "name": "장기 기억",
     "review": "매 대화 차례가 끝나면 자동으로 정리",
     "reviewLabel": "기억 자동 정리",
-    "team": "팀 기억에 쓰기 허용",
-    "teamSub": "모든 봇이 공유합니다",
-    "teamLabel": "팀 기억"
   },
   "context": {
     "head": "컨텍스트",

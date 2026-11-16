@@ -34,5 +34,10 @@ export default {
   "featuredMore": "Ver todos ({count})",
   "featuredLess": "Ver menos",
   "fieldHint": "Haz clic para escribirles a todos",
-  "fieldModel": "Cerebro"
+  "fieldModel": "Cerebro",
+  "community": {
+    "title": "Comunidad",
+    "scan": "Escanea con QQ para unirte",
+    "number": "Número del grupo"
+  }
 };

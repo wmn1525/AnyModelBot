@@ -8,6 +8,7 @@
 
 - **Вопросы, идеи, ваши примеры:** [GitHub Discussions](https://github.com/modelflare-ai/AnyModelBot/discussions).
 - **Ошибки и пожелания:** [GitHub Issues](https://github.com/modelflare-ai/AnyModelBot/issues), используйте шаблоны.
+- **Чат сообщества:** [Discord](https://discord.gg/umBN6wX3zJ) · [Telegram](https://t.me/+Tx6Payfzxqk2ZGVl)
 - **Проблемы безопасности:** не создавайте публичный issue; сообщите приватно по [правилам безопасности](./SECURITY_ru.md).
 - **Остальное:** [support@anymodel.bot](mailto:support@anymodel.bot).
 

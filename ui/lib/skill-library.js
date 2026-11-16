@@ -19,8 +19,9 @@ export const libraryNow = () => cache;
 function prepare(d) {
   const skills = d.skills.map((s) => ({ ...s, url: s.path ? `https://github.com/${s.repo}/tree/${s.branch}/${s.path}` : `https://github.com/${s.repo}` }));
   const order = (c) => d.categories.indexOf(c);
+  // 首字母头像的底色按作者在清单里的顺序取（8 种轮着用）：同一作者始终同色，不同作者尽量不同色
   const authors = Object.fromEntries(
-    Object.entries(d.authors).map(([id, a]) => {
+    Object.entries(d.authors).map(([id, a], i) => {
       const mine = skills.filter((s) => s.author === id);
       // 主要分类：技能最多的两类；一样多时按分类的固定顺序
       const main = d.categories
@@ -29,7 +30,7 @@ function prepare(d) {
         .sort((x, y) => y[1] - x[1] || order(x[0]) - order(y[0]))
         .slice(0, 2)
         .map(([c]) => c);
-      return [id, { id, ...a, count: mine.length, main }];
+      return [id, { id, ...a, count: mine.length, main, tone: (i % AVATAR_TONES) + 1 }];
     }),
   );
   return { ...d, skills, authors };
@@ -91,10 +92,42 @@ export function openExternal(url) {
   return true;
 }
 
-// —— 作者头像：从 github.com/{账号}.png 读，运行期间同一头像只请求一次；取不到或 3 秒内没加载出来就用首字母 ——
-const avatars = new Map(); // 账号 → "ok" | "fail"
-export const avatarSrc = (account) => `https://github.com/${encodeURIComponent(account)}.png?size=128`;
-export const avatarState = (account) => avatars.get(account);
-export function setAvatarState(account, state) {
-  if (!avatars.has(account)) avatars.set(account, state);
+// —— 作者头像：先显示首字母，图片在后台读，读到后原位淡入。图片经本机服务读（src/web/skill-avatars.ts）：
+// 读到过的存在本机，下次直接给；过期后后台更新，更新完前给旧图。读到过的作者记在 localStorage，重开时直接显示图片、不先闪首字母 ——
+const AVATAR_TONES = 8;
+const KNOWN_KEY = "amb.skillAvatars";
+/** 这次运行里读不到的：过一会儿（或网络恢复）再试 */
+const RETRY_MS = 30_000;
+const failedAt = new Map(); // 账号 → 失败的时刻
+let known = null;
+function knownSet() {
+  if (!known) {
+    try {
+      known = new Set(JSON.parse(localStorage.getItem(KNOWN_KEY) || "[]"));
+    } catch {
+      known = new Set();
+    }
+  }
+  return known;
+}
+function saveKnown() {
+  try {
+    localStorage.setItem(KNOWN_KEY, JSON.stringify([...knownSet()]));
+  } catch {
+    /* 存不下也没关系：下次先显示首字母再淡入 */
+  }
+}
+export const avatarSrc = (account) => `/amb/api/skill-avatars/${encodeURIComponent(account)}`;
+/** 读到过（本机有存）：直接显示图片 */
+export const avatarKnown = (account) => knownSet().has(account);
+/** 刚读不到：先别再试 */
+export const avatarFailed = (account) => Date.now() - (failedAt.get(account) ?? -Infinity) < RETRY_MS;
+export function avatarLoaded(account, ok) {
+  if (ok) {
+    failedAt.delete(account);
+    if (!knownSet().has(account)) (knownSet().add(account), saveKnown());
+  } else {
+    failedAt.set(account, Date.now());
+    if (knownSet().delete(account)) saveKnown();
+  }
 }

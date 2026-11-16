@@ -39,5 +39,6 @@ for (const file of ["ui/components/whats-new.js", "ui/screens/sidebar.js"]) {
   assert.ok(read(file).includes("https://github.com/wmn1525/AnyModelBot/releases"), `Fork release link missing: ${file}`);
   assert.ok(!read(file).includes("https://github.com/modelflare-ai/AnyModelBot"), `Upstream release link leaked: ${file}`);
 }
-assert.ok(read("ui/screens/sidebar.js").includes('signedIn ? "Okinto"'), "Account menu must show Okinto");
+assert.ok(read("ui/screens/sidebar.js").includes("accountIdentity"), "Account menu must use shared identity");
+assert.ok(read("ui/locales/en/welcome.js").includes("Okinto account"), "Account fallback must show Okinto");
 console.log(`Okinto bundle verified: okbot ${pkg.version}; login, API endpoint, chat relay and all seven display catalogs verified`);

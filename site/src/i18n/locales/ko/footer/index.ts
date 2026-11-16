@@ -34,5 +34,10 @@ export default {
   "featuredMore": "{count}개 모두 표시",
   "featuredLess": "접기",
   "fieldHint": "클릭해 모두에게 메시지 보내기",
-  "fieldModel": "두뇌"
+  "fieldModel": "두뇌",
+  "community": {
+    "title": "커뮤니티",
+    "scan": "QQ로 스캔해 참여",
+    "number": "그룹 번호"
+  }
 };

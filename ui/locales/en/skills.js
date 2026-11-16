@@ -19,7 +19,7 @@ export default {
   nameTitle: "{name}: {title}",
   tryLine: "Try: \"{text}\"",
   copy: "Copy install prompt",
-  copied: "Copied",
+  copied: "Copied ✓",
   copyLabel: "Copy the install prompt for {name}",
   openRepoLabel: "Open {name} on GitHub",
   filterAuthorLabel: "Show skills by {name}",

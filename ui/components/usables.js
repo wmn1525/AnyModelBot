@@ -6,9 +6,9 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { html, Icon, Popover, Spinner } from "./ui.js";
 import { AppMark } from "./app-mark.js";
 import { api } from "../lib/api.js";
-import { failed, toast, useStore } from "../lib/store.js";
+import { failed, useStore } from "../lib/store.js";
 import { ATTENTION, appLabel, appsStore, loadApps, setApps, stateText } from "../lib/apps.js";
-import { loadBotSkills, prefillOf, useBotSkills } from "../lib/usage.js";
+import { appExample, loadBotSkills, prefillOf, readyToast, useBotSkills } from "../lib/usage.js";
 import { has, t, useLang } from "../lib/i18n.js";
 
 /** 任一组超过这么多项时顶上出搜索框 */
@@ -107,7 +107,8 @@ export function UsablesPanel({ anchor, bot, perm, onPick, onClose, onOpenSkills,
         const r = await api(`/bots/${encodeURIComponent(bot.id)}/settings`, { method: "PUT", body: { apps: { ...appsSet, selected: [...new Set([...appsSet.selected, v.key])] } } });
         setSettings(r.settings);
       }
-      toast(t("chat.use.assigned", { app: name(v), bot: bot.name }));
+      // 结果句不变，下面一行应用页同一句示例（没有时「用{应用}帮我……」）和「填入输入框」「复制」
+      readyToast(t("chat.use.assigned", { app: name(v), bot: bot.name }), bot.id, appExample(v, name(v)));
     } catch (e) {
       failed(e);
     }

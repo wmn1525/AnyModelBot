@@ -27,4 +27,7 @@ export default {
     answered: "Ответ получен",
     denied: "Отказано",
   },
+  /** "⋯" at the end of a row (MoreButton): hover hint and screen-reader name */
+  more: "Ещё",
+  moreFor: "Другие действия: {name}",
 };

@@ -2,6 +2,13 @@ export default {
   "aria": "Conversation with {name}",
   "infoPanel": "Right panel (⌘⇧I)",
   "newConvCmd": "New conversation (/new)",
+  "newConv": {
+    "divider": "New conversation started",
+    "already": "You're already in a new conversation",
+    "busy": "You can start a new conversation after this reply finishes",
+    "agentOff": "Agent mode is off, so a new conversation can't be started. Use \"Clear context\" to start over.",
+    "failed": "Couldn't start a new conversation: {error}"
+  },
   "toBottom": "Scroll to bottom",
   "copyMessage": "Copy message",
   "commandsLabel": "Commands",
@@ -53,9 +60,9 @@ export default {
   },
   "error": {
     "stopFailed": "Couldn't stop: {error}",
+    "fixKey": "Update key",
     "fixOfficialKey": "Replace key",
     "officialKeyInvalid": "{name} rejected this API key. It may be invalid or revoked.",
-    "fixKey": "Update key",
     "authInvalid": "Your Okinto New API key is invalid or has been revoked.",
     "loadHistory": "Couldn't load message history: {error}"
   },
@@ -75,6 +82,7 @@ export default {
     "noMatch": "No matches",
     "prefill": "Use {name} to help me{cursor}…",
     "appExample": "Use {app} to help me…",
+    "appTool": "{app} · {tool}",
     "readonlyDesc": "Read-only: can look things up and read",
     "readonlyNo": "This bot is read-only, so it can't write",
     "noSkills": "This bot doesn't have any skills yet.",
@@ -103,7 +111,7 @@ export default {
     "sep": ", ",
     "state": {
       "active": "Active",
-      "waiting": "Active after the current task",
+      "waiting": "Ready from your next message",
       "loading": "Loading"
     },
     "try": "Try saying: {example}",

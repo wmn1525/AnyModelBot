@@ -406,7 +406,7 @@ describe("规则（假宿主、假时钟）", () => {
     expect(p1.text).toContain("[这次]\n观察：只看不动，message 只记下来，不会发给用户。");
     expect(p1.text).toContain("- 用户关心 X 的价格");
     // 插件取配置：观察只读、去掉能改变什么的工具、规则段
-    expect(svc.sessionConfig({ sessionId: p1.sessionId })).toEqual({ kind: "rule", mode: "observe", deny: RULE_DENY.observe, denyPrefix: ["mcp__computer-use__"], section: ruleRules("observe"), permission: "read-only" });
+    expect(svc.sessionConfig({ sessionId: p1.sessionId })).toEqual({ kind: "rule", mode: "observe", style: "line", deny: RULE_DENY.observe, denyPrefix: ["mcp__computer-use__"], section: ruleRules("observe"), permission: "read-only" });
     expect(RULE_DENY.observe).toEqual(expect.arrayContaining(["remember", "forget", "generate_image", "present", "rule_create"]));
     await turn((sid) => void expect(svc.report({ sessionId: sid, state: "done", summary: "X 现在 ¥259，高于 200", message: "" }).text).toMatch(/hears nothing/));
     // 第 2 天：上一次的结果带进来（连续性靠它）

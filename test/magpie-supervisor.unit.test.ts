@@ -105,3 +105,24 @@ describe.skipIf(process.platform === "win32")("magpie supervisor restarts", () =
     expect(pidFile).toBe(String(spawned[2]));
   }, 20_000);
 });
+
+describe("内置网关合成的模型组", () => {
+  it("启动前在 providers.json 里关掉 noAutoGroups，保留已有的服务方；读不懂的文件不动", () => {
+    const cfg = path.join(dir, "magpie", "config", "magpie");
+    fs.mkdirSync(cfg, { recursive: true });
+    const f = path.join(cfg, "providers.json");
+    fs.writeFileSync(f, JSON.stringify({ providers: [{ id: "modelflare", key: "k", models: ["xai/grok-4.6"] }] }));
+    const s = new MagpieSupervisor({ dataDir: dir, binPath: "/nonexistent", healthTimeoutMs: 1000 });
+    (s as unknown as { prepare(): void }).prepare();
+    const j = JSON.parse(fs.readFileSync(f, "utf8"));
+    expect(j.noAutoGroups).toBe(true);
+    expect(j.providers[0]).toMatchObject({ id: "modelflare", models: ["xai/grok-4.6"] });
+    fs.writeFileSync(f, "{ broken");
+    (s as unknown as { prepare(): void }).prepare();
+    expect(fs.readFileSync(f, "utf8")).toBe("{ broken");
+    fs.rmSync(f);
+    (s as unknown as { prepare(): void }).prepare();
+    expect(JSON.parse(fs.readFileSync(f, "utf8"))).toEqual({ providers: [], noAutoGroups: true });
+  });
+});
+

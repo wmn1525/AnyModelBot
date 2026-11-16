@@ -2,6 +2,13 @@ export default {
   "aria": "和 {name} 的对话",
   "infoPanel": "右侧面板（⌘⇧I）",
   "newConvCmd": "开始新的一段对话（/new）",
+  "newConv": {
+    "divider": "已开始新对话",
+    "already": "已经是新对话了",
+    "busy": "回复结束后才能开始新对话",
+    "agentOff": "代理没有启用，开不了新对话。可以用「清空上下文」重新开始。",
+    "failed": "没能开始新对话：{error}"
+  },
   "toBottom": "回到底部",
   "copyMessage": "复制这条消息",
   "commandsLabel": "命令",
@@ -53,9 +60,9 @@ export default {
   },
   "error": {
     "stopFailed": "停止失败：{error}",
+    "fixKey": "去更新",
     "fixOfficialKey": "去更换 Key",
     "officialKeyInvalid": "{name} 拒绝了这个 API Key，它可能无效或已被撤销。",
-    "fixKey": "去更新",
     "authInvalid": "Okinto New API 密钥失效或已被撤销。",
     "loadHistory": "读取历史消息失败：{error}"
   },
@@ -75,6 +82,7 @@ export default {
     "noMatch": "没有匹配的项",
     "prefill": "用{name}帮我{cursor}……",
     "appExample": "用{app}帮我……",
+    "appTool": "{app} · {tool}",
     "readonlyDesc": "当前是只读，只能查询和读取",
     "readonlyNo": "当前是只读，不能写入",
     "noSkills": "这个机器人还没有可用的技能。",
@@ -103,7 +111,7 @@ export default {
     "sep": "、",
     "state": {
       "active": "已生效",
-      "waiting": "当前任务结束后生效",
+      "waiting": "下一条消息起生效",
       "loading": "加载中"
     },
     "try": "试试这样说：{example}",

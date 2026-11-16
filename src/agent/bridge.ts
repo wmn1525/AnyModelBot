@@ -18,6 +18,8 @@ export interface BridgeHandlers {
   cancel(body: any): Promise<void>;
   /** amb-memory 插件：remember / forget / recall */
   memory?(body: any): Promise<unknown>;
+  /** amb-collab 插件：message_bot / bot_request（机器人之间发消息） */
+  collab?(body: any): Promise<unknown>;
   /** amb-memory 插件：上下文管家判定 / 压缩回报 */
   steward?(body: any): Promise<unknown>;
   /** amb-media 插件：生图 / 生视频 */
@@ -278,6 +280,7 @@ export class AgentBridge {
     else if (url === "/dsh/wait") out = await this.h.wait(body);
     else if (url === "/dsh/cancel") out = (await this.h.cancel(body), { ok: true });
     else if (url === "/dsh/memory" && this.h.memory) out = await this.h.memory(body);
+    else if (url === "/dsh/collab" && this.h.collab) out = await this.h.collab(body);
     else if (url === "/dsh/steward" && this.h.steward) out = await this.h.steward(body);
     else if (url === "/dsh/cu-permission" && this.h.cuPermission) out = await this.h.cuPermission(body);
     else if (url === "/dsh/media" && this.h.media) return this.longCall(res, this.h.media(body));

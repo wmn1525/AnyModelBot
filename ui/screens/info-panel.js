@@ -30,7 +30,7 @@ export function usePoll(fn, ms, deps = []) {
 /** 渠道名（渲染时取，跟着界面语言）；不认识的渠道原样显示 id */
 const channelName = (c) => ({ web: t("info.channel.web"), feishu: t("info.channel.feishu"), weixin: t("info.channel.weixin"), telegram: t("info.channel.telegram"), slack: t("info.channel.slack"), discord: t("info.channel.discord") })[c];
 
-function MemorySection({ botId }) {
+function MemorySection({ botId, onOpenAboutMe }) {
   const [d, err, reload] = usePoll(() => api(`/bots/${botId}/memory`), 0, [botId]);
   const forget = async (sc, text, topic) => {
     if (!(await confirmSheet({ title: t("info.memory.deleteTitle"), body: text, confirmLabel: t("common.delete"), danger: true }))) return;
@@ -42,12 +42,30 @@ function MemorySection({ botId }) {
       failed(e);
     }
   };
-  const all = d ? d.scopes.flatMap((sc) => [...sc.entries.map((e) => ({ sc, e })), ...sc.topics.flatMap((tp) => tp.entries.map((e) => ({ sc, e, topic: tp.name })))]) : [];
+  // 关于我（所有机器人共用）：顶部一行入口，句子标来源「关于我」，这里只看和删（删除同关于我页）
+  const removeAboutMe = async (l) => {
+    if (!(await confirmSheet({ title: t("aboutMe.deleteTitle"), body: `${l.text}\n\n${t("aboutMe.deleteBody")}`, confirmLabel: t("common.delete"), danger: true }))) return;
+    try {
+      await api(`/bots/${botId}/memory/forget`, { method: "POST", body: { kind: "me", id: l.id } });
+      toast(t("info.memory.deleted"));
+      reload();
+    } catch (e) {
+      failed(e);
+    }
+  };
+  const me = d?.aboutMe;
+  const all = d ? [...(me?.lines || []).map((l) => ({ me: l })), ...d.scopes.flatMap((sc) => [...sc.entries.map((e) => ({ sc, e })), ...sc.topics.flatMap((tp) => tp.entries.map((e) => ({ sc, e, topic: tp.name })))])] : [];
   return html`<div class="list-head">${t("info.memory.title")}<span class="grow"></span><button type="button" class="icon-btn" title=${t("common.refresh")} aria-label=${t("info.memory.refresh")} onClick=${reload}><${Icon} name="refresh" size="sm" /></button></div>
+    ${me && html`<button type="button" class="aboutme-entry" onClick=${() => onOpenAboutMe?.()}>
+      <span class="grow">${me.reads ? t("aboutMe.memoryEntry", { count: me.count }) : t("aboutMe.memoryOff")}</span><span class="text">${t("aboutMe.view")} ›</span>
+    </button>`}
     <div class="list">
       ${!d && html`<div class="row"><span class="hint">${err || t("common.loading")}</span></div>`}
       ${d && !all.length && html`<div class="row"><span class="hint">${t("info.memory.empty")}</span></div>`}
-      ${all.slice(0, 30).map(({ sc, e, topic }) => html`<div class="row compact">
+      ${all.slice(0, 40).map(({ sc, e, topic, me: l }) => l ? html`<div class="row compact">
+        <div class="who"><div class="sub wrap selectable tone-fg t-control">${l.text}</div><div class="sub">${t("aboutMe.memorySource")}</div></div>
+        <button type="button" class="icon-btn" title=${t("common.delete")} aria-label=${t("info.memory.delete")} onClick=${() => removeAboutMe(l)}><${Icon} name="trash" size="sm" /></button>
+      </div>` : html`<div class="row compact">
         <div class="who"><div class="sub wrap selectable tone-fg t-control">${e.text}</div><div class="sub">${sc.label}${topic ? " · " + topic : ""}</div></div>
         <button type="button" class="icon-btn" title=${t("common.delete")} aria-label=${t("info.memory.delete")} onClick=${() => forget(sc, e.text, topic)}><${Icon} name="trash" size="sm" /></button>
       </div>`)}
@@ -193,6 +211,6 @@ export function TasksTab({ bot, onOpenChat }) {
 }
 
 /** 「记忆」标签 */
-export function MemoryTab({ bot }) {
-  return html`<${MemorySection} key=${bot.id} botId=${bot.id} />`;
+export function MemoryTab({ bot, onOpenAboutMe }) {
+  return html`<${MemorySection} key=${bot.id} botId=${bot.id} onOpenAboutMe=${onOpenAboutMe} />`;
 }

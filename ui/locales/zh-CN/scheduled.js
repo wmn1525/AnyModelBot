@@ -1,4 +1,6 @@
 export default {
+  "yearly": "每年",
+  "beforeDays": {"other": "提前 {count} 天"},
   "emptyTitle": "还没有规则",
   "emptyNeedsTitle": "没有需要处理的规则",
   "emptyNeedsHint": "需要你处理的规则会出现在这里。",

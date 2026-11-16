@@ -90,7 +90,7 @@ describe("settings", () => {
     expect(normalizeSettings(undefined)).toEqual(DEFAULT_SETTINGS);
     const s = normalizeSettings({ permission: "root", memory: { review: false }, computerUse: { approval: "never" } });
     expect(s.permission).toBe("workspace");
-    expect(s.memory).toEqual({ enabled: true, review: false, teamWrite: false });
+    expect(s.memory).toEqual({ enabled: true, review: false });
     expect(s.computerUse).toEqual({ enabled: true, backend: "cua", approval: "auto" });
     // 旧的审批设置迁移为自动执行
     expect(normalizeSettings({ computerUse: { approval: "always" } }).computerUse.approval).toBe("auto");

@@ -108,8 +108,8 @@ describe("哪些文件能给", () => {
 });
 
 describe("浏览器里怎么给", () => {
-  it("图片（SVG 除外）、PDF、纯文本直接显示，其余一律下载；都带 nosniff，PDF 以外都有 CSP sandbox", () => {
-    for (const [name, type] of [["a.png", "image/png"], ["a.JPG", "image/jpeg"], ["a.webp", "image/webp"], ["a.txt", "text/plain; charset=utf-8"], ["a.json", "text/plain; charset=utf-8"]]) {
+  it("图片（含 SVG，靠 CSP sandbox 不运行脚本）、PDF、纯文本直接显示，其余一律下载；都带 nosniff，PDF 以外都有 CSP sandbox", () => {
+    for (const [name, type] of [["a.png", "image/png"], ["a.JPG", "image/jpeg"], ["a.webp", "image/webp"], ["a.svg", "image/svg+xml"], ["a.txt", "text/plain; charset=utf-8"], ["a.json", "text/plain; charset=utf-8"]]) {
       const h = fileHeaders(name);
       expect(h["content-type"]).toBe(type);
       expect(h["content-disposition"]).toMatch(/^inline;/);
@@ -120,7 +120,7 @@ describe("浏览器里怎么给", () => {
     expect(pdf).toMatchObject({ "content-type": "application/pdf", "x-content-type-options": "nosniff" });
     expect(pdf["content-disposition"]).toMatch(/^inline;/);
     expect(pdf["content-security-policy"]).toBeUndefined();
-    for (const name of ["a.html", "a.htm", "a.svg", "a.xml", "a.js", "a.mjs", "a.xhtml", "a.exe", "noext"]) {
+    for (const name of ["a.html", "a.htm", "a.xml", "a.js", "a.mjs", "a.xhtml", "a.exe", "noext"]) {
       const h = fileHeaders(name);
       expect(h["content-type"]).toBe("application/octet-stream");
       expect(h["content-disposition"]).toMatch(/^attachment;/);
@@ -226,18 +226,91 @@ describe("接口与历史", () => {
     const preview = (p: string) => fetch(`${base}/conversations/${enc(conv)}/file/preview?path=${enc(p)}`);
     const md = await preview("out/report.md");
     expect(md.status).toBe(200);
-    expect(await md.json()).toMatchObject({ kind: "markdown", text: "# Report\n\nHello **world**" });
+    expect(await md.json()).toMatchObject({ kind: "text", text: "# Report\n\nHello **world**", encoding: "utf-8", truncated: false });
     expect(await (await preview("out/cover.png")).json()).toMatchObject({ kind: "image" });
     expect(await (await preview("out/report.docx")).json()).toMatchObject({ kind: "unsupported" });
-    fs.writeFileSync(path.join(ws, "out", "large.txt"), "x".repeat(2 * 1024 * 1024 + 1));
-    expect(await (await preview("out/large.txt")).json()).toMatchObject({ kind: "unsupported", reason: "tooLarge" });
+    // 超过 2 MB：只给前 2 MB，截在完整的行末，带总大小和总行数
+    const line = "2026-11-15 14:01:01 INFO task step\n";
+    fs.writeFileSync(path.join(ws, "out", "large.log"), line.repeat(Math.ceil((3 * 1024 * 1024) / line.length)));
+    const large = await (await preview("out/large.log")).json() as any;
+    expect(large).toMatchObject({ kind: "text", truncated: true, totalLines: Math.ceil((3 * 1024 * 1024) / line.length) });
+    expect(large.text.length).toBeLessThanOrEqual(2 * 1024 * 1024);
+    expect(large.text.endsWith("\n")).toBe(true);
+    expect(large.size).toBeGreaterThan(3 * 1024 * 1024 - line.length);
     fs.writeFileSync(path.join(ws, "out", "binary.txt"), "hi\0binary");
     expect(await (await preview("out/binary.txt")).json()).toMatchObject({ kind: "unsupported" });
+    fs.writeFileSync(path.join(ws, "out", "empty.txt"), "");
+    expect(await (await preview("out/empty.txt")).json()).toMatchObject({ kind: "empty", size: 0 });
+    // 没有扩展名的纯文本（LICENSE）、Dockerfile 按文本；GBK 自动识别，也能按指定编码重读
+    fs.writeFileSync(path.join(ws, "out", "LICENSE"), "MIT License\n");
+    expect(await (await preview("out/LICENSE")).json()).toMatchObject({ kind: "text", text: "MIT License\n" });
+    fs.writeFileSync(path.join(ws, "out", "Dockerfile"), "FROM node:22\n");
+    expect(await (await preview("out/Dockerfile")).json()).toMatchObject({ kind: "text" });
+    fs.writeFileSync(path.join(ws, "out", "gbk.csv"), Buffer.from([0xc3, 0xfb, 0xb3, 0xc6, 0x2c, 0xb3, 0xc7, 0xca, 0xd0, 0x0a]));
+    expect(await (await preview("out/gbk.csv")).json()).toMatchObject({ kind: "text", encoding: "gbk", detected: "gbk", text: "名称,城市\n" });
+    const forced = await (await fetch(`${base}/conversations/${enc(conv)}/file/preview?path=${enc("out/gbk.csv")}&encoding=utf-8`)).json() as any;
+    expect(forced).toMatchObject({ encoding: "utf-8", detected: "gbk" });
+    expect(forced.text).toContain("\ufffd");
+    fs.writeFileSync(path.join(ws, "out", "bom.csv"), Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from("a,b\n")]));
+    expect(await (await preview("out/bom.csv")).json()).toMatchObject({ encoding: "utf-8-bom", text: "a,b\n" });
+    fs.writeFileSync(path.join(ws, "out", "doc.pdf"), "%PDF-1.4\n1 0 obj << /Type /Pages /Kids [2 0 R 3 0 R 4 0 R] /Count 3 >> endobj\n");
+    expect(await (await preview("out/doc.pdf")).json()).toMatchObject({ kind: "pdf", pages: 3 });
     for (const p of ["out/gone.pdf", "../../ui-token"]) expect((await preview(p)).status).toBe(404);
     const download = await fetch(`${base}/conversations/${enc(conv)}/file?path=out%2Freport.md&download=1`);
     expect(download.headers.get("content-disposition")).toMatch(/^attachment;/);
     await download.arrayBuffer();
   });
+
+  it("lists the files this conversation delivered, newest first, with gone ones marked", async () => {
+    const d = await (await fetch(`${base}/delivered-files?conv=${enc(conv)}&conv=${enc("nope:web:console")}`)).json() as any;
+    expect(d.files.map((f: any) => f.name)).toEqual(["cover.png", "page.html", "gone.pdf"]);
+    expect(d.files[0]).toMatchObject({ conv, path: path.join(ws, "out", "cover.png"), image: true });
+    expect(d.files[2]).toMatchObject({ gone: true });
+    expect(typeof d.files[0].at).toBe("number");
+    expect((await (await fetch(`${base}/delivered-files`)).json() as any).files).toEqual([]);
+  });
+
+  it("pushes file changes to open preview tabs and confirms deletions after a quiet second", async () => {
+    const file = path.join(ws, "out", "watch.md");
+    fs.writeFileSync(file, "# one\n");
+    const t = Buffer.from(JSON.stringify([{ k: "tab-1", conv, path: "out/watch.md" }, { k: "tab-x", conv, path: "../../anymodel.db" }])).toString("base64url");
+    const ac = new AbortController();
+    const res = await fetch(`${base}/preview-watch?t=${t}`, { signal: ac.signal });
+    expect(res.headers.get("content-type")).toContain("text/event-stream");
+    const reader = res.body!.getReader();
+    const events: string[] = [];
+    let buf = "";
+    let pending: Promise<ReadableStreamReadResult<Uint8Array>> | null = null;
+    const next = async (want: string, ms = 5000) => {
+      const end = Date.now() + ms;
+      while (Date.now() < end) {
+        const hit = events.findIndex((e) => e.startsWith(`event: ${want}`));
+        if (hit >= 0) return events.splice(hit, 1)[0];
+        pending ||= reader.read();
+        const r = await Promise.race([pending, new Promise<null>((ok) => setTimeout(() => ok(null), 200))]);
+        if (r) pending = null;
+        if (r && !r.done) {
+          buf += Buffer.from(r.value).toString("utf8");
+          const parts = buf.split("\n\n");
+          buf = parts.pop()!;
+          events.push(...parts);
+        }
+      }
+      return "";
+    };
+    expect(await next("ready")).toContain('"count":1');
+    fs.writeFileSync(file, "# one\n\nmore\n");
+    expect(await next("change")).toContain('"key":"tab-1"');
+    // 先删再写：不报消失
+    fs.rmSync(file);
+    await new Promise((ok) => setTimeout(ok, 150));
+    fs.writeFileSync(file, "# rewritten\n");
+    expect(await next("change")).toContain('"key":"tab-1"');
+    expect(events.some((e) => e.startsWith("event: gone"))).toBe(false);
+    fs.rmSync(file);
+    expect(await next("gone")).toContain('"gone":true');
+    ac.abort();
+  }, 15000);
 
   it("loads HTML assets in a sandbox using a directory-scoped capability", async () => {
     const r = await fetch(`${base}/conversations/${enc(conv)}/file/preview?path=out%2Fpage.html`);
@@ -252,7 +325,14 @@ describe("接口与历史", () => {
     expect(csp).not.toContain("allow-same-origin");
     expect(csp).toContain("frame-ancestors 'self'");
     expect(html.headers.get("referrer-policy")).toBe("no-referrer");
-    expect(await html.text()).toContain("<script>alert(1)</script>");
+    const page = await html.text();
+    expect(page).toContain("<script>alert(1)</script>");
+    // 链接交给面板：注入的小脚本放在 <head> 后面（不进怪异模式）
+    expect(page).toContain('amb:"preview-link"');
+    expect(descriptor.text).toContain("<script>alert(1)</script>");
+    // 授权续期：开着的页面过了一小时仍能读同目录资源
+    expect(await (await fetch(`${base}/preview-grants/renew`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: descriptor.url }) })).json()).toEqual({ ok: true });
+    expect(await (await fetch(`${base}/preview-grants/renew`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: "/amb/file-preview/nope/x.html" }) })).json()).toEqual({ ok: false });
     for (const asset of ["style.css", "app.js", "cover.png"]) {
       const res = await fetch(new URL(asset, entry));
       expect(res.status).toBe(200);
@@ -268,7 +348,7 @@ describe("接口与历史", () => {
     const web = await post("open", path.join(ws, "out", "cover.png"));
     expect(web.status).toBe(400);
     await web.arrayBuffer();
-    const hooks: Partial<DesktopHooks> = { openPath: (p) => void opened.push(["open", p]), showItemInFolder: (p) => void opened.push(["reveal", p]) };
+    const hooks: Partial<DesktopHooks> = { openPath: (p) => void opened.push(["open", p]), showItemInFolder: (p) => void opened.push(["reveal", p]), openFileInBrowser: async (p) => void opened.push(["browser", p]) };
     app.desktop = hooks as DesktopHooks;
     try {
       const d = (await (await fetch(`${base}/bots/default/chat`)).json()) as any;
@@ -276,6 +356,9 @@ describe("接口与历史", () => {
       expect(await (await post("open", path.join(ws, "out", "cover.png"))).json()).toEqual({ ok: true });
       expect(await (await post("open", path.join(ws, "out", "run.bat"))).json()).toEqual({ ok: true, revealed: true });
       expect(await (await post("reveal", "out/page.html")).json()).toEqual({ ok: true, revealed: true });
+      // 「在浏览器中打开」只给网页；别的文件按「用系统程序打开」处理（会运行的照样只在文件夹中显示）
+      expect(await (await post("browser", "out/page.html")).json()).toEqual({ ok: true });
+      expect(await (await post("browser", path.join(ws, "out", "run.bat"))).json()).toEqual({ ok: true, revealed: true });
       for (const p of [path.join(dataDir, "anymodel.db"), "../../anymodel.db"]) {
         const r = await post("open", p);
         expect(r.status).toBe(404);
@@ -285,6 +368,8 @@ describe("接口与历史", () => {
         ["open", path.join(ws, "out", "cover.png")],
         ["reveal", path.join(ws, "out", "run.bat")],
         ["reveal", path.join(ws, "out", "page.html")],
+        ["browser", path.join(ws, "out", "page.html")],
+        ["reveal", path.join(ws, "out", "run.bat")],
       ]);
     } finally {
       app.desktop = undefined;

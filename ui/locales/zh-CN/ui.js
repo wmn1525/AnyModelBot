@@ -28,4 +28,7 @@ export default {
     answered: "已回答",
     denied: "已拒绝",
   },
+  /** 行最右侧「⋯」的悬停提示和读屏名称（MoreButton） */
+  more: "更多",
+  moreFor: "「{name}」的更多操作",
 };

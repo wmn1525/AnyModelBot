@@ -9,7 +9,7 @@ import type { BlockedStep, MySkillApp, MySkillUse } from "./mine.js";
 import type { SkillRecords } from "./drafts.js";
 
 /** 不算「做了事」的工具：存技能、装技能、加载技能本身，记忆，提问，交付文件，查连接和查工具 */
-const NOT_WORK = new Set(["save_skill", "install_skill", "skill", "remember", "forget", "recall", "ask_user_question", "present", "connected_accounts", "app_tools", "app_tool_schema", "app_connect", "task_list", "rule_create", "rule_update", "background_pause", "media_models", "media_docs"]);
+const NOT_WORK = new Set(["save_skill", "install_skill", "skill", "remember", "forget", "recall", "ask_user_question", "present", "connected_accounts", "app_tools", "app_tool_schema", "app_connect", "task_list", "rule_create", "rule_update", "routine_library", "background_pause", "media_models", "media_docs"]);
 /** 宿主自己生成的技能：不算「用到的技能」 */
 const BUILTIN_SKILLS = new Set(["media", "computer-use", "amb-app"]);
 

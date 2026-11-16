@@ -114,18 +114,159 @@ export default {
   "noTasks": "Nenhuma tarefa ou regra ainda",
   "preview": {
     "openPanel": "Prévia no painel lateral",
-    "empty": "Clique em um arquivo ou link de uma mensagem, ou digite o endereço de um site.",
+    "empty": "Clique em um arquivo ou link no chat para abri-lo aqui.",
     "address": "Endereço do site",
-    "invalidUrl": "Digite um endereço HTTP ou HTTPS externo válido.",
-    "opened": "Itens abertos",
-    "closeFile": "Fechar prévia atual",
+    "invalidUrl": "Digite um endereço válido (http ou https).",
     "download": "Baixar",
-    "openSystem": "Abrir com aplicativo do sistema",
-    "websiteHint": "Alguns sites bloqueiam a incorporação ou exigem login. Se a página não aparecer, use Abrir ↗ para vê-la no navegador.",
-    "loadFailed": "Não foi possível carregar a prévia. Atualize ou abra fora do aplicativo.",
-    "slow": "O carregamento está demorando. Você pode atualizar ou abrir fora do aplicativo.",
-    "unsupported": "Este formato ainda não tem prévia. Baixe ou abra com um aplicativo do sistema.",
-    "tooLarge": "O arquivo é grande demais para a prévia. Baixe ou abra com um aplicativo do sistema."
+    "downloadFull": "Baixar arquivo completo",
+    "openSystem": "Abrir com o app padrão",
+    "openBrowser": "Abrir no navegador",
+    "openBrowserExt": "Abrir no navegador ↗",
+    "openNewTab": "Abrir em nova aba ↗",
+    "revealMac": "Mostrar no Finder",
+    "revealWin": "Mostrar no Explorador de Arquivos",
+    "saveAs": "Salvar como…",
+    "websiteHint": "Alguns sites não podem ser exibidos aqui ou exigem login. Se não carregar, escolha “Abrir no navegador ↗” no menu ⋯.",
+    "slow": "Ainda carregando… está demorando um pouco",
+    "reload": "Recarregar",
+    "failed": "Não foi possível abrir este arquivo",
+    "failedDesc": "Talvez ele esteja sendo usado por outro app.",
+    "gone": "{name} não foi encontrado",
+    "goneDesc": "Ele pode ter sido excluído ou movido.",
+    "unsupported": "Ainda não é possível visualizar este tipo de arquivo aqui",
+    "unsupportedDesc": "Tente abri-lo com outro app do seu computador.",
+    "emptyFile": "Este arquivo está vazio",
+    "emptyFileDesc": "Ele vai aparecer aqui quando o bot escrever nele.",
+    "truncated": "Mostrando os primeiros 2 MB de {size}.",
+    "tooLarge": "Este arquivo é grande demais para visualizar aqui",
+    "tooLargeDesc": "{name} tem {size}. A visualização de páginas web vai até 32 MB.",
+    "htmlSafe": "Modo seguro: os scripts podem rodar, mas esta página não pode buscar dados da internet, enviar formulários nem acessar suas contas",
+    "webPage": "Página web",
+    "lines": {
+      "one": "{n} linha",
+      "many": "{n} linhas",
+      "other": "{n} linhas"
+    },
+    "pages": {
+      "one": "{n} página",
+      "many": "{n} páginas",
+      "other": "{n} páginas"
+    },
+    "firstPart": "Primeiros 2 MB",
+    "noColor": "Arquivo grande, sem destaque de sintaxe",
+    "justUpdated": "Atualizado agora",
+    "newChanges": "Há alterações · Atualizar",
+    "updateFailed": "Falha ao atualizar · Tentar de novo",
+    "updated": "Atualizado para a versão mais recente",
+    "more": "Mais ações",
+    "viewLabel": "Visualização",
+    "view": {
+      "markdown": {
+        "preview": "Visualizar",
+        "source": "Código-fonte"
+      },
+      "html": {
+        "preview": "Visualizar",
+        "source": "Código"
+      },
+      "csv": {
+        "table": "Tabela",
+        "source": "Texto bruto"
+      },
+      "json": {
+        "formatted": "Formatado",
+        "source": "Texto bruto"
+      }
+    },
+    "wrap": "Quebrar linhas",
+    "encoding": "Codificação de texto",
+    "encodingAuto": "Detectar automaticamente ({encoding})",
+    "copyMarkdown": "Copiar Markdown",
+    "copyAll": "Copiar tudo",
+    "copyJson": "Copiar JSON",
+    "copyCsv": "Copiar como CSV",
+    "copySource": "Copiar código-fonte",
+    "copyImage": "Copiar imagem",
+    "copyUrl": "Copiar URL",
+    "copyImageUrl": "Copiar endereço da imagem",
+    "copyPath": "Copiar caminho do arquivo",
+    "shownPart": " (parte exibida)",
+    "copied": "Copiado",
+    "pathCopied": "Caminho copiado",
+    "copyFailed": "Não foi possível copiar. Tente de novo.",
+    "savedTo": "Salvo em “{folder}”",
+    "saveFailed": "Não foi possível salvar. Tente outro local.",
+    "downloading": "Baixando {name}",
+    "scriptRevealedMac": "Por segurança, scripts não são executados diretamente. Mostrado no Finder.",
+    "scriptRevealedWin": "Por segurança, scripts não são executados diretamente. Mostrado no Explorador de Arquivos.",
+    "scriptRevealed": "Por segurança, scripts não são executados diretamente. Mostrado na pasta.",
+    "zoom": "Zoom",
+    "zoomIn": "Ampliar",
+    "zoomOut": "Reduzir",
+    "zoomReset": "Voltar para 100%",
+    "close": "Fechar",
+    "closeTab": "Fechar aba",
+    "closeNamed": "Fechar {name}",
+    "closeOthers": "Fechar outras abas",
+    "closeAll": "Fechar todas",
+    "tabsLabel": "Arquivos abertos",
+    "expand": "Expandir",
+    "exitExpand": "Sair da visualização expandida",
+    "expandHint": "Pressione Esc ou clique de novo para sair",
+    "outline": "Sumário",
+    "yesterday": "Ontem",
+    "files": {
+      "title": "Arquivos deste chat",
+      "open": "Abrir outros arquivos deste chat",
+      "gone": "Não está mais disponível",
+      "empty": "Ainda não há arquivos neste chat",
+      "viewAll": {
+        "one": "Ver {n}",
+        "many": "Ver todos os {n}",
+        "other": "Ver todos os {n}"
+      }
+    },
+    "image": {
+      "fit": "Ajustar",
+      "zoomIn": "Ampliar",
+      "zoomOut": "Reduzir",
+      "pan": "Arraste para mover quando ampliada"
+    },
+    "json": {
+      "expandAll": "Expandir tudo",
+      "collapseAll": "Recolher tudo",
+      "items": {
+        "one": "{n} item",
+        "many": "{n} itens",
+        "other": "{n} itens"
+      },
+      "invalid": "Não é um JSON válido. Há um erro perto da linha {line}.",
+      "expand": "Expandir",
+      "collapse": "Recolher"
+    },
+    "csv": {
+      "search": "Pesquisar",
+      "header": "A primeira linha é o cabeçalho",
+      "column": "Coluna {n}",
+      "rows": {
+        "one": "{n} linha",
+        "many": "{n} linhas",
+        "other": "{n} linhas"
+      },
+      "columns": {
+        "one": "{n} coluna",
+        "many": "{n} colunas",
+        "other": "{n} colunas"
+      },
+      "matches": "{hits} / {total} linhas",
+      "noResults": "Nenhum resultado para “{query}”",
+      "headerOnly": "Só há cabeçalho, sem linhas de dados",
+      "parseFailed": "Não foi possível ler como tabela. Mostrando o texto bruto.",
+      "overRows": "Mostrando as primeiras 50.000 de {total} linhas. Abra com o app padrão para ver tudo.",
+      "overRowsWeb": "Mostrando as primeiras 50.000 de {total} linhas. Baixe o arquivo completo para ver tudo.",
+      "over10mb": "Este arquivo tem mais de 10 MB. Mostrando as primeiras {n} linhas. Abra com o app padrão para ver tudo.",
+      "over10mbWeb": "Este arquivo tem mais de 10 MB. Mostrando as primeiras {n} linhas. Baixe o arquivo completo para ver tudo."
+    }
   },
   "expandWorkspace": "Expandir espaço",
   "restoreWorkspace": "Voltar ao chat"

@@ -92,9 +92,6 @@ export default {
     "name": "長期メモリ",
     "review": "各ターンの終了後に自動整理",
     "reviewLabel": "メモリの自動整理",
-    "team": "チームメモリへの書き込みを許可",
-    "teamSub": "すべてのボットで共有します",
-    "teamLabel": "チームメモリ"
   },
   "context": {
     "head": "コンテキスト",

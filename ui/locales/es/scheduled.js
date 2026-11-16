@@ -1,4 +1,6 @@
 export default {
+  "yearly": "Anual",
+  "beforeDays": {"one": "{count} día antes", "many": "{count} días antes", "other": "{count} días antes"},
   "emptyTitle": "Aún no hay reglas",
   "emptyNeedsTitle": "Nada requiere atención",
   "emptyNeedsHint": "Aquí aparecerán las reglas que necesiten tu atención.",

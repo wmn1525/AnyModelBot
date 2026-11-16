@@ -3,6 +3,7 @@ export default {
   "h2dim": "Respuestas directas.",
   "ask": "¿Tienes una pregunta? Ábrela.",
   "more": "¿No la encontraste? Consulta la documentación",
+  "community": "O pregunta en la comunidad",
   "items": [
     {
       "q": "¿Cómo agrego habilidades a un bot?",

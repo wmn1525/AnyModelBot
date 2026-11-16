@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import { html, Icon, MenuButton, Spinner, tokenPx } from "./ui.js";
+import { html, Icon, MenuButton, Spinner } from "./ui.js";
 import { api } from "../lib/api.js";
 import { t } from "../lib/i18n.js";
 import { ms } from "../design/motion.js";
@@ -46,7 +46,7 @@ export function OfficialStart({ onConnected, onBusy, onFace, desktop }) {
   const provider = list?.find((p) => p.id === cur);
   return html`<div class="official-start">${err && html`<div class="err-text" role="alert">${err}</div>`}${!list && !err && html`<${Spinner} />`}
     ${provider && html`<div class="set-field"><span class="k">${t("welcome.provider")}</span>
-      <${MenuButton} label=${t("welcome.provider")} value=${cur} disabled=${busy} width=${Math.min(tokenPx("--onboard-col-w", 400), window.innerWidth - 2 * tokenPx("--space-6", 24))} align="left" onChange=${setCur}
+      <${MenuButton} block label=${t("welcome.provider")} title=${officialName(provider)} value=${cur} disabled=${busy} onChange=${setCur}
         options=${list.map((p) => [p.id, html`<span class="provider-option"><span>${officialName(p)}</span>${p.connected && html`<small>${t("welcome.keyConnected", { last4: p.keyTail })}</small>`}</span>`])} /></div>
       <${OfficialKeyForm} provider=${provider} desktop=${desktop} onFace=${onFace} onBusy=${(v) => { setBusy(v); onBusy?.(v); }} onConnected=${onConnected} />`}</div>`;
 }

@@ -4,10 +4,12 @@
 // 背景全部静止：顶上一束白光 → 一层星空（深色小星点 / 浅色四角形细小闪光，标题背后不放）→ 底边一道扁扁的地平线 → 颗粒（样式在 sections.css）。
 // 正中：标题 → 一句话 → 下载 / Docker → 开源说明；六个机器人站在地平线后面，只探出上半个头。
 // 指针移到下载按钮上，六个机器人一起看过去、挨个蹦一下；点下载就一起庆祝（scripts/sections.ts）。
+// 开源说明那一行末尾接社群的小圆钮（Community.astro 的 icons），平时灰，指到才上色。这一行里有列表，所以是 div 不是 p。
 // 全卡只有下载按钮用品牌色。桌面上横幅滚进来时像百叶窗一样一条条拉开（.shutter，进度由 scripts/scroll-fx.ts 写进 --p）。
 import BotFace from "../components/BotFace.astro";
 import DownloadButton from "../components/DownloadButton.astro";
 import Icon from "../components/Icon.astro";
+import Community from "../components/Community.astro";
 import { dict, href, type Lang } from "../i18n";
 import { GITHUB_URL } from "../lib/site";
 import { CHAR_KEYS } from "../lib/bots";
@@ -53,7 +55,7 @@ const sky = (() => {
           <DownloadButton lang={lang} placement="final" id="cta-final" />
           <a class="final__docker" href={`${href(lang, "/download")}#docker`} data-track="cta_click" data-track-location="final-docker">{t.home.final.docker}</a>
         </div>
-        <p class="final__oss small"><span class="badge badge--neutral">MIT</span> {t.home.final.oss} · <a href={GITHUB_URL} target="_blank" rel="noopener" data-track="github_click" data-track-location="final"><Icon name="branch" size={14} />{t.home.final.ossRepo}</a> · <a href={href(lang, "/licenses")} data-track="licenses_click">{t.home.final.ossLicenses}</a></p>
+        <div class="final__oss small"><span class="badge badge--neutral">MIT</span> {t.home.final.oss} · <a href={GITHUB_URL} target="_blank" rel="noopener" data-track="github_click" data-track-location="final"><Icon name="branch" size={14} />{t.home.final.ossRepo}</a> · <a href={href(lang, "/licenses")} data-track="licenses_click">{t.home.final.ossLicenses}</a> · <span class="final__community">{t.footer.community.title}<Community lang={lang} location="final" variant="icons" /></span></div>
       </div>
       <div class="final__bots" aria-hidden="true" data-doze>{CHAR_KEYS.map((k, i) => <span class="final__bot" style={`--k:${i}`}><BotFace char={k} size={72} lively pokeable /></span>)}</div>
       <div class="final__horizon" aria-hidden="true"></div>

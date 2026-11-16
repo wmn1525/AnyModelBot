@@ -116,6 +116,17 @@
   --red-wash: color-mix(in srgb, var(--red-600) 8%, transparent);     /* 出错的提示行：只铺一层淡红，字用 --fg，图标用 --red */
   --amber-wash: color-mix(in srgb, var(--amber-700) 8%, transparent); /* 需要注意的提示行 */
 
+  /* —— 代码着色（右侧预览的代码视图、Markdown 代码块）与图片的透明底 —— */
+  --syn-keyword: #8250df;
+  --syn-string: #1a7f37;
+  --syn-number: #953800;
+  --syn-comment: #6e7781;
+  --syn-title: #0550ae;
+  --syn-tag: #cf222e;
+  --syn-attr: #953800;
+  --checker-a: #f4f4f5;
+  --checker-b: #e4e4e7;
+
   /* —— 投影：只有浮在内容上的东西才有，而且很淡。窗口、面板、组、选中项都没有（见 README「容器与层次」） —— */
   --drop-float: 0 1px 3px rgba(0, 0, 0, .05);     /* 常驻的浮件：输入框、回到底部、提示胶囊 */
   --drop-pop: 0 4px 16px rgba(0, 0, 0, .08);      /* 临时弹出：菜单、引导卡片、抽屉 */
@@ -140,6 +151,17 @@
   --user-avatar-tone-10: hsl(257 86% 69%);
   --user-avatar-tone-11: hsl(286 82% 67%);
   --user-avatar-tone-12: hsl(330 90% 67%);
+
+  /* —— 技能库作者的首字母头像（「应用与技能」› 技能）：白字彩色底，按作者固定一种；8 种互相分得开的沉稳色，白字对比够 —— */
+  --skill-avatar-fg: #ffffff;
+  --skill-tone-1: #5b6f8f;
+  --skill-tone-2: #6a8160;
+  --skill-tone-3: #8a6474;
+  --skill-tone-4: #4c7d7e;
+  --skill-tone-5: #8a7140;
+  --skill-tone-6: #6d5f91;
+  --skill-tone-7: #93604b;
+  --skill-tone-8: #5f7449;
 
 }
 /* 由其他语义 token 推导的值：每个主题作用域都要重新计算，否则子树会继承外层主题算好的结果 */
@@ -353,6 +375,16 @@
   --red-wash: color-mix(in srgb, var(--red-300) 9%, transparent);
   --amber-wash: color-mix(in srgb, var(--amber-300) 8%, transparent);
 
+  --syn-keyword: #d2a8ff;
+  --syn-string: #7ee787;
+  --syn-number: #ffa657;
+  --syn-comment: #8b949e;
+  --syn-title: #79c0ff;
+  --syn-tag: #ff7b72;
+  --syn-attr: #ffa657;
+  --checker-a: #3a3a3c;
+  --checker-b: #2c2c2e;
+
   --drop-float: 0 1px 3px rgba(0, 0, 0, .25);
   --drop-pop: 0 4px 16px rgba(0, 0, 0, .35);
   --drop-modal: 0 12px 40px rgba(0, 0, 0, .5);
@@ -361,6 +393,17 @@
   --avatar-aura: 52%;
   --avatar-shadow: rgba(0, 0, 0, .5);
   --user-avatar-fg: #fcfcfe;
+
+  /* 技能库作者的首字母头像：深色底上压暗一档，白字仍清楚 */
+  --skill-avatar-fg: #f4f5f7;
+  --skill-tone-1: #4a5c78;
+  --skill-tone-2: #566b4d;
+  --skill-tone-3: #73525f;
+  --skill-tone-4: #3d6869;
+  --skill-tone-5: #725d33;
+  --skill-tone-6: #5a4e79;
+  --skill-tone-7: #7b4f3d;
+  --skill-tone-8: #4e603b;
 }
 
 /* 系统开了"降低透明度"时（data-glass="off"，prefers-reduced-transparency）：

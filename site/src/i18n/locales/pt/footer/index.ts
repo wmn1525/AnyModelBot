@@ -34,5 +34,10 @@ export default {
   "featuredMore": "Mostrar todos os {count}",
   "featuredLess": "Mostrar menos",
   "fieldHint": "Clique para mandar mensagem a todos",
-  "fieldModel": "Cérebro"
+  "fieldModel": "Cérebro",
+  "community": {
+    "title": "Comunidade",
+    "scan": "Escaneie com o QQ para entrar",
+    "number": "Número do grupo"
+  }
 };

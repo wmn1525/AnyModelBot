@@ -1,7 +1,7 @@
 // 装好的技能、连上的应用在对话里怎么用：加号菜单「技能与应用」、过程区「正在使用 / 已使用」、设置列表和成功提示里的「试试这样说」共用这一套——
 // 机器人的技能清单（显示名、简介、示例和生效状态由服务端算好，src/skills/display.ts）、应用的名字和示例、往输入框里填一句话。
 import { useEffect } from "preact/hooks";
-import { createStore, failed, toast, useStore } from "./store.js";
+import { createStore, failed, successToast, toast, useStore } from "./store.js";
 import { api } from "./api.js";
 import { fill } from "./guide.js";
 import { appDisplayName, appsStore, loadApps } from "./apps.js";
@@ -75,17 +75,22 @@ export function appExample(view, name, readonly = false) {
 }
 
 // —— 过程区 ——
-/** 进行中这一轮用到的技能和应用（步骤上有服务端标好的 use；同一项只算一次，用成过一次就算用上了），和服务端 usedSummary 一致 */
+/**
+ * 进行中这一轮用到的技能和应用（步骤上有服务端标好的 use），和服务端 usedSummary 一致：技能同一项只算一次；
+ * 应用按「应用 + 工具」算（同一应用的不同工具各一行，同一工具多次调用只算一行）；用成过一次就算用上了
+ */
 export function usedFromSteps(steps) {
   const out = [];
   for (const s of steps || []) {
     const use = s.kind === "tool" && s.use;
     if (!use) continue;
     const name = use.kind === "skill" ? use.name : use.app;
+    const tool = use.kind === "app" ? use.tool || undefined : undefined;
     const reason = s.status === "error" ? use.reason || "failed" : undefined;
-    const prev = out.find((x) => x.kind === use.kind && x.name === name);
+    const prev = out.find((x) => x.kind === use.kind && x.name === name && x.tool === tool);
     if (!prev) {
-      out.push({ kind: use.kind, name, status: s.status, ...(reason ? { reason } : {}) });
+      const toolTitle = use.kind === "app" ? use.toolTitle : undefined;
+      out.push({ kind: use.kind, name, ...(tool ? { tool } : {}), ...(toolTitle ? { toolTitle } : {}), status: s.status, ...(reason ? { reason } : {}) });
       continue;
     }
     if (prev.status === "ok") continue;
@@ -97,19 +102,27 @@ export function usedFromSteps(steps) {
   return out;
 }
 
-/** 一项的名字（技能按显示名、应用按应用名）；不显示的技能返回空串 */
-export const usedName = (u, skills) => (u.kind === "skill" ? skillLabel(u.name, skills) : appLabelOf(u.name));
+/**
+ * 一项的名字：技能按显示名；应用写成「{应用} · {工具}」，工具优先用应用给的显示名称，没有时用工具名原文
+ * （没有工具名的旧记录只写应用名）。不显示的技能返回空串
+ */
+export function usedName(u, skills) {
+  if (u.kind === "skill") return skillLabel(u.name, skills);
+  const app = appLabelOf(u.name);
+  const tool = u.toolTitle || u.tool;
+  return tool ? t("chat.use.appTool", { app, tool }) : app;
+}
 
-/** 没用成的原因（一句话，不露出内部报错） */
+/** 没用成的原因（一句话，不露出内部报错）。name：应用名（不带工具名，「请检查「Notion」的连接」） */
 export function usedReason(u, name) {
   if (u.reason === "loading") return t("chat.use.reason.loading");
-  if (u.reason === "connection") return t("chat.use.reason.connection", { app: name });
+  if (u.reason === "connection") return t("chat.use.reason.connection", { app: u.kind === "app" && u.name ? appLabelOf(u.name) : name });
   if (u.reason === "denied") return t("chat.use.reason.denied");
   if (u.reason === "readonly") return t("chat.use.reason.readonly");
   return t("chat.use.reason.failed");
 }
 
-/** 进行中的一行：「正在使用技能 · 名字」「正在使用 应用」；没用成的「没能使用…。原因」 */
+/** 进行中的一行：「正在使用技能 · 名字」「正在使用 {应用} · {工具}」；没用成的「没能使用…。原因」（name 是 usedName 给的名字） */
 export function usedLine(u, name) {
   if (u.status === "error") return t(u.kind === "skill" ? "chat.use.failedSkill" : "chat.use.failedApp", { name, app: name, reason: usedReason(u, name) });
   return t(u.kind === "skill" ? "chat.use.usingSkill" : "chat.use.usingApp", { name, app: name });
@@ -176,6 +189,31 @@ export function fillChat(botId, text, select) {
   const here = [`#/chat/${id}`, `#/app/${id}`].some((r) => location.hash === r || location.hash.startsWith(`${r}/`));
   if (!here) location.hash = `#/chat/${id}`;
   fill.set({ text, target: botId, at: Date.now(), insert: true, select });
+}
+
+/** 一段描述的第一句（到第一个句号、问号、感叹号为止），最长 120 字 */
+function firstSentence(text) {
+  const s = String(text || "").replace(/\s+/g, " ").trim();
+  if (!s) return "";
+  const m = /^.+?(?:[。！？!?]|\.(?=\s|$))/u.exec(s); // i18n-ignore: sentence-ending punctuation in any language
+  return (m ? m[0] : s).slice(0, 120).trim();
+}
+
+/** 装好技能后成功提示里的示例：技能库里有触发方式的用那一句；库外或 ZIP 导入的技能用描述第一句，没有则「用{名称}帮我……」 */
+export function installedExample(skill, name) {
+  if (skill?.library && skill.example) return skill.example;
+  return firstSentence(skill?.description) || t("chat.use.appExample", { app: name });
+}
+
+/** 现在是不是在应用内的群聊里（群聊没有单个机器人的输入框：成功提示只给「复制」） */
+export const inGroupChat = () => location.hash.startsWith("#/group/");
+
+/**
+ * 装好技能、分配好应用后的成功提示：结果句 + 生效说法（text），下一行「试试这样说：{示例}」，
+ * 按钮「填入输入框」（写进这个机器人的输入框并聚焦；群聊里不给）和「复制」
+ */
+export function readyToast(text, botId, example) {
+  successToast({ text, example, onFill: inGroupChat() ? undefined : () => fillChat(botId, example), onCopy: () => copyExample(example) });
 }
 
 /** 复制一句示例：成功、失败都给一句短提示 */

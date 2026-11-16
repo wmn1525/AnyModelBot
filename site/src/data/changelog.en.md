@@ -4,6 +4,59 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/wmn1525/AnyModelBot/releases).
 
+## 0.1.40 - 2026-11-15
+
+### New
+
+- **Task library:** the Scheduled page adds 20 ready-made tasks for news, work, learning, daily life and finance. Pick one, fill in a few fields, choose a bot and destination, then turn it on; you can also ask a bot to create a library rule in chat. Check tasks can be tried once first, with results shown only in the trial dialog and run log, without sending them to chat channels. The computer and app must be running.
+- **Richer file previews:** code gains line numbers, syntax highlighting and wrapping; JSON supports formatting and folding; CSV/TSV supports tables, sorting, search and encoding selection. Markdown supports images, task lists, an outline and source view; images support zoom and pan; HTML switches between preview and source.
+
+### Improvements and fixes
+
+- **Preview controls and refresh:** tabs have file-type icons and context menus, and "+" lists files delivered in the chat. Expand the panel to fill the app, keep view, zoom and wrapping preferences, and refresh when files change. Desktop supports Save as, Show in folder and opening HTML in a browser.
+- **Rule schedules and results:** add yearly reminders and reminders a few days before monthly or yearly dates. Library checks can send multi-line briefs, trial costs count toward monthly usage, and common cron schedules are easier to read.
+- **Website:** the community text menu opens on hover or keyboard focus, the home feature section is simpler, and the changelog shows only published versions.
+
+- Includes upstream 0.1.37–0.1.40: About me, bot collaboration, the task library, richer file previews and fixes; preserves Okinto sign-in, model groups, balances and seven-language branding checks.
+
+## 0.1.39 - 2026-11-15
+
+### New
+
+- **Know what to say right after setup:** after you import a skill ZIP or assign an app to a bot under **Skills & apps**, the confirmation adds a **Try saying** example with **Insert into the input** and **Copy**.
+
+### Improvements and fixes
+
+- **New conversations start right away:** the new-conversation button, **New conversation** in the + menu and typing /new switch to a fresh conversation at once and leave a "New conversation started" line in the chat (still there after a reload or restart). No more "/new" bubble stuck on "Thinking". Where you left off is written up as a handoff note in the background, and the first message of the new conversation waits for it for at most 8 seconds. The button is grayed out while a reply is running. /new in chat apps replies right away too.
+- **Your name and picture in the account area:** after you sign in to Okinto, the bottom-left corner and the account menu show your nickname and profile picture (or your own username, then your email; the first letter of your name when there is no picture) instead of "Okinto account". After a restart, your last name shows right away.
+- **The process shows which tool was used:** each app tool gets its own line, such as "Using Notion · Search pages", folding into "Used: Notion · Search pages, Notion · Read page" when the reply ends.
+- **A clearer skills list:** **Apps & skills › Skills** now shows cards. Author pictures start as initials, fade in once loaded and are kept on your device, so they show at once next time. **GitHub ↗** and **Copy install prompt** are always visible and no longer squeeze the title.
+- **Settings make clickable things obvious:** actions in Settings and bot settings are small pill buttons, with Delete, Remove and Sign out in red. A row with a single "View" is clickable as a whole, and a row has at most two buttons, with the rest under "⋯".
+- **Pickers and small fixes:** the **Provider** picker on the **Use your own API key** page and the switcher in Preview keep their arrow at the right edge and open from anywhere on the row. A skill that is set up but not active yet says "Ready from your next message". For built-in bots you haven't used yet, the sidebar "⋯" no longer covers the "new" dot.
+
+## 0.1.38 - 2026-11-15
+
+### New
+
+- **Switches back to the real model:** a model you picked earlier that was really "auto/…" (the global default, a bot's default or a model switched in a chat) changes to the matching real model at startup, or back to the default if there is none.
+
+### Improvements and fixes
+
+- **No more "auto/…" models in the model list:** when a model was offered by more than one source (for example a bot with its own budget, or an official API key added alongside Okinto), the list gained an entry that looked like the original but was really "auto/model-name", and picking it made requests fail with an unknown model. It is no longer listed or sent.
+
+## 0.1.37 - 2026-11-15
+
+### New
+
+- **About me:** team memory is now About me, for things about you that all your bots share. Say it once in any chat (like "I'm Melody") and every bot knows; a one-line note under the reply lets you undo it. Bots ask before saving an address, phone number or email, never change back lines you edited yourself, and don't add back lines you deleted. View and edit it in Settings › About me, where every change from the last 30 days can be undone. Your old team memory moves over automatically.
+- **Bots can message each other:** in the app, tell a bot "hand this to Product Assistant" and it sends the task, background and files to that bot. The other bot works in the background with its own model, permissions and budget, asks for your approval in the same chat under its own name, and replies when done. The first bot checks the result, asks for a redo if needed, and then tells you. Click the gray line in the chat to see their conversation. Requires signing in to Okinto, with both bots on Okinto models.
+- **Bot collaboration settings:** turn it off or set limits for spend, time, daily requests and redos per request in Settings › Bot collaboration, and browse the conversations between bots and what they cost.
+
+### Improvements and fixes
+
+- **Bot settings and the Memory tab:** the per-bot "Allow writing to team memory" switch is replaced by an About me link. The Memory tab shows how many About me lines there are, where you can view or delete them.
+- **Memory review:** facts about you no longer go into a single bot's memory; About me wins when they conflict.
+
 ## 0.1.36 - 2026-11-15
 
 ### New

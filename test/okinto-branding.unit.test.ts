@@ -25,7 +25,9 @@ describe("Okinto display branding", () => {
   });
   it("uses fork update links, Okinto account labels and media descriptions", () => {
     const sidebar = fs.readFileSync(path.join(root, "ui/screens/sidebar.js"), "utf8");
-    expect(sidebar).toContain('signedIn ? "Okinto"');
+    expect(sidebar).toContain("accountIdentity");
+    expect(fs.readFileSync(path.join(root, "ui/components/user-avatar.js"), "utf8")).toContain('t("welcome.accountFallback")');
+    expect(fs.readFileSync(path.join(root, "ui/locales/en/welcome.js"), "utf8")).toContain("Okinto account");
     expect(sidebar).not.toContain('"Modelflare"');
     for (const file of ["ui/screens/sidebar.js", "ui/components/whats-new.js"]) {
       const text = fs.readFileSync(path.join(root, file), "utf8");

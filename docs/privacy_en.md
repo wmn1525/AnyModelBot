@@ -23,7 +23,7 @@ This document explains what AnyModelBot stores where, what leaves your device, a
 | Conversations and sessions | `anymodel.db` (SQLite) | The part a reply needs | Sent as model context through Modelflare to the provider you chose |
 | Imported skills | `skills/<bot ID>/`; enabled copies in `dsh/<bot ID>/skills/` | Names, descriptions and content loaded during use do | Context for the selected model; import uploads only to your AnyModelBot instance and does not contact GitHub |
 | Chat search index | `message_search` and its full-text index in `anymodel.db` | No | Searches saved messages inside the instance without model calls |
-| Memory | `memory/` (Markdown: `bots/`, `groups/`, `team/`) | When it is used | Included as context in model requests; anything that looks like a secret is filtered before it is written |
+| Memory | `memory/` (Markdown: `bots/`, `groups/`; About me: `about-me.json`, with 30 days of change history; `team/` is the team memory from before the upgrade, moved into About me and no longer read) | When it is used | Included as context in model requests; anything that looks like a secret is filtered before it is written, ID and bank card numbers are never saved, and addresses, phone numbers and emails go into About me only after you confirm |
 | Bot workspace files | `workspaces/<bot>/` (including received files in `inbox/` and generated images and video in `media/`) | When a bot reads them and sends them to a model | Same as above |
 | Modelflare sign-in credential | `modelflare-account.json` (mode 600) | Only to modelflare.dev when refreshing tokens | Modelflare |
 | API key | The gateway's isolated config in `magpie/config/` | As authentication on every model request to Modelflare | Modelflare |

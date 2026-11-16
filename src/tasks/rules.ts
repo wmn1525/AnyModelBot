@@ -25,7 +25,7 @@ export const RULE_RUN_CAP_MS = 15 * 60_000;
  * 规则会话去掉的工具（只去掉注册了的；插件按 tools.restrict 的规矩过滤）。观察：能改变什么的都去掉，记忆只留 recall，已授权账号只留读取；
  * 执行：上限是可写工作区（决定 12），电脑操作和生图、生视频不给（设计第 7 节：除非规则上开了，3d 不做这个开关）。
  */
-const COMMON_DENY = ["present", "ask_user_question", "app_connect", "task_start", "task_message", "task_list", "rule_create", "rule_update", "background_pause", "generate_image", "generate_video", "media_models", "media_docs"];
+const COMMON_DENY = ["present", "ask_user_question", "app_connect", "task_start", "task_message", "task_list", "rule_create", "rule_update", "routine_library", "background_pause", "message_bot", "bot_request", "generate_image", "generate_video", "media_models", "media_docs"];
 export const RULE_DENY: Readonly<Record<"observe" | "act", string[]>> = {
   observe: [...COMMON_DENY, "remember", "forget", "notion_create_page", "notion_update_page"],
   act: COMMON_DENY,
@@ -104,6 +104,10 @@ export interface RuleView {
   skill?: { name: string; title: string; exists: boolean };
   /** 因为技能暂停时那句原因（「需要处理」里显示） */
   pausedLine?: string;
+  /** 检查的结果样式：一句话 / 简报（任务库） */
+  resultStyle?: "line" | "brief";
+  /** 从任务库建的：任务名按当前语言；任务下架了是 removed */
+  source?: { id: string; version: number; params: Record<string, unknown>; title?: string; removed?: boolean };
 }
 
 export function whenOf(rule: Pick<RuleRow, "trigger">, withZone = false, l: Lang = currentLang()): string {
@@ -129,6 +133,8 @@ export const RUN_ERROR = {
   runBudget: "run_budget",
   monthBudget: "month_budget",
   reserve: "reserve",
+  /** 任务库的试跑被应用重启打断（不自动重跑） */
+  trialInterrupted: "trial_interrupted",
 } as const;
 
 /** 原因 → 词条：规则自己的，和任务共用的那几种（tasks.*，和任务失败时的说法一样） */
@@ -149,6 +155,7 @@ const WHY: Record<string, MessageKey> = {
   run_budget: "rules.whyRunBudget",
   month_budget: "rules.whyMonthBudget",
   reserve: "rules.whyReserve",
+  trial_interrupted: "rules.whyTrialInterrupted",
 };
 
 /** 存下来的原因给人看：认得的翻成当前语言，其余（模型自己说的）原样 */
@@ -175,6 +182,8 @@ export function permissionText(p: string, l: Lang = currentLang()): string {
 
 const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 const oneLine = (s: string) => s.replace(/\s+/g, " ").trim();
+/** 简报（Markdown，任务库）放进一行给人看：链接只留文字，去掉强调、标题和列表记号 */
+const plain = (s: string) => s.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\*\*|__|`/g, "").replace(/^[ \t]{0,3}(#{1,6}[ \t]+|[-*+][ \t]+|>[ \t]?)/gm, "");
 
 /** 出站队列里那一条的送达状态（合进摘要的看那一条）→ 已发送 / 待发送 / 未送达 */
 function sentKey(row: OutboxRow | undefined): "rules.sent" | "rules.unsent" | "rules.pending" {
@@ -192,7 +201,7 @@ export function runLine(run: RunRow, kind: RuleRow["kind"], carrier?: OutboxRow,
   if (run.state === "queued") return tl(l, "tasks.stageQueued");
   if (run.state !== "ended") return tl(l, "rules.running");
   const r = run.report;
-  const msg = oneLine(r?.message ?? "");
+  const msg = oneLine(plain(r?.message ?? ""));
   const note = oneLine(r?.summary.split("\n")[0] ?? "");
   switch (run.outcome) {
     case "skipped":
@@ -237,7 +246,11 @@ export interface RuleRunView {
   summary: string;
   message: string;
   would: string;
+  /** 需要批准、被跳过的那几步（观察、试跑时）：模型写的原样 */
+  approvals: string[];
   error: string;
+  /** 存下来的原因代码（RUN_ERROR）：界面按它给试跑超时、被打断换说法 */
+  errorCode: string;
   version: number;
   /** 那次的权限：只读 / 可写工作区 */
   permission: string;

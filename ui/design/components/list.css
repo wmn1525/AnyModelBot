@@ -39,6 +39,12 @@
 .row.clickable:hover { background: var(--pill); }
 .row.clickable:active { background: var(--pill-hover); }
 .row.flash { animation: flash var(--dur-flash) var(--ease-out); }
+/* 整行可点（GoRow：整行是一个按钮或链接）：右侧浅灰 › 或 ↗；不可用时名称、说明和 › 一起变淡，不响应悬停 */
+.row.go { width: 100%; text-align: left; color: inherit; text-decoration: none; cursor: pointer; }
+.row.go .row-go { flex: none; display: inline-flex; margin-left: auto; color: var(--faint); }
+.row.go:disabled, .row.go[aria-disabled="true"] { cursor: default; }
+.row.go:is(:disabled, [aria-disabled="true"]):is(:hover, :active) { background: transparent; }
+.row.go:is(:disabled, [aria-disabled="true"]) > * { opacity: var(--o-disabled); }
 
 /* 行下面展开的编辑区：左右和默认的行一样，里面的输入框和上面那行的文字对齐 */
 /* 已经在 .list 的底色里，所以展开区不再铺一层底：只靠缩进 */

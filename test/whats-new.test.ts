@@ -145,11 +145,13 @@ describe("这一版要不要弹", () => {
 
   it("接口：检查到的新版本去取那个版本标签下的更新日志；取不到时 502 并给出发布页", async () => {
     const a = await start(tmp());
-    const releaseUrl = "https://github.com/modelflare-ai/AnyModelBot/releases/tag/v0.1.40";
+    const [major, minor, patch] = appVersion().split(".").map(Number);
+    const latest = `${major}.${minor}.${patch + 1}`;
+    const releaseUrl = `https://github.com/wmn1525/AnyModelBot/releases/tag/v${latest}`;
     const status = a.updates.status();
-    vi.spyOn(a.updates, "status").mockReturnValue({ ...status, available: true, latest: "0.1.40", releaseUrl });
+    vi.spyOn(a.updates, "status").mockReturnValue({ ...status, available: true, latest, releaseUrl });
     const real = globalThis.fetch;
-    let remote = SAMPLE.replace("0.1.30", "0.1.40");
+    let remote = SAMPLE.replace("0.1.30", latest);
     const seen: string[] = [];
     vi.stubGlobal("fetch", async (url: string | URL | Request, init?: RequestInit) => {
       const u = String(url);
@@ -158,12 +160,12 @@ describe("这一版要不要弹", () => {
       return remote ? new Response(remote) : new Response("", { status: 404 });
     });
     try {
-      const r = await api(a, "/changelog?lang=ja&version=0.1.40");
+      const r = await api(a, `/changelog?lang=ja&version=${latest}`);
       expect(r.status).toBe(200);
-      expect(r.json.entries[0].version).toBe("0.1.40");
-      expect(seen).toEqual(["https://raw.githubusercontent.com/wmn1525/AnyModelBot/v0.1.40/CHANGELOG_ja.md"]);
+      expect(r.json.entries[0].version).toBe(latest);
+      expect(seen).toEqual([`https://raw.githubusercontent.com/wmn1525/AnyModelBot/v${latest}/CHANGELOG_ja.md`]);
       remote = "";
-      const failed = await api(a, "/changelog?lang=ko&version=0.1.40");
+      const failed = await api(a, `/changelog?lang=ko&version=${latest}`);
       expect(failed.status).toBe(502);
       expect(failed.json.releaseUrl).toBe(releaseUrl);
     } finally {

@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { html, Icon, Notice } from "./ui.js";
 import { ActivityLine } from "./activity.js";
 import { RuleRow, RuleEditor } from "./rules.js";
+import { openLibrary } from "../lib/routines.js";
 import { openScheduled, ruleFocus, RULES_CHANGED } from "../lib/scheduled.js";
 import { api } from "../lib/api.js";
 import { confirmSheet, failed, toast, useStore } from "../lib/store.js";
@@ -275,6 +276,7 @@ export function TaskGroup({ botId, onOpenConv, tasks: givenTasks, rules: givenRu
       ${list.map(row)}
       <div class="rules-section-head"><b>${t("scheduled.rule")} ${rs.length}</b><button type="button" class="text" onClick=${() => setCreating(true)}><${Icon} name="plus" size="sm" />${t("scheduled.newRule")}</button></div>
       ${!rs.length && html`<p class="hint">${t("scheduled.example")}</p>`}
+      ${!rs.length && !sample && html`<p class="hint rule-library-link"><button type="button" class="text" onClick=${() => openLibrary({ botId })}>${t("routines.pickFromLibrary")}</button></p>`}
       ${rs.map((r) => html`<${RuleRow} key=${r.id} rule=${r} open=${openId === r.id} onToggle=${() => toggle(r.id)} onChanged=${reload} />`)}
       ${done.length > 0 && html`<button type="button" class=${`row compact clickable task-ended${showEnded ? " open" : ""}`} aria-expanded=${showEnded} onClick=${() => setShowEnded(!showEnded)}>
         <span class="who"><span class="name">${t("tasks.ended", { count: done.length })}</span></span><${Icon} name="chevRight" size="xs" class="chev" />

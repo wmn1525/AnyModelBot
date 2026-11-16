@@ -2,6 +2,13 @@ export default {
   "aria": "{name}와의 대화",
   "infoPanel": "오른쪽 패널(⌘⇧I)",
   "newConvCmd": "새 대화(/new)",
+  "newConv": {
+    "divider": "새 대화를 시작했습니다",
+    "already": "이미 새 대화입니다",
+    "busy": "답변이 끝나야 새 대화를 시작할 수 있습니다",
+    "agentOff": "에이전트 모드가 꺼져 있어 새 대화를 시작할 수 없습니다. '컨텍스트 지우기'로 다시 시작할 수 있습니다.",
+    "failed": "새 대화를 시작하지 못했습니다: {error}",
+  },
   "toBottom": "맨 아래로 이동",
   "copyMessage": "메시지 복사",
   "commandsLabel": "명령어",
@@ -75,6 +82,7 @@ export default {
     "noMatch": "일치하는 항목이 없습니다",
     "prefill": "{name}을(를) 써서 {cursor}…",
     "appExample": "{app}을(를) 써서 …",
+    "appTool": "{app} · {tool}",
     "readonlyDesc": "읽기 전용: 조회와 읽기만 가능",
     "readonlyNo": "읽기 전용이라 쓰기는 할 수 없습니다",
     "noSkills": "이 봇에는 아직 사용할 수 있는 스킬이 없습니다.",
@@ -103,7 +111,7 @@ export default {
     "sep": ", ",
     "state": {
       "active": "적용됨",
-      "waiting": "현재 작업이 끝나면 적용",
+      "waiting": "다음 메시지부터 적용",
       "loading": "불러오는 중"
     },
     "try": "이렇게 말해 보세요: {example}",

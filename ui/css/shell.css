@@ -36,6 +36,8 @@
 .app > .main { grid-area: 1 / 2; }
 .app > .panel { grid-area: 1 / 3; }
 .app.with-panel { --panel-track: var(--panel-col); }
+/* 面板开着时换宽度（切到「预览」、切回概览）不做动画（main.js 在那一帧加上 .width-snap） */
+.app.width-snap { transition: none; }
 /* 放着工作台的右侧面板（专业 Bot，screens/work-panel.js）更宽，和对话大约对半：默认 --work-w，拖过的宽度是 --work-w-user，和普通面板分开记。
    上限再让出侧栏和主区的最小宽度：主区不被挤到 --main-w-min 以下（侧栏收起时这一项跟着变宽） */
 .app.panel-wide { --panel-col: clamp(var(--work-w-min), var(--work-w-user, var(--work-w)), min(var(--work-w-max), var(--work-w-cap), 100vw - var(--side-col) - var(--main-w-min))); }
@@ -170,7 +172,8 @@ button.thread:active { background: var(--side-press); }
   opacity: 0; transition: opacity var(--t-fast), background var(--t-fast), color var(--t-fast);
 }
 .thread-item:hover > .thread-more, .thread-more:focus-visible, .thread-more[aria-expanded="true"] { opacity: 1; }
-.thread-item:is(:hover, :has(> .thread-more:focus-visible), :has(> .thread-more[aria-expanded="true"])) .when { opacity: 0; }
+/* 「⋯」出现时同一位置的时间和还没用过的目录 Bot 的「有新的」圆点一起让开（R9）；移开、菜单关了再回来 */
+.thread-item:is(:hover, :has(> .thread-more:focus-visible), :has(> .thread-more[aria-expanded="true"])) :is(.when, .thread-new-dot) { opacity: 0; }
 .thread-skel { flex: 1; display: grid; gap: var(--space-1-5); }
 /* 顶部工具栏下面的固定导航：「发现」「定时」和「需要你」（只在有事时出现）。不跟着机器人列表滚动。
    和设置导航是同一种行（.nav-item）：16 的图标落在搜索图标那条竖线上，文字和搜索框的文字对齐；
@@ -196,11 +199,14 @@ button.thread:active { background: var(--side-press); }
 .user-avatar {
   --user-avatar-size: var(--ctl-md);
   width: var(--user-avatar-size); height: var(--user-avatar-size); border-radius: 50%; flex: none; display: grid; place-items: center;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--user-avatar-from) 62%, transparent), color-mix(in srgb, var(--user-avatar-to) 46%, transparent));
+  background: color-mix(in srgb, var(--user-avatar-from) 62%, transparent);   /* 纯色圆底：同一账号固定一种颜色 */
   box-shadow: inset 0 0 0 var(--hairline) color-mix(in srgb, var(--user-avatar-from) 34%, transparent); /* 描边：与 Modelflare 用户头像一致的同色细边 */
   font-weight: var(--fw-medium); font-size: var(--fs-sm); color: var(--user-avatar-fg);
   transition: filter var(--t-fast);
 }
+/* 没有名称时的 Modelflare 标志放在中性的浅底上（头像图片的圆形裁切见下面的 .user-avatar img） */
+.user-avatar.logo { background: var(--pill); box-shadow: inset 0 0 0 var(--hairline) var(--line); }   /* 描边：浅底上的标志要一道细边才成圆 */
+.user-avatar.logo > img { width: 62%; height: 62%; object-fit: contain; border-radius: 0; }
 .account:hover .me { filter: brightness(1.04); }
 .account:active .me, .account.on .me { filter: brightness(.96); }
 .account-chevron { color: var(--muted); transition: transform var(--t-fast); }
@@ -449,7 +455,7 @@ a.text { display: inline-flex; align-items: center; text-decoration: none; }
 .account-menu-avatar { --user-avatar-size: var(--ctl-lg); font-size: var(--fs-lg); }
 .account-menu-identity { display: grid; gap: var(--space-0-5); min-width: 0; }
 .account-menu-identity .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); font-weight: var(--fw-medium); }
-.account-menu-identity .hint { margin: 0; font-size: var(--fs-xs); color: var(--muted); }
+.account-menu-identity .hint { margin: 0; font-size: var(--fs-xs); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account-menu { display: grid; padding: var(--pop-pad); overflow-y: auto; min-height: 0; }
 .account-menu > a, .account-menu > button { display: flex; align-items: center; gap: var(--space-2-5); min-height: var(--ctl-lg); padding: var(--space-1) var(--item-px); text-align: left; border-radius: calc(var(--pop-r) - var(--pop-pad)); color: var(--fg); font-size: var(--fs-sm); line-height: var(--lh-snug); text-decoration: none; transition: background var(--t-fast), color var(--t-fast); }
 /* Profile 菜单使用图标本身的尺寸，不加底色块；交互状态只高亮整行。 */
@@ -465,6 +471,17 @@ a.text { display: inline-flex; align-items: center; text-decoration: none; }
 .account-menu hr { border: 0; height: var(--space-1-5); margin: 0; }   /* 分组之间留一段空，不画线（和菜单的 li.sep 一样） */
 .account-menu .danger { color: var(--red); }
 .account-menu .danger .menu-icon { color: var(--red); }
+/* 账号菜单里的社群一行（components/community.js）：和上面的行同样的高度、内边距；整行不是菜单项，右边一排品牌小圆钮才是 */
+.account-community { display: flex; align-items: center; gap: var(--space-2-5); min-height: var(--ctl-lg); padding: var(--space-1) var(--item-px); color: var(--fg); font-size: var(--fs-sm); line-height: var(--lh-snug); }
+.account-community .community-links { margin-inline-start: auto; margin-inline-end: calc(-1 * var(--space-1)); }
+
+/* 社群链接（components/community.js）：品牌标志平时跟着文字颜色，指到 / 聚焦时换成品牌色 --brand，小圆钮再透一点品牌色的底 */
+.brand-ic { flex: none; display: block; width: calc(var(--ic-sm) * 1px); height: calc(var(--ic-sm) * 1px); transition: color var(--t-fast); }
+.community-links { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); }
+.community-icon { display: grid; place-items: center; width: var(--ctl-sm); height: var(--ctl-sm); border-radius: 50%; color: var(--fg-2); text-decoration: none; transition: background var(--t-fast), color var(--t-fast); }
+.community-icon:is(:hover, :focus-visible) { color: var(--brand); background: color-mix(in srgb, var(--brand) 14%, transparent); }
+.community-btn { gap: var(--space-1-5); text-decoration: none; }
+.community-btn:is(:hover, :focus-visible) .brand-ic { color: var(--brand); }
 .account-menu > .danger:is(:hover, :focus-visible):not(:disabled) { background: var(--red-soft); }
 .account-menu > .danger:is(:hover, :focus-visible):not(:disabled) .menu-icon { color: var(--red); }
 /* 切换 Key 后的提示（第 19 项）：主内容顶部一行，只有关闭按钮 */

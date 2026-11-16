@@ -28,7 +28,7 @@ export interface ApiDeps {
   /** 只有界面监听在本机时才能登记本机目录 */
   loopback: boolean;
   /** 桌面版才有：用系统程序打开、在文件夹中显示 */
-  desktop?: { openPath?: (p: string) => unknown; showItemInFolder?: (p: string) => unknown };
+  desktop?: { openPath?: (p: string) => unknown; showItemInFolder?: (p: string) => unknown; saveFileAs?: (src: string, name: string) => Promise<unknown>; openFileInBrowser?: (p: string) => Promise<void> };
   previews?: FilePreviews;
   dataDir?: string;
 }
@@ -159,7 +159,16 @@ export async function botAppApi(req: http.IncomingMessage, res: http.ServerRespo
         const file = d.installer.appFile(bot, url.searchParams.get("path"));
         const workspace = botWorkspace(d.dataDir, botId);
         if (!file || !workspace) throw new CatalogError("file_not_found", 404);
-        d.send(res, 200, await d.previews.describe(file, { workspace, dataDir: d.dataDir, delivered: [] }));
+        d.send(res, 200, await d.previews.describe(file, { workspace, dataDir: d.dataDir, delivered: [] }, { encoding: url.searchParams.get("encoding") || undefined }));
+        return true;
+      }
+      // 右侧预览的「另存为…」（桌面版）：同 /conversations/:id/file/save
+      if (sub === "save" && m === "POST") {
+        const b = await d.readJson(req);
+        const file = d.installer.appFile(bot, b.path);
+        if (!file) throw new CatalogError("file_not_found", 404);
+        if (!d.desktop?.saveFileAs) throw new CatalogError("desktop_only", 400);
+        d.send(res, 200, await d.desktop.saveFileAs(file.path, path.basename(file.path)));
         return true;
       }
       // 打开就会运行的文件不直接打开，只在文件夹中显示（同 /conversations/:id/file/open）
@@ -168,6 +177,13 @@ export async function botAppApi(req: http.IncomingMessage, res: http.ServerRespo
         const file = d.installer.appFile(bot, b.path);
         if (!file) throw new CatalogError("file_not_found", 404);
         if (!d.desktop?.openPath) throw new CatalogError("desktop_only", 400);
+        // 「在浏览器中打开」（HTML）：系统默认浏览器，同 /conversations/:id/file/browser
+        if (b.browser && !b.reveal && /\.html?$/i.test(file.path)) {
+          if (d.desktop.openFileInBrowser) await d.desktop.openFileInBrowser(file.path);
+          else d.desktop.openPath(file.path);
+          d.send(res, 200, { ok: true });
+          return true;
+        }
         if (!b.reveal && !runnable(file)) {
           d.desktop.openPath(file.path);
           d.send(res, 200, { ok: true });

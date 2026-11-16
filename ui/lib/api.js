@@ -122,6 +122,11 @@ export function watchApp(botId, handlers, signal) {
   return readEvents(fetch(`/amb/api/bots/${encodeURIComponent(botId)}/app/watch`, { headers: { "x-amb-lang": getLang() }, signal }), handlers);
 }
 
+/** 右侧预览的自动刷新：t 是已打开文件的列表（base64url JSON）；change（{ key, size, mtimeMs }）、gone（{ key }） */
+export function watchPreview(t, handlers, signal) {
+  return readEvents(fetch(`/amb/api/preview-watch?t=${encodeURIComponent(t)}`, { headers: { "x-amb-lang": getLang() }, signal }), handlers);
+}
+
 /** 接着一个群聊：turn（轮到谁）、同 streamChat 的事件、turnEnd（这一轮答完），都答完了结束 */
 export function attachGroup(groupId, handlers, signal) {
   return readEvents(fetch(`/amb/api/groups/${encodeURIComponent(groupId)}/live`, { headers: { "x-amb-lang": getLang() }, signal }), handlers);

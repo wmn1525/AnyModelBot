@@ -1,12 +1,9 @@
 export default {
   "main": "主导航",
   "bots": "机器人",
-  "catalog": "发现",
-  "features": "功能",
-  "data": "数据",
-  "models": "模型",
   "pricing": "价格",
   "docs": "文档",
+  "partners": "合作伙伴",
   "skip": "跳到主要内容",
   "home": "okbot 首页",
   "menu": "菜单",

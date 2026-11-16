@@ -7,6 +7,7 @@ import { normalizeAppRef, type BotAppRef } from "../domain/app-ref.js";
 import type { Schedule } from "../domain/schedule.js";
 import { usedSummary, type ActivityStep, type UsedItem } from "../domain/activity.js";
 import { ChatSearch } from "./chat-search.js";
+import { CollabStore } from "./collab.js";
 
 /**
  * SQLite 存储（node:sqlite，无原生模块，Electron 下也无需 rebuild）。
@@ -335,12 +336,17 @@ export interface TaskRow {
   anytime: boolean;
   /** 3f：文件夹定在什么时候清理（30 天没动、在「需要你」里告诉过用户之后）；0 = 没定 */
   cleanupAt: number;
+  /** 别的机器人发来的这件事（collab/）；空 = 普通的后台任务 */
+  handoffId: string;
+  /** 每次运行最长多久；0 = 任务的默认上限（4 小时） */
+  capMs: number;
   createdAt: number;
   updatedAt: number;
 }
 export type RunState = "queued" | "running" | "settling" | "ended";
 export type RunOutcome = "" | "done" | "needs_you" | "failed" | "budget" | "stopped" | "interrupted" | "skipped";
-export type RunCause = "launch" | "answer" | "followup" | "retry" | "continue" | "recover" | "schedule" | "catchup" | "manual" | "event";
+/** trial：任务库「先试一次」（规则关着时只读跑一次，结果不发到任何会话） */
+export type RunCause = "launch" | "answer" | "followup" | "retry" | "continue" | "recover" | "schedule" | "catchup" | "manual" | "event" | "trial";
 /** 一段工作（一次启动、回答、追加、重试、恢复）：占着名额直到结束 */
 export interface RunRow {
   id: string;
@@ -433,6 +439,10 @@ export interface RuleRow {
   undoneUntil?: number;
   /** 用「我的技能」做（skills/mine.ts）：技能名、建规则时的标题、已经回答过的「运行时再问」占位 */
   skill?: { name: string; title: string; asks: string[] };
+  /** 检查的结果样式：line 一句话（默认）；brief 简报（多行、列表和链接，最多 1500 字；只有任务库的任务用） */
+  resultStyle?: "line" | "brief";
+  /** 从任务库建的：任务 id、任务的 version、用起来时填的参数（判断重复、「已在用」计数） */
+  source?: { id: string; version: number; params: Record<string, unknown> };
 }
 
 type Row = Record<string, unknown>;
@@ -478,6 +488,7 @@ const TASK_COLS: Record<string, string> = {
   endReason: "end_reason",
   stoppedBy: "stopped_by",
   cleanupAt: "cleanup_at",
+  capMs: "cap_ms",
   updatedAt: "updated_at",
 };
 const RUN_COLS: Record<string, string> = {
@@ -499,6 +510,7 @@ const RUN_COLS: Record<string, string> = {
 const INPUT_COLS: Record<string, string> = { runId: "run_id", messageId: "message_id", deliveredAt: "delivered_at", takenAt: "taken_at" };
 const RULE_COLS: Record<string, string> = {
   missedPolicy: "missed_policy", sourceGroupId: "source_group_id", requiresGroup: "requires_group", revision: "revision", undoneUntil: "undone_until", skill: "skill",
+  resultStyle: "result_style", source: "source",
   conversationId: "conversation_id",
   title: "title",
   instruction: "instruction",
@@ -670,16 +682,24 @@ const COLUMNS: Array<[string, string, string]> = [
   ["rules", "undone_until", "INTEGER NOT NULL DEFAULT 0"],
   // 「让它做件事」用「我的技能」（JSON：技能名、标题、回答过的占位）；空 = 不用
   ["rules", "skill", "TEXT NOT NULL DEFAULT ''"],
+  // 任务库（2026-11-15）：结果样式（line / brief）、来源（JSON：任务 id、version、参数）；空 = 手建的
+  ["rules", "result_style", "TEXT NOT NULL DEFAULT 'line'"],
+  ["rules", "source", "TEXT NOT NULL DEFAULT ''"],
   ["messages", "rule_source", "TEXT NOT NULL DEFAULT ''"],
   ["messages", "permission_wait", "INTEGER NOT NULL DEFAULT 0"],
   ["messages", "error_context", "TEXT NOT NULL DEFAULT ''"],
   // 保留与清理（3f）：任务文件夹定在什么时候清理
   ["tasks", "cleanup_at", "INTEGER NOT NULL DEFAULT 0"],
+  // 机器人之间发消息（collab/）：别的机器人发来的这件事（handoffs.id）；这件事每次运行最长多久（0 = 任务的默认上限）
+  ["tasks", "handoff_id", "TEXT NOT NULL DEFAULT ''"],
+  ["tasks", "cap_ms", "INTEGER NOT NULL DEFAULT 0"],
 ];
 
 export class Store {
   readonly db: DatabaseSync;
   readonly chatSearch: ChatSearch;
+  /** 机器人之间发消息：件和两人对话（collab.ts） */
+  readonly collab: CollabStore;
 
   constructor(file: string) {
     if (file !== ":memory:") {
@@ -700,6 +720,7 @@ export class Store {
       if (!cols.includes(col)) this.db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
     }
     this.chatSearch = new ChatSearch(this.db, (row) => this.toMessage(row));
+    this.collab = new CollabStore(this.db);
     this.migrateComputerUseAuto();
     this.migrateAccess();
   }
@@ -921,6 +942,10 @@ export class Store {
     const rows = (botId ? this.db.prepare(sql).all(botId) : this.db.prepare(sql).all()) as Row[];
     return rows.map((r) => ({ ...this.toConv(r), messageCount: Number(r.n), lastMessage: r.last == null ? "" : String(r.last).slice(0, 120) }));
   }
+  /** 选了内置网关合成的组（auto/<模型名>、group/…）的会话：启动时换回真实的模型 id */
+  conversationsOnGroupModels(): Array<{ id: string; model: string }> {
+    return (this.db.prepare("SELECT id, model FROM conversations WHERE model LIKE 'auto/%' OR model LIKE 'group/%'").all() as Row[]).map((r) => ({ id: String(r.id), model: String(r.model) }));
+  }
   setConversationModel(id: string, model: string): void {
     this.db.prepare("UPDATE conversations SET model = ?, updated_at = ? WHERE id = ?").run(model, Date.now(), id);
   }
@@ -1062,6 +1087,21 @@ export class Store {
       FROM conversations c`).all() as Row[];
     return rows.map((r) => ({ botId: String(r.bot_id), successfulReply: !!r.replied, deliveredFile: !!r.delivered }));
   }
+  /** 这些会话里交付过的文件和最近一次交付的时间（新→旧，按路径去重）：右侧预览的「+」菜单和空状态 */
+  deliveredFileTimes(conversationIds: string[]): Array<{ conversationId: string; path: string; at: number }> {
+    const out = new Map<string, { conversationId: string; path: string; at: number }>();
+    const q = this.db.prepare("SELECT files, created_at FROM messages WHERE conversation_id = ? AND files != '' ORDER BY id DESC");
+    for (const conversationId of conversationIds) {
+      for (const r of q.all(conversationId) as Row[]) {
+        for (const p of strings(r.files)) {
+          const at = Number(r.created_at) || 0;
+          const had = out.get(p);
+          if (!had || had.at < at) out.set(p, { conversationId, path: p, at });
+        }
+      }
+    }
+    return [...out.values()].sort((a, b) => b.at - a.at);
+  }
   /** 这个会话里交付过的文件（真实路径，旧→新，去重） */
   deliveredFiles(conversationId: string): string[] {
     const rows = this.db.prepare("SELECT files FROM messages WHERE conversation_id = ? AND files != '' ORDER BY id").all(conversationId) as Row[];
@@ -1198,11 +1238,23 @@ export class Store {
   clearAgentSession(conversationId: string): void {
     this.db.prepare("DELETE FROM agent_sessions WHERE conversation_id = ?").run(conversationId);
   }
-  /** 段落归档：上下文管家换段时记下旧 session 与交接便条。 */
-  archiveSegment(conversationId: string, sessionId: string, reason: string, handoff: string): void {
-    this.db
+  /**
+   * 段落归档：换段时记下旧 session 与交接便条，返回这条记录的 id。reason = manual 是用户主动开的新对话（/new、新建按钮）：
+   * 对话里在 ended_at 的位置画「已开始新对话」分隔线；上下文管家自动换段不画。
+   */
+  archiveSegment(conversationId: string, sessionId: string, reason: string, handoff: string, endedAt = Date.now()): number {
+    const r = this.db
       .prepare("INSERT INTO agent_segments(conversation_id, session_id, reason, handoff, ended_at) VALUES(?, ?, ?, ?, ?)")
-      .run(conversationId, sessionId, reason, handoff, Date.now());
+      .run(conversationId, sessionId, reason, handoff, endedAt);
+    return Number(r.lastInsertRowid);
+  }
+  /** 后台写好的交接便条替换归档时先存的兜底原文 */
+  setSegmentHandoff(id: number, handoff: string): void {
+    this.db.prepare("UPDATE agent_segments SET handoff = ? WHERE id = ?").run(handoff, id);
+  }
+  /** 用户主动开新对话的时刻（旧→新）：对话里画分隔线的位置 */
+  manualSegmentTimes(conversationId: string): number[] {
+    return (this.db.prepare("SELECT ended_at FROM agent_segments WHERE conversation_id = ? AND reason = 'manual' ORDER BY ended_at").all(conversationId) as Row[]).map((r) => Number(r.ended_at));
   }
   listSegments(conversationId: string): Array<{ sessionId: string; reason: string; handoff: string; endedAt: number }> {
     return (this.db.prepare("SELECT * FROM agent_segments WHERE conversation_id = ? ORDER BY id").all(conversationId) as Row[]).map((r) => ({
@@ -1545,17 +1597,19 @@ export class Store {
       stoppedBy: String(r.stopped_by),
       anytime: Number(r.anytime ?? 0) === 1,
       cleanupAt: Number(r.cleanup_at ?? 0),
+      handoffId: String(r.handoff_id ?? ""),
+      capMs: Number(r.cap_ms ?? 0),
       createdAt: Number(r.created_at),
       updatedAt: Number(r.updated_at),
     };
   }
-  insertTask(t: Omit<TaskRow, "spentUsd" | "report" | "endedAt" | "endReason" | "stoppedBy" | "anytime" | "cleanupAt"> & { anytime?: boolean }): TaskRow {
+  insertTask(t: Omit<TaskRow, "spentUsd" | "report" | "endedAt" | "endReason" | "stoppedBy" | "anytime" | "cleanupAt" | "handoffId" | "capMs"> & { anytime?: boolean; handoffId?: string; capMs?: number }): TaskRow {
     this.db
       .prepare(
-        `INSERT INTO tasks(id, bot_id, conversation_id, origin_message_id, origin_ref, title, brief, session_id, folder, model, permission, budget_usd, anytime, created_at, updated_at)
-         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO tasks(id, bot_id, conversation_id, origin_message_id, origin_ref, title, brief, session_id, folder, model, permission, budget_usd, anytime, handoff_id, cap_ms, created_at, updated_at)
+         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(t.id, t.botId, t.conversationId, t.originMessageId, t.originRef, t.title, t.brief, t.sessionId, t.folder, t.model, t.permission, t.budgetUsd, t.anytime ? 1 : 0, t.createdAt, t.updatedAt);
+      .run(t.id, t.botId, t.conversationId, t.originMessageId, t.originRef, t.title, t.brief, t.sessionId, t.folder, t.model, t.permission, t.budgetUsd, t.anytime ? 1 : 0, t.handoffId ?? "", t.capMs ?? 0, t.createdAt, t.updatedAt);
     return this.getTask(t.id)!;
   }
   getTask(id: string): TaskRow | undefined {
@@ -1567,17 +1621,21 @@ export class Store {
     const r = this.db.prepare("SELECT * FROM tasks WHERE session_id = ?").get(sessionId) as Row | undefined;
     return r ? this.toTask(r) : undefined;
   }
-  updateTask(id: string, patch: Partial<Pick<TaskRow, "originRef" | "title" | "sessionId" | "model" | "budgetUsd" | "spentUsd" | "report" | "endedAt" | "endReason" | "stoppedBy" | "cleanupAt" | "updatedAt">>): void {
+  updateTask(id: string, patch: Partial<Pick<TaskRow, "originRef" | "title" | "sessionId" | "model" | "budgetUsd" | "spentUsd" | "report" | "endedAt" | "endReason" | "stoppedBy" | "cleanupAt" | "capMs" | "updatedAt">>): void {
     updateRow(this.db, "tasks", TASK_COLS, id, patch);
   }
   /** 任务又花了一点（每次模型请求的估算加上去） */
   addTaskSpent(id: string, usd: number): void {
     if (usd > 0) this.db.prepare("UPDATE tasks SET spent_usd = spent_usd + ? WHERE id = ?").run(usd, id);
   }
-  /** open：还没结束（停止、归档）的；since：之后更新过的；归档了的（3f：30 天没动）不列，除非 archived */
-  listTasks(opts: { botId?: string; conversationId?: string; open?: boolean; since?: number; limit?: number; archived?: boolean } = {}): TaskRow[] {
+  /**
+   * open：还没结束（停止、归档）的；since：之后更新过的；归档了的（3f：30 天没动）不列，除非 archived；
+   * handoffs：false = 不要别的机器人发来的事（用户看到的任务列表），true = 只要它们，不给 = 都要
+   */
+  listTasks(opts: { botId?: string; conversationId?: string; open?: boolean; since?: number; limit?: number; archived?: boolean; handoffs?: boolean } = {}): TaskRow[] {
     const where: string[] = opts.archived ? [] : ["end_reason != 'archived'"];
     const args: Array<string | number> = [];
+    if (opts.handoffs !== undefined) where.push(opts.handoffs ? "handoff_id != ''" : "handoff_id = ''");
     if (opts.botId) (where.push("bot_id = ?"), args.push(opts.botId));
     if (opts.conversationId) (where.push("conversation_id = ?"), args.push(opts.conversationId));
     if (opts.open !== undefined) where.push(opts.open ? "ended_at = 0" : "ended_at > 0");
@@ -1720,6 +1778,8 @@ export class Store {
       sourceGroupId: String(r.source_group_id ?? ""), requiresGroup: Number(r.requires_group) === 1,
       revision: Number(r.revision ?? 1), undoneUntil: Number(r.undone_until ?? 0),
       ...(parseJson<RuleRow["skill"]>(r.skill)?.name ? { skill: parseJson<RuleRow["skill"]>(r.skill) } : {}),
+      resultStyle: r.result_style === "brief" ? "brief" : "line",
+      ...(parseJson<RuleRow["source"]>(r.source)?.id ? { source: parseJson<RuleRow["source"]>(r.source) } : {}),
       id: String(r.id),
       botId: String(r.bot_id),
       conversationId: String(r.conversation_id),
@@ -1750,7 +1810,7 @@ export class Store {
          VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(r.id, r.botId, r.conversationId, r.title, r.instruction, r.message, r.kind, JSON.stringify(r.trigger), r.mode, r.folder, r.version ?? 1, r.nextRunAt, r.anytime ? 1 : 0, r.createdAt, r.updatedAt, r.runBudgetUsd ?? 0.1, r.monthBudgetUsd ?? 3);
-    this.updateRule(r.id, { missedPolicy: r.missedPolicy ?? "catchup", sourceGroupId: r.sourceGroupId ?? "", requiresGroup: !!r.requiresGroup, revision: r.revision ?? 1, undoneUntil: r.undoneUntil ?? 0, ...(r.skill ? { skill: r.skill } : {}) });
+    this.updateRule(r.id, { missedPolicy: r.missedPolicy ?? "catchup", sourceGroupId: r.sourceGroupId ?? "", requiresGroup: !!r.requiresGroup, revision: r.revision ?? 1, undoneUntil: r.undoneUntil ?? 0, ...(r.skill ? { skill: r.skill } : {}), resultStyle: r.resultStyle ?? "line", ...(r.source ? { source: r.source } : {}) });
     return this.getRule(r.id)!;
   }
   /** 规则从 since 起（按该跑的时间）花了多少：本月的花费 */

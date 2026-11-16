@@ -24,4 +24,6 @@ import connections from "./connections.js";
 import apps from "./apps.js";
 import skills from "./skills.js";
 import mySkills from "./mySkills.js";
-export default { connections, apps, skills, mySkills, media, activity, magpie, app, cu, approvals, pwsh, desktop, tasks, channel, web, cli, rules, delivery, access, diag, account, agent, runtime, modelflare, official } satisfies TranslatedCatalog;
+import aboutMe from "./aboutMe.js";
+import collab from "./collab.js";
+export default { aboutMe, collab, connections, apps, skills, mySkills, media, activity, magpie, app, cu, approvals, pwsh, desktop, tasks, channel, web, cli, rules, delivery, access, diag, account, agent, runtime, modelflare, official } satisfies TranslatedCatalog;

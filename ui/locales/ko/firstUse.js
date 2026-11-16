@@ -30,6 +30,7 @@ export default {
   "signIn": "Okinto 로그인",
   "signInSub": "더 많은 모델 사용, 지금 키도 그대로 사용",
   "feedback": "의견 및 피드백",
+  "community": "커뮤니티",
   "checkUpdate": "업데이트 확인",
   "checking": "확인 중…",
   "latest": "최신 버전입니다",

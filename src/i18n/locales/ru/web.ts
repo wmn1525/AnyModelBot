@@ -48,6 +48,8 @@ export default {
   runNotFound: "Запуск не найден",
   taskAlreadyStopped: "Задача уже остановлена",
   badGroup: "group должен быть working, needs или ended",
+  "collabSignIn": "Войдите в аккаунт Okinto, чтобы изменить настройки совместной работы ботов",
+  "collabChoice": "Выберите одно из значений списка",
   windowsOnly: "Требуется только в Windows",
   recordNotFound: "Запись не найдена",
   requestAlreadyHandled: "Этот запрос уже обработан",

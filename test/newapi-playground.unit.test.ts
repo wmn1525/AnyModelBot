@@ -14,7 +14,7 @@ import { groupModels, sameModel, shortModel } from "../ui/lib/models.js";
 const origin = "https://api.okinto.com";
 const cleanups: Array<() => Promise<void>> = [];
 afterEach(async () => { for (const close of cleanups.splice(0)) await close(); vi.useRealTimers(); vi.restoreAllMocks(); });
-function fixture(options: { failGroup?: string; keyMode?: boolean; delayedImage?: boolean; images?: boolean; imageStatus?: number; failTokenKey?: boolean } = {}) {
+function fixture(options: { user?: Record<string, unknown>; failGroup?: string; keyMode?: boolean; delayedImage?: boolean; images?: boolean; imageStatus?: number; failTokenKey?: boolean } = {}) {
   const store = new Store(":memory:");
   const groups: Record<string, { desc: string; ratio: number; models: string[] }> = {
     "OpenAi-Pro": { desc: "Pro models", ratio: 2.5, models: Array.from({ length: 31 }, (_, i) => `chat-${i}`) },
@@ -64,7 +64,7 @@ function fixture(options: { failGroup?: string; keyMode?: boolean; delayedImage?
     if (url.pathname === "/api/token/search") return Response.json({ success: true, data: { items: [{ id: 42, name: tokenName }] } });
     if (url.pathname === "/api/token/42/key") return options.failTokenKey ? Response.json({ success: false, message: "key denied" }, { status: 403 }) : Response.json({ success: true, data: { key: "private-image-token" } });
     if (url.pathname === "/api/token/42" && init?.method === "DELETE") { imageTokenRevoked = true; return Response.json({ success: true }); }
-    if (url.pathname === "/api/user/self") return Response.json({ success: true, data: { id: 7, username: "tester", display_name: "Test Account", quota: 2000000, used_quota: 500000 } });
+    if (url.pathname === "/api/user/self") return Response.json({ success: true, data: { id: 7, username: "tester", display_name: "Test Account", ...options.user, quota: 2000000, used_quota: 500000 } });
     if (url.pathname === "/api/user/self/groups") return Response.json({ success: true, data: Object.fromEntries(Object.entries(groups).map(([id, g]) => [id, { desc: g.desc, ratio: g.ratio }])) });
     if (url.pathname === "/api/user/models") {
       const group = url.searchParams.get("group")!;
@@ -110,6 +110,16 @@ describe("New API playground account", () => {
     expect(f.account.ownerKey).toBe(owner);
     await f.account.logout();
     expect(f.account.ownerKey).toBe("local");
+  });
+  it("uses the shared profile identity without exposing auth data and caches only display fields", async () => {
+    const f = fixture({ user: { display_name: "", username: "real-user", email: "person@example.test", avatar_url: "https://images.example.test/me.png" } });
+    await f.signIn();
+    expect(f.account.status()).toMatchObject({ name: "real-user", nameFrom: "username", email: "person@example.test", avatar: "https://images.example.test/me.png", profileReady: true, profileUrl: origin + "/console/personal" });
+    const cached = f.store.getKV("newapi.session")!;
+    expect(JSON.parse(cached).profile).toMatchObject({ name: "real-user", email: "person@example.test" });
+    expect(cached).not.toMatch(/jwt-secret|access_token|refresh_token/);
+    await f.account.logout();
+    expect(f.account.status()).toMatchObject({ name: "", email: "", avatar: "" });
   });
   it("keeps the scoped image token until the complete response body is received", async () => {
     const f = fixture({ images: true, delayedImage: true }); await f.signIn();

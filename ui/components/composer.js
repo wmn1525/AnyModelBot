@@ -40,7 +40,7 @@ export const useConvModel = (key) => useStore(convModels)[key] || "";
  * ctl：页面拿到 { openModel, closeSlash }（出错提示里的「换个模型」、引导卡片填入句子）。
  */
 export function Composer({ bot, modelKey = bot?.id, text, setText, taRef, placeholder, label, generating = false, stopping = false, sent = false, steer = false, onSend, onStop,
-  models, modelsError, reloadModels, defaultModel, account, onAccount, onBotUpdated, onOpenBotSettings, showPerm = true, guide = false, ctl }) {
+  models, modelsError, reloadModels, defaultModel, account, onAccount, onBotUpdated, onOpenBotSettings, showPerm = true, guide = false, ctl, onNewConversation }) {
   const own = useRef(null);
   const ta = taRef || own;
   const plusRef = useRef(null);
@@ -114,7 +114,8 @@ export function Composer({ bot, modelKey = bot?.id, text, setText, taRef, placeh
   const plusItems = bot && [
     { label: t("chat.menu.switchModel"), onSelect: openModel },
     { sep: true },
-    { label: t("chat.menu.newConv"), note: "/new", onSelect: () => onSend("/new") },
+    // 开始新的一段对话：和右上角新建按钮一样（不发消息）；回复进行中置灰，悬停说明原因
+    { label: t("chat.menu.newConv"), note: "/new", disabled: generating, title: generating ? t("chat.newConv.busy") : undefined, onSelect: () => (onNewConversation ? onNewConversation() : onSend("/new")) },
     {
       label: t("chat.menu.reset"),
       note: "/reset",

@@ -11,6 +11,7 @@ import { confirmSheet, failed, toast } from "../lib/store.js";
 import { t, locale } from "../lib/i18n.js";
 import { exportUrl, hasCost, money } from "./tasks.js";
 import { openRule, rulesChanged, RULES_CHANGED } from "../lib/scheduled.js";
+import { openLibrary, openRoutine } from "../lib/routines.js";
 import { useBotSkills } from "../lib/usage.js";
 import { kindOf } from "../lib/my-skills.js";
 import { unschedulable } from "./skill-draft-card.js";
@@ -106,7 +107,8 @@ export function RuleRow({ rule, onChanged, open, onToggle, full = false, timeZon
 /** 运行记录的一行：时间 · 模式 · 一句话 · 花了多少（有了才写）；点开看报告、步骤、版本和权限（不另起一块） */
 function RunItem({ rule, run }) {
   const [open, setOpen] = useState(false);
-  const mode = rule.kind === "remind" || !["observe", "act"].includes(run.mode) ? "" : t(`rules.mode.${run.mode}`);
+  // 任务库的试跑：标「试跑」（只读、没有发出去）
+  const mode = run.cause === "trial" ? t("routines.trialTag") : rule.kind === "remind" || !["observe", "act"].includes(run.mode) ? "" : t(`rules.mode.${run.mode}`);
   const meta = [t("rules.version", { n: run.version }), run.permission, run.cause === "manual" ? t("rules.manual") : run.cause === "event" ? t("rules.event") : ""].filter(Boolean).join(" · ");
   return html`<li class=${`rule-run${open ? " open" : ""}`}>
     <button type="button" class="rule-run-head" aria-expanded=${open} onClick=${() => setOpen(!open)}>
@@ -172,6 +174,7 @@ export function RuleDetail({ rule, runs: given, onChanged, full = false }) {
       ...(hasCost(rule.monthUsd) ? [[t("scheduled.details.month"), t("scheduled.details.spent", { spent: money(rule.monthUsd), budget: money(rule.monthBudgetUsd) })]] : rule.estimatedMonthUsd !== undefined ? [[t("scheduled.details.month"), t("scheduled.estimate", { amount: rule.estimatedMonthUsd.toFixed(2) })]] : []),
     ];
     return html`<div class="rule-detail rule-card-detail">
+      <${RuleOrigin} rule=${rule} />
       <section class="rule-prompt"><h3 class="t-label">${t(rule.kind === "remind" ? "scheduled.details.reminder" : "scheduled.details.prompt")}</h3><p class="selectable">${rule.kind === "remind" ? rule.message : rule.instruction}</p></section>
       <dl class="rule-attributes">${attributes.map(([label, value]) => html`<div><dt>${label}</dt><dd class="selectable">${value}</dd></div>`)}</dl>
       <section><div class="rule-card-actions">${rule.kind !== "remind" && html`<${RuleMode} rule=${rule} segments onChanged=${onChanged} />`}<${Button} size="sm" loading=${busy === "run"} disabled=${!!busy || !!rule.live || rule.mode === "off"} onClick=${runNow}>${t("rules.runNow")}<//></div>
@@ -183,6 +186,7 @@ export function RuleDetail({ rule, runs: given, onChanged, full = false }) {
     </div>`;
   }
   return html`<div class="rule-detail">
+    <${RuleOrigin} rule=${rule} />
     <p class="rule-words selectable">${t("rules.words", { text: rule.kind === "remind" ? rule.message : rule.instruction })}</p>
     ${line && html`<span class="hint">${line}</span>`}
     ${zone && html`<span class="hint">${rule.when} · ${zone}</span>`}
@@ -210,36 +214,47 @@ export function RuleDetail({ rule, runs: given, onChanged, full = false }) {
   </div>`;
 }
 
+/** 从任务库建的：「来自任务库：{任务名}」，点了打开任务详情；任务下架了只写一句，点不开 */
+function RuleOrigin({ rule }) {
+  if (!rule.source) return null;
+  if (rule.source.removed) return html`<p class="hint rule-origin">${t("routines.fromLibraryRemoved")}</p>`;
+  return html`<p class="hint rule-origin"><button type="button" class="text" onClick=${() => openRoutine(rule.source.id)}>${t("routines.fromLibrary", { task: rule.source.title })}</button></p>`;
+}
+
 const COMMON_KINDS = ["daily", "weekdays", "weekly", "monthly", "once"];
+const MORE_KINDS = ["every", "cron", "yearly"];
 const DAY_PICKS = [1, 2, 3, 4, 5, 6, 0];
 const dayName = (d) => new Date(2026, 10, 1 + d).toLocaleDateString(locale(), { weekday: "short" });
 const localInput = (at, zone) => {
   const parts = Object.fromEntries(new Intl.DateTimeFormat("sv-SE", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(at).map((x) => [x.type, x.value]));
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 };
-function formOf(s) {
-  const base = { kind: "daily", time: "08:00", days: [1], day: 1, minutes: 60, at: "", cron: "0 8 * * 1-5" };
+export function formOf(s) {
+  const base = { kind: "daily", time: "08:00", days: [1], day: 1, month: 1, before: 0, minutes: 60, at: "", cron: "0 8 * * 1-5" };
   if (!s) return base;
   if (s.kind === "daily" && s.days?.length && s.days.join() !== "1,2,3,4,5" && s.days.length < 7) return { ...base, ...s, kind: "weekly" };
   return { ...base, ...s, kind: s.kind === "daily" && (s.days || []).join() === "1,2,3,4,5" ? "weekdays" : s.kind, at: s.kind === "once" ? localInput(s.at, s.tz) : "" };
 }
-function scheduleOf(f, tz) {
+export function scheduleOf(f, tz) {
+  // 提前几天（任务库的缴费、生日提醒）：只在每月、每年上，改别的频率时不带
+  const before = Number(f.before) > 0 ? { before: Number(f.before) } : {};
   if (f.kind === "weekdays") return { kind: "daily", time: f.time, days: [1, 2, 3, 4, 5], tz };
   if (f.kind === "daily") return { kind: "daily", time: f.time, tz };
   if (f.kind === "weekly") return { kind: "weekly", time: f.time, days: f.days, tz };
-  if (f.kind === "monthly") return { kind: "monthly", day: f.day === "last" ? "last" : Number(f.day), time: f.time, tz };
+  if (f.kind === "monthly") return { kind: "monthly", day: f.day === "last" ? "last" : Number(f.day), time: f.time, ...before, tz };
+  if (f.kind === "yearly") return { kind: "yearly", month: Number(f.month), day: f.day === "last" ? 1 : Number(f.day), time: f.time, ...before, tz };
   if (f.kind === "every") return { kind: "every", minutes: Number(f.minutes), ...(f.from ? { from: f.from } : {}), tz };
   if (f.kind === "once") return { kind: "once", local: f.at, tz };
   return { kind: "cron", cron: f.cron, tz };
 }
 
-function DestinationPicker({ destinations, value, onChange }) {
+export function DestinationPicker({ destinations, value, onChange }) {
   const section = (d) => d.channel !== "web" ? "channels" : d.kind === "group" ? "groups" : "desktop";
   return html`<div class="rule-destinations" role="radiogroup" aria-label=${t("rules.to")}>
     ${destinations.map((d, i) => html`${(!i || section(destinations[i - 1]) !== section(d)) && html`<span class="t-label">${t(`scheduled.${section(d)}`)}</span>`}<label class="rule-destination-option" key=${d.id}><input type="radio" name="rule-destination" value=${d.id} checked=${value === d.id} onChange=${() => onChange(d.id)} /><span>${d.title}</span>${d.default && html`<span class="hint">${t("scheduled.default")}</span>`}</label>`)}
   </div><p class="hint rule-destination-hint">${t("scheduled.destinationHint")}</p>`;
 }
-function GroupPicker({ groups, value, onChange }) {
+export function GroupPicker({ groups, value, onChange }) {
   return html`<label>${t("scheduled.groupLabel")}${groups.length ? html`<select class="field" value=${value} onChange=${(e) => onChange(e.target.value)}><option value="">${t("scheduled.groupMissing")}</option>${groups.map((g) => html`<option key=${g.id} value=${g.id}>${g.name}</option>`)}</select>` : html`<span class="hint">${t("scheduled.noGroups")}</span>`}</label>`;
 }
 
@@ -278,6 +293,58 @@ export function RuleMode({ rule, segments = false, onChanged }) {
   `;
 }
 
+/** 按表单预览接下来三次和每月次数（和调度用同一个日历）；skip 时不取 */
+export function useSchedulePreview(f, zone, skip = false) {
+  const [preview, setPreview] = useState(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (!zone || skip) return;
+    let alive = true;
+    setPreview(null); setError("");
+    const timer = setTimeout(() => api("/rules/preview", { method: "POST", body: { schedule: scheduleOf(f, zone) } }).then((d) => { if (alive) setPreview(d); }).catch((e) => { if (alive) setError(e.message); }), 180);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [JSON.stringify(f), zone, skip]);
+  return { preview, error };
+}
+
+const monthName = (m) => new Date(2024, m - 1, 1).toLocaleDateString(locale(), { month: "long" });
+/**
+ * 「什么时候」：常用的频率（每天、工作日、每周、每月、一次）+「更多」（每隔、cron、每年），时刻、日子、星期，
+ * 下面是时区、接下来三次和每月次数；检查每月超过 300 次时提示。新规则对话框和任务库的「用起来」共用。
+ * compact：只露时刻（任务库的默认时间），频率写在下面的说明里；点「更多」再展开完整的。
+ */
+export function ScheduleFields({ f, setF, zone, preview, error, remind, more, setMore, compact = false }) {
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const toggleDay = (d) => setF({ ...f, days: f.days.includes(d) ? f.days.filter((x) => x !== d) : [...f.days, d] });
+  const full = !compact || more;
+  const timed = ["daily", "weekdays", "weekly", "monthly", "yearly"].includes(f.kind);
+  return html`${full && html`<div class="rule-frequency"><${Seg} label=${t("rules.when")} options=${COMMON_KINDS.map((k) => [k, t(k === "monthly" ? "scheduled.monthly" : `rules.kinds.${k}`)])} value=${f.kind} onChange=${(kind) => setF({ ...f, kind })} />
+      ${!compact && html`<button type="button" class="text" aria-expanded=${more} onClick=${() => setMore(!more)}>${t("scheduled.more")}<${Icon} name="chevDown" class=${more ? "flipped" : ""} size="xs" /></button>`}</div>`}
+    ${more && html`<${Seg} label=${t("scheduled.more")} options=${MORE_KINDS.map((k) => [k, t(k === "yearly" ? "scheduled.yearly" : `rules.kinds.${k}`)])} value=${f.kind} onChange=${(kind) => setF({ ...f, kind })} />`}
+    <div class="rule-when-row">
+      ${!full ? html`${timed && html`<input class="field num" type="time" aria-label=${t("rules.when")} value=${f.time} onInput=${set("time")} />`}` : html`
+      ${f.kind === "yearly" && html`<select class="field" aria-label=${t("scheduled.yearly")} value=${f.month} onChange=${set("month")}>${Array.from({ length: 12 }, (_, i) => html`<option value=${i + 1}>${monthName(i + 1)}</option>`)}</select>`}
+      ${(f.kind === "monthly" || f.kind === "yearly") && html`<select class="field" aria-label=${t("scheduled.monthly")} value=${f.day} onChange=${set("day")}>${Array.from({ length: 31 }, (_, i) => html`<option value=${i + 1}>${i + 1}</option>`)}${f.kind === "monthly" && html`<option value="last">${t("scheduled.lastDay")}</option>`}</select>`}
+      ${["daily", "weekdays", "weekly", "monthly", "yearly"].includes(f.kind) && html`<input class="field num" type="time" aria-label=${t("rules.when")} value=${f.time} onInput=${set("time")} />`}
+      ${f.kind === "every" && html`<input class="field num" type="number" min="15" max="10080" step="1" aria-label=${t("rules.minutes")} value=${f.minutes} onInput=${set("minutes")} /><span class="hint">${t("rules.minutes")}</span>`}
+      ${f.kind === "once" && html`<input class="field num" type="datetime-local" aria-label=${t("rules.when")} value=${f.at} onInput=${set("at")} />`}
+      ${f.kind === "cron" && html`<input class="field mono" aria-label="cron" value=${f.cron} onInput=${set("cron")} />`}`}
+      ${(f.kind === "monthly" || f.kind === "yearly") && Number(f.before) > 0 && html`<span class="hint">${t("scheduled.beforeDays", { count: Number(f.before) })}</span>`}
+    </div>
+    ${full && f.kind === "weekly" && html`<div class="rule-days">${DAY_PICKS.map((d) => html`<button type="button" class=${`chip${f.days.includes(d) ? " on" : ""}`} aria-pressed=${f.days.includes(d)} onClick=${() => toggleDay(d)}>${dayName(d)}</button>`)}</div>`}
+    <div class="rule-time-summary"><span>${compact && preview?.when ? `${preview.when} · ${zone}` : zone}</span>
+    ${preview && html`<span class="hint">${t("scheduled.next", { times: preview.times.map((at) => fmtNext(at, Date.now(), zone)).join(" · ") })}</span><span class="hint">${t(preview.monthlyRuns === 1 ? "scheduled.frequencyOne" : "scheduled.frequency", { count: preview.monthlyRuns })}</span>`}</div>
+    ${preview && !remind && preview.monthlyRuns > 300 && html`<p class="tone-warning">${t("scheduled.frequent")}</p>`}
+    ${error && html`<p class="tone-danger" role="alert">${error}</p>`}`;
+}
+
+/** 「不知道写什么？从任务库挑一条 ›」：已经填了东西时先问要不要放弃 */
+export async function leaveForLibrary(dirty, close) {
+  if (dirty && !(await confirmSheet({ title: t("routines.discardTitle"), confirmLabel: t("routines.discard"), danger: false }))) return;
+  close?.();
+  openLibrary();
+}
+
 export function RuleEditor({ botId, rule, onClose, onSaved, advanced = false }) {
   const [kind, setKind] = useState(rule?.kind || "check");
   const [title, setTitle] = useState(rule?.title || "");
@@ -291,12 +358,10 @@ export function RuleEditor({ botId, rule, onClose, onSaved, advanced = false }) 
   const [choices, setChoices] = useState(null);
   const [zone, setZone] = useState(rule?.trigger?.schedule?.tz || "");
   const [busy, setBusy] = useState(false);
-  const [more, setMore] = useState(["every", "cron"].includes(orig.kind));
+  const [more, setMore] = useState(MORE_KINDS.includes(orig.kind));
   const [missed, setMissed] = useState(rule?.missedPolicy || "catchup");
   const [runB, setRunB] = useState(String(rule?.runBudgetUsd ?? 0.1));
   const [monthB, setMonthB] = useState(String(rule?.monthBudgetUsd ?? 3));
-  const [preview, setPreview] = useState(null);
-  const [error, setError] = useState("");
   // 「用技能（可选）」：在这条规则所属机器人上打开的「我的技能」；选了预填原话
   const [skill, setSkill] = useState(rule?.skill?.name || "");
   const botSkillList = useBotSkills(botId);
@@ -320,15 +385,7 @@ export function RuleEditor({ botId, rule, onClose, onSaved, advanced = false }) 
     }).catch(failed);
     return () => { alive = false; };
   }, [botId]);
-  useEffect(() => {
-    if (!zone || event) return;
-    let alive = true;
-    setPreview(null); setError("");
-    const timer = setTimeout(() => api("/rules/preview", { method: "POST", body: { schedule: scheduleOf(f, zone) } }).then((d) => { if (alive) setPreview(d); }).catch((e) => { if (alive) setError(e.message); }), 180);
-    return () => { alive = false; clearTimeout(timer); };
-  }, [JSON.stringify(f), zone]);
-  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
-  const toggleDay = (d) => setF({ ...f, days: f.days.includes(d) ? f.days.filter((x) => x !== d) : [...f.days, d] });
+  const { preview, error } = useSchedulePreview(f, zone, event);
   const remind = kind === "remind";
   const channel = choices?.destinations.find((c) => c.id === conv)?.channel || rule?.channel;
   const save = async () => {
@@ -346,6 +403,7 @@ export function RuleEditor({ botId, rule, onClose, onSaved, advanced = false }) 
   const ok = title.trim() && words.trim() && (conv || rule?.mode === "off") && (event || unchanged || preview) && (remind || Number(runB) > 0 && Number(monthB) > 0) && (!rule?.requiresGroup || rule.mode === "off" || group);
   return html`<${Sheet} wide framed class="rule-editor" title=${rule ? t("rules.editTitle") : t("rules.newTitle")} onClose=${onClose} footer=${html`<${Button} onClick=${onClose}>${t("common.cancel")}<//><${Button} variant="primary" loading=${busy} disabled=${!ok} onClick=${save}>${rule ? t("common.save") : t("rules.create")}<//>`}>
     <div class="rule-form">
+      ${!rule && html`<p class="hint rule-library-link"><button type="button" class="text" onClick=${() => leaveForLibrary(!!(title.trim() || words.trim()), onClose)}>${t("routines.notSure")}</button></p>`}
       ${!rule && html`<div class="rule-types" role="radiogroup" aria-label=${t("rules.kind")}>${["remind", "check"].map((value) => html`<label class=${`rule-type${kind === value ? " selected" : ""}`}><input class="sr-only" type="radio" name="rule-kind" value=${value} checked=${kind === value} onChange=${() => setKind(value)} onKeyDown=${(e) => { if (e.key === "Enter") { e.preventDefault(); setKind(value); } }} /><span class="rule-type-icon"><${Icon} name=${value === "remind" ? "chat" : "spark"} size="lg" /></span><span><b>${t(value === "remind" ? "rules.kindRemind" : "rules.kindCheck")}</b><small>${t(`scheduled.kindHint.${value}`)}</small></span></label>`)}</div>`}
       <section class="rule-content-group"><label>${t("rules.name")}<input class="field" data-autofocus value=${title} maxlength="40" onInput=${(e) => setTitle(e.target.value)} /></label>
       ${!remind && (mineOn.length > 0 || rule?.skill) && html`<label>${t("mySkills.rules.pick")}<select class="field" value=${skill} onChange=${(e) => pickSkill(e.target.value)}>
@@ -355,21 +413,7 @@ export function RuleEditor({ botId, rule, onClose, onSaved, advanced = false }) 
       </select></label>`}
       <label>${remind ? t("rules.wordsRemind") : t("rules.wordsCheck")}<textarea class="field" rows=${remind ? 2 : 3} maxlength=${remind ? 300 : 2000} value=${words} onInput=${(e) => setWords(e.target.value)}></textarea></label></section>
       ${!event && html`<div class="rule-when"><h3 class="rule-group-title">${t("rules.when")}</h3>
-        <div class="rule-frequency"><${Seg} label=${t("rules.when")} options=${COMMON_KINDS.map((k) => [k, t(k === "monthly" ? "scheduled.monthly" : `rules.kinds.${k}`)])} value=${f.kind} onChange=${(kind) => setF({ ...f, kind })} />
-        <button type="button" class="text" aria-expanded=${more} onClick=${() => setMore(!more)}>${t("scheduled.more")}<${Icon} name="chevDown" class=${more ? "flipped" : ""} size="xs" /></button></div>
-        ${more && html`<${Seg} label=${t("scheduled.more")} options=${["every", "cron"].map((k) => [k, t(`rules.kinds.${k}`)])} value=${f.kind} onChange=${(kind) => setF({ ...f, kind })} />`}
-        <div class="rule-when-row">
-          ${f.kind === "monthly" && html`<select class="field" value=${f.day} onChange=${set("day")}>${Array.from({ length: 31 }, (_, i) => html`<option value=${i + 1}>${i + 1}</option>`)}<option value="last">${t("scheduled.lastDay")}</option></select>`}
-          ${["daily", "weekdays", "weekly", "monthly"].includes(f.kind) && html`<input class="field num" type="time" aria-label=${t("rules.when")} value=${f.time} onInput=${set("time")} />`}
-          ${f.kind === "every" && html`<input class="field num" type="number" min="15" max="10080" step="1" aria-label=${t("rules.minutes")} value=${f.minutes} onInput=${set("minutes")} /><span class="hint">${t("rules.minutes")}</span>`}
-          ${f.kind === "once" && html`<input class="field num" type="datetime-local" aria-label=${t("rules.when")} value=${f.at} onInput=${set("at")} />`}
-          ${f.kind === "cron" && html`<input class="field mono" aria-label="cron" value=${f.cron} onInput=${set("cron")} />`}
-        </div>
-        ${f.kind === "weekly" && html`<div class="rule-days">${DAY_PICKS.map((d) => html`<button type="button" class=${`chip${f.days.includes(d) ? " on" : ""}`} aria-pressed=${f.days.includes(d)} onClick=${() => toggleDay(d)}>${dayName(d)}</button>`)}</div>`}
-        <div class="rule-time-summary"><span>${zone}</span>
-        ${preview && html`<span class="hint">${t("scheduled.next", { times: preview.times.map((at) => fmtNext(at, Date.now(), zone)).join(" · ") })}</span><span class="hint">${t(preview.monthlyRuns === 1 ? "scheduled.frequencyOne" : "scheduled.frequency", { count: preview.monthlyRuns })}</span>`}</div>
-        ${preview && !remind && preview.monthlyRuns > 300 && html`<p class="tone-warning">${t("scheduled.frequent")}</p>`}
-        ${error && !unchanged && html`<p class="tone-danger" role="alert">${error}</p>`}
+        <${ScheduleFields} f=${f} setF=${setF} zone=${zone} preview=${preview} error=${unchanged ? "" : error} remind=${remind} more=${more} setMore=${setMore} />
       </div>`}
       <section class="rule-delivery-group"><h3 class="rule-group-title">${t("rules.to")}</h3>
       ${rule?.requiresGroup && choices && html`<${GroupPicker} groups=${choices.groups} value=${group} onChange=${setGroup} />`}

@@ -102,7 +102,7 @@ export interface SkillRuntime {
 }
 
 /**
- * 一个技能现在能不能用：active 已生效 · waiting 当前任务结束后生效 · loading 加载中 · off 已关闭。
+ * 一个技能现在能不能用：active 已生效 · waiting 机器人正在跑任务、下一条消息起生效 · loading 加载中 · off 已关闭。
  * 进程没在跑时，下一条消息启动它就会带上，算已生效；在启动的时候一律是加载中（加载完成前不说已经可用）。
  */
 export type SkillState = "active" | "waiting" | "loading" | "off";

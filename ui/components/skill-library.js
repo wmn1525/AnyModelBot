@@ -5,7 +5,7 @@ import { html, Button, Icon, Popover, Sheet, Spinner } from "./ui.js";
 import { toast } from "../lib/store.js";
 import { t, useLang } from "../lib/i18n.js";
 import {
-  authorName, avatarSrc, avatarState, categoryName, copyText, initialOf, installPrompt, matchesSkill, openExternal, repoUrl, setAvatarState, skillText,
+  authorName, avatarFailed, avatarKnown, avatarLoaded, avatarSrc, categoryName, copyText, initialOf, installPrompt, matchesSkill, openExternal, repoUrl, skillText,
 } from "../lib/skill-library.js";
 
 /** 打开 GitHub：浏览器打不开时把地址复制下来 */
@@ -15,10 +15,16 @@ export function openGithub(url) {
   toast(t("skills.toast.openFailed", { url }), "err");
 }
 
-/** 作者头像：进入可视区域才加载（之前是灰色占位），取不到或 3 秒没加载出来显示首字母；运行期间同一头像只请求一次 */
+/**
+ * 作者头像：先显示作者首字母（白字彩色底，底色按作者固定），图片在后台读，读到后原位淡入（尺寸不变，卡片不跳动）；
+ * 读不到或一直没读到就一直是首字母，不出现空灰块或破图。读到过的（本机有存）直接显示图片，不先闪首字母。
+ * 列表里进入可视区域才去读。
+ */
 export function SkillAvatar({ author, big }) {
   const ref = useRef(null);
-  const [state, setState] = useState(() => avatarState(author.id) || "idle");
+  const id = author.id;
+  // idle 还没进入可视区域 · loading 在读 · ok 读到了 · known 本机读到过、直接显示 · fail 读不到
+  const [state, setState] = useState(() => (avatarKnown(id) ? "known" : avatarFailed(id) ? "fail" : "idle"));
   useEffect(() => {
     if (state !== "idle") return;
     const el = ref.current;
@@ -26,27 +32,37 @@ export function SkillAvatar({ author, big }) {
     const io = new IntersectionObserver((entries) => {
       if (entries.some((e) => e.isIntersecting)) {
         io.disconnect();
-        setState(avatarState(author.id) || "loading");
+        setState("loading");
       }
     });
     io.observe(el);
     return () => io.disconnect();
-  }, [state, author.id]);
+  }, [state, id]);
+  // 本机读到过、却没马上出来（本机那份被清掉了，正在重新读）：先显示首字母，读到后照常淡入
   useEffect(() => {
-    if (state !== "loading") return;
-    const timer = setTimeout(() => {
-      setAvatarState(author.id, "fail");
-      setState(avatarState(author.id));
-    }, 3000);
+    if (state !== "known") return;
+    const timer = setTimeout(() => setState((v) => (v === "known" ? "loading" : v)), 400);
     return () => clearTimeout(timer);
-  }, [state, author.id]);
+  }, [state]);
+  // 读不到的：网络恢复后再试一次
+  useEffect(() => {
+    if (state !== "fail") return;
+    const retry = () => setState("loading");
+    window.addEventListener("online", retry);
+    return () => window.removeEventListener("online", retry);
+  }, [state]);
+  // 一打开就是本机读到过的：图片直接显示，不做淡入
+  const instant = useRef(state === "known");
   const done = (ok) => {
-    setAvatarState(author.id, ok ? "ok" : "fail");
-    setState(avatarState(author.id));
+    avatarLoaded(id, ok);
+    if (state === "loading") instant.current = false;
+    setState(ok ? "ok" : "fail");
   };
-  return html`<span class=${`skill-avatar${big ? " big" : ""}${state === "fail" ? " initial" : ""}`} ref=${ref} role="img" aria-label=${t("skills.author.avatar", { name: authorName(author) })}>
-    ${(state === "loading" || state === "ok") && html`<img src=${avatarSrc(author.id)} alt="" class=${state === "ok" ? "on" : ""} referrerpolicy="no-referrer" onLoad=${() => done(true)} onError=${() => done(false)} />`}
-    ${state === "fail" && html`<span aria-hidden="true">${initialOf(author)}</span>`}
+  const shown = state === "known" || state === "ok";
+  return html`<span class=${`skill-avatar${big ? " big" : ""}${shown && instant.current ? " instant" : ""}`} ref=${ref} role="img" aria-label=${t("skills.author.avatar", { name: authorName(author) })}
+    style=${{ "--skill-tone": `var(--skill-tone-${author.tone || 1})` }}>
+    ${!shown && html`<span class="skill-avatar-initial" aria-hidden="true">${initialOf(author)}</span>`}
+    ${state !== "idle" && state !== "fail" && html`<img src=${avatarSrc(id)} alt="" class=${shown ? "on" : ""} draggable="false" onLoad=${() => done(true)} onError=${() => done(false)} />`}
   </span>`;
 }
 
@@ -54,11 +70,14 @@ function Marks({ s }) {
   return s.marks.slice(0, 2).map((m) => html`<span key=${m} class="skill-mark" title=${t(`skills.markTips.${m}`)} aria-label=${t("skills.markAria", { label: t(`skills.marks.${m}`), tip: t(`skills.markTips.${m}`) })} tabindex="0">${t(`skills.marks.${m}`)}</span>`);
 }
 
-/** 标签（可点）：GitHub 打开原仓库，作者昵称筛选这位作者；标记（不可点）排在后面 */
-function Tags({ s, lib, onAuthor, hover }) {
+/**
+ * 标签（可点）：作者昵称筛选这位作者；标记（不可点）排在后面。repo：详情里还带一个打开原仓库的「GitHub」标签
+ * （列表卡片上不带：卡片右下角有「GitHub ↗」胶囊，打开技能所在的文件夹）
+ */
+function Tags({ s, lib, onAuthor, hover, repo = false }) {
   const a = lib.authors[s.author];
   return html`<span class="skill-tags">
-    <button type="button" class="skill-tag" aria-label=${t("skills.openRepoLabel", { name: s.id })} onClick=${(e) => (e.stopPropagation(), openGithub(repoUrl(s)))}>GitHub</button>
+    ${repo && html`<button type="button" class="skill-tag" aria-label=${t("skills.openRepoLabel", { name: s.id })} onClick=${(e) => (e.stopPropagation(), openGithub(repoUrl(s)))}>GitHub</button>`}
     <button type="button" class="skill-tag" aria-label=${t("skills.filterAuthorLabel", { name: authorName(a) })} onClick=${(e) => (e.stopPropagation(), onAuthor(a.id))}
       onMouseEnter=${(e) => hover?.enter(a, e.currentTarget)} onMouseLeave=${() => hover?.leave()}>${authorName(a)}</button>
     <${Marks} s=${s} />
@@ -67,6 +86,11 @@ function Tags({ s, lib, onAuthor, hover }) {
 
 const tryLine = (s) => t("skills.tryLine", { text: skillText(s, "try") });
 
+/**
+ * 一个技能是一张卡片：头像和标题「{英文名}：{中文名}」、描述、触发方式（都单行，末尾省略），底部一行左边作者标签和标记、
+ * 右边常显两个小胶囊「GitHub ↗」「复制安装指令」（太窄时换到下一行靠右）。点卡片或回车打开右侧详情；
+ * 点胶囊、作者标签、头像只做各自的事。键盘 Tab 依次到卡片、头像、作者标签、标记、两个胶囊。
+ */
 function SkillRow({ s, lib, copied, onOpen, onCopy, onAuthor, hover }) {
   const a = lib.authors[s.author];
   const stop = (fn) => (e) => {
@@ -80,14 +104,16 @@ function SkillRow({ s, lib, copied, onOpen, onCopy, onAuthor, hover }) {
       <${SkillAvatar} author=${a} />
     </button>
     <span class="skill-row-text">
-      <span class="skill-row-title">${t("skills.nameTitle", { name: s.id, title: skillText(s, "title") })}</span>
-      <span class="skill-row-sub">${skillText(s, "summary")}</span>
-      <span class="skill-row-sub">${tryLine(s)}</span>
-      <${Tags} s=${s} lib=${lib} onAuthor=${onAuthor} hover=${hover} />
+      <span class="skill-row-title" title=${t("skills.nameTitle", { name: s.id, title: skillText(s, "title") })}>${t("skills.nameTitle", { name: s.id, title: skillText(s, "title") })}</span>
+      <span class="skill-row-sub" title=${skillText(s, "summary")}>${skillText(s, "summary")}</span>
+      <span class="skill-row-sub" title=${tryLine(s)}>${tryLine(s)}</span>
     </span>
-    <span class="skill-row-actions">
-      <${Button} size="sm" class="skill-act" aria-label=${t("skills.openRepoLabel", { name: s.id })} onClick=${stop(() => openGithub(s.url))}>GitHub<${Icon} name="ext" size="xs" /><//>
-      <${Button} size="sm" class="skill-act" aria-label=${t("skills.copyLabel", { name: s.id })} onClick=${stop(() => onCopy(s))}>${copied ? t("skills.copied") : t("skills.copy")}<//>
+    <span class="skill-row-foot">
+      <${Tags} s=${s} lib=${lib} onAuthor=${onAuthor} hover=${hover} />
+      <span class="skill-row-actions">
+        <button type="button" class="btn sm skill-act" aria-label=${t("skills.openRepoLabel", { name: s.id })} onClick=${stop(() => openGithub(s.url))}>GitHub<${Icon} name="ext" size="xs" /></button>
+        <button type="button" class=${`btn sm skill-act${copied ? " done" : ""}`} aria-label=${t("skills.copyLabel", { name: s.id })} onClick=${stop(() => onCopy(s))}>${copied ? t("skills.copied") : t("skills.copy")}</button>
+      </span>
     </span>
   </div>`;
 }
@@ -239,7 +265,7 @@ function SkillDetail({ s, lib, manual, nonce, copied, onCopy, onAuthor, onClose 
         <div class="skill-detail-names">
           <h2>${s.id}</h2>
           <p>${title}</p>
-          <${Tags} s=${s} lib=${lib} onAuthor=${onAuthor} />
+          <${Tags} s=${s} lib=${lib} onAuthor=${onAuthor} repo />
         </div>
       </header>
       <div class="skill-detail-actions">

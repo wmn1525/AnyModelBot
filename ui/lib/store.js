@@ -39,7 +39,7 @@ export function resumeToast(id) {
 function scheduleToast(id) {
   clearTimeout(toastTimers.get(id));
   const item = toasts.get().find((t) => t.id === id);
-  if (item && !item.leaving && !item.queued && item.kind !== "err" && !toastPaused.has(id)) {
+  if (item && !item.leaving && !item.queued && item.kind !== "err" && !item.sticky && !toastPaused.has(id)) {
     toastTimers.set(id, setTimeout(() => dismissToast(id), 3000));
   }
 }
@@ -52,7 +52,8 @@ function promoteToasts() {
   }));
   promoted.forEach(scheduleToast);
   const list = toasts.get();
-  if (list.some((t) => t.queued) && !list.some((t) => t.leaving)) dismissToast(list.find((t) => !t.queued).id);
+  // 排满了：先让最早的普通提示让位，带按钮的（用户还没处理）尽量留着
+  if (list.some((t) => t.queued) && !list.some((t) => t.leaving)) dismissToast((list.find((t) => !t.queued && !t.sticky) || list.find((t) => !t.queued)).id);
 }
 export function toast(text, kind = "ok", scope = "") {
   // 同一条提示还在（比如连续保存）：沿用那一条、重新计时，不叠一串、也不重播出现的动画
@@ -61,6 +62,20 @@ export function toast(text, kind = "ok", scope = "") {
   if (!same) { toasts.set((l) => [...l, { id, text, kind, scope, queued: true }]); promoteToasts(); }
   else if (same.scope !== scope) toasts.set((l) => l.map((item) => item.id === id ? { ...item, scope } : item));
   scheduleToast(id);
+  return id;
+}
+/**
+ * 带示例和按钮的成功提示（装好技能、分配好应用）：一句结果 + 生效说法；下一行「试试这样说：{示例}」；
+ * 按钮「填入输入框」（onFill 不给时不显示，比如应用内群聊）和「复制」。不自动淡出，右侧有关闭；点任一按钮或关闭后收起。
+ */
+export function successToast({ text, example, onFill, onCopy, scope = "" }) {
+  const id = ++toastSeq;
+  const actions = example ? [
+    ...(onFill ? [{ label: t("chat.use.fill"), title: t("chat.use.fillTitle"), primary: true, run: onFill }] : []),
+    ...(onCopy ? [{ label: t("chat.use.copy"), run: onCopy }] : []),
+  ] : [];
+  toasts.set((l) => [...l, { id, text, kind: "ok", scope, queued: true, sticky: true, sub: example ? t("chat.use.try", { example }) : "", actions }]);
+  promoteToasts();
   return id;
 }
 /** 收起某个区域里的提示（比如保存失败时，刚才那条"已保存"不能再留着） */

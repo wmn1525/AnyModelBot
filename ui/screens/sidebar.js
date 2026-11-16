@@ -11,7 +11,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { html, Icon, IconButton, Menu, Popover, Skeleton, Spinner } from "../components/ui.js";
 import { BotAvatar } from "../components/avatar.js";
-import { UserAvatar } from "../components/user-avatar.js";
+import { UserAvatar, accountIdentity } from "../components/user-avatar.js";
 import { GuidePill } from "../components/guide.js";
 import { api } from "../lib/api.js";
 import { updateActionLabel, updateError } from "../components/app-update.js";
@@ -26,6 +26,7 @@ import { catalogSeen, locallyRemoved, tr } from "../lib/catalog.js";
 import { addSection, defaultLayout, deleteSection, keyOfBot, keyOfEntry, keyOfGroup, loadSideLayout, markSideLayoutPruned, moveItem, moveSection, place, prune, renameSection, saveSideLayout, sectionOf, sideFold, sideLayout, sideLayoutLoaded, sideLayoutPruned, toggleSideFold } from "../lib/sections.js";
 import { resumeAccountLogin } from "../lib/account-login.js";
 import { AccountLogin } from "./onboarding.js";
+import { CommunityLinks } from "../components/community.js";
 import { previewText } from "../lib/errors.js";
 import { appsStore } from "../lib/apps.js";
 import { ScheduledButton } from "./scheduled.js";
@@ -41,6 +42,8 @@ const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
  * - 余额和 Bot 额度在设置 › 模型中的 Modelflare 账户区 顶部直接展示，账户行只保留头像、昵称和菜单入口。
  * - 用自己的 API Key、没登录 Modelflare 时，账户行上面是"登录 Modelflare"的独立入口，不显示不存在的余额。
  * - 余额加载中 / 读取失败不显示成 0；登录后优先显示缓存资料；没有可显示资料时使用 Modelflare 账号，不显示本地账户占位。
+ * - 账户行和菜单顶部用同一份名称和头像（components/user-avatar.js 的 accountIdentity）：昵称 → 自设用户名 → 完整邮箱 →「Modelflare 账号」；
+ *   菜单副标题是邮箱（名称是昵称或用户名时）或「Modelflare 账号」。名称、副标题单行，末尾省略，悬停看全称。
  */
 export function AccountButton({ account, onSettings, update, onUpdateChanged }) {
   // 连接应用：侧栏和设置页的账户菜单都有这一项，直接改地址（main.js 的路由）；提醒点读共享的应用状态
@@ -67,7 +70,8 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
   useEffect(() => { if (!update?.busy) setBlockedHint(false); }, [update?.busy]);
   const signedIn = account?.state === "signed_in";
   useEffect(() => resumeAccountLogin(account), [account?.state]);
-  const me = signedIn ? account.name?.trim() || t("welcome.accountFallback") : t("firstUse.myAccount");
+  const id = accountIdentity(account);
+  const me = id.name;
   const profileLoading = signedIn && !(account.profileCached ?? !!(account.name || account.avatar)) && (account.profileState === "loading" || (!account.profileState && !account.profileReady && !account.error));
   const profileFailed = signedIn && (account.profileState === "error" || (!account.profileState && !!account.error));
   const retryProfile = () => { setOpen(false); window.dispatchEvent(new Event("amb-account-refresh")); };
@@ -119,7 +123,7 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
     <div class=${`account-row${open ? " on" : ""}`}>
       <div class=${`account${open ? " on" : ""}`}>
         <button type="button" class="account-identity" ref=${ref} title=${me} aria-label=${t("firstUse.accountMenu", { name: me })} aria-haspopup="menu" aria-expanded=${open} onClick=${() => setOpen((v) => !v)}>
-          <${UserAvatar} name=${me} src=${signedIn ? account.avatar : ""} fallback=${signedIn && !account.name} loading=${profileLoading} class="me" /><span class=${`who${profileLoading ? " connecting" : ""}`}>${profileLoading ? t("account.profile.connecting") : me}</span>
+          <${UserAvatar} name=${me} tone=${id.key} src=${id.avatar} fallback=${id.logo} loading=${profileLoading} class="me" /><span class=${`who${profileLoading ? " connecting" : ""}`}>${profileLoading ? t("account.profile.connecting") : me}</span>
         </button>
         ${appsAttention && html`<span class="dot warn account-dot" title=${t("apps.attention")}></span>`}
         ${profileFailed && html`<button type="button" class="icon-btn account-retry" title=${t("account.profile.retryHint")} aria-label=${t("account.profile.retry")} onClick=${retryProfile}><${Icon} name="refresh" size="sm" /></button>`}
@@ -132,8 +136,8 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
     </div>
     ${open && html`<${Popover} class="account-popover" anchor=${stackRef.current} trigger=${ref.current} prefer="up" width=${stackRef.current?.offsetWidth || 280} label=${t("sidebar.account")} onClose=${() => setOpen(false)}>
       <div class="account-menu-head">
-        <${UserAvatar} name=${me} src=${signedIn ? account.avatar : ""} fallback=${signedIn && !account.name} loading=${profileLoading} class="account-menu-avatar" />
-        <div class="account-menu-identity"><span class="name">${me}</span><span class="hint">${signedIn ? "Okinto" : t("sidebar.localUser")}</span></div>
+        <${UserAvatar} name=${me} tone=${id.key} src=${id.avatar} fallback=${id.logo} loading=${profileLoading} class="account-menu-avatar" />
+        <div class="account-menu-identity"><span class="name" title=${me}>${me}</span><span class="hint" title=${id.sub}>${id.sub}</span></div>
       </div>
       <div class="account-menu primary" role="menu">
         ${profileFailed && html`<button type="button" role="menuitem" onClick=${retryProfile}><span class="menu-icon"><${Icon} name="refresh" size="md" /></span><span class="menu-label">${t("account.profile.reload")}</span></button>`}
@@ -143,6 +147,9 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
           <span class="menu-icon"><${Icon} name="link" size="md" /></span><span class="menu-label">${t("apps.menu")}</span>${appsAttention && html`<span class="dot warn" title=${t("apps.attention")}></span>`}</button>
         <a role="menuitem" href="https://github.com/wmn1525/AnyModelBot/issues/new/choose" target="_blank" rel="noopener noreferrer" onClick=${() => setOpen(false)}>
           <span class="menu-icon"><${Icon} name="chat" size="md" /></span><span class="menu-label">${t("firstUse.feedback")}</span><${Icon} name="ext" size="xs" class="menu-trail" /></a>
+        <div class="account-community" role="group" aria-label=${t("firstUse.community")}>
+          <span class="menu-icon"><${Icon} name="chats" size="md" /></span><span class="menu-label">${t("firstUse.community")}</span>
+          <${CommunityLinks} icons role="menuitem" onPick=${() => setOpen(false)} /></div>
         <button type="button" role="menuitem" disabled=${check === "checking" || updating || updateWorking || (ready && update.busy)} title=${ready && update.busy ? t("updates.busy") : ""} onClick=${checkUpdate}>
           <span class="menu-icon"><${Icon} name="refresh" size="md" /></span><span class="menu-label" role="status">${checkLabel}${ready && update.busy && html`<small class="update-disabled-reason">${t("updates.busy")}</small>`}</span>${update?.available && html`<span class="dot new"></span>`}</button>
       </div>

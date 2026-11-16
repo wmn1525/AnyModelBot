@@ -389,20 +389,23 @@ export function Popover({ anchor, trigger, onClose, class: cls = "", width = 280
 }
 
 /**
- * 菜单：items = [{ label, icon, note, onSelect, danger, disabled, cur, sub }] | { sep: true } | { group: "…" }
- * sub：点了打开下一层（右边一个箭头，代替勾）。
+ * 菜单：items = [{ label, icon, note, onSelect, danger, disabled, cur, sub, title, kbd }] | { sep: true } | { group: "…" } | { custom: 节点 }。title：悬停提示（置灰时说明原因）
+ * sub：点了打开下一层（右边一个箭头，代替勾）。custom：自己画的一行（缩放条、搜索框），不参与键盘选择，点里面不收起菜单。
  * 键盘：↑↓ 选择，Enter 执行，Esc 关闭。
  */
-export function Menu({ anchor, items, onClose, width = 240, prefer, align, label }) {
+export function Menu({ anchor, items, onClose, width = 240, prefer, align, label, class: cls = "" }) {
   const hasIcons = items.some((it) => it.icon);
-  const pickable = items.map((it, i) => (it.sep || it.group || it.disabled ? -1 : i)).filter((i) => i >= 0);
-  const [sel, setSel] = useState(pickable[0] ?? -1);
+  const pickable = items.map((it, i) => (it.sep || it.group || it.custom || it.disabled ? -1 : i)).filter((i) => i >= 0);
+  // 打开时指着当前项（有勾的那项），没有就指第一项；列表长时把它滚到看得见的地方
+  const [sel, setSel] = useState(() => pickable.find((i) => items[i].cur) ?? pickable[0] ?? -1);
   const listRef = useRef(null);
+  useEffect(() => listRef.current?.querySelector("li.sel")?.scrollIntoView?.({ block: "nearest" }), [sel]);
   const run = (it) => {
     onClose();
     it.onSelect?.();
   };
   const onKey = (e) => {
+    if (e.target.closest?.("li.custom")) return;
     const k = pickable.indexOf(sel);
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -416,14 +419,16 @@ export function Menu({ anchor, items, onClose, width = 240, prefer, align, label
     }
   };
   useEffect(() => listRef.current?.focus(), []);
-  return html`<${Popover} class="menu-pop" anchor=${anchor} onClose=${onClose} width=${width} prefer=${prefer} align=${align} label=${label}>
+  return html`<${Popover} class=${cx("menu-pop", cls)} anchor=${anchor} onClose=${onClose} width=${width} prefer=${prefer} align=${align} label=${label}>
     <ul role="menu" tabindex="-1" ref=${listRef} onKeyDown=${onKey} style="outline:none">
       ${items.map((it, i) =>
         it.sep
           ? html`<li class="sep" role="separator"></li>`
           : it.group
             ? html`<li class="group">${it.group}</li>`
-            : html`<li role="menuitem" aria-disabled=${!!it.disabled}
+            : it.custom
+              ? html`<li class="custom" role="none">${it.custom}</li>`
+            : html`<li role="menuitem" aria-disabled=${!!it.disabled} title=${it.title}
                 class=${[sel === i ? "sel" : "", it.danger ? "danger" : "", it.disabled ? "disabled" : "", it.cur ? "cur" : "", it.note ? "rich" : ""].join(" ")}
                 onPointerMove=${() => !it.disabled && setSel(i)} onClick=${() => !it.disabled && run(it)}>
                 ${hasIcons && html`<span class=${cx("lead", !it.icon && "empty-icon")} aria-hidden="true">${it.icon && html`<${Icon} name=${it.icon} size="sm" />`}</span>`}
@@ -436,17 +441,57 @@ export function Menu({ anchor, items, onClose, width = 240, prefer, align, label
   <//>`;
 }
 
-/** 行右侧的菜单按钮（magpie .proto.pick） */
-export function MenuButton({ value, options, onChange, disabled, label, width = 260, align = "right" }) {
+/**
+ * 行右侧的菜单按钮（magpie .proto.pick）。
+ * block：整行选择框——占满一行、整行都能点，文字靠左（超长末尾省略、悬停看全称 title），下拉三角固定在框内最右侧，
+ * 展开的列表和框同宽、左对齐。title 不给时用当前项的文字（是字符串时）。
+ * 键盘：回车、空格或 ↓ 展开；列表里 ↑↓ 移动、回车选中、Esc 收起，焦点回到框上（Popover 关闭时还回去）。
+ */
+export function MenuButton({ value, options, onChange, disabled, label, width = 260, align = "right", block = false, title }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const cur = options.find((o) => o[0] === value);
-  return html`<button type="button" class="pick" ref=${ref} disabled=${disabled} aria-haspopup="menu" aria-expanded=${open} aria-label=${label}
-      onClick=${() => setOpen((v) => !v)}>
-      <span class="v">${cur ? cur[1] : value || "—"}</span><${Icon} name="chevDown" />
+  const text = cur ? cur[1] : value || "—";
+  const full = title ?? (typeof text === "string" ? text : undefined);
+  const onKeyDown = (e) => {
+    if (e.key !== "ArrowDown" || open || disabled) return;
+    e.preventDefault();
+    setOpen(true);
+  };
+  return html`<button type="button" class=${cx("pick", block && "block")} ref=${ref} disabled=${disabled} aria-haspopup="menu" aria-expanded=${open} aria-label=${label}
+      title=${block ? full : undefined} onClick=${() => setOpen((v) => !v)} onKeyDown=${onKeyDown}>
+      <span class="v">${text}</span><${Icon} name="chevDown" />
     </button>
-    ${open && html`<${Menu} anchor=${ref.current} width=${width} align=${align} label=${label} onClose=${() => setOpen(false)}
-      items=${options.map(([v, text, note]) => ({ label: text, note, cur: v === value, onSelect: () => v !== value && onChange(v) }))} />`}`;
+    ${open && html`<${Menu} anchor=${ref.current} width=${block ? ref.current?.offsetWidth || width : width} align=${block ? "left" : align} label=${label} class=${block ? "block-pop" : ""}
+      onClose=${() => setOpen(false)} items=${options.map(([v, text, note]) => ({ label: text, note, cur: v === value, onSelect: () => v !== value && onChange(v) }))} />`}`;
+}
+
+/**
+ * 行最右侧的「⋯」：只显示三个点，悬停出现浅灰圆底，点开是菜单（Menu 的 items），选一项后收起。
+ * 读屏名称带上这一行的名称（name），悬停提示「更多」。busy：菜单里的事正在做，转圈且不能再点
+ */
+export function MoreButton({ name, items, disabled, busy, width = 240, class: cls }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const label = t("ui.moreFor", { name });
+  return html`<button type="button" class=${cx("icon-btn more-btn", cls)} ref=${ref} title=${t("ui.more")} aria-label=${label} aria-haspopup="menu" aria-expanded=${open}
+      aria-busy=${busy || undefined} disabled=${disabled || busy} onClick=${() => setOpen((v) => !v)}>${busy ? html`<${Spinner} />` : html`<${Icon} name="more" size="sm" />`}</button>
+    ${open && html`<${Menu} anchor=${ref.current} align="right" width=${width} label=${label} items=${items} onClose=${() => setOpen(false)} />`}`;
+}
+
+/**
+ * 整行可点的行：一行只有一个「查看 / 打开」时，去掉右侧的文字按钮，整行就是这个按钮，右侧一个浅灰 ›；
+ * 打开站外网页的行右侧是 ↗（href 在浏览器里打开；ext 是点了由程序去打开的）。
+ * 悬停整行深一档、按下再深一档，键盘焦点描边画在行内侧，回车或空格触发；不可用时名称、说明和 › 一起变淡
+ */
+export function GoRow({ id, name, sub, title, onClick, href, ext, disabled, flash, class: cls }) {
+  const body = html`<div class="who"><div class="name">${name}</div>${sub && html`<div class="sub">${sub}</div>`}</div>
+    <span class="row-go" aria-hidden="true"><${Icon} name=${href || ext ? "ext" : "chevRight"} size="xs" /></span>`;
+  const c = cx("row clickable go", flash && "flash", cls);
+  return href
+    ? html`<a class=${c} id=${id} href=${disabled ? undefined : href} aria-disabled=${disabled || undefined} target="_blank" rel="noopener noreferrer" title=${title}
+        onKeyDown=${(e) => e.key === " " && (e.preventDefault(), e.currentTarget.click())}>${body}</a>`
+    : html`<button type="button" class=${c} id=${id} disabled=${disabled} title=${title} onClick=${onClick}>${body}</button>`;
 }
 
 /** label 缺省为「复制」 */
@@ -486,6 +531,9 @@ export const Badge = ({ s }) => {
   return html`<span class=${`badge ${known ? STATE_KIND[s] : ""}`}>${known ? t(`ui.state.${s}`) : s}</span>`;
 };
 
+/** 开着的对话框，后开的在最后：叠着几个时（「用起来」上面开着连接应用）只有最上面那个管 Esc 和 Tab */
+const openSheets = [];
+
 /** 自绘确认框：焦点先在"取消"（安全选项），Esc 关闭，Tab 在框内循环 */
 /** sticky：点遮罩不关（扫码、填表进行到一半时，误点不该把流程丢掉）；Esc 和关闭钮照常 */
 export function Sheet({ title, onClose, children, wide, label, leaving, closable = true, sticky = false, framed = false, footer, class: cls = "" }) {
@@ -493,9 +541,12 @@ export function Sheet({ title, onClose, children, wide, label, leaving, closable
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const prev = document.activeElement;
+    const me = {};
+    openSheets.push(me);
     requestAnimationFrame(() => (ref.current?.querySelector("[data-autofocus]") || ref.current?.querySelector("input, textarea") || ref.current?.querySelector("button"))?.focus());
     const key = (e) => {
       if (e.isComposing || e.keyCode === 229) return;
+      if (openSheets.at(-1) !== me) return;
       if (e.key === "Escape") {
         // 对话框里开着下拉时，Esc 先关下拉（useDismiss）
         if (document.querySelector(".pop")) return;
@@ -517,6 +568,7 @@ export function Sheet({ title, onClose, children, wide, label, leaving, closable
     };
     document.addEventListener("keydown", key, true);
     return () => {
+      openSheets.splice(openSheets.indexOf(me), 1);
       document.removeEventListener("keydown", key, true);
       prev?.focus?.({ preventScroll: true });
     };
@@ -553,10 +605,18 @@ export function DialogHost() {
 
 export function Toasts({ scope }) {
   const list = useStore(toasts);
+  // 带按钮的提示（store.js 的 successToast）：结果一句、「试试这样说」一行、按钮一行；点任一按钮或关闭后收起
+  const act = (it, a) => {
+    dismissToast(it.id);
+    a.run?.();
+  };
   return html`<div class="toasts" role="status" aria-live="polite">
-    ${list.filter((it) => !it.queued && (scope === undefined || (it.scope || "") === scope)).map((it) => html`<div key=${it.id} class=${`toast ${it.kind}${it.leaving ? " leaving" : ""}`} onMouseEnter=${() => pauseToast(it.id)} onMouseLeave=${() => resumeToast(it.id)}>
-      <span>${it.text}</span>
-      ${it.kind === "err" && html`<${IconButton} icon="close" size="xs" iconSize="xs" label=${t("common.close")} onClick=${() => dismissToast(it.id)} />`}
+    ${list.filter((it) => !it.queued && (scope === undefined || (it.scope || "") === scope)).map((it) => html`<div key=${it.id} class=${`toast ${it.kind}${it.sticky ? " rich" : ""}${it.leaving ? " leaving" : ""}`} onMouseEnter=${() => pauseToast(it.id)} onMouseLeave=${() => resumeToast(it.id)}>
+      ${it.sticky
+        ? html`<div class="toast-body"><span class="toast-text">${it.text}</span>${it.sub && html`<span class="toast-sub">${it.sub}</span>`}
+            ${it.actions?.length > 0 && html`<div class="toast-actions">${it.actions.map((a) => html`<button type="button" class=${`btn sm${a.primary ? " primary" : ""}`} title=${a.title} onClick=${() => act(it, a)}>${a.label}</button>`)}</div>`}</div>`
+        : html`<span>${it.text}</span>`}
+      ${(it.kind === "err" || it.sticky) && html`<${IconButton} icon="close" size="xs" iconSize="xs" label=${t("common.close")} onClick=${() => dismissToast(it.id)} />`}
     </div>`)}
   </div>`;
 }

@@ -29,6 +29,9 @@ import { chatView, saveChatView, useChatDraft } from "../lib/chat-view.js";
 import { SkillInstallCard } from "../components/skill-install-card.js";
 import { SkillDraftCard } from "../components/skill-draft-card.js";
 import { openSkillDetail } from "../lib/my-skills.js";
+import { AboutMeNotes, aboutMeByItem } from "../components/about-me.js";
+import { CollabItem, collabByItem, useCollabView } from "../components/collab.js";
+import { botById, replyAfter } from "../lib/collab.js";
 
 const NEAR_BOTTOM = 80;
 let seq = 0;
@@ -64,6 +67,27 @@ export function withInstalls(list, installs = [], live = []) {
   return out;
 }
 
+/**
+ * 「已开始新对话」分隔线：用户主动开新对话的时刻（服务端存在换段记录里，刷新、重开后仍在原位置）按时间插进历史。
+ * 它前面没有消息的（对话清空过、或更早的消息没读进来）不画
+ */
+export function withDividers(list, times = []) {
+  if (!times?.length) return list;
+  const out = [...list];
+  for (const at of times) {
+    if (!out.some((x) => x.kind !== "divider" && x.at && x.at <= at)) continue;
+    const i = out.findIndex((x) => x.at > at);
+    out.splice(i < 0 ? out.length : i, 0, { kind: "divider", id: `d${at}`, at });
+  }
+  return out;
+}
+
+/** 已经是新对话：还没聊过，或最后一条（不算卡片）就是分隔线 */
+export const freshConversation = (list) => {
+  const last = (list || []).filter((x) => x.kind !== "prompt").at(-1);
+  return !last || last.kind === "divider";
+};
+
 /** 回复显示的全文：模型在回合中间说的话在前，按说的顺序，最后的回复接着（最后没再说话时回复就是中间说的最后一句，不重复） */
 export function shownText(it) {
   const before = it.interim || [];
@@ -86,7 +110,19 @@ function liveItems(t, cards = []) {
 
 // —— 审批 / 提问卡片 ——
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-export function PromptCard({ requestId, fallback }) {
+/**
+ * 别的机器人（B）的审批和提问出现在你和 A 的对话里时，以 B 的名义：卡片上面一行 B 的头像、名字和时间（R9）
+ */
+function SignedBy({ row, chatBot, children }) {
+  if (!row || !chatBot || !row.botId || row.botId === chatBot) return children;
+  const b = botById(row.botId);
+  return html`<div class="signed-card">
+    <div class="signed-by"><${BotAvatar} bot=${b} id=${row.botId} size=${22} /><span class="name">${b?.name || row.botId}</span><span class="num tone-muted">${fmtClock(row.createdAt)}</span></div>
+    ${children}
+  </div>`;
+}
+
+export function PromptCard({ requestId, fallback, chatBot }) {
   const [row, setRow] = useState(null);
   const [gone, setGone] = useState(false);
   const [picked, setPicked] = useState({});
@@ -105,6 +141,7 @@ export function PromptCard({ requestId, fallback }) {
   if (gone || (!row && !requestId)) return html`<${Notice}><span class="pre-wrap">${fallback}</span><//>`;
   if (!row) return html`<div class="card"><${Skeleton} w="60%" /><${Skeleton} w="40%" /></div>`;
   const pending = row.status === "pending";
+  const sign = (node) => html`<${SignedBy} row=${row} chatBot=${chatBot}>${node}<//>`;
   const decide = async (ok, always = false) => {
     setBusy(true);
     try {
@@ -121,7 +158,7 @@ export function PromptCard({ requestId, fallback }) {
     const c = row.appConnect;
     const name = c.custom ? c.appName : appDisplayName(c.app, c.appName);
     const connected = row.status === "allowed";
-    return html`<div class=${`card app-card${pending ? "" : " done"}`}>
+    return sign(html`<div class=${`card app-card${pending ? "" : " done"}`}>
       <div class="q">${connected ? t("apps.card.connectedTitle", { app: name }) : t(`apps.card.title.${c.kind}`, { app: name })}</div>
       ${connected ? html`<div class="q-detail">${t("apps.card.connected")}</div>` : c.reason && html`<div class="q-detail">${c.reason}</div>`}
       ${pending && html`<div class="actions">
@@ -129,13 +166,13 @@ export function PromptCard({ requestId, fallback }) {
         <button type="button" class="text" disabled=${busy} onClick=${() => decide(false)}>${t("apps.card.notNow")}</button>
       </div>`}
       ${!pending && !connected && html`<div class="meta"><${Badge} s=${row.status} /></div>`}
-    </div>`;
+    </div>`);
   }
   if (row.appTool) {
     const a = row.appTool;
     const name = a.custom ? a.appName : appDisplayName(a.app, a.appName);
     const bot = a.botName || "";
-    return html`<div class=${`card app-card${pending ? "" : " done"}`}>
+    return sign(html`<div class=${`card app-card${pending ? "" : " done"}`}>
       <div class="meta"><span>${t(row.taskTitle ? "chat.approval.neededTask" : "chat.approval.needed", { title: row.taskTitle, code: html`<span class="num">${row.code}</span>` })}</span>
         ${!pending && html`<span class="app-card-done"><${Badge} s=${row.status} />${row.always && html`<span class="hint">${t("apps.bot.always")}</span>`}</span>`}</div>
       <div class="q">${t("apps.card.toolTitle", { bot })}</div>
@@ -146,10 +183,10 @@ export function PromptCard({ requestId, fallback }) {
         ${a.always && html`<button type="button" class="btn" disabled=${busy} onClick=${() => decide(true, true)}>${t("apps.card.always")}</button>`}
         <button type="button" class="btn" disabled=${busy} onClick=${() => decide(false)}>${t("chat.approval.deny")}</button>
       </div>`}
-    </div>`;
+    </div>`);
   }
   if (row.kind === "approval") {
-    return html`<div class=${`card${pending ? "" : " done"}`}>
+    return sign(html`<div class=${`card${pending ? "" : " done"}`}>
       <div class="meta"><span>${t(row.taskTitle ? "chat.approval.neededTask" : "chat.approval.needed", { title: row.taskTitle, code: html`<span class="num">${row.code}</span>` })}</span>${!pending && html`<${Badge} s=${row.status} />`}</div>
       <div class="q">${row.reason || t("chat.approval.fallbackReason")}</div>
       ${(row.tool || row.detail) && html`<div class="cmd">${row.tool}${row.detail ? "  " + row.detail : ""}</div>`}
@@ -157,7 +194,7 @@ export function PromptCard({ requestId, fallback }) {
         <button type="button" class="btn primary" disabled=${busy} onClick=${() => decide(true)}>${t("chat.approval.allowOnce")}</button>
         <button type="button" class="btn" disabled=${busy} onClick=${() => decide(false)}>${t("chat.approval.deny")}</button>
       </div>`}
-    </div>`;
+    </div>`);
   }
   const qs = row.questions || [];
   const submit = async (answers) => {
@@ -186,7 +223,7 @@ export function PromptCard({ requestId, fallback }) {
   };
   const sendAll = () =>
     submit(qs.map((q, i) => ({ id: q.id, selected: picked[q.id] || [], ...(i === qs.length - 1 && custom.trim() ? { custom: custom.trim() } : {}) })));
-  return html`<div class=${`card${pending ? "" : " done"}`}>
+  return sign(html`<div class=${`card${pending ? "" : " done"}`}>
     ${row.taskTitle && html`<div class="meta"><span>${t("chat.question.taskAsks", { title: row.taskTitle })}</span></div>`}
     ${qs.map((q) => html`<div class="q-block">
       <div class="q">${q.question}</div>
@@ -210,7 +247,7 @@ export function PromptCard({ requestId, fallback }) {
         onKeyDown=${(e) => e.key === "Enter" && !e.isComposing && e.keyCode !== 229 && custom.trim() && submit([{ id: qs[0].id, selected: [], custom: custom.trim() }])} />
     </div>`}
     ${!pending && html`<div class="meta"><${Badge} s=${row.status} /></div>`}
-  </div>`;
+  </div>`);
 }
 
 /**
@@ -232,9 +269,10 @@ export function WorkLine({ live, stopping, text, startedAt, workedMs, steps, cou
   useStore(appsStore);
   if (!live && !(ms >= 3000) && !steps?.length && !count) return null;
   const items = found.map((u) => ({ ...u, label: usedName(u, skills) })).filter((u) => u.label);
-  // 有一步在做时说那一步（模型在回合中间说过话也一样）；没有时出了字是"正在回复"。在用技能或应用的那一步说人话（「正在使用 Notion」），不说工具名
+  // 有一步在做时说那一步（模型在回合中间说过话也一样）；没有时出了字是"正在回复"。在用技能或应用的那一步说人话
+  // （「正在使用技能 · 名字」「正在使用 Notion · 搜索页面」），不说内部的调用工具名
   const busyUse = live && (steps || []).findLast((s) => s.status === "running")?.use;
-  const busyItem = busyUse && items.find((u) => u.kind === busyUse.kind && u.name === (busyUse.kind === "skill" ? busyUse.name : busyUse.app));
+  const busyItem = busyUse && items.find((u) => u.kind === busyUse.kind && (busyUse.kind === "skill" ? u.name === busyUse.name : u.name === busyUse.app && u.tool === (busyUse.tool || undefined)));
   const cur = live ? (busyItem ? usedLine({ ...busyItem, status: "running" }, busyItem.label) : currentStep(steps)) : "";
   // 按了停止：代理要重启进程，可能要几秒，先说清楚在停
   const long = ms >= 3000;
@@ -251,7 +289,7 @@ export function WorkLine({ live, stopping, text, startedAt, workedMs, steps, cou
   const name = (u) => (u.kind === "skill" && !HOST_SKILLS.has(u.name)
     ? html`<button type="button" class="text skill-link" title=${t("mySkills.activity.view")} onClick=${(e) => (e.stopPropagation(), openSkillDetail({ botId, name: u.name }))}>${u.label}</button>`
     : u.label);
-  const uses = live ? items.map((u) => ({ key: `${u.kind}:${u.name}`, status: u.status, text: withMark(usedLine(u, MARK), name(u)) })) : null;
+  const uses = live ? items.map((u) => ({ key: `${u.kind}:${u.name}:${u.tool || ""}`, status: u.status, text: withMark(usedLine(u, MARK), name(u)) })) : null;
   return html`<${ActivityLine} label=${label} phase=${phase} live=${live} steps=${steps} count=${count} load=${load} used=${live || !items.length ? "" : usedSummaryNodes(items, name)} uses=${uses} />`;
 }
 
@@ -355,6 +393,9 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
   const [loadErr, setLoadErr] = useState("");
   const [cue, setCue] = useState(null); // 头像的一次性反应（出错）；完成时头像自己会播
   const [canOpen, setCanOpen] = useState(false); // 桌面版：交付的文件用系统程序打开
+  // 关于我：这个对话里记下、改了、删了的提示行和确认卡、建议卡（挂在那一轮的回复下面）
+  const [aboutMe, setAboutMe] = useState(null);
+  const loadAboutMe = useCallback(() => api(`/about-me/chat?conversation=${encodeURIComponent(`${bot.id}:web:console`)}`).then((d) => mounted.current && setAboutMe(d)).catch(() => {}), [bot.id]);
   const lang = useLang();
   const scroller = useRef(null);
   const stick = useRef(savedView.current.atBottom);
@@ -369,6 +410,16 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
   const attachRef = useRef(null);
   // 处理中又发的消息（并进正在进行的回复）结束后重新读一次历史：存下的顺序是两条用户消息、一条回复
   const reloadAfter = useRef(false);
+  // 开始新对话（新建按钮、加号菜单、手动输入 /new）：正在请求；回复进行中手动输入的 /new 排到回复结束后
+  const [newBusy, setNewBusy] = useState(false);
+  const newQueued = useRef(false);
+  // 对话底部的轻提示（已经是新对话了、代理没有启用、没能开始新对话）：几秒后自己消失
+  const [hint, setHint] = useState(null);
+  useEffect(() => {
+    if (!hint) return;
+    const timer = setTimeout(() => setHint(null), hint.ms);
+    return () => clearTimeout(timer);
+  }, [hint]);
   // 这个会话的后台任务（胶囊挂在请求它的那条消息的回复下面）；任务结束时结果写进了历史，重新读一次
   const [tasks, setTasks] = useState([]);
   const taskGroups = useRef({});
@@ -438,7 +489,8 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
       convId.current = d.conversationId || "";
       setConvModel(bot.id, d.model || "");
       setCanOpen(!!d.canOpen);
-      const list = withInstalls(toItems(d.messages || []), d.installs, d.live);
+      if (d.aboutMe) setAboutMe(d.aboutMe);
+      const list = withDividers(withInstalls(toItems(d.messages || []), d.installs, d.live), d.dividers);
       const reply = ended && list.findLast((x) => x.kind !== "prompt" && x.role !== "user");
       if (reply && reply.at >= ended.since) reply.workedMs = ended.ms;
       const cards = (d.pending || []).map((a) => ({ kind: "prompt", id: "p" + a.id, requestId: a.id, prompt: "" }));
@@ -469,6 +521,14 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
   }, [load]);
   useEffect(() => { if (cuBlocked && !following.current) load(); }, [cuBlocked]);
   useEffect(() => onWorking(bot.id, generating), [generating]);
+  // 机器人之间发消息：灰色小字（已发消息给 / 收到…的消息）；B 回了消息、A 汇总好了（存进了历史）时重新读一次
+  const [collab, reloadCollab] = useCollabView(`${bot.id}:web:console`, () => !following.current && load());
+  // 一轮结束：这一轮可能记了关于我、发了消息给别的机器人
+  useEffect(() => {
+    if (generating) return;
+    loadAboutMe();
+    reloadCollab();
+  }, [generating]);
   useEffect(() => {
     const result = (e) => { if (e.detail.includes(bot.id)) load(); };
     window.addEventListener("amb-rule-results", result);
@@ -639,9 +699,55 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
     }
   };
 
+  /**
+   * 开始新对话：不发「/new」、不出气泡和「思考中」。成功时对话末尾出现灰色分隔线「已开始新对话」并滚到底，输入框获得焦点，
+   * 欢迎示例收起；交接便条在后台写（服务端）。已经是新对话、代理没启用、开新对话本身出错时不加分隔线，底部轻提示。
+   */
+  const newConversation = async () => {
+    if (newBusy || generating || following.current) return;
+    history.clear();
+    setFindOpen(false);
+    setSamples([]);
+    consumeWelcome();
+    const focus = () => requestAnimationFrame(() => ta.current?.focus());
+    if (items !== null && freshConversation(items)) {
+      setHint({ text: t("chat.newConv.already"), ms: 2000 });
+      return focus();
+    }
+    setNewBusy(true);
+    try {
+      const r = await api(`/bots/${encodeURIComponent(bot.id)}/chat/new`, { method: "POST", body: {} });
+      if (!mounted.current) return;
+      if (r.status === "started") {
+        stick.current = true;
+        setUnseen(false);
+        setItems((l) => [...(l || []), { kind: "divider", id: `d${r.at}`, at: r.at, enter: true }]);
+      } else if (r.status === "already") setHint({ text: t("chat.newConv.already"), ms: 2000 });
+      else if (r.status === "off") setHint({ text: t("chat.newConv.agentOff"), ms: 5000 });
+      else setHint({ text: t("chat.newConv.failed", { error: r.error || t("common.error") }), ms: 5000 });
+    } catch (e) {
+      if (mounted.current) setHint({ text: t("chat.newConv.failed", { error: e.message }), ms: 5000 });
+    } finally {
+      if (mounted.current) setNewBusy(false);
+      focus();
+    }
+  };
+
   const send = async (raw) => {
     const msg = (raw ?? text).trim();
     if (msg) { history.clear(); setFindOpen(false); }
+    // 手动输入的 /new（后面的文字忽略）和新建按钮一样；回复进行中时排到回复结束后立即开始
+    if (/^\/new(\s|$)/i.test(msg)) {
+      if (raw === undefined) {
+        setText("");
+        requestAnimationFrame(() => autoGrow(ta.current));
+      }
+      if (generating || following.current) {
+        newQueued.current = true;
+        return;
+      }
+      return newConversation();
+    }
     if (msg && (generating || following.current) && !msg.startsWith("/") && raw === undefined) return steer(msg);
     // 正在回复时点「存成技能…」或发 /skill：排在这一轮后面，回复结束后再整理
     if (msg && (generating || following.current) && /^\/skill\b/i.test(msg)) {
@@ -660,7 +766,7 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
     stick.current = true;
     const liveId = uid();
     const isReset = /^\/reset\b/i.test(msg);
-    if (/^\/(new|reset)\b/i.test(msg)) setSamples([]);
+    if (isReset) setSamples([]);
     setItems((l) => [...(l || []), { kind: "msg", id: uid(), role: "user", text: msg, at: Date.now(), enter: true, turn: liveId }, { kind: "msg", id: liveId, role: "assistant", text: "", at: Date.now(), live: true, startedAt: Date.now(), turn: liveId }]);
     const finalText = await follow(liveId, liveId, (h, signal) => streamChat(bot.id, msg, h, signal));
     if (finalText === null) return;
@@ -750,37 +856,63 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
     if (stick.current && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
   };
   const files = (it) => html`<${DeliveredFiles} files=${it.files} conv=${convId.current || `${bot.id}:web:console`} canOpen=${canOpen} onLoad=${onMedia} />`;
+  const changeModel = (id) => (id === bot.id ? composer.current?.openModel() : onOpenBotSettings?.(id, "model"));
   const rows = useMemo(() => {
     const out = [];
-    const shownItems = history.context ? toItems(history.context.messages) : items;
+    const baseItems = history.context ? toItems(history.context.messages) : items;
+    // 关于我的提示行、灰色小字挂到哪一项；B 主对话里的两行按时间插进去
+    const notes = history.context ? new Map() : aboutMeByItem(aboutMe, baseItems, replyAfter);
+    const co = history.context ? { after: new Map(), before: new Map(), loose: [] } : collabByItem(collab, baseItems, replyAfter);
+    const shownItems = co.loose.length ? [...(baseItems || [])] : baseItems;
+    for (const x of co.loose) {
+      const i = shownItems.findIndex((m) => m.at > x.at && !m.live);
+      shownItems.splice(i < 0 ? shownItems.length : i, 0, x);
+    }
+    const coItems = (list) => (list || []).map((x, i) => html`<${CollabItem} key=${i} x=${x} onSignIn=${() => onOpenSettings("modelflare", "account")} onChangeModel=${changeModel} />`);
     let prev = null;
+    let afterDivider = false;
     const lastAi = (shownItems || []).findLast((x) => x.kind === "msg" && x.role === "assistant" && !x.live)?.id;
     for (const it of shownItems || []) {
+      // 「已开始新对话」：一条灰色分隔线，不另画时间；下一条消息不和分隔线前的连成一组
+      if (it.kind === "divider") {
+        out.push(html`<div class=${`conv-divider${it.enter ? " enter" : ""}`} role="separator" aria-label=${t("chat.newConv.divider")} key=${it.id}><span>${t("chat.newConv.divider")}</span></div>`);
+        afterDivider = true;
+        continue;
+      }
       if (it.at && (!prev?.at || new Date(it.at).toDateString() !== new Date(prev.at).toDateString() || it.at - prev.at > 15 * 60_000)) {
         out.push(html`<div class="time-sep" key=${"t" + it.id}>${fmtSep(it.at)}</div>`);
         prev = null;
       }
       const role = it.kind === "msg" ? it.role : "assistant";
-      const cont = prev && (prev.kind === "msg" ? prev.role : "assistant") === role;
+      const cont = prev && !afterDivider && (prev.kind === "msg" ? prev.role : "assistant") === role;
+      afterDivider = false;
       const cls = `msg-row ${role}${cont ? " cont" : ""}${it.enter ? " enter" : ""}${it.live ? " live" : ""}`;
+      if (it.kind === "collab") {
+        out.push(html`<div class="msg-row assistant collab-row" key=${it.id}><${CollabItem} x=${it.line} /></div>`);
+        prev = it;
+        continue;
+      }
       if (it.kind === "msg") {
         // 回复：工作状态行（处理过程折叠在里面）、模型说的话（回合中间说的在前）、交付的文件
         const shown = it.permissionWait ? "" : it.role === "user" ? it.text : shownText(it);
         out.push(html`<div class=${`${cls}${it.id === lastAi ? " last" : ""}`} data-message-id=${it.mid} key=${it.id}>
           ${it.role === "user"
             ? userMessage(it)
-            : html`${(it.live || it.workedMs || it.steps) && html`<${WorkLine} live=${it.live} stopping=${it.live && stopping} text=${it.text} startedAt=${it.startedAt} workedMs=${it.workedMs}
+            : html`${co.before.has(it.id) && html`<div class="collab-lines">${coItems(co.before.get(it.id))}</div>`}
+              ${(it.live || it.workedMs || it.steps) && html`<${WorkLine} live=${it.live} stopping=${it.live && stopping} text=${it.text} startedAt=${it.startedAt} workedMs=${it.workedMs}
                 steps=${it.activity} count=${it.steps} used=${it.used} botId=${bot.id} load=${it.mid ? loadActivity(it.mid) : undefined} />`}
               ${it.permissionWait && html`<${CuPermissionCard} botId=${bot.id} messageId=${it.mid} />`}
               ${it.ruleSource && html`<${RuleSource} source=${it.ruleSource} botId=${bot.id} />`}
               ${shown && html`<div class="msg"><${Markdown} text=${shown} conv=${convId.current || `${bot.id}:web:console`} canOpen=${canOpen} /></div>`}
               ${files(it)}
               ${chips(it)}
+              <${AboutMeNotes} list=${notes.get(it.id)} onChanged=${loadAboutMe} />
+              ${co.after.has(it.id) && html`<div class="collab-lines">${coItems(co.after.get(it.id))}</div>`}
               ${ruleActions.filter((a) => a.messageId === it.mid).map((a) => html`<${RuleCard} key=${a.id} action=${a} />`)}
               ${!it.live && html`<${MsgActions} text=${shown} at=${it.at} />`}`}
         </div>`);
       } else if (it.kind === "prompt") {
-        out.push(html`<div class=${cls} key=${it.id}>${it.pkind === "skill_install" ? html`<${SkillInstallCard} id=${it.requestId} />` : it.pkind === "skill_draft" ? html`<${SkillDraftCard} id=${it.requestId} />` : html`<${PromptCard} requestId=${it.requestId} fallback=${it.prompt} />`}</div>`);
+        out.push(html`<div class=${cls} key=${it.id}>${it.pkind === "skill_install" ? html`<${SkillInstallCard} id=${it.requestId} />` : it.pkind === "skill_draft" ? html`<${SkillDraftCard} id=${it.requestId} />` : html`<${PromptCard} requestId=${it.requestId} fallback=${it.prompt} chatBot=${bot.id} />`}</div>`);
       } else if (it.kind === "media-demo") {
         out.push(html`<div class=${cls} key=${it.id} data-guide-sample><${MediaDemo} onLoad=${onMedia} account=${account} /></div>`);
       } else if (it.kind === "error") {
@@ -794,10 +926,12 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
       }
       // 回复下面直接挂在同一行里（在复制按钮之前）；挂在卡片、文件、出错提示后面时自成一行
       if (!(it.kind === "msg" && it.role === "assistant") && chipsAfter.has(it.id)) out.push(html`<div class="msg-row assistant cont" key=${"task-" + it.id}>${chips(it)}</div>`);
+      // 出错提示后面的提示行、灰色小字（这一轮记下了、发出了，回复却出错了）
+      if (it.kind === "error" && (notes.has(it.id) || co.after.has(it.id))) out.push(html`<div class="msg-row assistant cont" key=${"co-" + it.id}><${AboutMeNotes} list=${notes.get(it.id)} onChanged=${loadAboutMe} />${co.after.has(it.id) && html`<div class="collab-lines">${coItems(co.after.get(it.id))}</div>`}</div>`);
       prev = it;
     }
     return out;
-  }, [items, history.context, generating, stopping, chipsAfter, lang, canOpen, ruleActions]);
+  }, [items, history.context, generating, stopping, chipsAfter, lang, canOpen, ruleActions, aboutMe, collab]);
 
   // 经 ctl 交来的话（专业 Bot 界面上的操作、还没有实例时发的第一句）：历史还没读到时先记着，读到后再发——
   // 否则先发出去的这一轮会被随后到的历史整个换掉（回复很快出错时连提示都没了）
@@ -808,6 +942,12 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
     const msg = skillQueued.current;
     skillQueued.current = "";
     void send(msg);
+  }, [generating]);
+  // 回复进行中手动输入的 /new：回复结束（或停止）后立即开始新对话
+  useEffect(() => {
+    if (generating || following.current || !newQueued.current) return;
+    newQueued.current = false;
+    void newConversation();
   }, [generating]);
   if (ctl) ctl.current = { send: (msg) => (generating || following.current || queued.current ? false : items === null ? ((queued.current = msg), true) : (void send(msg), true)) };
   useEffect(() => () => { if (ctl) ctl.current = null; }, []);
@@ -833,7 +973,7 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
       </button>
       <span class="grow"></span>
       <${IconButton} icon="search" iconSize="md" label=${t("search.findInChat")} onClick=${() => setFindOpen(true)} />
-      <${IconButton} icon="compose" iconSize="md" label=${t("chat.newConvCmd")} disabled=${generating} onClick=${() => send("/new")} />
+      <${IconButton} icon="compose" iconSize="md" label=${generating ? t("chat.newConv.busy") : t("chat.newConvCmd")} disabled=${generating} aria-busy=${newBusy || undefined} onClick=${newConversation} />
       <${IconButton} icon="panel" iconSize="md" label=${t("chat.infoPanel")} on=${infoOpen} aria-pressed=${infoOpen} onClick=${onToggleInfo} />
     </header>
     ${bot.origin === "catalog" && html`<${OfficialGuideNotice} installed busy=${generating || !!pending || !!cuBlocked} />`}
@@ -866,8 +1006,9 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
       </div>
     </div>
     ${toBottomBtn.mounted && html`<button type="button" class=${`to-bottom${toBottomBtn.leaving ? " leaving" : ""}`} aria-label=${t("chat.toBottom")} onClick=${toBottom}><${Icon} name="down" size="md" />${unseen && html`<span class="new"></span>`}</button>`}
+    ${hint && html`<div class="chat-hint" role="status" key=${hint.text}>${hint.text}</div>`}
     <div class="composer-dock">
-      <${Composer} bot=${bot} text=${text} setText=${setText} taRef=${ta} ctl=${composer} guide steer
+      <${Composer} bot=${bot} text=${text} setText=${setText} taRef=${ta} ctl=${composer} guide steer onNewConversation=${newConversation}
         placeholder=${t("chat.composer.placeholder", { name: bot.name })} label=${t("chat.composer.label")}
         generating=${generating} stopping=${stopping} sent=${sentOnce.current} onSend=${send} onStop=${stop}
         models=${models} modelsError=${modelsError} reloadModels=${reloadModels} defaultModel=${defaultModel} account=${account} onAccount=${onAccount}

@@ -1,4 +1,6 @@
 export default {
+  "yearly": "매년",
+  "beforeDays": {"other": "{count}일 전"},
   "emptyTitle": "아직 규칙이 없어요",
   "emptyNeedsTitle": "처리할 규칙이 없어요",
   "emptyNeedsHint": "직접 처리해야 할 규칙이 여기에 표시됩니다.",

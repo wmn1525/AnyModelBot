@@ -2,31 +2,37 @@
 import EyesMark from "./EyesMark.astro";
 import Icon from "./Icon.astro";
 import DownloadButton from "./DownloadButton.astro";
+import Community from "./Community.astro";
+import CommunityQr from "./CommunityQr.astro";
 import { dict, href, READY_LANGS, LOCALES, switchHref, type Lang } from "../i18n";
 import { GITHUB_URL } from "../lib/site";
 import { docsUrl } from "../lib/docs";
+import { communityFor, QQ_GROUP } from "../data/community";
 interface Props { lang: Lang; path: string }
 const { lang, path } = Astro.props;
 const t = dict(lang);
 const home = href(lang, "/");
-// 通栏导航（样式见 components.css）：左 logo、中间链接、右侧工具，左右边缘和正文容器对齐。
-// 链接前四项是首页的章节（顺序同首页），价格是独立页；下载由右侧按钮负责。
-// 右侧是三个同尺寸的图标按钮（GitHub、语言、外观；悬停出提示）和一颗下载按钮，平台菜单留给首页和下载页。
+// 通栏导航（样式见 components.css）：左边 logo，后面紧跟产品链接；右边是合作伙伴、「加入社群」、图标按钮和下载。
+// 导航只放独立页面，不放首页章节的锚点：锚点在别的页面上一点就跳回首页，看着像本页的链接却换了页（用户 2026-11-15 指出）。
+// 首页的功能、模型、数据往下滚就能看到；完整模型价格在 /pricing，数据去向在 /security，页脚都有入口。
+// 产品链接三项：机器人（/bots，现成 Bot 目录）、价格、文档（外链）；下载由右侧按钮负责。
+// 合作伙伴是写给推广者的，不属于产品，所以不排在产品链接里，单独放在右侧最前面；抽屉里也和产品链接分开。
+// 右侧是「加入社群」（写成文字，指上去就展开）、GitHub / 语言 / 外观三个图标按钮（悬停出提示）和一颗下载按钮，平台菜单留给首页和下载页。
 // 语言和外观都是下拉菜单，当前项打勾：语言用各自的本名，不随页面语言翻译
-const anchor = (id: string) => (path === "/" ? `#${id}` : `${home}#${id}`);
 const links = [
-  { href: anchor("bots"), label: t.nav.bots },
-  { href: href(lang, "/bots"), label: t.nav.catalog, current: path === "/bots" },
-  { href: anchor("features"), label: t.nav.features },
-  { href: anchor("models"), label: t.nav.models },
-  { href: anchor("data"), label: t.nav.data },
-  { href: href(lang, "/pricing"), label: t.nav.pricing, current: path === "/pricing" },
+  { href: href(lang, "/bots"), label: t.nav.bots, current: path === "/bots", external: false },
+  { href: href(lang, "/pricing"), label: t.nav.pricing, current: path === "/pricing", external: false },
+  { href: docsUrl(lang), label: t.nav.docs, current: false, external: true },
 ];
 const themes = [
   { pref: "light", icon: "sun", label: t.nav.themeLight },
   { pref: "dark", icon: "moon", label: t.nav.themeDark },
   { pref: "system", icon: "monitor", label: t.nav.themeSystem },
 ] as const;
+const partners = { href: href(lang, "/partners"), label: t.nav.partners, current: path === "/partners" };
+// 社群（data/community.ts）：GitHub 右边写成「加入社群」，指上去就列出各个群（QQ 后面是群号，中文站底下再接二维码），不用点；手机抽屉里是一排胶囊。样式在 styles/community.css
+const cm = t.footer.community;
+const community = communityFor(lang);
 ---
 <header class="nav" data-nav>
   <div class="container nav__bar">
@@ -36,12 +42,26 @@ const themes = [
     </a>
     <nav class="nav__links" aria-label={t.nav.main} data-nav-links>
       <span class="nav__pill" aria-hidden="true"></span>
-      {links.map((l) => <a class="nav__link" href={l.href} aria-current={l.current ? "page" : undefined}>{l.label}</a>)}
-      <a class="nav__link" href={docsUrl(lang)} target="_blank" rel="noopener">{t.nav.docs}<Icon name="external" size={13} class="nav__ext" /></a>
+      {links.map((l) => l.external
+        ? <a class="nav__link" href={l.href} target="_blank" rel="noopener">{l.label}<Icon name="external" size={13} class="nav__ext" /></a>
+        : <a class="nav__link" href={l.href} aria-current={l.current ? "page" : undefined}>{l.label}</a>)}
     </nav>
     <div class="nav__tools">
+      <a class="nav__util nav__partners hide-md" href={partners.href} aria-current={partners.current ? "page" : undefined}>{partners.label}</a>
       <div class="nav__utils hide-md">
         <a class="nav__util nav__util--icon" href={GITHUB_URL} target="_blank" rel="noopener" aria-label={t.nav.github} data-tip={t.nav.github} data-track="github_click" data-track-location="nav"><Icon name="github" size={16} /></a>
+        <div class="nav__menu nav__menu--hover">
+          <button class="nav__util" type="button" aria-haspopup="menu" aria-expanded="false" data-menu-hover>{cm.title}</button>
+          <div class="menu cm-menu" role="menu" aria-label={cm.title} hidden>
+            {community.map((l) => (
+              <a role="menuitem" href={l.url} target="_blank" rel="noopener" style={`--brand:${l.color}`} data-track="community_click" data-track-channel={l.id} data-track-location="nav">
+                <Icon name={l.id} size={16} class="menu__ico" /><span class="menu__label">{l.name}</span>
+                {l.id === "qq" ? <span class="cm-menu__meta mono">{QQ_GROUP}</span> : <Icon name="external" size={14} class="cm-menu__meta" />}
+              </a>
+            ))}
+            {community.some((l) => l.id === "qq") && <CommunityQr lang={lang} size={88} menu />}
+          </div>
+        </div>
         <div class="nav__menu">
           <button class="nav__util nav__util--icon" type="button" aria-haspopup="menu" aria-expanded="false" aria-label={t.nav.langLabel} data-tip={t.nav.langLabel} data-menu-toggle><Icon name="globe" size={16} /></button>
           <div class="menu" role="menu" aria-label={t.nav.langLabel} hidden>
@@ -75,16 +95,15 @@ const themes = [
   </div>
   <nav class="container drawer__links" aria-label={t.nav.menu}>
     {links.map((l, i) => (
-      <a href={l.href} aria-current={l.current ? "page" : undefined} style={`--i:${i}`} data-close-dialog>
+      <a href={l.href} target={l.external ? "_blank" : undefined} rel={l.external ? "noopener" : undefined} aria-current={l.current ? "page" : undefined} data-close-dialog={l.external ? undefined : true} style={`--i:${i}`}>
         <span class="drawer__num">{String(i + 1).padStart(2, "0")}</span>
         <span class="drawer__label">{l.label}</span>
-        <Icon name="arrow" size={18} class="drawer__go" />
+        <Icon name={l.external ? "external" : "arrow"} size={18} class="drawer__go" />
       </a>
     ))}
-    <a href={docsUrl(lang)} target="_blank" rel="noopener" style={`--i:${links.length}`}>
-      <span class="drawer__num">{String(links.length + 1).padStart(2, "0")}</span>
-      <span class="drawer__label">{t.nav.docs}</span>
-      <Icon name="external" size={18} class="drawer__go" />
+    <a class="drawer__aside" href={partners.href} aria-current={partners.current ? "page" : undefined} style={`--i:${links.length}`} data-close-dialog>
+      <span class="drawer__label">{partners.label}</span>
+      <Icon name="arrow" size={16} class="drawer__go" />
     </a>
   </nav>
   <div class="container drawer__foot">
@@ -97,6 +116,10 @@ const themes = [
         <button type="button" class="chip" data-theme-set="dark">{t.nav.themeDark}</button>
         <button type="button" class="chip" data-theme-set="system">{t.nav.themeSystem}</button>
       </div>
+    </div>
+    <div class="drawer__community">
+      <span class="drawer__community-title">{cm.title}</span>
+      <Community lang={lang} location="drawer" />
     </div>
     <div class="drawer__actions">
       <a class="btn btn--secondary" href={GITHUB_URL} target="_blank" rel="noopener" data-track="github_click" data-track-location="drawer"><Icon name="github" />{t.nav.github}</a>

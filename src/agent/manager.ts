@@ -26,7 +26,9 @@ import { CUSTOM_APP, appName, builtinApp, customKey } from "../tools/apps/catalo
 import type { ToolInfo } from "../tools/apps/types.js";
 import { ALWAYS_RESULT, APPROVAL_TTL_MS, APPS_BY, ApprovalCenter, RULE_APPROVAL_TTL_MS, TASK_APPROVAL_TTL_MS, appConnectOf, type AppConnectPayload, type AppToolPayload, type QuestionItem } from "./approvals.js";
 import { MemoryError, MemoryStore, type Scope } from "./memory.js";
+import { AboutMe, type BotAddResult, type BotForgetResult } from "./about-me.js";
 import type { TaskHost, TaskService } from "../tasks/service.js";
+import type { CollabService } from "../collab/service.js";
 import { DEFAULT_SETTINGS, type BotSettings, type MediaConfirm } from "./settings.js";
 import { t, tl, t as tr, TARGET_LANGS, lang as currentLang } from "../i18n/index.js";
 import {
@@ -57,6 +59,8 @@ export interface AgentManagerOptions {
   /** 代理已经在处理、却这么久没有任何进展（模型不回、工具不动、只在重试）就中止；等用户批准/回答不算 */
   idleTimeoutMs?: number;
   approvalTtlMs?: number;
+  /** 机器人和会话都没选模型时用的全局默认模型（关于我「不再记回」的判断用小模型） */
+  defaultModel?: () => string;
   /** 后台小模型调用（管家判定、交接便条、记忆整理）；缺省则这些功能静默跳过。botId 用来把请求记到该机器人的 Key 上 */
   complete?: (botId: string, model: string, system: string, user: string) => Promise<string>;
   /** 回合后记忆整理的防抖延迟 */
@@ -123,8 +127,11 @@ export interface TurnProgress {
 /** 生成确认里"取消"那一项（问题建好后界面语言可能变了：两种语言的都认） */
 const CANCELS = TARGET_LANGS.map((l) => tl(l, "media.cancel"));
 
+/** 每个会话读到的关于我是哪一版（aboutMe.seq）：之后变了，下一条消息带上新内容 */
+const ABOUT_SEEN = "aboutme-seen:";
+
 /** 用户明确要求记住（各界面语言的说法）：这一轮的记忆整理提前做 */
-const EXPLICIT_REMEMBER = /^(请)?(记住|記住|帮我记住|remember|please remember|覚えて|覚えておいて|기억해|запомни)/i;
+const EXPLICIT_REMEMBER = /^(请|請)?(记住|記住|帮我记住|幫我記住|remember|please remember|覚えて|覚えておいて|기억해|запомни|recuerda|lembre|lembra)/i;
 const EXPLICIT_REVIEW_DELAY_MS = 1500;
 
 /** 预计花费超过它（美元）就先问用户 */
@@ -183,6 +190,8 @@ export class AgentManager {
   /** botId → 正在进行回合的会话（子代理 session 无映射时用来归属审批） */
   private activeConvs = new Map<string, Set<string>>();
   readonly memory: MemoryStore;
+  /** 关于我：所有机器人共用的、关于用户本人的事（about-me.ts） */
+  readonly aboutMe: AboutMe;
   /** 在 Responses / Anthropic Messages 上被拒过、暂时改走 Chat Completions 的模型（所有机器人共用） */
   readonly apiFallbacks: ApiFallbacks;
   /** 会话 → 管家判定（是否原地压缩），插件在代理空闲时取 */
@@ -192,6 +201,11 @@ export class AgentManager {
   /** DSH session → 进行中的原地压缩；插件回报、超时、会话被重置或换段、代理进程退出时结束 */
   private compactDone = new Map<string, { botId: string; conv: string; resolve: (v: unknown) => void }>();
   private judgedAt = new Map<string, number>();
+  /**
+   * 用户开新对话后在后台写的交接便条：会话 → 这次的进度。写好时还没被新对话的第一句取走就换掉兜底原文；
+   * dropped：第一句等了 8 秒没等到（或这段对话又被清空），之后写好的不再补进
+   */
+  private seedJobs = new Map<string, { done: Promise<void>; settled: boolean; dropped: boolean }>();
   private reviewTimers = new Map<string, NodeJS.Timeout>();
   /** 会话 → 用户在生成确认里换了模型、代理要按新模型文档重写请求：重写后的那一次免确认 */
   private mediaGrants = new Map<string, { kind: string; model: string; at: number }>();
@@ -202,6 +216,10 @@ export class AgentManager {
   readonly serverCompaction: ServerCompaction | undefined;
   /** 后台任务服务（App 建好后接上）：插件的 task_report / task-settled / 聊天工具经 bridge 交给它，任务会话的通知也给它 */
   tasks: TaskService | undefined;
+  /** 机器人之间发消息（App 建好后接上）：amb-collab 插件的 message_bot / bot_request 经 bridge 交给它 */
+  collab: CollabService | undefined;
+  /** 机器人之间现在能不能发消息（已登录、开着）：系统提示词里的协作规则跟着它 */
+  collabOn: (() => boolean) | undefined;
 
   constructor(private o: AgentManagerOptions) {
     this.approvals = new ApprovalCenter(o.store, { ttlMs: o.approvalTtlMs });
@@ -222,6 +240,7 @@ export class AgentManager {
       wait: (b) => this.wait(b),
       cancel: async (b) => void this.approvals.cancel(String(b?.id ?? ""), "agent"),
       memory: (b) => this.memoryOp(b),
+      collab: (b) => this.collabOp(b),
       steward: (b) => this.stewardCall(b),
       media: (b) => this.mediaOp(b),
       skills: (b) => this.skillOp(b),
@@ -245,6 +264,14 @@ export class AgentManager {
       },
     });
     this.memory = new MemoryStore(path.join(o.dataDir, "memory"));
+    this.aboutMe = new AboutMe(path.join(o.dataDir, "memory"));
+    // 升级：原来的团队记忆搬进关于我（一次）
+    try {
+      const n = this.aboutMe.migrate(this.memory);
+      if (n) log.info("team memory moved to About me", { lines: n });
+    } catch (e) {
+      log.warn("could not move team memory to About me", { message: (e as Error).message.slice(0, 200) });
+    }
     this.apiFallbacks = new ApiFallbacks(path.join(o.dataDir, "dsh", "api-fallback.json"));
     // 连接变了（连上、断开、谁能用）：提示词里那一段马上更新；现有账号的工具清单变了的，空闲的代理进程换新的
     let appsTimer: NodeJS.Timeout | undefined;
@@ -301,6 +328,7 @@ export class AgentManager {
         effort: this.o.effort,
         apiFallbacks: this.apiFallbacks,
         onWake: (conv) => this.onWake?.(botId, conv),
+        collab: () => !!this.collabOn?.(),
         onTaskEvent: (root, n) => this.tasks?.onEvent(botId, root, n),
         idle: () => this.idle(botId),
         systemProxy: this.o.systemProxy,
@@ -405,10 +433,11 @@ export class AgentManager {
     return this.track(botId, { ...input, text: "" }, (i) => this.followInner(botId, i));
   }
 
-  /** 过程区「正在使用 / 已使用」要的两样：应用的 key、技能是不是装了还没生效 */
+  /** 过程区「正在使用 / 已使用」要的：应用的 key、工具的显示名称、技能是不是装了还没生效 */
   private usesFor(botId: string) {
     return {
       appKey: (selector: string) => this.o.apps?.keyOf(selector),
+      toolTitle: (app: string, tool: string) => this.o.apps?.toolTitle(app, tool),
       skillPending: (name: string) => this.hosts.get(botId)?.skillPending(name) ?? false,
     };
   }
@@ -496,7 +525,15 @@ export class AgentManager {
    * 新消息能不能并入这个会话正在进行的回合：代理已经收下了上一条、回合没在中止或收尾、指令通道在线。
    * 不能的时候消息照常排队，等这一轮结束再处理。
    */
+  /** 这些会话正在跑不能并进新消息的一轮（A 核对 B 的结果：这一轮的话可能不给用户看） */
+  private noSteer = new Set<string>();
+  holdSteer(conversationId: string, on: boolean): void {
+    if (on) this.noSteer.add(conversationId);
+    else this.noSteer.delete(conversationId);
+  }
+
   canSteer(conversationId: string): boolean {
+    if (this.noSteer.has(conversationId)) return false;
     const t = this.turnsInProgress.get(conversationId);
     return !!t && !!t.lastProgress && !t.abort.signal.aborted && !!this.hosts.get(t.botId)?.canSteer(conversationId);
   }
@@ -598,12 +635,48 @@ export class AgentManager {
     }
   }
 
-  /** 首条输入用的冻结记忆前缀（团队 → 本机器人 → 本群）；记忆关闭时为空。 */
-  memoryPrefix(botId: string, conversationId: string): string {
+  /**
+   * 首条输入用的冻结记忆前缀（关于我 → 本机器人 → 本群）；记忆关闭时为空。
+   * mark：这段聊天会话从这里开始读关于我（之后关于我有变化，下一条消息带上新内容，见 aboutMeUpdate）
+   */
+  memoryPrefix(botId: string, conversationId: string, o: { mark?: boolean } = {}): string {
     if (!this.settings(botId).memory.enabled) return "";
     const conv = this.o.store.getConversation(conversationId);
+    const parts: string[] = [];
+    if (this.readsAboutMe(botId, conversationId)) {
+      const me = this.aboutMe.text();
+      if (me) parts.push(`## 关于我（所有机器人共用，关于用户本人）\n${me}`);
+      if (o.mark) this.o.store.setKV(ABOUT_SEEN + conversationId, String(this.aboutMe.seq));
+    }
     const snap = this.memory.snapshot(this.readScopes(botId, conv?.kind === "group" ? conversationId : undefined));
-    return snap.trim();
+    if (snap) parts.push(snap);
+    return parts.join("\n\n").trim();
+  }
+
+  /**
+   * 这个会话读不读、写不写关于我：本机器人开着长期记忆，而且是用户本人的对话（应用里的全部对话、渠道里主人的单聊）。
+   * 渠道里被允许的其他人和机器人聊时不读也不写（PRD 讨论 2026-11-15 第 1 条）。
+   */
+  readsAboutMe(botId: string, conversationId: string): boolean {
+    if (!this.settings(botId).memory.enabled) return false;
+    const conv = this.o.store.getConversation(conversationId);
+    if (!conv) return false;
+    if (conv.channel === "web") return true;
+    return conv.kind !== "group" && (this.o.ownsConversation?.(conversationId) ?? true);
+  }
+
+  /**
+   * 已开着的对话：关于我在这段开始之后变了，下一条消息前面带上新的全文（不动系统提示词和这段的开头，提示缓存不受影响）。
+   * 没变、没在读关于我、还没开始这段时是空串。
+   */
+  aboutMeUpdate(botId: string, conversationId: string): string {
+    if (!this.readsAboutMe(botId, conversationId)) return "";
+    const seen = this.o.store.getKV(ABOUT_SEEN + conversationId);
+    const seq = this.aboutMe.seq;
+    if (seen === undefined || seen === "" || Number(seen) >= seq) return "";
+    this.o.store.setKV(ABOUT_SEEN + conversationId, String(seq));
+    const me = this.aboutMe.text();
+    return `[关于我有更新]（所有机器人共用、关于用户本人的事；以这份为准，旧的作废）\n${me || "（现在是空的）"}`;
   }
 
   /** 取走一次性的交接便条（上下文管家换段后，新段首条输入使用）。 */
@@ -613,15 +686,64 @@ export class AgentManager {
     return v;
   }
 
-  /** /new：主动开新段（保留记忆，生成交接便条）。 */
-  async newSegment(botId: string, conversationId: string, model: string): Promise<void> {
+  /**
+   * /new、新建按钮：用户主动开新对话（保留记忆）。立刻换段，不等模型：先存旧对话最后 6 条原文（最多 4000 字）当兜底便条，
+   * 同时在后台把最近 40 条写成交接便条，写好后替换兜底；写失败（模型不可用、额度不足、网络错误）不提示，继续用兜底。
+   * 返回分隔线的时刻（归档记录的 ended_at）；已经是新对话（还没有代理会话）时返回 undefined。
+   */
+  newSegment(botId: string, conversationId: string, model: string): number | undefined {
     const sessionId = this.o.store.getAgentSession(conversationId);
-    if (!sessionId) return;
-    await this.switchSegment(botId, conversationId, sessionId, model, "manual");
+    if (!sessionId) return undefined;
+    const conv = conversationId;
+    const lines = this.transcript(conv);
+    const fallback = recentTranscript(lines.slice(-6), 4000).slice(0, 4000);
+    const at = Date.now();
+    const segment = this.o.store.archiveSegment(conv, sessionId, "manual", fallback, at);
+    if (this.o.store.getAgentSession(conv) === sessionId) this.o.store.clearAgentSession(conv);
+    this.o.store.setKV(`seed:${conv}`, fallback);
+    this.judgedAt.delete(sessionId);
+    this.note(conv, "switch", "manual");
+    // 旧段上还没回报的压缩不用再等
+    this.endCompaction((c) => c.conv === conv);
+    const previous = this.seedJobs.get(conv);
+    if (previous) previous.dropped = true;
+    this.seedJobs.delete(conv);
+    if (!this.o.complete || !lines.length) return at;
+    const job = { done: Promise.resolve(), settled: false, dropped: false };
+    job.done = (async () => {
+      try {
+        const handoff = (await this.o.complete!(botId, this.utilityModel(botId, model), HANDOFF_SYSTEM, recentTranscript(lines))).trim().slice(0, 4000);
+        if (!handoff || job.dropped) return;
+        this.o.store.setSegmentHandoff(segment, handoff);
+        this.o.store.setKV(`seed:${conv}`, handoff);
+      } catch (e) {
+        log.warn("handoff failed, keeping the raw tail", { message: (e as Error).message.slice(0, 200) });
+      }
+    })().finally(() => {
+      job.settled = true;
+      if (this.seedJobs.get(conv) === job) this.seedJobs.delete(conv);
+    });
+    this.seedJobs.set(conv, job);
+    return at;
   }
 
+  /**
+   * 新对话的第一句交给代理之前调用：交接便条还在后台写时最多等 waitMs（8 秒，期间照常「思考中」）；
+   * 超时就用兜底原文，之后写好的便条不再补进。第一句之后（便条已取走）不再等。
+   */
+  async seedReady(conversationId: string, waitMs = 8000): Promise<void> {
+    const job = this.seedJobs.get(conversationId);
+    if (!job || job.settled) return;
+    await withTimeout(job.done, waitMs, undefined);
+    if (!job.settled) {
+      job.dropped = true;
+      this.seedJobs.delete(conversationId);
+    }
+  }
+
+  /** 机器人自己的记忆和本群记忆（原来的团队记忆搬进了关于我，不再从这里读） */
   private readScopes(botId: string, groupConv?: string): Scope[] {
-    const out: Scope[] = [{ kind: "team", id: "" }, { kind: "bot", id: botId }];
+    const out: Scope[] = [{ kind: "bot", id: botId }];
     if (groupConv) out.push({ kind: "group", id: groupConv });
     return out;
   }
@@ -761,8 +883,9 @@ export class AgentManager {
     const c = store.getConversation(conv);
     const scope: Scope = c?.kind === "group" ? { kind: "group", id: conv } : { kind: "bot", id: botId };
     const current = this.memory.snapshot([scope]) || "（空）";
+    const about = this.readsAboutMe(botId, conv) ? this.aboutMe.text() || "（空）" : "（这个对话不读关于我）";
     const lines: Line[] = msgs.map((m) => ({ role: m.role as "user" | "assistant", text: m.content }));
-    const out = await this.o.complete(botId, this.utilityModel(botId, model), REVIEW_SYSTEM, `当前记忆：\n${current}\n\n最近对话（旧→新）：\n${recentTranscript(lines, 12_000)}`);
+    const out = await this.o.complete(botId, this.utilityModel(botId, model), REVIEW_SYSTEM, `当前记忆：\n${current}\n\n关于我（只读）：\n${about}\n\n最近对话（旧→新）：\n${recentTranscript(lines, 12_000)}`);
     const ops = parseReview(out);
     for (const r of ops.remove) {
       try {
@@ -1256,19 +1379,20 @@ export class AgentManager {
     return text ? { reply: text } : { cancel: true };
   }
 
-  /** 插件 → 宿主：remember / forget / recall。 */
+  /** 插件 → 宿主：remember / forget / recall。scope = me 是关于我（所有机器人共用，关于用户本人）；旧会话里的 team 也当 me */
   private async memoryOp(b: any): Promise<{ text?: string; error?: string }> {
     const botId = String(b?.botId ?? "");
     if (!this.hosts.has(botId)) return { error: "unknown bot" };
     const st = this.settings(botId);
     if (!st.memory.enabled) return { error: "本机器人的长期记忆已关闭" };
-    const convId = this.resolveConversation(botId, String(b?.sessionId ?? ""));
+    const sessionId = String(b?.sessionId ?? "");
+    const convId = this.resolveConversation(botId, sessionId);
     const conv = convId ? this.o.store.getConversation(convId) : undefined;
     const group = conv?.kind === "group" ? conv.id : undefined;
     const a = (b?.args ?? {}) as Record<string, unknown>;
     const want = typeof a.scope === "string" ? a.scope : "";
+    const me = want === "me" || want === "team";
     const pick = (): Scope => {
-      if (want === "team") return { kind: "team", id: "" };
       if (want === "group") {
         if (!group) throw new MemoryError("当前不在群聊中，没有群记忆");
         return { kind: "group", id: group };
@@ -1277,29 +1401,50 @@ export class AgentManager {
       return group ? { kind: "group", id: group } : { kind: "bot", id: botId };
     };
     const topic = typeof a.topic === "string" && a.topic.trim() ? a.topic.trim() : undefined;
+    const aboutOk = !!conv && this.readsAboutMe(botId, conv.id);
     try {
       switch (String(b?.op)) {
         case "remember": {
-          const s = pick();
-          if (s.kind === "team" && !st.memory.teamWrite) return { error: "本机器人没有写团队记忆的权限（可在机器人设置中开启）" };
-          const session = String(b?.sessionId ?? "");
+          if (me) {
+            if (!aboutOk) return { error: "About me is only read and written in the user's own chats. This chat is with someone else: do not store facts about them anywhere." };
+            const task = this.taskOf(botId, sessionId) || this.ruleOf(botId, sessionId);
+            if (task) return { error: "About me is written only in chats with the user, not in background work. Mention it in your result instead." };
+            const r = await this.aboutMe.botAdd(String(a.text ?? ""), this.aboutContext(botId, conv!, sessionId), typeof a.replaces === "string" ? a.replaces : undefined);
+            return aboutAddText(r, conv!.channel === "web");
+          }
+          const session = sessionId;
           const fromChat = conv && !this.taskOf(botId, session) && !this.ruleOf(botId, session);
-          return { text: this.memory.remember(s, String(a.text ?? ""), { topic, source: fromChat ? `chat:${conv.channel}` : "agent", by: "agent" }) };
+          return { text: this.memory.remember(pick(), String(a.text ?? ""), { topic, source: fromChat ? `chat:${conv.channel}` : "agent", by: "agent" }) };
         }
         case "forget": {
-          const s = pick();
-          if (s.kind === "team" && !st.memory.teamWrite) return { error: "本机器人没有写团队记忆的权限" };
-          return { text: this.memory.forget(s, String(a.match ?? ""), { topic, all: a.all === true, by: "agent" }) };
+          if (me) {
+            if (!aboutOk) return { error: "About me cannot be changed from this chat." };
+            const bot = this.o.store.getBot(botId);
+            return aboutForgetText(this.aboutMe.botForget(String(a.match ?? ""), { botId, botName: bot?.name ?? botId, conversationId: conv!.id }), conv!.channel === "web");
+          }
+          return { text: this.memory.forget(pick(), String(a.match ?? ""), { topic, all: a.all === true, by: "agent" }) };
         }
         case "recall": {
+          const q = typeof a.query === "string" ? a.query.trim() : "";
+          if (me) {
+            if (!aboutOk) return { text: "About me is not available in this chat." };
+            if (q) {
+              const hits = this.aboutMe.search(q);
+              return { text: hits.length ? hits.map((h) => `[关于我] ${h}`).join("\n") : `关于我里没有包含「${q}」的句子` };
+            }
+            return { text: this.aboutMe.text() || "关于我是空的" };
+          }
           const scopes = want ? [pick()] : this.readScopes(botId, group);
           if (topic) return { text: this.memory.topicText(pick(), topic) || `主题「${topic}」不存在或为空` };
-          const q = typeof a.query === "string" ? a.query.trim() : "";
+          const about = !want && aboutOk ? this.aboutMe : undefined;
           if (q) {
-            const hits = this.memory.search(scopes, q);
+            const hits = [...(about?.search(q).map((h) => `[关于我] ${h}`) ?? []), ...this.memory.search(scopes, q)];
             return { text: hits.length ? hits.join("\n") : `没有找到包含「${q}」的记忆` };
           }
-          return { text: this.memory.snapshot(scopes) || "长期记忆为空" };
+          const mine = about?.text();
+          const text = [mine ? `## 关于我\n${mine}` : "", this.memory.snapshot(scopes)].filter(Boolean).join("\n\n");
+          if (aboutOk) this.o.store.setKV(ABOUT_SEEN + conv!.id, String(this.aboutMe.seq));
+          return { text: text || "长期记忆为空" };
         }
         default:
           return { error: "unknown memory op" };
@@ -1308,6 +1453,49 @@ export class AgentManager {
       if (e instanceof MemoryError) return { error: e.message };
       throw e;
     }
+  }
+
+  /**
+   * 插件 → 宿主：message_bot / bot_request。只认用户和这个机器人的聊天会话（任务、规则会话和子代理里没有这两个工具，这里再挡一次）：
+   * 别的机器人发来的事在 B 的任务会话里，不能再发给别人（只发一层）。
+   */
+  private async collabOp(b: any): Promise<{ text?: string; error?: string }> {
+    const botId = String(b?.botId ?? "");
+    const collab = this.collab;
+    if (!collab || !this.hosts.has(botId)) return { error: "Messaging other bots is not available right now." };
+    const sessionId = String(b?.sessionId ?? "");
+    const chatConv = this.o.store.conversationForSession(sessionId);
+    const a = (b?.args ?? {}) as Record<string, unknown>;
+    if (String(b?.op) === "send") return collab.send(botId, chatConv || this.resolveConversation(botId, sessionId), !!chatConv && !this.taskOf(botId, sessionId) && !this.ruleOf(botId, sessionId), a);
+    if (String(b?.op) === "request") {
+      if (!chatConv) return { error: "Only your chat with the user can manage requests between bots." };
+      return collab.request(botId, chatConv, a);
+    }
+    return { error: "unknown op" };
+  }
+
+  /** 机器人在这个对话里记关于我时的上下文：这一轮从什么时候开始、用户这一轮有没有亲口说「记住」、能不能出卡片 */
+  private aboutContext(botId: string, conv: { id: string; channel: string }, sessionId: string) {
+    const bot = this.o.store.getBot(botId);
+    const model = this.o.store.getConversation(conv.id)?.model || bot?.defaultModel || this.o.defaultModel?.() || "";
+    const complete = this.o.complete;
+    return {
+      botId,
+      botName: bot?.name ?? botId,
+      conversationId: conv.id,
+      session: sessionId,
+      turnSince: this.turnsInProgress.get(conv.id)?.since ?? Date.now() - 60_000,
+      explicit: this.askedToRemember(conv.id),
+      cards: conv.channel === "web",
+      // 用户删掉过的：换了说法也算（小模型判断是不是同一件事）；判断不了就当不是
+      judge: complete && model
+        ? async (text: string, candidates: string[]) => {
+            const out = await complete(botId, this.utilityModel(botId, model), SAME_FACT_SYSTEM, `新句子：${text}\n\n已删除的：\n${candidates.map((c, i) => `${i + 1}. ${c}`).join("\n")}`);
+            const n = Number(/\d+/.exec(out)?.[0] ?? 0);
+            return n >= 1 && n <= candidates.length ? n - 1 : -1;
+          }
+        : undefined,
+    };
   }
 
   /** 插件 → 宿主：代理空闲时取管家判定（phase=idle），压缩完成后回报（phase=done）。 */
@@ -1334,6 +1522,10 @@ export class AgentManager {
     this.endCompaction((c) => c.conv === conversationId);
     this.o.store.clearAgentSession(conversationId);
     this.o.store.setKV(`seed:${conversationId}`, "");
+    // 后台还在写的交接便条：对话清空了，写好也不再补进
+    const job = this.seedJobs.get(conversationId);
+    if (job) job.dropped = true;
+    this.seedJobs.delete(conversationId);
     this.mediaGrants.delete(conversationId);
     for (const r of this.approvals.pendingChat(conversationId)) this.approvals.cancel(r.id, "reset");
   }
@@ -1536,4 +1728,59 @@ export interface ComputerUseInfo {
   reason: string;
   notice?: string;
   backends: Array<{ id: string; available: boolean; reason: string }>;
+}
+
+/** 「不再记回」：新句子和用户删掉过的是不是同一件事 */
+const SAME_FACT_SYSTEM = [
+  "判断「新句子」和「已删除的」里的哪一条说的是同一件关于用户的事实（同一个事实换了说法、换了详略都算同一件；相关但不同的事不算）。",
+  "只回一个编号；没有同一件就回 0。",
+].join("\n");
+
+const SENSITIVE_WORD: Record<string, string> = { address: "address", phone: "phone number", email: "email address" };
+
+/** 关于我记一句的结果 → 给模型的那句话 */
+function aboutAddText(r: BotAddResult, web: boolean): { text?: string; error?: string } {
+  switch (r.kind) {
+    case "added":
+      return { text: `Saved to About me (shared by all of the user's bots): "${r.change.after?.text}". ${web ? "The app shows a one-line note with Undo under your reply; you need not repeat it." : "The app appends a one-line note to your reply; the user can reply 撤销/undo."}` };
+    case "edited":
+      return { text: `Updated About me: "${r.change.before?.text}" → "${r.change.after?.text}". ${web ? "The app shows a one-line note with Undo under your reply." : "The app appends a one-line note to your reply."}` };
+    case "duplicate":
+      return { text: "Already in About me; nothing changed." };
+    case "off":
+      return { text: "Not saved: the user has turned off \"Let bots add to this\" for About me, so it is read-only. Do not store it anywhere else; just use it in this chat." };
+    case "secret":
+      return { error: "Not saved: passwords, keys, tokens and codes are never stored." };
+    case "idOrCard":
+      return { text: "Not saved: ID and bank card numbers are never stored. Use it in this chat only, and say in a few words that you did not save it." };
+    case "full":
+      return { text: "Not saved: About me is full. Tell the user in one sentence that they can tidy it in Settings › About me." };
+    case "perTurn":
+      return { text: "Not saved: at most 3 lines per reply. Save the rest later if they still matter." };
+    case "suppressed":
+      return { text: "Not saved: the user removed this from About me before, so bots do not add it back on their own. Only if the user explicitly says \"remember …\" again is it saved. Use it in this chat only; do not mention the removed line." };
+    case "tooLong":
+      return { error: "Too long: one short sentence, at most 300 characters." };
+    case "empty":
+      return { error: "text is empty" };
+    case "noTarget":
+      return { error: r.candidates.length ? `replaces matches several lines; use a distinctive part of one: ${r.candidates.map((c) => `"${c}"`).join(", ")}` : "No About me line matches replaces. Call recall with scope me to see the lines." };
+    case "sensitive":
+      return { text: `Not saved yet: it is the user's ${SENSITIVE_WORD[r.proposal.category ?? "address"]}, which every bot would see, so the app shows a card under your reply (Add / Just this time). Ask in one short sentence whether to add it to About me; use it in this chat either way.` };
+    case "sensitiveOnce":
+      return { text: `Not saved: the user's ${SENSITIVE_WORD[r.category]} is only saved after they confirm in the app. Use it in this chat only.` };
+    case "sensitiveAsked":
+      return { text: "Already asked about this in this chat; do not ask again. Use it in this chat." };
+    case "locked":
+      if (r.asked) return { text: "You already suggested changing that line in this chat; do not suggest it again." };
+      if (r.proposal) return { text: `Not changed: "${r.line.text}" was written or edited by the user, so bots cannot change it. The app shows a card under your reply (Change it / Keep it). Say in one sentence that it is their own line and ask whether to change it.` };
+      return { text: `Not changed: "${r.line.text}" was written or edited by the user, so bots cannot change it from here. Tell them they can change it in the app (Settings › About me).` };
+  }
+}
+
+function aboutForgetText(r: BotForgetResult, web: boolean): { text?: string; error?: string } {
+  if (r.kind === "deleted") return { text: `Removed from About me: "${r.change.before?.text}". Bots will not add it back unless the user explicitly says it again. ${web ? "The app shows a one-line note with Undo under your reply." : "The app appends a one-line note to your reply."}` };
+  if (r.kind === "off") return { text: "Not removed: About me is read-only for bots (the user turned off \"Let bots add to this\"). Tell the user they can delete it in Settings › About me." };
+  if (r.kind === "many") return { error: `Several lines match; use a distinctive part of one: ${r.candidates.map((c) => `"${c}"`).join(", ")}` };
+  return { error: "No About me line matches. Call recall with scope me to see the lines." };
 }

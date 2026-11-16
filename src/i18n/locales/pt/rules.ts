@@ -1,5 +1,17 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
+  yearly: "Todo ano em {date} às {time}",
+  beforeDays: { one: "{text} ({count} dia antes)", many: "{text} ({count} dias antes)", other: "{text} ({count} dias antes)" },
+  cronHoursWeekdays: { one: "Dias úteis das {from} às {to}, a cada {count} hora", many: "Dias úteis das {from} às {to}, a cada {count} horas", other: "Dias úteis das {from} às {to}, a cada {count} horas" },
+  cronHoursDaily: { one: "Todos os dias das {from} às {to}, a cada {count} hora", many: "Todos os dias das {from} às {to}, a cada {count} horas", other: "Todos os dias das {from} às {to}, a cada {count} horas" },
+  whyTrialInterrupted: "O teste foi interrompido",
+  briefTruncated: "Veja o resultado completo no app para computador",
+  trialRemind: "Lembretes não precisam de teste.",
+  trialBusy: "Esta regra está em execução. Tente de novo quando ela terminar.",
+  libraryMissing: "Esta tarefa não está mais na biblioteca de tarefas.",
+  botGone: "Este bot não existe mais. Escolha outro.",
+  libraryField: "Preencha \"{field}\" primeiro",
+  libraryApp: "Conecte {app} primeiro",
   lateLabel: "Enviado com atraso (previsto {time})",
   updatedCard: "Regra alterada · {name}",
   undoButton: "Desfazer",

@@ -11,6 +11,7 @@ import { saveConfigFile } from "../../config.js";
 import { GUIDE_STEPS, guideComplete, deriveGuide, isGuideChannel, isGuideStep, mergeGuide, normalizeGuide, type GuideState } from "../../guide.js";
 import { lang, t } from "../../i18n/index.js";
 import { HttpError, readJson, send, type Route, type WebContext } from "../http.js";
+import { SkillAvatars } from "../skill-avatars.js";
 
 const log = logger("web");
 
@@ -19,7 +20,25 @@ export function systemRoutes(ctx: WebContext): Route {
   const cfg = app.config;
   /** /guide 在账户信息还没读到时补读账户的时间（离线时限流） */
   let guideRefreshAt = 0;
+  // 技能库作者头像：读到过的存在本机，过期后后台更新（web/skill-avatars.ts）
+  const avatars = new SkillAvatars({
+    dir: path.join(cfg.dataDir, "cache", "skill-avatars"),
+    authors: () => {
+      try {
+        return Object.keys(JSON.parse(fs.readFileSync(path.join(findAppRoot(), "ui", "data", "skill-library.json"), "utf8")).authors ?? {});
+      } catch {
+        return [];
+      }
+    },
+    fetchImpl: () => app.desktop?.fetch ?? fetch,
+  });
   return async (req, res, url, seg, p, m) => {
+    if (seg[0] === "skill-avatars" && seg.length === 2 && m === "GET") {
+      const hit = await avatars.get(decodeURIComponent(seg[1]));
+      if (!hit) return void res.writeHead(404, { "cache-control": "no-store" }).end();
+      res.writeHead(200, { "content-type": hit.type, "cache-control": "private, max-age=3600", "x-content-type-options": "nosniff" });
+      return void res.end(hit.data);
+    }
     if (p === "/status" && m === "GET") {
       const mp = app.magpie;
       return send(res, 200, {
@@ -185,8 +204,8 @@ export function systemRoutes(ctx: WebContext): Route {
         bots,
         // 至少有一个渠道真的连上了（只填了配置不算）
         channelBound: () => channelConnected,
-        // 机器人自己的记忆或团队记忆里真的有条目（主文件 + 各主题）
-        memoryCount: (id) => memoryDone ? 0 : [{ kind: "bot" as const, id }, { kind: "team" as const, id: "" },
+        // 机器人自己的记忆里真的有条目（主文件 + 各主题），或它在对话里记到了关于我
+        memoryCount: (id) => memoryDone ? 0 : app.agent.aboutMe.lines().filter((l) => l.botId === id && l.source === "chat").length + app.agent.aboutMe.history().filter((h) => h.op !== "delete" && h.conversationId?.startsWith(`${id}:`)).length + [{ kind: "bot" as const, id },
           ...app.store.listConversations(id).filter((c) => c.kind === "group").map((c) => ({ kind: "group" as const, id: c.id }))].reduce((n, scope) =>
           n + app.agent.memory.entries(scope).filter((e) => /^source:\s*chat:/.test(e.meta)).length + app.agent.memory.topics(scope).reduce((count, topic) => count + app.agent.memory.entries(scope, topic).filter((e) => /^source:\s*chat:/.test(e.meta)).length, 0), 0),
       });

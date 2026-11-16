@@ -22,4 +22,9 @@ export default {
   featuredLess: "Свернуть",
   fieldHint: "Нажмите, чтобы написать всем",
   fieldModel: "Интеллект",
+  community: {
+    title: "Сообщество",
+    scan: "Отсканируйте в QQ, чтобы вступить",
+    number: "Номер группы"
+  },
 };

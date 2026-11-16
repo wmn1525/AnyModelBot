@@ -1,6 +1,8 @@
 export default {
   "tabs": {
     "general": "General",
+    "aboutMe": "About me",
+    "collab": "Bot collaboration",
     "appearance": "Appearance",
     "modelflare": "Okinto New API",
     "computer": "Computer use",
@@ -194,15 +196,6 @@ export default {
     "label": "Preview",
     "reply": "Sure, and error handling gets clearer too. With {b} on, the line below wraps:"
   },
-  "rekey": {
-    "title": "Change Okinto New API key",
-    "submit": "Verify and save"
-  },
-  "disconnect": {
-    "title": "Disconnect Okinto New API?",
-    "body": "This deletes the API key from this computer. Your bots and conversations stay, ready for when you reconnect.",
-    "confirm": "Disconnect"
-  },
   "logout": {
     "title": "Sign out of Okinto New API?",
     "body": "This revokes this computer's access and deletes the API keys issued to it and your bots at sign-in. Your bots and conversations stay.",
@@ -307,20 +300,20 @@ export default {
       "button": "Reset"
     },
     "account": {
-      "apiKey": "Connect with an API key from api.okinto.com",
       "name": "Okinto New API account",
       "signedIn": "Signed in",
       "enterprise": "{name}'s usage is billed to your organization's wallet",
       "signedOut": "Sign in to see usage, notifications and your invite link, and to set budgets for individual bots",
       "keys": "account sign in sign up log in login",
       "logout": "Sign out",
-      "noBrowserLogin": "API key connection",
-      "login": "Sign in / Sign up"
+      "login": "Sign in / Sign up",
+      "apiKey": "Connect with an API key from api.okinto.com",
+      "noBrowserLogin": "API key connection"
     },
     "connection": {
-      "playground": "Use your New API playground session; requests are billed to the selected group",
       "name": "Connection",
       "subExternal": "Endpoint set by the AMB_MAGPIE_BASE_URL environment variable (development/testing)",
+      "playground": "Use your New API playground session; requests are billed to the selected group",
       "nameSignedIn": "Account connection",
       "subSignedIn": "Using your Okinto account",
       "sub": "Using an Okinto site API key",
@@ -329,15 +322,15 @@ export default {
       "disconnect": "Disconnect"
     },
     "balance": {
-      "fromToken": "Remaining quota for this API key; view the wallet in the console",
-      "fromAccount": "New API account wallet balance",
       "name": "Balance",
       "error": "Couldn't load: {error}",
-      "fromKey": "From New API billing; quota scope depends on site settings",
       "updated": "Updated {time}",
       "keys": "balance top up wallet credit",
       "refresh": "Refresh balance",
-      "topUp": "Top up ↗"
+      "topUp": "Top up ↗",
+      "fromToken": "Remaining quota for this API key; view the wallet in the console",
+      "fromAccount": "New API account wallet balance",
+      "fromKey": "From New API billing; quota scope depends on site settings"
     },
     "lowBalance": {
       "name": "Low balance alert",
@@ -512,9 +505,25 @@ export default {
       "sub": "Gateway and agent process status, model and agent tests, recent logs, and copying diagnostics",
       "keys": "log logs test agent stuck spinning hang diagnostics restart PowerShell pwsh slow commands"
     },
+    "community": {
+      "name": "Community",
+      "sub": "Ask questions, share feedback and swap tips with other users",
+      "keys": "community chat group discord telegram",
+      "copyQq": "Copy QQ group number",
+      "qq": "QQ group"
+    },
     "links": {
       "sub": "Website and docs",
       "docs": "Docs ↗"
     }
+  },
+  "rekey": {
+    "title": "Change Okinto New API key",
+    "submit": "Verify and save"
+  },
+  "disconnect": {
+    "title": "Disconnect Okinto New API?",
+    "body": "This deletes the API key from this computer. Your bots and conversations stay, ready for when you reconnect.",
+    "confirm": "Disconnect"
   }
 };

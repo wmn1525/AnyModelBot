@@ -1,12 +1,9 @@
 export default {
   "main": "주요 메뉴",
   "bots": "봇",
-  "catalog": "둘러보기",
-  "features": "기능",
-  "data": "데이터",
-  "models": "모델",
   "pricing": "요금",
   "docs": "문서",
+  "partners": "파트너",
   "skip": "본문으로 건너뛰기",
   "home": "okbot 홈",
   "menu": "메뉴",

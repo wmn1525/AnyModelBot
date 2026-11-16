@@ -21,19 +21,26 @@ export interface ActivityStep {
 }
 
 /**
- * 这一步用到了用户装的技能或连接的应用：网页对话的过程区据此写「正在使用技能 · …」「已使用：…」。
+ * 这一步用到了用户装的技能或连接的应用：网页对话的过程区据此写「正在使用技能 · …」「正在使用 {应用} · {工具}」「已使用：…」。
  * skill：name 是技能名（加载技能的 skill 工具）；app：app 是应用的 key（内置应用的 id 或 custom:<连接 id>，认不出时是模型传的原文），
- * tool 是工具名。reason：没用成的原因——loading 技能装了还没生效 · connection 连接要处理 · denied 用户没允许 · readonly 机器人只读 · failed 其他。
+ * tool 是工具名，toolTitle 是应用给的显示名称（有才给，界面优先用它）。
+ * reason：没用成的原因——loading 技能装了还没生效 · connection 连接要处理 · denied 用户没允许 · readonly 机器人只读 · failed 其他。
  */
 export type StepUse =
   | { kind: "skill"; name: string; reason?: "loading" }
-  | { kind: "app"; app: string; tool: string; reason?: "connection" | "denied" | "readonly" | "failed" };
+  | { kind: "app"; app: string; tool: string; toolTitle?: string; reason?: "connection" | "denied" | "readonly" | "failed" };
 
-/** 过程区折叠后那一行的一项：同一个技能、同一个应用只算一次，用成过一次就算用上了 */
+/**
+ * 过程区折叠后那一行的一项：同一个技能只算一次；应用按「应用 + 工具」算（同一应用的不同工具各一项，同一工具多次调用只算一项），
+ * 用成过一次就算用上了
+ */
 export interface UsedItem {
   kind: "skill" | "app";
   /** 技能名，或应用的 key */
   name: string;
+  /** 应用的工具名和显示名称 */
+  tool?: string;
+  toolTitle?: string;
   status: "running" | "ok" | "error";
   reason?: string;
 }
@@ -86,10 +93,12 @@ export function usedSummary(steps: ReadonlyArray<Pick<ActivityStep, "kind" | "ti
     // 旧消息里没用成的技能：分不清是不是模型编了个名字，不显示
     if (use.kind === "skill" && s.status === "error" && !use.reason) continue;
     const name = use.kind === "skill" ? use.name : use.app;
+    const tool = use.kind === "app" ? use.tool || undefined : undefined;
     const reason = s.status === "error" ? (use.reason ?? "failed") : undefined;
-    const prev = out.find((x) => x.kind === use.kind && x.name === name);
+    const prev = out.find((x) => x.kind === use.kind && x.name === name && x.tool === tool);
     if (!prev) {
-      out.push({ kind: use.kind, name, status: s.status, ...(reason ? { reason } : {}) });
+      const toolTitle = use.kind === "app" ? use.toolTitle : undefined;
+      out.push({ kind: use.kind, name, ...(tool ? { tool } : {}), ...(toolTitle ? { toolTitle } : {}), status: s.status, ...(reason ? { reason } : {}) });
       continue;
     }
     if (prev.status === "ok") continue;
