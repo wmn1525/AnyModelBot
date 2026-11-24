@@ -24,7 +24,7 @@ export default {
   team_101_500: "101–500",
   team_over_500: "Более 500",
   product_anymodelbot: "AnyModelBot",
-  product_modelflare: "Modelflare",
+  product_modelflare: "Okinto",
   product_both: "Оба",
   yes: "Да",
   meta_category: "Категория",

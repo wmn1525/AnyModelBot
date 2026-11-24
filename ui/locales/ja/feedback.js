@@ -56,7 +56,7 @@ export default {
   },
   enterprise: {
     bannerTitle: "モデルの調達と商談",
-    bannerLink: "Modelflare に問い合わせ",
+    bannerLink: "Okinto に問い合わせ",
     roleQuestion: "あなたの役割（ひとつ選択）",
     role_enterprise_use: "自社で利用",
     role_enterprise_useSub: "所属する会社・チームで使う",
@@ -82,7 +82,7 @@ export default {
     systems: "利用中のシステム",
     product: "関心のある製品",
     product_anymodelbot: "AnyModelBot",
-    product_modelflare: "Modelflare",
+    product_modelflare: "Okinto",
     product_both: "両方",
     productNone: "回答しない",
     partnership: "提携の詳細",
@@ -154,7 +154,7 @@ export default {
     note: "任意です。このフィードバックのやり取りにのみ使います。",
   },
   signIn: {
-    title: "Modelflare にログインして非公開で送信・フォロー",
+    title: "Okinto にログインして非公開で送信・フォロー",
     body: "ログイン後も下書きは残ります。確認してから送信します。",
     waiting: "ブラウザでログインを済ませてから、ここに戻ってください。",
   },

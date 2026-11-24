@@ -24,7 +24,7 @@ export default {
   team_101_500: "101–500 人",
   team_over_500: "500 人以上",
   product_anymodelbot: "AnyModelBot",
-  product_modelflare: "Modelflare",
+  product_modelflare: "Okinto",
   product_both: "両方",
   yes: "はい",
   meta_category: "分類",

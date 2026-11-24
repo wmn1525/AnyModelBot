@@ -56,7 +56,7 @@ export default {
   },
   enterprise: {
     bannerTitle: "Закупка моделей и бизнес-партнёрство",
-    bannerLink: "Связаться с Modelflare",
+    bannerLink: "Связаться с Okinto",
     roleQuestion: "Ваша роль (выберите одну)",
     role_enterprise_use: "Для своей компании",
     role_enterprise_useSub: "Для своей компании или команды",
@@ -82,7 +82,7 @@ export default {
     systems: "Текущие системы",
     product: "Интересующий продукт",
     product_anymodelbot: "AnyModelBot",
-    product_modelflare: "Modelflare",
+    product_modelflare: "Okinto",
     product_both: "Оба",
     productNone: "Не указывать",
     partnership: "О сотрудничестве",
@@ -154,7 +154,7 @@ export default {
     note: "Необязательно. Только для связи по этому отзыву.",
   },
   signIn: {
-    title: "Войдите в Modelflare, чтобы отправить приватно и следить за ответом",
+    title: "Войдите в Okinto, чтобы отправить приватно и следить за ответом",
     body: "Черновик сохранится. Проверьте и отправьте после входа.",
     waiting: "Завершите вход в браузере и вернитесь сюда.",
   },

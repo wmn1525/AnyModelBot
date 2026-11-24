@@ -56,7 +56,7 @@ export default {
   },
   enterprise: {
     bannerTitle: "Compra de modelos e parcerias comerciais",
-    bannerLink: "Falar com a Modelflare",
+    bannerLink: "Falar com a Okinto",
     roleQuestion: "Sua função (escolha uma)",
     role_enterprise_use: "Uso na minha empresa",
     role_enterprise_useSub: "Para minha empresa ou equipe",
@@ -82,7 +82,7 @@ export default {
     systems: "Sistemas atuais",
     product: "Produto de interesse",
     product_anymodelbot: "AnyModelBot",
-    product_modelflare: "Modelflare",
+    product_modelflare: "Okinto",
     product_both: "Ambos",
     productNone: "Prefiro não informar",
     partnership: "Detalhes da parceria",
@@ -154,7 +154,7 @@ export default {
     note: "Opcional. Só para conversar sobre este feedback.",
   },
   signIn: {
-    title: "Entre na Modelflare para enviar em privado e acompanhar",
+    title: "Entre na Okinto para enviar em privado e acompanhar",
     body: "Seu rascunho fica salvo. Revise e envie depois de entrar.",
     waiting: "Conclua o login no navegador e volte aqui.",
   },

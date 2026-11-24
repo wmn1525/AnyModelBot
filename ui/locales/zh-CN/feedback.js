@@ -46,7 +46,7 @@ export default {
   os: { macos: "macOS", windows: "Windows", linux: "Linux", unknown: "其他系统" },
   enterprise: {
     bannerTitle: "模型采购与商务合作",
-    bannerLink: "联系 Modelflare",
+    bannerLink: "联系 Okinto",
     roleQuestion: "你的角色（请选择一项）",
     role_enterprise_use: "企业自用",
     role_enterprise_useSub: "给所在企业／团队使用",
@@ -72,7 +72,7 @@ export default {
     systems: "现用系统",
     product: "关注产品",
     product_anymodelbot: "AnyModelBot",
-    product_modelflare: "Modelflare",
+    product_modelflare: "Okinto",
     product_both: "两者",
     productNone: "暂不填写",
     partnership: "合作说明",
@@ -115,7 +115,7 @@ export default {
     note: "选填，仅用于本次反馈沟通。",
   },
   signIn: {
-    title: "登录 Modelflare，私下提交并跟进",
+    title: "登录 Okinto，私下提交并跟进",
     body: "登录后保留草稿，确认后发送。",
     waiting: "正在浏览器中登录，完成后回到这里继续。",
   },

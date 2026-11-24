@@ -46,7 +46,7 @@ export default {
   os: { macos: "macOS", windows: "Windows", linux: "Linux", unknown: "Other OS" },
   enterprise: {
     bannerTitle: "Model procurement & business partnerships",
-    bannerLink: "Contact Modelflare",
+    bannerLink: "Contact Okinto",
     roleQuestion: "Your role (select one)",
     role_enterprise_use: "Use within my company",
     role_enterprise_useSub: "For my own company or team",
@@ -72,7 +72,7 @@ export default {
     systems: "Current systems",
     product: "Product of interest",
     product_anymodelbot: "AnyModelBot",
-    product_modelflare: "Modelflare",
+    product_modelflare: "Okinto",
     product_both: "Both",
     productNone: "Prefer not to say",
     partnership: "Partnership details",
@@ -114,7 +114,7 @@ export default {
     note: "Optional. For follow-up on this feedback only.",
   },
   signIn: {
-    title: "Sign in to Modelflare to submit privately and follow up",
+    title: "Sign in to Okinto to submit privately and follow up",
     body: "Your draft stays. Review and send after signing in.",
     waiting: "Finish signing in in your browser, then come back here.",
   },

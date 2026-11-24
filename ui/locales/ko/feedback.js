@@ -56,7 +56,7 @@ export default {
   },
   enterprise: {
     bannerTitle: "모델 구매와 비즈니스 협력",
-    bannerLink: "Modelflare에 문의",
+    bannerLink: "Okinto에 문의",
     roleQuestion: "역할(하나 선택)",
     role_enterprise_use: "회사 내 사용",
     role_enterprise_useSub: "소속 회사나 팀에서 사용",
@@ -82,7 +82,7 @@ export default {
     systems: "사용 중인 시스템",
     product: "관심 제품",
     product_anymodelbot: "AnyModelBot",
-    product_modelflare: "Modelflare",
+    product_modelflare: "Okinto",
     product_both: "둘 다",
     productNone: "답하지 않음",
     partnership: "협력 내용",
@@ -154,7 +154,7 @@ export default {
     note: "선택 사항이며, 이번 피드백 소통에만 사용합니다.",
   },
   signIn: {
-    title: "Modelflare에 로그인해 비공개로 보내고 이어서 확인",
+    title: "Okinto에 로그인해 비공개로 보내고 이어서 확인",
     body: "로그인해도 초안은 남고, 확인한 뒤 보냅니다.",
     waiting: "브라우저에서 로그인을 마친 뒤 여기로 돌아오세요.",
   },

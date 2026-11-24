@@ -1,6 +1,6 @@
 // feedback：zh 与 en 的键必须一一对应（en 的类型由 zh 推出，少一个多一个都过不了类型检查）。
-// 需求与反馈（src/feedback/）：进入 Modelflare 私有工单的正文里的可读标签。正文出现在用户自己的工单里，客服也看这一份。
-// 方括号里的机器标签（[ticket_type:…]、[contact_consent:true]…）和语言无关，所有语言必须原样保留：Modelflare 按它们核对结构化字段。
+// 需求与反馈（src/feedback/）：进入 Okinto 私有工单的正文里的可读标签。正文出现在用户自己的工单里，客服也看这一份。
+// 方括号里的机器标签（[ticket_type:…]、[contact_consent:true]…）和语言无关，所有语言必须原样保留：Okinto 按它们核对结构化字段。
 import type { Catalog } from "../types.js";
 
 export const zh = {
@@ -29,7 +29,7 @@ export const zh = {
   team_101_500: "101–500人",
   team_over_500: "500人以上",
   product_anymodelbot: "AnyModelBot",
-  product_modelflare: "Modelflare",
+  product_modelflare: "Okinto",
   product_both: "两者",
   yes: "是",
   meta_category: "分类",
@@ -97,7 +97,7 @@ export const en: Catalog<typeof zh> = {
   team_101_500: "101–500",
   team_over_500: "Over 500",
   product_anymodelbot: "AnyModelBot",
-  product_modelflare: "Modelflare",
+  product_modelflare: "Okinto",
   product_both: "Both",
   yes: "Yes",
   meta_category: "Category",

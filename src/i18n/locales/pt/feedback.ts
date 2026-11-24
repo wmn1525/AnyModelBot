@@ -24,7 +24,7 @@ export default {
   team_101_500: "101–500",
   team_over_500: "Mais de 500",
   product_anymodelbot: "AnyModelBot",
-  product_modelflare: "Modelflare",
+  product_modelflare: "Okinto",
   product_both: "Ambos",
   yes: "Sim",
   meta_category: "Categoria",
