@@ -47,6 +47,7 @@ export default {
   costShort: "约 {spent}",
   // 3f：任务详情、信息面板的「任务」组
   origin: "来自",
+  fromBot: "{bot} 发来的",
   question: "问题",
   originLine: "{where} · {when}「{text}」",
   openConv: "打开会话",

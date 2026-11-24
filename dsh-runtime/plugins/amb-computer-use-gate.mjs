@@ -49,7 +49,7 @@ export function apply(ctx) {
         const missing = (Array.isArray(p.missing) ? p.missing : []).map((k) => LABEL[k] || k).join(' and ')
         return {
           kind: 'deny',
-          reason: `macOS has not granted AnyModelBot the ${missing} permission needed for Computer Use. Do not call Computer Use tools again in this turn and do not retry. Tell the user that the task is waiting for this permission; AnyModelBot shows them how to grant it, and they can send the task again afterwards.`,
+          reason: `macOS has not granted AnyModelBot the ${missing} permission needed for Computer Use. Do not call Computer Use tools again in this turn and do not retry. AnyModelBot is now showing the user a permission card in this chat and continues the task once it is turned on. Do not say that a system prompt has appeared and do not send the user to any settings page.`,
         }
       }
     }

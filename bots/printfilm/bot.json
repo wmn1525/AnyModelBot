@@ -9,7 +9,8 @@
     "ko": "영상 스튜디오",
     "ru": "Киностудия",
     "es": "Estudio de cine",
-    "pt": "Estúdio de cinema"
+    "pt": "Estúdio de cinema",
+    "tr": "Film Stüdyosu"
   },
   "summary": {
     "zh-CN": "做短视频和分集短剧，从剧本、分镜到配音、剪辑和成片。",
@@ -18,7 +19,8 @@
     "ko": "숏폼과 시리즈 드라마를 대본, 스토리보드부터 음성, 편집, 완성까지 만듭니다.",
     "ru": "Короткие видео и сериалы: от сценария и раскадровки до озвучки и монтажа.",
     "es": "Videos cortos y series: guion, guion gráfico, voz, edición y montaje final.",
-    "pt": "Vídeos curtos e séries: roteiro, storyboard, voz, edição e corte final."
+    "pt": "Vídeos curtos e séries: roteiro, storyboard, voz, edição e corte final.",
+    "tr": "Kısa videolar ve diziler: senaryo, storyboard, ses, kurgu ve son kesim."
   },
   "about": {
     "zh-CN": [
@@ -55,6 +57,11 @@
       "Traz do PRINTFILM a escrita de roteiros, os storyboards, o design de elementos e a composição com FFmpeg",
       "Os modelos rodam pelo Okinto; os projetos e a mídia ficam no seu dispositivo",
       "Edite planos individuais, guarde tomadas, reutilize elementos e retome trabalhos interrompidos"
+    ],
+    "tr": [
+      "PRINTFILM senaryo yazımını, storyboard düzenini, varlık tasarımını ve FFmpeg birleştirmesini taşır",
+      "Modeller Modelflare üzerinden çalışır; projeler ve medya senin cihazında kalır",
+      "Tek tek çekimleri düzenle, tekrarları sakla, varlıkları yeniden kullan ve kesilen işe devam et"
     ]
   },
   "avatar": "film",
@@ -97,6 +104,11 @@
       "Escreva uma sinopse com menos de 100 palavras: um entregador recebe pacotes do amanhã. Só texto, sem imagens nem vídeo.",
       "Transforme minha ideia em um vídeo curto completo; mostre o roteiro e o storyboard antes",
       "Crie uma série de três episódios; planeje a história, o elenco e os episódios antes"
+    ],
+    "tr": [
+      "100 kelimenin altında bir kısa film özeti yaz: bir kurye her gün yarından paket alır. Yalnızca metin, görsel veya video yok.",
+      "Fikrimi tam bir kısa videoya çevir; önce senaryoyu ve storyboard düzenini göster",
+      "Üç bölümlük bir dizi oluştur; önce hikâyeyi, kadroyu ve bölümleri planla"
     ]
   },
   "skills": [

@@ -48,6 +48,7 @@ export default {
   costOf: "Примерно {spent} из {budget}",
   costShort: "Примерно {spent}",
   origin: "Источник",
+  fromBot: "От {bot}",
   question: "Вопрос",
   originLine: "{where} · {when} «{text}»",
   openConv: "Открыть разговор",

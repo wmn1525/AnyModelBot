@@ -21,6 +21,8 @@ import skills from "./skills.js";
 import mySkills from "./mySkills.js";
 import aboutMe from "./aboutMe.js";
 import collab from "./collab.js";
+import feedback from "./feedback.js";
+import attach from "./attach.js";
 import skillItems from "./skillItems.json" with { type: "json" };
 import guide from "./guide.js";
 import info from "./info.js";
@@ -40,7 +42,8 @@ import tasks from "./tasks.js";
 import time from "./time.js";
 import troubleshoot from "./troubleshoot.js";
 import ui from "./ui.js";
-export default { routines, routineLibrary, aboutMe, collab, skills, mySkills, skillItems, templates, scheduled, welcome, apps, firstUse, updates, search,
+import folder from "./folder.js";
+export default { folder, attach, routines, routineLibrary, aboutMe, collab, feedback, skills, mySkills, skillItems, templates, scheduled, welcome, apps, firstUse, updates, search,
   official,
   access,
   account,

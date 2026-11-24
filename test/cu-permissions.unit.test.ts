@@ -18,6 +18,22 @@ describe("电脑操作的系统权限", () => {
     expect(permissionsFor("list_apps")).toEqual([]);
   });
 
+  // PRD 2026-11-20 R11：查询权限状态不能代替出示引导——缺项时问状态也出授权卡，只列实际缺的；系统禁止访问文件夹走另一页设置
+  it("模型查询权限状态时缺项照样拦下并只记缺的那一项；打开「文件和文件夹」不算请求过屏幕录制", () => {
+    expect(permissionsFor("check_permissions")).toEqual(["accessibility", "screen"]);
+    const opened: string[] = [];
+    const p = new CuPermissions(() => ({ ...hooks("denied", "granted"), openSettings: (k) => void opened.push(k), openFolderSettings: () => void opened.push("files") }));
+    expect(p.gate("bot1", "check_permissions")).toEqual({ ok: false, missing: ["accessibility"] });
+    expect(p.view().blocked.bot1?.missing).toEqual(["accessibility"]);
+    p.openFolderSettings();
+    expect(opened).toEqual(["files"]);
+    expect(p.view().restartSuggested).toBe(false);
+    // 其他系统（没有钩子）：这两项都不拦，也没有卡
+    const other = new CuPermissions(() => undefined);
+    expect(other.gate("bot1", "check_permissions")).toEqual({ ok: true });
+    expect(other.view().supported).toBe(false);
+  });
+
   it("只缺屏幕录制时：点击照常，截图被拦并记下这个机器人在等授权；授权后再调用会收起", () => {
     let screen: CuPermissionState = "denied";
     const p = new CuPermissions(() => ({ ...hooks("granted", "granted"), status: () => ({ accessibility: "granted", screen }) }));

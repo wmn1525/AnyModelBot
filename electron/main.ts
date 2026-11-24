@@ -44,10 +44,20 @@ let entryUrl = "";
 let quitting = false;
 let stopped = false;
 let stopping: Promise<void> | undefined;
+/** 停掉防睡眠的定时器和电源监听（启动完成后才有）；关库之前调，可以重复调 */
+let stopKeepAwake: (() => void) | undefined;
 
 function stopCore(): Promise<void> {
   if (stopped || !core) return Promise.resolve();
   return stopping ??= core.stop().finally(() => { stopped = true; });
+}
+
+/**
+ * 还能用的 core：开始关闭之后就是 undefined。更新换包时库先关、进程还要活一阵（macOS 上 Squirrel 从本进程拉完安装包才退出），
+ * 这段时间里主进程自己的定时器和系统回调不能再去读数据库（database is not open）。
+ */
+function liveCore(): App | undefined {
+  return stopped || stopping ? undefined : core;
 }
 
 function showUpdates(): void {
@@ -161,6 +171,8 @@ function macPermissions(): NonNullable<import("../src/app.js").DesktopHooks["cuP
       const pane = kind === "accessibility" ? "Privacy_Accessibility" : "Privacy_ScreenCapture";
       void shell.openExternal(`x-apple.systempreferences:com.apple.preference.security?${pane}`);
     },
+    // 系统禁止访问桌面等受保护文件夹：隐私与安全性 → 文件和文件夹
+    openFolderSettings: () => void shell.openExternal("x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders"),
   };
 }
 
@@ -190,7 +202,8 @@ function createWindow(): void {
     const k = input.key.toLowerCase();
     if (k === "f12" || ((input.meta || input.control) && input.alt && ["i", "j", "c", "insert"].includes(k))) event.preventDefault();
   });
-  // ⌘W / Ctrl+W：焦点在右侧预览面板时只关当前标签（界面里的 __ambPreviewCloseTab 说了算），否则照常关窗口（和菜单的「关闭」一样，按设置收进托盘）。
+  // ⌘W / Ctrl+W：焦点在右侧预览面板时只关当前标签（界面里的 __ambPreviewCloseTab 说了算：点在预览正文上、焦点在预览的菜单里也算；
+  // 关掉最后一个后焦点留在空状态，再按也不关窗口），否则照常关窗口（和菜单的「关闭」一样，按设置收进托盘）。
   // 菜单快捷键先于网页收到按键，所以在这里拦下再问界面
   // ⌘ / Ctrl 加减号、⌘0 / Ctrl+0：焦点在预览内容区时缩放内容（__ambPreviewKey），否则和菜单的放大 / 缩小 / 实际大小一样缩放整个窗口
   win.webContents.on("before-input-event", (event, input) => {
@@ -199,7 +212,8 @@ function createWindow(): void {
     const key = input.key.toLowerCase();
     const wc = win?.webContents;
     if (!wc) return;
-    if (key === "w" && !input.shift) {
+    // 俄文等非拉丁键盘：W 键上的字母不是 w，按物理键认（拉丁布局只认字母本身，免得 AZERTY 的 ⌘Z 被当成 ⌘W）
+    if ((key === "w" || (input.code === "KeyW" && !/^[a-z]$/.test(key))) && !input.shift) {
       event.preventDefault();
       void wc.executeJavaScript("typeof window.__ambPreviewCloseTab === 'function' && window.__ambPreviewCloseTab() === true", true)
         .catch(() => false)
@@ -213,15 +227,16 @@ function createWindow(): void {
       .catch(() => false)
       .then((handled) => { if (!handled && !wc.isDestroyed()) wc.setZoomLevel(zoom === 0 ? 0 : wc.getZoomLevel() + zoom); });
   });
-  // 只允许停留在本机管理界面；外部链接交给系统浏览器
+  // 只允许停留在本机管理界面；外部链接交给系统浏览器，mailto:（意见和反馈里的「发邮件」）交给系统的邮件程序
+  const external = (url: string) => /^(https?|mailto):/i.test(url);
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:/i.test(url)) void shell.openExternal(url);
+    if (external(url)) void shell.openExternal(url);
     return { action: "deny" };
   });
   win.webContents.on("will-navigate", (e, url) => {
     if (new URL(url).origin !== origin) {
       e.preventDefault();
-      if (/^https?:/i.test(url)) void shell.openExternal(url);
+      if (external(url)) void shell.openExternal(url);
     }
   });
   win.webContents.on("did-finish-load", () => {
@@ -266,9 +281,10 @@ function onAttention(items: AttentionItem[]): void {
   app.setBadgeCount(needsCount);
   if (isWin) win?.setOverlayIcon(needsCount ? overlayDot() : null, needsCount ? `${needsCount} 件事需要你` : "");
   renderTray?.();
-  const fresh = core?.attention.takeNew(items) ?? [];
+  const live = liveCore();
+  const fresh = live?.attention.takeNew(items) ?? [];
   const looking = !!win && win.isVisible() && win.isFocused();
-  if (looking || !fresh.length || !Notification.isSupported() || core?.store.getKV("desktop.notify") !== "true") return;
+  if (looking || !fresh.length || !Notification.isSupported() || live?.store.getKV("desktop.notify") !== "true") return;
   // 一下来好几件时只发最早的两条，其余在「需要你」里
   for (const it of fresh.slice(0, 2)) {
     const n = new Notification({ ...notificationOf(it), icon: windowIconPath() });
@@ -369,6 +385,8 @@ async function boot(): Promise<void> {
       prepareInstall: async () => {
         if (core?.busyForUpdate()) throw new UpdateActionError("busy");
         quitting = true;
+        // before-quit 要等 Squirrel 拉完安装包才来，防睡眠的定时器不能留到那时：库马上就关
+        stopKeepAwake?.();
         await stopCore();
       },
       onReady: (version) => {
@@ -415,6 +433,16 @@ async function boot(): Promise<void> {
       core?.store.setKV("desktop.saveAsDir", folder);
       return { path: r.filePath, folder: path.basename(folder) || folder };
     },
+    // 输入框上方的「选择文件夹…」：系统原生的目录选择器（只选，不读里面的内容；能不能用由 folders/service.ts 核对）。
+    // 默认打开上次选的那个文件夹的上一层，第一次是主目录
+    pickFolder: async () => {
+      const last = core?.store.getKV("desktop.pickFolderDir") || "";
+      const opts = { defaultPath: last && fs.existsSync(last) ? last : app.getPath("home"), properties: ["openDirectory", "createDirectory"] as Array<"openDirectory" | "createDirectory"> };
+      const r = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);
+      const p = r.canceled ? undefined : r.filePaths[0];
+      if (p) core?.store.setKV("desktop.pickFolderDir", path.dirname(p));
+      return p;
+    },
     // 右侧预览 HTML 的「在浏览器中打开」：交给系统默认浏览器（.html 的默认程序可能是编辑器）；查不到默认浏览器时（Linux）按文件类型打开
     openFileInBrowser: async (p) => {
       const fallback = () => void shell.openPath(p);
@@ -447,7 +475,7 @@ async function boot(): Promise<void> {
     appLink: `${APP_SCHEME}://login-complete`,
     cuPermissions: macPermissions(),
     ruleNotification: (botId, title, text) => {
-      if (core?.store.getKV("desktop.notify") !== "true" || win?.isFocused() || !Notification.isSupported()) return;
+      if (liveCore()?.store.getKV("desktop.notify") !== "true" || win?.isFocused() || !Notification.isSupported()) return;
       const n = new Notification({ title, body: text.split(/\r?\n/)[0].slice(0, 200), icon: windowIconPath() });
       n.on("click", () => { showWindow(); void win?.webContents.executeJavaScript(`location.hash = ${JSON.stringify(`/chat/${encodeURIComponent(botId)}`)}`); });
       n.show();
@@ -461,19 +489,26 @@ async function boot(): Promise<void> {
   startup.record("core_started");
   if (!core.web) throw new Error(t("desktop.uiNotStarted"));
   // 规则的定时器：电脑醒来、解锁时马上重新看一遍（睡着时错过的按宽限期补跑一次或记为跳过）
-  powerMonitor.on("resume", () => core?.tasks.wakeRules());
-  powerMonitor.on("unlock-screen", () => core?.tasks.scheduler.wake());
+  powerMonitor.on("resume", () => liveCore()?.tasks.wakeRules());
+  powerMonitor.on("unlock-screen", () => liveCore()?.tasks.scheduler.wake());
   let awakeId: number | undefined;
   const keepAwake = () => {
+    const store = liveCore()?.store;
+    if (!store) return; // 正在关或已经关了：库不能再读，防睡眠由 stopKeepAwake 收掉
     const now = Date.now();
-    const enabled = core?.store.getKV("rules.keepAwake") === "true" && !powerMonitor.isOnBatteryPower();
-    const wanted = enabled && core?.store.listRules().some((r) => r.mode !== "off" && !r.pausedReason && !core?.store.getBot(r.botId)?.settings.paused && ((r.nextRunAt > now && r.nextRunAt - now <= 5 * 60_000) || core?.store.listRuns({ ruleId: r.id, states: ["queued", "running", "settling"], limit: 1 }).length));
+    const enabled = store.getKV("rules.keepAwake") === "true" && !powerMonitor.isOnBatteryPower();
+    const wanted = enabled && store.listRules().some((r) => r.mode !== "off" && !r.pausedReason && !store.getBot(r.botId)?.settings.paused && ((r.nextRunAt > now && r.nextRunAt - now <= 5 * 60_000) || store.listRuns({ ruleId: r.id, states: ["queued", "running", "settling"], limit: 1 }).length));
     if (wanted && awakeId === undefined) awakeId = powerSaveBlocker.start("prevent-app-suspension");
     if (!wanted && awakeId !== undefined) { powerSaveBlocker.stop(awakeId); awakeId = undefined; }
   };
   const awakeTimer = setInterval(keepAwake, 10_000); awakeTimer.unref();
   powerMonitor.on("on-ac", keepAwake); powerMonitor.on("on-battery", keepAwake);
-  app.once("before-quit", () => { clearInterval(awakeTimer); if (awakeId !== undefined) powerSaveBlocker.stop(awakeId); });
+  stopKeepAwake = () => {
+    clearInterval(awakeTimer);
+    powerMonitor.off("on-ac", keepAwake); powerMonitor.off("on-battery", keepAwake);
+    if (awakeId !== undefined) { powerSaveBlocker.stop(awakeId); awakeId = undefined; }
+  };
+  app.once("before-quit", stopKeepAwake);
   entryUrl = `${core.web.url.replace(/\/$/, "")}/?token=${encodeURIComponent(config.ui.token)}`;
   log.info(`数据目录：${dataDir}`);
   log.info(`管理界面：${core.web.url}`);
@@ -528,6 +563,8 @@ process.on("uncaughtException", (e) => {
   startup.record("uncaught_exception", { error: err?.stack || String(e) });
   log.error(`uncaught exception: ${err?.stack || String(e)}`);
   if (["EPIPE", "EBADF", "EOF", "ERR_STREAM_DESTROYED"].includes(String(err?.code))) return;
+  // 正在退出或更新换包（服务和库已经在关）：只记日志。这时的错多半是收尾中的回调碰到已关闭的东西，弹框只会打断退出和更新
+  if (quitting || stopped) return;
   if (Date.now() - lastErrorBox < 60_000 || !app.isReady()) return;
   lastErrorBox = Date.now();
   void dialog

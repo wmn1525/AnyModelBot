@@ -8,6 +8,7 @@ import { GroupAvatars } from "./group.js";
 import { api } from "../lib/api.js";
 import { fmtTime } from "../lib/format.js";
 import { t, useLang } from "../lib/i18n.js";
+import { fold } from "../lib/text-fold.js";
 
 function Select({ label, value, onChange, options }) {
   return html`<label class="search-filter"><span class="sr-only">${label}</span><select class="field" aria-label=${label} value=${value} onChange=${(e) => onChange(e.target.value)}>${options.map(([id, name]) => html`<option value=${id}>${name}</option>`)}</select></label>`;
@@ -28,6 +29,20 @@ function shortTime(at, lang) {
   const d = new Date(at);
   if (dayBucket(at) === "today") return d.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
   return d.toLocaleDateString(lang, d.getFullYear() === new Date().getFullYear() ? { month: "short", day: "numeric" } : { year: "numeric", month: "short", day: "numeric" });
+}
+
+/**
+ * 点在遮罩上：关掉搜索。遮罩盖着侧栏，点的地方底下是侧栏的导航项（发现、机器人、群聊、专业 Bot）时，关掉后照常打开那一项，
+ * 和没开搜索时点它一样（不论它现在是不是选中的样子）；点在别处只关搜索
+ */
+function closeFromScrim(e, onClose) {
+  const scrim = e.currentTarget;
+  const under = document.elementsFromPoint?.(e.clientX, e.clientY).find((el) => !scrim.contains(el));
+  const nav = under?.closest?.(".side .nav-item, .side .thread");
+  onClose();
+  if (!nav || nav.disabled) return;
+  e.preventDefault();
+  nav.click();
 }
 
 /** 应用里和某个机器人的聊天：直接打开聊天；群聊打开群；微信、飞书等渠道的会话打开历史记录（停在最后一条） */
@@ -63,9 +78,9 @@ export function MessageSearchScreen({ open, query, onQuery, bots = [], groups = 
   const dialog = useRef(null), input = useRef(null), scroller = useRef(null), savedTop = useRef(0), active = useRef(null);
   const needle = query.trim();
   const nameMatches = useMemo(() => needle ? [
-    ...bots.filter((b) => b.name.toLowerCase().includes(needle.toLowerCase())).map((b) => ({ id: b.id, name: b.name, kind: "bot", entry: b })),
-    ...groups.filter((g) => g.name.toLowerCase().includes(needle.toLowerCase())).map((g) => ({ id: g.id, name: g.name, kind: "group", entry: g })),
-    ...conversations.filter((c) => c.title.toLowerCase().includes(needle.toLowerCase())).map((c) => ({ id: c.id, name: `${c.title} · ${searchChannel(c.channel)}`, kind: "conversation", entry: c })),
+    ...bots.filter((b) => fold(b.name).includes(fold(needle))).map((b) => ({ id: b.id, name: b.name, kind: "bot", entry: b })),
+    ...groups.filter((g) => fold(g.name).includes(fold(needle))).map((g) => ({ id: g.id, name: g.name, kind: "group", entry: g })),
+    ...conversations.filter((c) => fold(c.title).includes(fold(needle))).map((c) => ({ id: c.id, name: `${c.title} · ${searchChannel(c.channel)}`, kind: "conversation", entry: c })),
   ] : [], [needle, bots, groups, conversations, lang]);
   const request = useMemo(() => {
     const p = new URLSearchParams({ q: needle });
@@ -173,7 +188,7 @@ export function MessageSearchScreen({ open, query, onQuery, bots = [], groups = 
     });
     return html`<div class="search-recent" aria-label=${t("search.recent")}>${out}</div>`;
   };
-  return html`<div class="scrim search-scrim" hidden=${!open} onPointerDown=${(e) => e.target === e.currentTarget && onClose()}>
+  return html`<div class="scrim search-scrim" hidden=${!open} onPointerDown=${(e) => e.target === e.currentTarget && closeFromScrim(e, onClose)}>
   <section class="sheet search-dialog message-search" ref=${dialog} role="dialog" aria-modal="true" data-screen="message-search" aria-label=${t("search.title")} onKeyDown=${onKey}>
     <header class="search-head"><${Icon} name="search" size="md" /><input ref=${input} type="search" class="search-input" maxLength="200" value=${query} placeholder=${t("search.placeholder")} aria-label=${t("search.placeholder")} onInput=${(e) => onQuery(e.target.value)} />
       <button type="button" class=${`btn sm search-filter-toggle${activeFilters ? " on" : ""}`} aria-expanded=${filtersOpen} aria-controls="chat-search-filters" onClick=${() => setFiltersOpen((v) => !v)}>${t("search.filters")}${activeFilters > 0 && html`<span class="num"> · ${activeFilters}</span>`}</button>

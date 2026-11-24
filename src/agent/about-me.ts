@@ -111,7 +111,7 @@ export class AboutMeError extends Error {
 }
 
 const hex = (n: number) => crypto.randomBytes(n).toString("hex");
-const squash = (s: string) => s.toLowerCase().replace(/[\s，。,.!！?？；;：:、"'“”‘’「」]/g, "");
+const squash = (s: string) => s.replace(/İ/g, "I").toLowerCase().replace(/[\s，。,.!！?？；;：:、"'“”‘’「」]/g, "");
 const tidy = (s: string) => s.replace(/\s+/g, " ").trim();
 
 // ---------- 识别 ----------

@@ -1,6 +1,6 @@
 // 右侧面板的「预览」页签（PRD 2026-11-15 右侧预览面板）：从上到下是文件标签行 → 文件信息行 → 内容区。
 // 标签由 main.js 按范围记（每个机器人一套，群聊、历史消息搜索结果各一套；重启后清空），这里只管显示和操作：
-// - 标签行：类型图标 + 文件名，最多 12 个；「+」列出本对话交付的文件；右键菜单；双击空白处放大。
+// - 标签行：类型图标 + 文件名，最多 12 个；「+」列出本对话在预览中打开过的文件；右键菜单；双击空白处放大。
 // - 信息行：文件名（中间省略）、在访达中显示、辅助信息、类型专属控件、视图切换、「⋯」（宽度不够时专属控件先收进「⋯」）。
 // - 内容区：Markdown、代码 / 纯文本、JSON、CSV / TSV、HTML、图片、PDF、网址，以及加载中、失败、不在了、不支持、空文件、过大这些状态。
 // - 自动刷新：订阅已打开文件的变化（/preview-watch），当前标签保持位置重新读取，后台标签切过去时再读；选中文字时先不刷新。
@@ -50,8 +50,32 @@ function PanelToasts() {
   return html`<div class="toasts pv-toasts" role="status" aria-live="polite">${list.map((it) => html`<div key=${it.id} class=${`toast ${it.kind}`}><span>${it.text}</span></div>`)}</div>`;
 }
 
+// —— 焦点在不在预览面板（⌘W / Ctrl+W 只在这时关标签）——
+// 点在预览的正文、表格上焦点不会动（document.activeElement 还是 body），所以记下最后一次按下鼠标、焦点移动落在哪；
+// 从面板里打开的菜单挂在 <body> 下，在菜单里点、焦点进菜单不改这个记录
+let lastInPreview = false;
+const inPopLayer = (el) => !!el?.closest?.(".pop");
+function markWhere(e) {
+  if (inPopLayer(e.target)) return;
+  lastInPreview = !!e.target?.closest?.(".preview-pane");
+}
+if (typeof document !== "undefined") {
+  document.addEventListener("pointerdown", markWhere, true);
+  document.addEventListener("focusin", markWhere, true);
+}
+/** 焦点在预览面板里：有明确焦点的元素时看它在不在面板里（面板里的 iframe 也算），否则看最后一次点在哪 */
+export function previewFocused() {
+  const pane = document.querySelector(".preview-pane");
+  if (!pane) return false;
+  const a = document.activeElement;
+  if (a && a !== document.body && a !== document.documentElement && !inPopLayer(a)) return pane.contains(a);
+  return lastInPreview;
+}
+
 // —— 每个标签的运行状态 ——
 const entries = new Map();
+/** 已经记过「在预览里打开过」的标签：id → rev（重新打开时 rev + 1，再记一次） */
+const noted = new Map();
 const bus = createStore(0);
 const touch = () => bus.set((n) => n + 1);
 export function entryOf(id) {
@@ -209,7 +233,7 @@ const whenLabel = (at) => {
 const tabType = (item) => (item.type === "website" ? "website" : item.type === "webimage" ? "webimage" : previewType(item.name));
 const fileId = (f) => JSON.stringify([f.conv, f.path]);
 
-/** 「+」菜单 / 「查看全部」：本对话交付的全部文件，最新在上；底部固定「关闭其他标签页」「关闭全部」 */
+/** 「+」菜单 / 「查看全部」：本对话在预览中打开过的全部文件，最近的在上；底部固定「关闭其他标签页」「关闭全部」 */
 function FilesMenu({ anchor, files, state, desktop, onClose, onSelect, onCloseOthers, onCloseAll }) {
   const list = files || [];
   const openIds = new Set(state.items.map((x) => x.id));
@@ -252,11 +276,11 @@ function FilesMenu({ anchor, files, state, desktop, onClose, onSelect, onCloseOt
   <//>`;
 }
 
-/** 没有标签时：一句说明、本对话最近 3 个交付文件、「网站地址」 */
+/** 没有标签时：一句说明、本对话最近在预览中打开过的 3 个文件（右侧是打开时间）、「网站地址」 */
 function EmptyState({ files, state, desktop, onSelect }) {
   const [all, setAll] = useState(null);
   const recent = (files || []).filter((f) => !f.gone).slice(0, 3);
-  return html`<div class="preview-empty">
+  return html`<div class="preview-empty" tabindex="-1">
     <p>${t("info.preview.empty")}</p>
     ${recent.length > 0 && html`<section class="pv-recent" aria-label=${t("info.preview.files.title")}>
       <h3 class="t-label">${t("info.preview.files.title")}</h3>
@@ -802,7 +826,7 @@ const b64url = (s) => {
 };
 
 /**
- * state：{ items, active }（main.js 按范围记）；onState(fn)：改这一套标签；convs：本对话的会话（「+」菜单列它们交付的文件）；
+ * state：{ items, active }（main.js 按范围记）；onState(fn)：改这一套标签；convs：本对话的会话（「+」菜单和空状态列在这些会话里打开过的文件）；
  * desktop：桌面版（用系统程序打开、在访达中显示、另存为…）；onToggleExpand：双击标签行空白处放大 / 退出。
  */
 export function ResourcePreview({ state = emptyResources(), onState, convs = [], desktop = false, onToggleExpand }) {
@@ -813,19 +837,27 @@ export function ResourcePreview({ state = emptyResources(), onState, convs = [],
   itemsRef.current = state.items;
   const activeRef = useRef(item?.id);
   activeRef.current = item?.id;
-  // 本对话交付的文件（「+」菜单、空状态）
+  // 本对话在预览中打开过的文件（「+」菜单、空状态；GET /preview-files，最近打开的在前）
   const [files, setFiles] = useState(null);
   const convKey = convs.join("\n");
   const loadFiles = useCallback(() => {
     if (!convs.length) return setFiles([]);
-    api(`/delivered-files?${convs.map((c) => `conv=${encodeURIComponent(c)}`).join("&")}`).then((d) => setFiles(d.files || []), () => setFiles((f) => f || []));
+    api(`/preview-files?${convs.map((c) => `conv=${encodeURIComponent(c)}`).join("&")}`).then((d) => setFiles(d.files || []), () => setFiles((f) => f || []));
   }, [convKey]);
   useEffect(() => { loadFiles(); }, [loadFiles, state.items.length]);
+  // 新开的文件标签、重新打开的（rev 变了）记一笔「在预览里打开过」，记好再刷新列表；网址、专业 Bot 的 app/ 文件不算本对话的文件
+  const revKey = state.items.map((x) => `${x.id}#${x.rev || 0}`).join("\n");
+  useEffect(() => {
+    const todo = state.items.filter((x) => x.type === "file" && x.conv && noted.get(x.id) !== (x.rev || 0));
+    if (!todo.length) return;
+    for (const x of todo) noted.set(x.id, x.rev || 0);
+    Promise.all(todo.map((x) => api(`/conversations/${encodeURIComponent(x.conv)}/file/opened`, { method: "POST", body: { path: x.path } }).catch(() => {}))).then(loadFiles);
+  }, [revKey, loadFiles]);
   // 关掉的标签：读到的内容、手动选的编码、排序等一起丢掉（编码只在标签关闭前记住）
   const prevIds = useRef(state.items.map((x) => x.id));
   useEffect(() => {
     const now = new Set(state.items.map((x) => x.id));
-    for (const id of prevIds.current) if (!now.has(id)) entries.delete(id);
+    for (const id of prevIds.current) if (!now.has(id)) { entries.delete(id); noted.delete(id); }
     prevIds.current = [...now];
   }, [state.items.map((x) => x.id).join("\n")]);
   const select = (id) => onState((s) => ({ ...s, active: id }));
@@ -897,13 +929,20 @@ export function ResourcePreview({ state = emptyResources(), onState, convs = [],
     return () => document.removeEventListener("selectionchange", onSel);
   }, []);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
-  // 桌面版的 ⌘W / Ctrl+W、内容缩放快捷键由主进程转过来（electron/main.ts）：焦点在预览面板时才接
+  // 桌面版的 ⌘W / Ctrl+W、内容缩放快捷键由主进程转过来（electron/main.ts）：焦点在预览面板时才接。
+  // 关掉的是最后一个：焦点留在空状态上（面板还在），再按一次也不会关窗口
   useEffect(() => {
     const close = () => {
+      if (!previewFocused()) return false;
       const id = activeRef.current;
-      if (!id || !root.current?.contains(document.activeElement)) return false;
+      if (!id) return true;
       closeTab(id);
-      requestAnimationFrame(() => root.current?.querySelector(".pv-tab.on .pv-tab-main")?.focus());
+      requestAnimationFrame(() => {
+        const pane = document.querySelector(".preview-pane");
+        const next = pane?.querySelector(".pv-tab.on .pv-tab-main") || pane?.querySelector(".preview-empty");
+        next?.focus({ preventScroll: true });
+        lastInPreview = !!next;
+      });
       return true;
     };
     const key = (k) => !!(activeRef.current && entryOf(activeRef.current).zoomKey?.(k));

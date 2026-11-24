@@ -85,7 +85,7 @@ bots/<id>/
 | `permissions` | 见下表 |
 | `skills` | 引入的技能：`name`、`source`、`sha256`（`amb-bot hash` 算）、`author`、`license`、`url`。自己写的不用列 |
 
-文案字段都写成 `{ "zh-CN": …, "en": … }`。框架要求这两种，`ja`、`ko`、`ru`、`es`、`pt` 缺了退回 `en`。这个仓库里上架的 Bot 七种语言都要有，文案、界面和示例数据都算，`test/bot-catalog-site.unit.test.ts` 会检查。
+文案字段都写成 `{ "zh-CN": …, "en": … }`。框架要求这两种，`ja`、`ko`、`ru`、`es`、`pt`、`tr` 缺了退回 `en`。这个仓库里上架的 Bot 八种语言都要有，文案、界面和示例数据都算，`test/bot-catalog-site.unit.test.ts` 会检查。
 
 ### 权限
 

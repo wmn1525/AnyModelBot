@@ -6,7 +6,7 @@ import { api } from "../lib/api.js";
 import { failed } from "../lib/store.js";
 import { t } from "../lib/i18n.js";
 import { openGithub } from "./skill-library.js";
-import { copyExample, fillChat, useBotSkills } from "../lib/usage.js";
+import { copyExample, fillChat, useBotSkills, useSkillReady } from "../lib/usage.js";
 
 const FINAL = ["installed", "replaced", "failed", "canceled", "expired"];
 
@@ -59,6 +59,8 @@ export function SkillInstallCard({ id }) {
   // 装好以后：这个技能现在能不能用、怎么说（机器人的技能清单，没生效时自己刷新）
   const done = !!c && (c.state === "installed" || c.state === "replaced");
   const botSkills = useBotSkills(done && c.botExists ? c.botId : null);
+  // 还没生效（加载中、等当前任务结束）时自己刷新清单，说法跟着换（和存成技能的卡片一样）
+  useSkillReady(done && c.botExists ? c.botId : null, c?.skill?.name);
   useEffect(() => {
     if (!resetAt || resetAt <= Date.now()) return;
     const timer = setTimeout(() => tick((n) => n + 1), Math.min(resetAt - Date.now() + 500, 2 ** 31 - 1));

@@ -6,5 +6,6 @@ import { ko } from './ko';
 import { ru } from './ru';
 import { es } from './es';
 import { pt } from './pt';
-export { zh, en, ja, ko, ru, es, pt };
-export const RAW_DICTS = { zh, en, ja, ko, ru, es, pt };
+import { tr } from './tr';
+export { zh, en, ja, ko, ru, es, pt, tr };
+export const RAW_DICTS = { zh, en, ja, ko, ru, es, pt, tr };

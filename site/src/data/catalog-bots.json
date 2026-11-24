@@ -10,7 +10,8 @@
       "ko": "기업 리서치",
       "ru": "Исследование компаний",
       "es": "Análisis de empresas",
-      "pt": "Pesquisa de empresas"
+      "pt": "Pesquisa de empresas",
+      "tr": "Şirket araştırması"
     },
     "summary": {
       "zh-CN": "在你的电脑上做公司尽调，生成可追溯的简报和 PDF。",
@@ -19,7 +20,8 @@
       "ko": "내 컴퓨터에서 기업을 실사하고 출처가 있는 브리핑과 PDF를 만듭니다.",
       "ru": "Изучает компании на вашем компьютере: сводки и PDF со ссылками на источники.",
       "es": "Investiga empresas en tu computadora: resúmenes con fuentes e informes en PDF.",
-      "pt": "Pesquisa empresas no seu computador, com resumos e PDFs que citam as fontes."
+      "pt": "Pesquisa empresas no seu computador, com resumos e PDFs que citam as fontes.",
+      "tr": "Bilgisayarında şirket araştırması: kaynaklı özetler ve PDF raporlar."
     },
     "about": {
       "zh-CN": [
@@ -56,6 +58,11 @@
         "Segue o fluxo de pesquisa e a exportação em PDF do projeto de código aberto Company Research Agent",
         "Os relatórios e as fontes ficam no seu dispositivo; comece em um canal de chat e o resultado volta para lá",
         "Apenas para fins informativos e de aprendizado, não é recomendação de investimento"
+      ],
+      "tr": [
+        "Açık kaynak Company Research Agent araştırma akışını ve PDF dışa aktarmayı izler",
+        "Raporlar ve kaynaklar senin cihazında kalır; bir sohbet kanalında başlatırsan sonuç oraya döner",
+        "Yalnızca bilgi ve öğrenme içindir, yatırım tavsiyesi değildir"
       ]
     },
     "starters": {
@@ -93,6 +100,11 @@
         "Apresente o que a Stripe faz e quem atende em uma página. Consulte apenas 1–2 páginas oficiais, sem pesquisa completa.",
         "Faça uma due diligence completa da Stripe e gere um relatório",
         "Abra as fontes e a curadoria do relatório mais recente"
+      ],
+      "tr": [
+        "Stripe ne yapar ve kime hizmet eder, bir sayfada anlat. Yalnızca resmi siteden 1–2 sayfa kullan, tam inceleme yapma.",
+        "Stripe için tam inceleme yap ve bir rapor oluştur",
+        "En son raporun kaynaklarını ve seçimini aç"
       ]
     }
   },
@@ -107,7 +119,8 @@
       "ko": "PPT 마스터",
       "ru": "Мастер PPT",
       "es": "PPT Master",
-      "pt": "PPT Master"
+      "pt": "PPT Master",
+      "tr": "PPT Master"
     },
     "summary": {
       "zh-CN": "把文档或主题做成可编辑的 PPT，也能改现有的演示文稿。",
@@ -116,7 +129,8 @@
       "ko": "문서나 주제를 편집 가능한 슬라이드로 만들고, 기존 발표 자료도 수정합니다.",
       "ru": "Делает редактируемые слайды из документов и тем, правит готовые презентации.",
       "es": "Crea diapositivas editables a partir de documentos o temas, o edita las tuyas.",
-      "pt": "Transforma documentos e temas em slides editáveis ou edita suas apresentações."
+      "pt": "Transforma documentos e temas em slides editáveis ou edita suas apresentações.",
+      "tr": "Belge ve konuları düzenlenebilir slayt yapar; mevcut sunumu da düzenler."
     },
     "about": {
       "zh-CN": [
@@ -153,6 +167,11 @@
         "Baseado no fluxo de trabalho e nas ferramentas de exportação do projeto de código aberto PPT Master (hugohe3/ppt-master)",
         "Os arquivos do projeto e as apresentações ficam no seu dispositivo; o conteúdo dos documentos é enviado ao modelo que você escolher",
         "Os slides são exportados como formas nativas que você pode continuar editando no PowerPoint; a qualidade depende do modelo escolhido"
+      ],
+      "tr": [
+        "Açık kaynak PPT Master (hugohe3/ppt-master) iş akışı ve dışa aktarma araçları üzerine kuruludur",
+        "Proje dosyaları ve sunumlar senin cihazında kalır; belge içeriği seçtiğin modele gider",
+        "Slaytlar, PowerPoint içinde düzenlemeye devam edebileceğin yerel şekiller olarak dışa aktarılır; kalite seçilen modele bağlıdır"
       ]
     },
     "starters": {
@@ -190,6 +209,11 @@
         "Esboce 3 slides sobre uma boa reunião de 30 minutos: título e três tópicos por slide. Só texto, sem arquivos.",
         "Faça rapidamente uma apresentação 16:9 com 5 slides sobre como melhorar as reuniões semanais remotas, sem precisar confirmar",
         "Faça uma apresentação de lançamento de produto com 8 slides e me mostre o plano antes"
+      ],
+      "tr": [
+        "İyi bir 30 dakikalık ekip toplantısı için 3 slaytlık taslak yaz: her slaytta bir başlık ve üç madde. Yalnızca metin, dosya yok.",
+        "Uzaktan haftalık toplantıları iyileştirmek için 16:9 biçiminde 5 slaytlık bir sunumu hızlıca yap, onay gerekmez",
+        "8 slaytlık bir ürün lansman sunumu yap ve önce planı göster"
       ]
     }
   },
@@ -204,7 +228,8 @@
       "ko": "영상 스튜디오",
       "ru": "Киностудия",
       "es": "Estudio de cine",
-      "pt": "Estúdio de cinema"
+      "pt": "Estúdio de cinema",
+      "tr": "Film Stüdyosu"
     },
     "summary": {
       "zh-CN": "做短视频和分集短剧，从剧本、分镜到配音、剪辑和成片。",
@@ -213,7 +238,8 @@
       "ko": "숏폼과 시리즈 드라마를 대본, 스토리보드부터 음성, 편집, 완성까지 만듭니다.",
       "ru": "Короткие видео и сериалы: от сценария и раскадровки до озвучки и монтажа.",
       "es": "Videos cortos y series: guion, guion gráfico, voz, edición y montaje final.",
-      "pt": "Vídeos curtos e séries: roteiro, storyboard, voz, edição e corte final."
+      "pt": "Vídeos curtos e séries: roteiro, storyboard, voz, edição e corte final.",
+      "tr": "Kısa videolar ve diziler: senaryo, storyboard, ses, kurgu ve son kesim."
     },
     "about": {
       "zh-CN": [
@@ -250,6 +276,11 @@
         "Traz do PRINTFILM a escrita de roteiros, os storyboards, o design de elementos e a composição com FFmpeg",
         "Os modelos rodam pelo Okinto; os projetos e a mídia ficam no seu dispositivo",
         "Edite planos individuais, guarde tomadas, reutilize elementos e retome trabalhos interrompidos"
+      ],
+      "tr": [
+        "PRINTFILM senaryo yazımını, storyboard düzenini, varlık tasarımını ve FFmpeg birleştirmesini taşır",
+        "Modeller Modelflare üzerinden çalışır; projeler ve medya senin cihazında kalır",
+        "Tek tek çekimleri düzenle, tekrarları sakla, varlıkları yeniden kullan ve kesilen işe devam et"
       ]
     },
     "starters": {
@@ -287,6 +318,11 @@
         "Escreva uma sinopse com menos de 100 palavras: um entregador recebe pacotes do amanhã. Só texto, sem imagens nem vídeo.",
         "Transforme minha ideia em um vídeo curto completo; mostre o roteiro e o storyboard antes",
         "Crie uma série de três episódios; planeje a história, o elenco e os episódios antes"
+      ],
+      "tr": [
+        "100 kelimenin altında bir kısa film özeti yaz: bir kurye her gün yarından paket alır. Yalnızca metin, görsel veya video yok.",
+        "Fikrimi tam bir kısa videoya çevir; önce senaryoyu ve storyboard düzenini göster",
+        "Üç bölümlük bir dizi oluştur; önce hikâyeyi, kadroyu ve bölümleri planla"
       ]
     }
   },
@@ -301,7 +337,8 @@
       "ko": "미국 주식 리서치",
       "ru": "Анализ акций США",
       "es": "Acciones de EE. UU.",
-      "pt": "Ações dos EUA"
+      "pt": "Ações dos EUA",
+      "tr": "ABD hisse araştırması"
     },
     "summary": {
       "zh-CN": "查阅美股财报和申报文件，写出数据可追溯的研究报告。",
@@ -310,7 +347,8 @@
       "ko": "미국 상장사의 재무제표와 SEC 공시를 조사해 수치를 추적할 수 있는 보고서를 작성합니다.",
       "ru": "Изучает компании США по документам SEC, каждое число в отчёте можно проверить.",
       "es": "Analiza empresas de EE. UU. con documentos de la SEC; cada cifra es rastreable.",
-      "pt": "Pesquisa empresas dos EUA nos documentos da SEC, com cada número rastreável."
+      "pt": "Pesquisa empresas dos EUA nos documentos da SEC, com cada número rastreável.",
+      "tr": "SEC belgelerinden ABD şirketlerini araştırır; her rakam izlenebilir."
     },
     "about": {
       "zh-CN": [
@@ -347,6 +385,11 @@
         "Pesquisa empresas listadas nos EUA a partir dos documentos no SEC EDGAR: planeja, coleta, confere e depois escreve um relatório",
         "Os registros de coleta e os dados originais ficam no seu espaço de trabalho. Não tem cotações, índices P/L nem filtro de ações",
         "Inspirado no projeto de código aberto Dexter, sem nenhum código dele e sem vínculo com ele. Não é recomendação de investimento"
+      ],
+      "tr": [
+        "SEC EDGAR belgelerinden ABD'de işlem gören şirketleri araştırır: planlar, veri alır, kontrol eder, sonra rapor yazar",
+        "Alım kayıtları ve ham veriler çalışma alanında kalır. Fiyat, F/K oranı veya hisse tarayıcısı yoktur",
+        "Açık kaynak Dexter projesinden esinlenir; onun kodu yoktur ve bağı yoktur. Yatırım tavsiyesi değildir"
       ]
     },
     "starters": {
@@ -384,6 +427,11 @@
         "Apresente os negócios da Apple em um parágrafo e três perguntas para ler o relatório anual. Só introdução, sem dados financeiros ou avaliação.",
         "Pesquise a evolução da receita e da margem bruta da NVIDIA em cinco anos e faça um relatório",
         "Compare a receita e a margem operacional da Microsoft e da Alphabet em três anos"
+      ],
+      "tr": [
+        "Apple ana işlerini bir paragrafta anlat ve yıllık raporu okurken düşünülecek üç soru listele. Yalnızca giriş; finansal veri veya değerleme yok.",
+        "NVIDIA gelirini ve brüt kâr marjını beş yıl için araştırıp bir rapor yaz",
+        "Microsoft ile Alphabet gelirini ve faaliyet marjını üç yıl için karşılaştır"
       ]
     }
   }

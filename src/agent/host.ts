@@ -1,7 +1,7 @@
 import type { ReasoningEffort } from "../config.js";
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { lineLogger, logger } from "../log.js";
 import type { Store } from "../store/db.js";
@@ -100,19 +100,25 @@ export const MAX_DELIVERABLE_BYTES = 50 * 1024 * 1024;
 /**
  * 只交付工作区内（解析符号链接后）真实存在的普通文件，去重，最多 8 个、单个 ≤ 50 MB。
  * 防止模型借 present 把工作区外的文件（如 ~/.ssh、数据目录）发到聊天里。
+ * folder：这一轮绑定的工作文件夹（PRD R7）：它里面的文件也能交付；相对路径以它为准（代理的工作目录就是它）。
  */
-export function deliverables(workspace: string, paths: string[]): string[] {
-  let root: string;
-  try {
-    root = fs.realpathSync(workspace);
-  } catch {
-    return [];
+export function deliverables(workspace: string, paths: string[], folder?: string): string[] {
+  const roots: string[] = [];
+  for (const r of [workspace, folder]) {
+    if (!r) continue;
+    try {
+      roots.push(fs.realpathSync(r));
+    } catch {
+      /* 不在了 */
+    }
   }
+  if (!roots.length) return [];
+  const base = folder && roots.length > 1 ? folder : workspace;
   const out: string[] = [];
   for (const p of paths) {
     try {
-      const real = fs.realpathSync(path.resolve(workspace, p));
-      if (real !== root && !real.startsWith(root + path.sep)) continue;
+      const real = fs.realpathSync(path.resolve(base, p));
+      if (!roots.some((root) => real === root || real.startsWith(root + path.sep))) continue;
       const st = fs.statSync(real);
       if (!st.isFile() || st.size === 0 || st.size > MAX_DELIVERABLE_BYTES) continue;
       if (!out.includes(real)) out.push(real);
@@ -209,6 +215,8 @@ export interface AgentHostOptions {
   settings?: () => BotSettings;
   /** 单回合上限，超时则重启子进程（SDK 无中断接口） */
   turnTimeoutMs?: number;
+  /** Linux 上 bubblewrap 用不了时允许命令改用 DSH 的 Landlock 沙箱（见 sandboxPatchLines）；缺省不允许 */
+  allowLandlock?: boolean;
   /** 需要让用户看到的提示（界面通知） */
   onNotice?: (text: string) => void;
   /** 能生图 / 生视频（已连接 OKINTO）：写入 media 技能说明 */
@@ -308,6 +316,8 @@ export type AgentApi = "openai-completions" | "openai-responses" | "anthropic-me
 export interface ModelApiInfo {
   endpoints?: string[];
   reasoning?: boolean;
+  /** 模型资料里的图片输入（input_modalities）；没有资料时不给 */
+  vision?: boolean;
 }
 
 /**
@@ -333,6 +343,8 @@ export interface ModelRoute {
   fallback?: ApiFallback;
   limits: { window: number; maxTokens: number };
   reasoning?: boolean;
+  /** 模型资料明确写了看不看图；没有资料时按模型名判断（acceptsImages） */
+  vision?: boolean;
 }
 
 /**
@@ -422,7 +434,7 @@ export function providerProfiles(routes: ModelRoute[], bridgeUrl: string, botId:
       contextWindow: r.limits.window,
       maxTokens: r.limits.maxTokens,
       // 默认只收文字；能看图的模型声明图片输入，用户发来的图片才会作为图片交给它
-      ...(acceptsImages(r.model) ? { input: ["text", "image"] } : {}),
+      ...((r.vision ?? acceptsImages(r.model)) ? { input: ["text", "image"] } : {}),
       ...(effortApplies(api, reasoning) ? { reasoningEfforts: { low: "low", medium: "medium", high: "high" } } : {}),
       ...(compat ? { compat } : {}),
     });
@@ -484,8 +496,16 @@ export interface TurnImage {
   mimeType: "image/png" | "image/jpeg" | "image/gif" | "image/webp";
 }
 
+/**
+ * 一条消息绑定的工作文件夹（PRD R2）：root = 宿主刚核对过的真实路径；unavailable = 原来选的目录不在了、换了或没有权限
+ * （这一轮按只读跑，不退回默认工作区、不去别处找）。null = 这条消息没有选目录（默认工作区）。
+ */
+export type TurnFolder = { id: string; root: string; name: string; unavailable?: false } | { id: string; root?: undefined; name: string; unavailable: true; reason: string } | null;
+
 export interface TurnInput {
   conversationId: string;
+  /** 网页对话的消息绑定的工作文件夹；不给（其他渠道、代理自己醒来的一轮）= 默认工作区 */
+  folder?: TurnFolder;
   /** 可信渠道入站的操作者，供宿主判断跨会话规则权限；不从模型工具参数读取。 */
   senderId?: string;
   text: string;
@@ -507,6 +527,31 @@ export interface TurnUsage {
 
 function yamlStr(s: string): string {
   return JSON.stringify(s); // JSON 字符串是合法的 YAML 标量
+}
+
+const shQuote = (v: string) => `'${v.replaceAll("'", `'\\''`)}'`;
+
+/** 系统里的 bubblewrap（不看 PATH：PATH 最前面是我们自己的包装脚本） */
+export function findBwrap(): string | undefined {
+  return ["/usr/bin/bwrap", "/usr/local/bin/bwrap", "/bin/bwrap"].find((p) => fs.existsSync(p));
+}
+
+/** 没装 bubblewrap 时占位脚本报的那一行（给模型和日志看；以 "bwrap: " 开头，DSH 据此认定运行器失败） */
+export const BWRAP_MISSING =
+  "bwrap: bubblewrap is not installed, so sandboxed commands are refused on this machine. Ask the user to install it (Debian/Ubuntu: apt install bubblewrap; Fedora: dnf install bubblewrap; Arch: pacman -S bubblewrap) and restart AnyModelBot.";
+
+/**
+ * bwrap（经包装脚本）能不能建出 DSH 给命令用的那种沙箱。能：undefined；不能：原因（它自己的报错，或超时 / 起不来）。
+ * 参数与 DSH 的 bwrap 档一致（@deepseek-ai/dsh-sandbox-local：只读根、独立 /dev 与 /proc、PID 命名空间）。
+ */
+export function probeBwrap(bwrap: string, timeoutMs = 5000): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    execFile(bwrap, ["--ro-bind", "/", "/", "--dev", "/dev", "--unshare-pid", "--proc", "/proc", "--die-with-parent", "--", "true"], { timeout: timeoutMs }, (err, _stdout, stderr) => {
+      if (!err) return resolve(undefined);
+      const line = String(stderr || "").split(/\r?\n/).map((l) => l.trim()).find(Boolean);
+      resolve((line || err.message || "bwrap failed").slice(0, 300));
+    });
+  });
 }
 
 /** 工具结果的文字（content 是字符串或 [{type:"text",text}]） */
@@ -690,6 +735,10 @@ export class AgentHost {
   private listeners = new Set<(e: HostEvent) => void>();
   /** 当前子进程补丁里写的 PowerShell（Windows）；代理拉不起它时据此退回 */
   private pwshPath: string | undefined;
+  /** Linux：bubblewrap 用不了的原因（有值时沙箱里的命令都会被拒绝，见 checkSandbox）；能用或不适用时为空 */
+  private sandboxProblem: string | undefined;
+  /** Linux：bubblewrap 用不了、但放行了 Landlock（allowLandlock）时的原因；这时命令在只限制写的沙箱里跑 */
+  private sandboxWeak: string | undefined;
   /** 进入 runOnce 还没结束的回合（含还在等进程、等会话的）：有就不在后台重启 */
   private entering = 0;
   /** 当前子进程里打开过的任务会话（子代理的通知按它们归属） */
@@ -775,6 +824,8 @@ export class AgentHost {
       ...providerPatchLines(providerProfiles(list, this.o.bridge.url, this.o.botId)),
       // 长命令转后台；Windows：命令用检测到的 PowerShell 7（DSH 自己只看 Program Files\PowerShell\7 和 PATH，找不到就退回 5.1）
       ...shellPatchLines(pwshPath),
+      // Linux：命令的沙箱只用 bubblewrap，用不了就拒绝，不退到 Landlock
+      ...this.sandboxPatchLines(),
       // web_search 用 amb-web-search 插件注册的 amb（经 bridge 由宿主搜索），不用 DeepSeek 自带的搜索（要 DeepSeek 的 Key）；
       // 补丁整体替换这一行的 config，网页抓取照旧写上 http
       "- id: web",
@@ -801,6 +852,12 @@ export class AgentHost {
       // 生图 / 生视频：宿主带着本机器人的 Key 调 OKINTO，文件存进工作区 media/；技能说明在 skills/media
       "    - id: amb-media",
       `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-media.mjs"))}`,
+      // 用户随消息发的 ZIP：zip_list / zip_extract 经 bridge 由宿主核对归属后查看、安全解压（attachments/unzip.ts）
+      "    - id: amb-zip",
+      `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-zip.mjs"))}`,
+      // 工作文件夹：每条消息绑定的目录成为这个会话（和它的子代理）的可写根（宿主经指令通道告诉它，见 bindFolder）
+      "    - id: amb-workfolder",
+      `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-workfolder.mjs"))}`,
       // 按 GitHub 链接安装技能：install_skill 让宿主读取、预检并在对话里出确认卡片，用户点「安装」才写入（skills/installs.ts）
       "    - id: amb-skills",
       `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-skills.mjs"))}`,
@@ -963,16 +1020,49 @@ export class AgentHost {
   }
 
   /**
+   * Linux：命令只在 bubblewrap 里跑，用不了就拒绝。DSH 自己在 bwrap 用不了时会退到 Landlock，那种模式下
+   * 没有 PID 命名空间（脱离了进程树的进程，回环管理接口认不出是沙箱里来的，见 agent/peer-guard.ts），
+   * 整个文件系统又都可读（遮不住数据目录里的数据库、渠道令牌和界面令牌）。
+   * 所以把运行器指定成下面的包装脚本（DSH 不再探测、不再换别的）：bwrap 起不来时命令直接失败并带着原因，
+   * 不会换一种弱的方式照跑。完全权限的机器人不进沙箱，不受影响。
+   *
+   * 例外：部署的人明确放行（allowLandlock，环境变量 AMB_ALLOW_LANDLOCK=1，官方 Docker 镜像里打开）。
+   * 这时不指定运行器，沿用 DSH 自己的顺序（先 bwrap，不行再 Landlock），上面两个弱点都还在，checkSandbox 会在日志里写明。
+   */
+  private sandboxPatchLines(): string[] {
+    if (this.o.allowLandlock) return [];
+    const shim = this.writeBwrapShim();
+    if (!shim) return [];
+    return [
+      "- id: sandbox",
+      "  config:",
+      `    runnerCommand: [${yamlStr(path.join(shim, "bwrap"))}]`,
+      // 运行器自己报错（装了但建不了命名空间、没装时下面的占位脚本）都以 "bwrap: " 开头
+      `    runnerFailureSignatures: [${yamlStr("bwrap: ")}]`,
+    ];
+  }
+
+  /**
    * Linux：在 PATH 前放一个 bwrap 包装脚本，把整个数据目录（数据库、渠道令牌、magpie 密钥）
    * 用空 tmpfs 遮住，只重新挂回本机器人的工作区与 DSH 主目录。DSH 自带沙箱只限制写，不限制读。
+   * 没装 bubblewrap 时写一个只报错的占位脚本（见 sandboxPatchLines：命令被拒绝，不退到别的沙箱）。
    */
   private writeBwrapShim(): string | undefined {
     if (process.platform !== "linux") return undefined;
-    const real = ["/usr/bin/bwrap", "/usr/local/bin/bwrap", "/bin/bwrap"].find((p) => fs.existsSync(p));
-    if (!real) return undefined;
+    const real = findBwrap();
     const dir = path.join(this.home, ".amb-bin");
     fs.mkdirSync(dir, { recursive: true });
-    const q = (v: string) => `'${v.replaceAll("'", `'\\''`)}'`;
+    const f = path.join(dir, "bwrap");
+    if (!real) {
+      // 放行了 Landlock：PATH 里不放 bwrap，DSH 探测不到就用 Landlock（以前留下的占位脚本也清掉）
+      if (this.o.allowLandlock) {
+        fs.rmSync(f, { force: true });
+        return undefined;
+      }
+      fs.writeFileSync(f, `#!/bin/sh\n# 由 anymodel bot 生成：这台机器上没有 bubblewrap，沙箱里的命令一律不跑。\necho ${shQuote(BWRAP_MISSING)} >&2\nexit 127\n`, { mode: 0o755 });
+      return dir;
+    }
+    const q = shQuote;
     const data = path.resolve(this.o.dataDir);
     const script = `#!/bin/sh
 # 由 anymodel bot 生成：遮住宿主数据目录后再交给真正的 bwrap。
@@ -1000,9 +1090,34 @@ for a do
 done
 exec "$REAL" "$@"
 `;
-    const f = path.join(dir, "bwrap");
     fs.writeFileSync(f, script, { mode: 0o755 });
     return dir;
+  }
+
+  /**
+   * Linux、不是完全权限：看一眼 bwrap 能不能建出命令用的沙箱（参数和 DSH 自己用的那组一样，经包装脚本）。
+   * 不行就在日志和状态里说清楚原因和怎么办；真正拦住命令的是 sandboxPatchLines，这里只负责让人知道。
+   */
+  private async checkSandbox(): Promise<void> {
+    this.sandboxProblem = undefined;
+    this.sandboxWeak = undefined;
+    if (process.platform !== "linux" || this.settings().permission === "full") return;
+    const shim = this.writeBwrapShim();
+    const detail = shim ? await probeBwrap(path.join(shim, "bwrap")) : BWRAP_MISSING;
+    if (!detail) return;
+    if (this.o.allowLandlock) {
+      this.sandboxWeak = detail;
+      log.warn(
+        "bubblewrap 用不了，命令改用 Landlock 沙箱（AMB_ALLOW_LANDLOCK=1）：它只限制写文件，数据目录（数据库、渠道令牌、界面令牌）对命令可读，回环管理接口的来源检查也拦不住它。只给信得过的内容用，或让容器能创建命名空间",
+        { bot: this.o.botId, detail },
+      );
+      return;
+    }
+    this.sandboxProblem = detail;
+    log.warn(
+      "bubblewrap 用不了，沙箱里的命令会被拒绝（不会退到别的沙箱）。请安装 bubblewrap，或让这台机器 / 容器允许它创建命名空间（Ubuntu 23.10 起默认不让普通用户建用户命名空间，要给 bwrap 放行）；确实只能用弱一些的 Landlock 时设 AMB_ALLOW_LANDLOCK=1",
+      { bot: this.o.botId, detail },
+    );
   }
 
   /** 环境里没设代理时问桌面外壳系统用的代理（每次拉起子进程都重新问：之后才开的代理，下次重启就用上）；命令行、Docker 没有 */
@@ -1230,7 +1345,7 @@ exec "$REAL" "$@"
       const ask = <T>(q: Promise<T | undefined> | undefined) => withTimeoutOr(q ?? Promise.resolve(undefined), 3000, undefined).catch(() => undefined);
       p = Promise.all([ask(this.o.contextWindow?.(model)), ask(this.o.apiInfo?.(model))]).then(([known, info]) => {
         const api = agentApi(info?.endpoints);
-        return { model, provider: providerFor(api, info?.reasoning), api, limits: modelLimits(model, known), reasoning: info?.reasoning };
+        return { model, provider: providerFor(api, info?.reasoning), api, limits: modelLimits(model, known), reasoning: info?.reasoning, ...(info?.vision !== undefined ? { vision: info.vision } : {}) };
       });
       this.routes.set(model, p);
     }
@@ -1389,6 +1504,8 @@ exec "$REAL" "$@"
       const routes = [first, ...(await Promise.all([...this.known].filter((m) => m !== model).map((m) => this.routeFor(m))))];
       const api = first.api;
       const patch = this.writePatch(routes, apps, pwshPath);
+      // 不等它：只是把「沙箱用不了」写进日志和状态，命令本身由补丁里指定的运行器拦
+      this.checkSandbox().catch((e) => log.warn("sandbox check failed", { bot: this.o.botId, message: String((e as Error)?.message ?? e).slice(0, 200) }));
       this.syncPrompt(true);
       this.pwshPath = pwshPath;
       this.sig = this.settingsSig(pwshPath, skillsRevision);
@@ -1448,6 +1565,7 @@ exec "$REAL" "$@"
         if (this.harness !== harness) return;
         this.harness = undefined;
         this.opened.clear();
+        this.boundFolders.clear();
         this.taskSessions.clear();
         this.taskBusy.clear();
         this.control.close();
@@ -1521,6 +1639,7 @@ exec "$REAL" "$@"
     const h = this.harness;
     this.harness = undefined;
     this.opened.clear();
+    this.boundFolders.clear();
     this.taskSessions.clear();
     this.taskBusy.clear();
     this.control.close(tr("agent.processRestarted"));
@@ -1635,6 +1754,35 @@ exec "$REAL" "$@"
     return isInit;
   }
 
+  /** 子进程里每个会话现在绑定的工作文件夹（amb-workfolder 记着的那份）：sessionId → 键；换了子进程清空、按需重发 */
+  private boundFolders = new Map<string, string>();
+
+  /**
+   * 告诉子进程这个会话这一轮的可写根（amb-workfolder 插件改写沙箱策略的工作区根），并把会话的工作目录换过去；
+   * folder = null 回到默认工作区，unavailable 时这一轮按只读跑。没变就不重发（工作目录每变一次模型会收到一条说明）。
+   * undefined（其他渠道、代理自己醒来的一轮）：沿用会话现在的绑定。失败就抛错，这一轮不跑。
+   */
+  private async bindFolder(sessionId: string, folder: TurnFolder | undefined, h?: SdkHarness): Promise<void> {
+    if (folder === undefined) return;
+    const key = folder === null ? "" : folder.unavailable ? `!${folder.id}` : `${folder.id}\n${folder.root}`;
+    if ((this.boundFolders.get(sessionId) ?? "") === key) return;
+    const harness = h ?? this.harness;
+    if (!harness) throw new Error(tr("agent.processNotRunning"));
+    if (!this.control.connected && !(await this.control.ready(5000))) throw new Error(tr("agent.processNoResponse", { op: "folder" }));
+    // 先改可写根、再改工作目录：中间失败时只会更保守（可写根已经收紧或换好）
+    await this.control.send("folder", folder === null ? { sessionId, root: null } : folder.unavailable ? { sessionId, unavailable: true } : { sessionId, root: folder.root }, 10_000);
+    this.boundFolders.set(sessionId, key);
+    await harness.session(sessionId).setWorkingDirectory(folder?.root ?? this.workspace);
+    log.info("work folder bound", { bot: this.o.botId, session: sessionId, folder: folder === null ? "default" : folder.unavailable ? "unavailable" : "chosen" });
+  }
+
+  /** 这个会话现在绑定的目录（后台任务继承、zip 工具的目标用）：没绑或回到默认工作区时 undefined */
+  boundRoot(sessionId: string): string | undefined {
+    const k = this.boundFolders.get(sessionId);
+    if (!k || k.startsWith("!")) return undefined;
+    return k.slice(k.indexOf("\n") + 1);
+  }
+
   private async runEntered(input: TurnInput): Promise<TurnResult> {
     const conv = input.conversationId;
     // 这个会话正在交给代理：期间代理自己醒来（后台命令结束）不另开一轮跟踪，这一轮的 run 会收下它的事件
@@ -1665,6 +1813,10 @@ exec "$REAL" "$@"
     const woke = this.wakes.get(s.id);
     if (woke && !woke.ended) await withTimeoutOr(woke.done.catch(() => undefined), this.o.turnTimeoutMs ?? 30 * 60_000, undefined);
     if (input.signal?.aborted) throw stopReason(input.signal);
+    // 这一轮绑定的工作文件夹：可写根和工作目录换成它（或回到默认工作区）；告诉不了子进程就不跑这一轮（fail closed：
+    // 不能让上一条消息的目录还开着写权限）
+    await this.bindFolder(s.id, input.folder);
+    if (input.signal?.aborted) throw stopReason(input.signal);
     this.active++;
     this.known.add(input.model);
     this.model = input.model;
@@ -1675,6 +1827,8 @@ exec "$REAL" "$@"
     this.turns.set(input.conversationId, turn);
     this.claimed.delete(input.conversationId);
     const images = this.imageInput ? (input.images ?? []) : [];
+    let text = input.text;
+    if (input.folder?.unavailable) text = `${tr("folders.promptFolderGone", { name: input.folder.name, reason: tr(input.folder.reason === "system" ? "folders.reasonSystem" : input.folder.reason === "notAllowed" ? "folders.reasonNotAllowed" : "folders.reasonUnavailable") })}\n\n${text}`;
     // 这一轮：用的接口、上游拒绝过本机器人的哪些模型请求
     const api = route.api;
     const trk = this.tracker(s.id, route, input.observer, accept);
@@ -1684,7 +1838,7 @@ exec "$REAL" "$@"
         if (r.bot === this.o.botId && /\/v1\/(responses|messages)$/.test(r.path)) rejections.push(r);
       }) ?? (() => {});
     try {
-      const prompt = images.length ? [{ type: "text", text: input.text }, ...images.map((i) => ({ type: "image", data: i.data, mimeType: i.mimeType }))] : input.text;
+      const prompt = images.length ? [{ type: "text", text }, ...images.map((i) => ({ type: "image", data: i.data, mimeType: i.mimeType }))] : text;
       input.observer?.onStart?.();
       const run = s.run(prompt, { onNotification: trk.onNotification });
       const r = await this.awaitTurn(turn, run, input.signal);
@@ -1697,7 +1851,7 @@ exec "$REAL" "$@"
         if (rejected) throw new ApiRejected(turnError, api, rejected, toolCalls === 0 && presented.length === 0);
         throw new Error(turnError);
       }
-      return { text: answers.length > 1 ? answers.join("\n\n") : r.finalResponse, sessionId: s.id, files: deliverables(this.workspace, presented), usage };
+      return { text: answers.length > 1 ? answers.join("\n\n") : r.finalResponse, sessionId: s.id, files: deliverables(this.workspace, presented, input.folder?.root), usage };
     } catch (e) {
       if (e instanceof TurnStopped) {
         log.warn("agent turn stopped", { bot: this.o.botId, reason: e.reason, ms: e.ms, restarted: e.restarted, otherTurns: this.active - 1 });
@@ -1744,7 +1898,7 @@ exec "$REAL" "$@"
         if (data.name === "present") {
           const paths = presentPaths(String(data.arguments ?? ""));
           st.presented.push(...paths);
-          const files = deliverables(this.workspace, paths);
+          const files = deliverables(this.workspace, paths, this.boundRoot(sessionId));
           if (files.length) observer?.onPresent?.(files);
         }
         observer?.onProgress?.(`🔧 ${summarizeCall(String(data.name), String(data.arguments ?? "")).split(this.workspace + "/").join("")}`);
@@ -1884,7 +2038,7 @@ exec "$REAL" "$@"
    * 这一轮的事件经 onTaskEvent 交给任务服务。会话第一次用时建出来（工作目录是任务文件夹，在工作区里，沙箱根仍是工作区）；
    * 在新的子进程里先 resume（失败抛 ResumeFailed）。任务用它自己的模型（按会话选，和聊天一样不用重启）。
    */
-  async promptTask(o: { sessionId: string; folder: string; model: string; text: string; resume: boolean }): Promise<string> {
+  async promptTask(o: { sessionId: string; folder: string; model: string; text: string; resume: boolean; root?: string }): Promise<string> {
     if (!o.model) throw new Error(tr("agent.noModelAvailable"));
     const route = await this.routeFor(o.model);
     const h = await this.ensure(o.model);
@@ -1898,9 +2052,19 @@ exec "$REAL" "$@"
         }
       } else {
         fs.mkdirSync(o.folder, { recursive: true });
-        await h.session(o.sessionId).setWorkingDirectory(o.folder);
+        if (!o.root) await h.session(o.sessionId).setWorkingDirectory(o.folder);
       }
       this.opened.add(o.sessionId);
+    }
+    // 从绑定了工作文件夹的聊天里开始的任务（PRD R2「派生工作」）：可写根和工作目录是那个文件夹；它不在了就按只读跑
+    if (o.root) {
+      let ok = false;
+      try {
+        ok = fs.statSync(o.root).isDirectory();
+      } catch {
+        /* 不在了 */
+      }
+      await this.bindFolder(o.sessionId, ok ? { id: `task:${o.root}`, root: o.root, name: path.basename(o.root) } : { id: `task:${o.root}`, name: path.basename(o.root), unavailable: true, reason: "unavailable" }, h);
     }
     if (!(await this.useRoute(o.sessionId, route))) throw new Error(tr("agent.cantUseModel", { model: o.model }));
     this.known.add(o.model);
@@ -1996,7 +2160,7 @@ exec "$REAL" "$@"
       await this.awaitTurn(turn, w.done, input.signal);
       const { turnError, answers, presented, usage } = trk.st;
       if (!answers.length && turnError) throw new Error(turnError);
-      return { text: answers.join("\n\n"), sessionId: w.sessionId, files: deliverables(this.workspace, presented), usage };
+      return { text: answers.join("\n\n"), sessionId: w.sessionId, files: deliverables(this.workspace, presented, this.boundRoot(w.sessionId)), usage };
     } catch (e) {
       if (e instanceof TurnStopped) log.warn("agent wake-up turn stopped", { bot: this.o.botId, reason: e.reason, restarted: e.restarted });
       throw e;
@@ -2055,7 +2219,7 @@ exec "$REAL" "$@"
     if (!t || !this.canSteer(conversationId)) return false;
     await withTimeoutOr(t.accepted, 5000, undefined);
     if (this.turns.get(conversationId) !== t || t.finishing || t.stopping) return false;
-    const images = this.imageInput && acceptsImages(t.model) ? (msg.images ?? []) : [];
+    const images = this.imageInput && ((await this.routeFor(t.model)).vision ?? acceptsImages(t.model)) ? (msg.images ?? []) : [];
     for (let i = 0; i < 2 && this.control.connected; i++) {
       try {
         const r = await this.control.send<{ accepted?: boolean; reason?: string }>("steer", { sessionId: t.sessionId, messageId: msg.id, text: msg.text, images }, 15_000);
@@ -2082,7 +2246,7 @@ exec "$REAL" "$@"
   status(): Record<string, unknown> {
     const api = this.api ? (this.fallback ? `${this.api} (fallback: ${this.fallback.reason})` : this.api) : undefined;
     const models = [...new Set([...this.childRoutes.values()].map((r) => r.model))];
-    return { state: this.state, pid: this.pid, model: this.model, api, models, control: this.control.connected, restarts: this.restarts, lastError: this.lastError, workspace: this.workspace, activeTurns: this.active };
+    return { state: this.state, pid: this.pid, model: this.model, api, models, control: this.control.connected, restarts: this.restarts, lastError: this.lastError, workspace: this.workspace, activeTurns: this.active, ...(this.sandboxProblem ? { sandboxUnavailable: this.sandboxProblem } : {}), ...(this.sandboxWeak ? { sandboxWeak: this.sandboxWeak } : {}) };
   }
 
   /** 故障排查用的完整状态（含 stderr 尾部与最近一次退出） */

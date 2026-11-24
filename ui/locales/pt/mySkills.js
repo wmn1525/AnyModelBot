@@ -6,6 +6,8 @@ export default {
   queued: "Vou montar a habilidade quando esta resposta terminar",
   card: {
     title: "{bot} montou uma habilidade. Salve quando estiver tudo certo",
+    savedTitle: "A habilidade que {bot} montou foi salva",
+    updatedTitle: "A habilidade foi atualizada com o que {bot} montou",
     drafting: "Montando a habilidade…",
     saving: "Salvando…",
     missing: "Este cartão não foi encontrado. Ele pode ter sido removido.",
@@ -128,9 +130,9 @@ export default {
     deleteTitle: "Excluir a habilidade “{name}”?",
     deleteBody: "Nenhum bot poderá usá-la. Não dá para desfazer.",
     deleteBodyRules: {
-      one: "Nenhum bot poderá usá-la. {count} rotina que a usa será pausada. Não dá para desfazer.",
-      other: "Nenhum bot poderá usá-la. {count} rotinas que a usam serão pausadas. Não dá para desfazer.",
-      many: "Nenhum bot poderá usá-la. {count} rotinas que a usam serão pausadas. Não dá para desfazer.",
+      one: "Nenhum bot poderá usá-la. {count} rotina que a usa será desativada. Não dá para desfazer.",
+      other: "Nenhum bot poderá usá-la. {count} rotinas que a usam serão desativadas. Não dá para desfazer.",
+      many: "Nenhum bot poderá usá-la. {count} rotinas que a usam serão desativadas. Não dá para desfazer.",
     },
     deleted: "“{name}” excluída",
     unverified: "Não verificada: foi salva antes de a tarefa terminar. A marca some depois que ela for concluída com sucesso uma vez.",

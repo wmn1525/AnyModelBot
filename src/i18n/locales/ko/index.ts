@@ -26,4 +26,7 @@ import skills from "./skills.js";
 import mySkills from "./mySkills.js";
 import aboutMe from "./aboutMe.js";
 import collab from "./collab.js";
-export default { aboutMe, collab, connections, apps, skills, mySkills, media, activity, magpie, app, cu, approvals, pwsh, desktop, tasks, channel, web, cli, rules, delivery, access, diag, account, agent, runtime, modelflare, official } satisfies TranslatedCatalog;
+import feedback from "./feedback.js";
+import attachments from "./attachments.js";
+import folders from "./folders.js";
+export default { folders, attachments, aboutMe, collab, feedback, connections, apps, skills, mySkills, media, activity, magpie, app, cu, approvals, pwsh, desktop, tasks, channel, web, cli, rules, delivery, access, diag, account, agent, runtime, modelflare, official } satisfies TranslatedCatalog;

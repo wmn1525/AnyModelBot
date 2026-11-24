@@ -375,7 +375,17 @@ export function BotAppScreen({ catalogId, bot, frameHost, panelOpen, expanded, o
         infoOpen=${panelOpen} onToggleInfo=${onTogglePanel} />
       ${portal}`;
   }
-  return html`<section class="botapp" data-screen="bot-app" aria-label=${name}>
+  // 还没有机器人实例的示例页不收附件：拖进来只提示先添加机器人（不打开文件、不读取）
+  const fileDrag = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
+  const noBotOver = (e) => {
+    if (fileDrag(e)) e.preventDefault();
+  };
+  const noBotDrop = (e) => {
+    if (!fileDrag(e)) return;
+    e.preventDefault();
+    toast(t("attach.noBot"));
+  };
+  return html`<section class="botapp" data-screen="bot-app" data-drop-zone aria-label=${name} onDragOver=${noBotOver} onDrop=${noBotDrop}>
       <header class="chat-head">
         <span class="head-bot static">${entry && html`<${BotAvatar} char=${entry.avatar} size=${22} />`}<span class="name">${name}</span></span>
         ${entry && html`<span class="botapp-sample">${t("botapp.app.sample")}</span>`}

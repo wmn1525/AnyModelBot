@@ -504,11 +504,12 @@
       "audience": "People exchanging currency or buying gold",
       "steps": [
         "Checks the public price once a day",
-        "Sends one line only when it reaches your level",
+        "Sends one line only when it reaches your level, ending with a reference-only note",
+        "Writes \"not available\" instead of guessing when it can't get a reliable price",
         "Won't remind you twice on the same day"
       ],
-      "sample": "USD/CNY is now 7.08 (Quote site, 10:02), below 7.10.",
-      "instruction": "Check the current price of {item}. When it is {direction} {price}, tell me in one sentence the current price, the source and the time; if it hasn't reached that level, don't send a message. Don't remind me twice on the same day (keep track in alert.md in this folder).",
+      "sample": "USD/CNY is now 7.08 (Quote site, 10:02), below 7.10. For reference only, not investment advice.",
+      "instruction": "Check the current price of {item}. When it is {direction} {price}, tell me in one sentence the current price, the source and the time, and end with \"For reference only, not investment advice.\"; if it hasn't reached that level, don't send a message. Use only reliable public quote pages you find; if you can't get a reliable price, only write \"{item}: not available.\" Don't estimate a price, and don't count it as reaching the level (don't note it in alert.md; check again the next day as usual). Don't remind me twice on the same day (keep track in alert.md in this folder).",
       "params": {
         "item": {
           "label": "Rate or price",

@@ -23,12 +23,18 @@ export interface CuPermissionHooks {
   request(kind: CuPermissionKind): Promise<void>;
   /** 打开系统设置里对应的那一页 */
   openSettings(kind: CuPermissionKind): void;
+  /** 打开系统设置里「文件和文件夹」那一页（系统禁止访问桌面等受保护文件夹时；和上面两项无关） */
+  openFolderSettings?(): void;
 }
 
 export const CU_PERMISSION_KINDS: readonly CuPermissionKind[] = ["accessibility", "screen"];
 
-/** 不碰屏幕内容也不发输入的工具：不需要系统权限 */
-const FREE_TOOLS = new Set(["list_apps", "check_permissions", "get_screen_size", "get_cursor_position"]);
+/**
+ * 不碰屏幕内容也不发输入的工具：不需要系统权限。
+ * check_permissions 不在这里：模型问权限状态说明它要操作桌面应用了，缺项时照样出授权卡——
+ * 查询状态不能代替出示引导，也不能让模型拿查询结果用一段文字结束这一轮（PRD 2026-11-20 R11）。
+ */
+const FREE_TOOLS = new Set(["list_apps", "get_screen_size", "get_cursor_position"]);
 /** 只看画面（截图、放大）：要屏幕录制 */
 const SCREEN_ONLY = new Set(["zoom"]);
 /** 读窗口结构又带截图：两项都要 */
@@ -214,6 +220,11 @@ export class CuPermissions {
   openSettings(kind: CuPermissionKind): void {
     if (kind === "screen") this.screenRequested = true;
     this.hooks()?.openSettings(kind);
+  }
+
+  /** 系统禁止访问桌面等受保护文件夹：打开系统设置里对应的那一页（不是辅助功能，也不是屏幕录制） */
+  openFolderSettings(): void {
+    this.hooks()?.openFolderSettings?.();
   }
 
   view(): CuPermissionView {

@@ -7,6 +7,9 @@ import { dict, type Lang } from "../i18n";
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const t = dict(lang);
+// 土耳其语还没有单独录屏，先播英文那条。补了 docs/assets/demo/demo-tr.mp4 之后把 tr 加进这个名单。
+const RECORDED = new Set(["zh", "en", "ja", "ko", "ru", "es", "pt"]);
+const demoLang = RECORDED.has(lang) ? lang : "en";
 ---
 <dialog class="sheet demo-video" id="demo-video" aria-labelledby="demo-video-title">
   <div class="sheet__head">
@@ -14,6 +17,6 @@ const t = dict(lang);
     <button class="icon-btn" type="button" data-close-dialog aria-label={t.ui.close}><Icon name="close" /></button>
   </div>
   <div class="sheet__body">
-    <video class="demo-video__player" src={`/demo/demo-${lang}.mp4`} controls muted playsinline preload="none" aria-labelledby="demo-video-title"></video>
+    <video class="demo-video__player" src={`/demo/demo-${demoLang}.mp4`} controls muted playsinline preload="none" aria-labelledby="demo-video-title"></video>
   </div>
 </dialog>

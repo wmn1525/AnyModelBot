@@ -18,7 +18,7 @@ describe("locale URLs and presentation", () => {
     expect(siteManifest).toEqual(appManifest);
     expect([...LANGS]).toEqual(appManifest.locales.map((l) => l.siteCode));
   });
-  it.each([["ja-JP", "ja"], ["ko_KR.UTF-8", "ko"], ["ru-RU", "ru"], ["es-419", "es"], ["pt-BR", "pt"], ["pt_PT.UTF-8", "pt"], ["zh-Hans", "zh"], ["english", undefined]])("recognizes complete language subtags: %s", (input, expected) => {
+  it.each([["ja-JP", "ja"], ["ko_KR.UTF-8", "ko"], ["ru-RU", "ru"], ["es-419", "es"], ["pt-BR", "pt"], ["pt_PT.UTF-8", "pt"], ["tr-TR", "tr"], ["tr_TR.UTF-8", "tr"], ["zh-Hans", "zh"], ["english", undefined]])("recognizes complete language subtags: %s", (input, expected) => {
     expect(normalizeLang(input!)).toBe(expected);
   });
   it("preserves pages, query strings and fragments across language links", () => {

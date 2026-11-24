@@ -53,6 +53,8 @@ export function tasksRoutes(ctx: WebContext): Route {
             since: recent ? Date.now() - Math.min(30, Math.max(0, Number(recent) || 1)) * 86400_000 : undefined,
             limit: Math.min(100, Number(url.searchParams.get("limit")) || 50),
             group: groups as StageGroup[],
+            // handoffs=1：连别的机器人发来的事一起列（右侧面板「任务」，标「{A} 发来的」）；对话里的任务胶囊不要它们
+            handoffs: url.searchParams.get("handoffs") === "1",
           }),
         });
       }
@@ -107,7 +109,8 @@ export function tasksRoutes(ctx: WebContext): Route {
         return send(res, 200, { steps: app.tasks.activity(run.id) });
       }
       if (seg.length === 3 && seg[2] === "stop" && m === "POST") {
-        const ok = await app.tasks.stopTask(task.id, "web");
+        // 别的机器人发来的事：和「需要你」里的「停止」一样经机器人协作停下（发来的那个机器人收到「你让停下」）
+        const ok = task.from ? app.collab.stopFromAttention(task.id) : await app.tasks.stopTask(task.id, "web");
         if (!ok) throw new HttpError(409, tr("web.taskAlreadyStopped"));
         return send(res, 200, { task: app.tasks.get(task.id) });
       }

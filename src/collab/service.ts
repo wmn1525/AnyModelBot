@@ -87,7 +87,7 @@ export interface CollabOptions {
 const hex = (n: number) => crypto.randomBytes(n).toString("hex");
 const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 const oneLine = (s: string) => s.replace(/\s+/g, " ").trim();
-const squash = (s: string) => s.toLowerCase().replace(/[\s，。,.!！?？；;：:、"'“”‘’「」]/g, "");
+const squash = (s: string) => s.replace(/İ/g, "I").toLowerCase().replace(/[\s，。,.!！?？；;：:、"'“”‘’「」]/g, "");
 
 /** 发出前过滤登录信息和令牌：像密钥、密码的那一行换掉 */
 export function redact(text: string): string {

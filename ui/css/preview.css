@@ -236,6 +236,7 @@
 
   /* —— 空状态 —— */
   .preview-empty { padding: var(--space-5) var(--pane-px); color: var(--fg-2); overflow: auto; }
+  .preview-empty:focus { outline: none; }   /* ⌘W 关掉最后一个标签后焦点停在这里（不是可操作的控件，不画焦点框） */
   .preview-empty > p { margin: var(--space-2) 0 0; font-size: var(--fs-md); }
   .pv-recent { margin-top: var(--section-gap-sm); display: grid; }
   .pv-recent h3 { margin: 0 0 var(--space-1); }

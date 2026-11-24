@@ -17,6 +17,7 @@ import { t } from "../../i18n/index.js";
 import { MediaJournal, mediaFingerprint, type MediaReceipt } from "./journal.js";
 import { imagePayload, imageSources } from "./image-response.js";
 import { displayModel, parsePlaygroundModel } from "../../providers/newapi.js";
+import { buildDirectRequest, parseDirectResponse, type DirectJob } from "./direct.js";
 
 const log = logger("agent.media");
 
@@ -41,6 +42,8 @@ export interface MediaOptions {
   geminiBaseUrl?: () => string;
   /** Account-specific authorized models; undefined uses the API key catalog. */
   available?: (kind: MediaKind) => Promise<MediaModel[] | undefined>;
+  /** 认图片的真实格式；不把无效内容报告成成功。 */
+  sniff?: (data: Buffer) => { format: string } | undefined;
   /** 视频轮询间隔与上限（测试用） */
   pollMs?: number;
   videoTimeoutMs?: number;
@@ -131,6 +134,37 @@ const MIME: Record<string, string> = {
 const FILE_REF = /^workspace(-base64)?:(.+)$/;
 
 export class MediaError extends Error {}
+/** 上游结果未知（超时、断线、5xx、重启时还在提交）：已停止自动重试，只能查原记录，不能换标识重发 */
+export class MediaUnknownError extends MediaError {}
+/** 已经生成，但本地保存 / 交付没完成：不重新生成 */
+export class MediaUndeliveredError extends MediaError {}
+
+/** 宿主直接构建的一次生图的结果（工作区里的相对路径） */
+export interface DirectResult {
+  files: string[];
+  /** 返回了、但不是有效图片的（空内容、解不开、零字节） */
+  missing: number;
+  /** 有效但没能下载 / 保存下来的 */
+  undelivered: number;
+  /** 型号自己回的文字（generateContent 会有） */
+  text: string;
+  /** 同一个操作标识已经完成过：这次只是取回原结果 */
+  replayed: boolean;
+}
+
+/** 没有注入文件头核对时的兜底：只认四种图片的文件头 */
+function magicFormat(b: Buffer): { format: string } | undefined {
+  if (b.length > 8 && b[0] === 0x89 && b.toString("latin1", 1, 4) === "PNG") return { format: "png" };
+  if (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { format: "jpeg" };
+  if (b.length > 12 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP") return { format: "webp" };
+  if (b.length > 6 && b.toString("latin1", 0, 3) === "GIF") return { format: "gif" };
+  return undefined;
+}
+const MIME_OF: Record<string, string> = { png: "image/png", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif" };
+/** 上游给的错误原因：截短，去掉像密钥、长串编码的部分（脱敏显示原因） */
+export function safeReason(msg: string): string {
+  return msg.replace(/\b(sk|ak|key|token)[-_][A-Za-z0-9_-]{6,}/gi, "***").replace(/[A-Za-z0-9+/=]{80,}/g, "…").replace(/\s+/g, " ").trim().slice(0, 200);
+}
 
 const num = (n: number) => String(+n.toFixed(n < 0.1 ? 4 : 3));
 
@@ -440,6 +474,106 @@ export class MediaService {
       .filter(Boolean)
       .join("\n");
     return { kind, model, default: def, candidates, all, custom: !!body, summary, estimate: estimateUsd(model, body, args) };
+  }
+
+  /**
+   * 宿主直接构建的生图（参考图或纯文字，见 direct.ts）：先把操作记下来再提交（同一个 requestId 只提交一次），
+   * 结果逐张核对是真的图片才保存。超时、断线、5xx、读不完响应：结果未知，记录留在「提交中」，不自动重试、不换标识。
+   * 上游明确拒绝（4xx：安全、余额、429…）记成失败，原因脱敏后抛出；再次生成要用户自己重新发。
+   */
+  async generateDirect(botId: string, job: DirectJob, requestId: string): Promise<DirectResult> {
+    const key = this.key(botId);
+    const journal = new MediaJournal(this.o.workspace(botId), requestId);
+    const fingerprint = mediaFingerprint(["direct", job.mode, job.model, job.line, job.encoding, this.o.baseUrl(), job.prompt, job.images.map((i) => [i.mime, mediaFingerprint(i.data.toString("base64"))])]);
+    if (this.runningRequests.has(journal.file)) throw new MediaUnknownError("same request is running");
+    const prior = journal.read();
+    if (prior) {
+      if (prior.fingerprint !== fingerprint) throw new MediaError("request id reused with different input");
+      if (prior.status === "failed") throw new MediaError(prior.result || "failed");
+      if (prior.status !== "done" || !prior.result) throw new MediaUnknownError("result unknown");
+      const done = JSON.parse(prior.result) as Omit<DirectResult, "replayed">;
+      const root = fs.realpathSync(this.o.workspace(botId));
+      const present = done.files.filter((f) => {
+        try {
+          const real = fs.realpathSync(path.join(root, f));
+          return real.startsWith(root + path.sep) && fs.statSync(real).isFile() && fs.statSync(real).size > 0;
+        } catch {
+          return false;
+        }
+      });
+      if (done.files.length && present.length < done.files.length) throw new MediaUndeliveredError("saved files are missing");
+      return { ...done, replayed: true };
+    }
+    const receipt: MediaReceipt = { fingerprint, kind: "image", model: job.model, baseUrl: this.o.baseUrl(), status: "submitting", updatedAt: new Date().toISOString() };
+    this.runningRequests.add(journal.file);
+    try {
+      journal.write(receipt); // 先记下再提交：结果不明时绝不自动再发一次
+      const req = buildDirectRequest(job);
+      let res: Response;
+      try {
+        res = await this.fetch(`${this.o.baseUrl()}${req.path}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${key}`, ...this.o.headers(), ...("json" in req ? { "content-type": "application/json" } : {}) },
+          body: "json" in req ? JSON.stringify(req.json) : req.form,
+          signal: AbortSignal.timeout(300_000),
+        });
+      } catch (e) {
+        log.warn("direct image request outcome unknown", { bot: botId, model: job.model, message: (e as Error).message.slice(0, 200) });
+        throw new MediaUnknownError("network");
+      }
+      if (res.status >= 500) throw new MediaUnknownError(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const detail = (await res.json().catch(() => ({}))) as { error?: { message?: string } | string; message?: string };
+        const msg = safeReason((typeof detail.error === "string" ? detail.error : detail.error?.message) || detail.message || `HTTP ${res.status}`);
+        journal.write({ ...receipt, status: "failed", result: msg });
+        throw new MediaError(msg);
+      }
+      let body: unknown;
+      try {
+        body = await res.json();
+      } catch {
+        throw new MediaUnknownError("unreadable response");
+      }
+      const parsed = parseDirectResponse(body);
+      const files: string[] = [];
+      let missing = 0;
+      let undelivered = 0;
+      for (const img of parsed.images) {
+        let data: Buffer | undefined;
+        try {
+          if (img.b64) data = Buffer.from(img.b64, "base64");
+          else if (img.url) data = (await this.download(img.url)).data;
+        } catch {
+          undelivered++;
+          continue;
+        }
+        const info = data?.length ? (this.o.sniff ?? magicFormat)(data) : undefined;
+        if (!data || !info) {
+          missing++;
+          continue;
+        }
+        try {
+          files.push(this.save(botId, "image", data, MIME_OF[info.format] ?? "image/png"));
+        } catch {
+          undelivered++;
+        }
+      }
+      const result = { files, missing, undelivered, text: parsed.text.slice(0, 4000) };
+      journal.write({ ...receipt, status: "done", result: JSON.stringify(result) });
+      log.info("direct image generation finished", { bot: botId, model: job.model, mode: job.mode, files: files.length, missing, undelivered });
+      return { ...result, replayed: false };
+    } finally {
+      this.runningRequests.delete(journal.file);
+    }
+  }
+
+  /** 这把 Key 下某个图片型号的单价资料（估算花费用）；目录里没有时为空 */
+  async imageModel(botId: string, id: string): Promise<MediaModel | undefined> {
+    try {
+      return (await this.models(botId, "image")).find((m) => m.id === id);
+    } catch {
+      return undefined;
+    }
   }
 
   /** 用确定下来的模型生成，返回给模型的一段文字 */

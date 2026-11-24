@@ -6,7 +6,7 @@ import { findBot, setBotForPeer } from "./routes.js";
 import { KeyedQueue } from "./queue.js";
 import { eventText } from "./types.js";
 import { acceptsImages, type ModelClient, type ChatMessage } from "../llm/client.js";
-import { TurnStopped, type TurnImage } from "../agent/host.js";
+import { TurnStopped, type TurnFolder, type TurnImage } from "../agent/host.js";
 import { describeStep, fmtSecs, type ActivityStep } from "../agent/activity.js";
 import type { Store } from "../store/db.js";
 import { logger } from "../log.js";
@@ -24,8 +24,12 @@ import { localProxyFailureHint } from "../network-error.js";
 import type { CuBlocked } from "../tools/computer-use/permissions.js";
 import { installPromptLinks, MAX_CARDS_PER_MESSAGE, type SkillInstalls } from "../skills/installs.js";
 import type { SkillDrafts } from "../skills/drafts.js";
+import type { Attachments } from "../attachments/service.js";
+import type { FolderBinding, FolderService } from "../folders/service.js";
 
 const log = logger("runtime");
+/** 只发了附件、没有文字的消息在重启提醒里怎么称呼 */
+const attachmentsLabel = () => t("attachments.messageLabel");
 
 const IMAGE_EXT: Record<TurnImage["mimeType"], string> = { "image/png": ".png", "image/jpeg": ".jpg", "image/gif": ".gif", "image/webp": ".webp" };
 const MAX_INLINE_IMAGES = 4;
@@ -98,6 +102,23 @@ export interface RuntimeOptions {
   defaultModel: () => string;
   contextMessages: number;
   contextChars: number;
+  /**
+   * 这个模型看不看图（附件、选模型控件和实际请求用同一个判断，见 app.ts visionOf）：只有 supported 才把图片本身交给它。
+   * 缺省按模型名判断（acceptsImages）。
+   */
+  vision?: (model: string) => Promise<"supported" | "unsupported" | "unknown">;
+  /** 网页对话随消息发的附件（受管副本）：历史里的附件按原版本重读 */
+  attachments?: Attachments;
+  /** 工作文件夹（folders/service.ts）：回合开始时核对消息绑定的目录还在不在 */
+  folders?: FolderService;
+  /**
+   * 宿主直接生图（imagegen/generate.ts）：plan 判断选的是不是纯图片生成型号（是就把这条纯文字做成文生图计划，
+   * 渠道里给一句说明 refuse；不是返回 undefined 照常对话）；run 执行计划。没有内置网关时不给。
+   */
+  imageGen?: {
+    plan(botId: string, conversationId: string, model: string, text: string, web: boolean): Promise<import("../imagegen/generate.js").GenerationPlan | { refuse: string } | undefined>;
+    run(plan: import("../imagegen/generate.js").GenerationPlan, out: ReplySession, signal: AbortSignal): Promise<void>;
+  };
   /** 这个模型该带的推理强度（用户选了、模型也支持时）；纯对话路径用，代理路径由 AgentHost 自己带 */
   reasoningEffort?: (model: string) => Promise<string | undefined>;
   /** DSH 代理宿主；缺省或不可用时走纯对话路径 */
@@ -282,6 +303,45 @@ export class BotRuntime {
     return !!recovered;
   }
 
+  /** 这个模型收不收图片本身（附件核验、选模型控件和这里用同一个判断） */
+  private async sees(model: string): Promise<boolean> {
+    if (!this.opts.vision) return acceptsImages(model);
+    return (await this.opts.vision(model).catch(() => "unknown" as const)) === "supported";
+  }
+
+  /**
+   * 纯对话路径的历史：带附件的用户消息按原内容版本重读——文本文件是带来源标记的全文，图片是真实的图像内容块。
+   * 每次请求最多带最近 4 张还在的图片（这一条的优先）；更早的图片、放不下的旧文件只留一行说明，不假装模型还看得见。
+   * 模型不看图时只发文字。
+   */
+  private withAttachments(botId: string, history: Array<{ role: "system" | "user" | "assistant"; content: string; attachments?: import("../attachments/service.js").MessageAttachment[] }>, canSee: boolean): ChatMessage[] {
+    const atts = this.opts.attachments;
+    const out: ChatMessage[] = new Array(history.length);
+    let imagesLeft = 4;
+    let charsLeft = Math.max(this.opts.contextChars, 0);
+    for (let i = history.length - 1; i >= 0; i--) {
+      const m = history[i];
+      if (!atts || !m.attachments?.length) {
+        out[i] = { role: m.role, content: m.content };
+        continue;
+      }
+      const newest = i === history.length - 1;
+      const size = m.attachments.reduce((n, a) => n + (a.kind === "text" ? a.size : 0), 0);
+      // 这一条的附件总是完整给；更早的文件在字符预算内才重读全文
+      const refs = newest || size <= charsLeft ? m.attachments : m.attachments.filter((a) => a.kind === "image");
+      const skipped = m.attachments.filter((a) => !refs.includes(a));
+      if (refs !== m.attachments) charsLeft = 0;
+      else if (!newest) charsLeft -= size;
+      const c = atts.compose(refs, botId, m.content, { images: canSee, maxImages: imagesLeft });
+      imagesLeft -= c.images.length;
+      const text = skipped.length ? `${t("attachments.promptEarlier", { names: skipped.map((a) => a.name).join(t("runtime.listSep")) })}\n${c.text}` : c.text;
+      out[i] = c.images.length
+        ? { role: m.role, content: [{ type: "text", text }, ...c.images.map((im) => ({ type: "image_url" as const, image_url: { url: `data:${im.mimeType};base64,${im.data}` } }))] }
+        : { role: m.role, content: text };
+    }
+    return out;
+  }
+
   /**
    * signal：网页的停止按钮（排队时就停了也算）；/stop 经 stop() 走同一条路。纯对话中止模型请求并保留已生成的部分，
    * 代理回合交给代理之前直接收尾，之后由代理中止。
@@ -307,7 +367,7 @@ export class BotRuntime {
     const done = this.enter(conv.id, t);
     // 重启标记：应用退出或崩溃时还没处理完的，下次启动告诉用户
     const text = eventText(ev);
-    if (text) markInflight(store, conv.id, text);
+    if (text || ev.prepared) markInflight(store, conv.id, text || attachmentsLabel());
     try {
       await this.handleMessage(ev, out, bot, conv.id, t, done.prior);
     } finally {
@@ -366,24 +426,30 @@ export class BotRuntime {
     const { store } = this.opts;
     const signal = run.abort.signal;
     const agent = this.opts.agent;
+    // 网页对话随消息发的附件：用户消息已经原子存好（带附件引用），这里拿到的是交给模型的全文和图片；
+    // 不当命令解释、不并进别的回合、不进工作区
+    const pre = ev.prepared;
+    if (pre) run.userStored = true;
     // 代理模式：收到的图片/文件先进工作区，消息里写路径
-    if (agent?.available) storeInbound(agent.host(bot.id).workspace, ev);
-    let text = eventText(ev);
+    if (agent?.available && !pre) storeInbound(agent.host(bot.id).workspace, ev);
+    let text = pre ? pre.text : eventText(ev);
     if (!text) return;
-    const images = inboundImages(ev);
+    const images = pre ? pre.images : inboundImages(ev);
     // 上次重启时没处理完、当时又没能告诉用户的：先说一声
     const notice = takeNotice(store, convId);
     if (notice) await out.apply({ type: "text", text: notice }).catch((e) => log.warn("restart notice failed", { message: (e as Error).message.slice(0, 200) }));
 
     // 技能库「复制安装指令」的固定格式：不经过模型，直接出安装卡片（也不并进进行中的回合）
-    const installLinks = this.opts.skillInstalls ? installPromptLinks(text) : null;
+    const installLinks = this.opts.skillInstalls && !pre ? installPromptLinks(text) : null;
     if (installLinks) return this.installFromPrompt(ev, out, bot.id, convId, text, installLinks, run);
 
     // 前面还有消息在处理：代理回合进行中就把这条并进去（模型下一步看到，回复一起给），否则排在它们后面。
     // 命令（/model、/reset…）不并入，等前面的处理完
     if (prior) {
-      if (agent?.available && !signal.aborted && !text.startsWith("/")
+      // 并进进行中的那一轮只在两条绑定的是同一个工作文件夹时（PRD R2）：换了目录的新消息排在它后面，用自己的目录
+      if (agent?.available && !pre && !signal.aborted && !text.startsWith("/")
         && (ev.conversation.kind !== "group" || agent.turnsInProgress.get(convId)?.senderId === ev.sender.id)
+        && (agent.turnsInProgress.get(convId)?.folderId ?? "") === (ev.folder?.id ?? "")
         && (await this.steer(agent, bot.id, convId, text, images, out, run))) {
         await prior;
         // 应用正在退出、它并进的那一轮没做完：重启标记留着（下次启动告诉用户）
@@ -406,9 +472,21 @@ export class BotRuntime {
       return;
     }
 
+    // 参考图生图（网页单聊受理时冻结的计划）：由宿主直接执行，不交给聊天模型或代理
+    if (ev.generate && pre) {
+      if (this.opts.imageGen) await this.opts.imageGen.run(ev.generate, out, signal);
+      else {
+        const msg = `⚠️ ${t("attachments.changed")}`;
+        store.addMessage(conv.id, "assistant", msg);
+        await out.apply({ type: "text", text: msg });
+      }
+      this.answered(conv.id, run);
+      return;
+    }
+
     // /skill：等同于说「把刚才做的事存成技能」（后面的文字是补充说明），交给机器人整理成草稿卡；不能存时
     // （渠道群、不是主人、群里该别的机器人出、没有可存的事）直接回一句。用户消息照原样记下
-    const skillCmd = /^\/skill(?:\s+([\s\S]*))?$/i.exec(text.trim());
+    const skillCmd = pre ? null : /^\/skill(?:\s+([\s\S]*))?$/i.exec(text.trim());
     if (skillCmd) {
       const gate = agent?.available ? agent.saveSkillGate(bot.id, conv.id) : { why: "", say: t("mySkills.nothing") };
       if (gate && !gate.say) return;
@@ -426,7 +504,7 @@ export class BotRuntime {
       if (drafts && ev.channel === "web" && ev.conversation.kind !== "group") await out.apply(drafts.op(drafts.begin(bot.id, conv.id)));
     }
 
-    if (text.startsWith("/")) {
+    if (!pre && text.startsWith("/")) {
       const reply = await this.command(text, conv.id, conv.model, bot.defaultModel, bot.id);
       if (reply !== null) {
         await out.apply({ type: "text", text: reply });
@@ -439,14 +517,41 @@ export class BotRuntime {
       return "";
     });
     if (!model) return;
+    // 右下角选的是纯图片生成型号：这条文字就是文生图指令，直接走图片接口（不当聊天模型调用、不拼聊天记录）
+    if (!pre && this.opts.imageGen) {
+      const web = ev.channel === "web" && ev.conversation.kind !== "group" && ev.conversation.id === "console";
+      const plan = await this.opts.imageGen.plan(bot.id, conv.id, model, text, web).catch((e: Error) => {
+        log.warn("image model check failed", { message: e.message.slice(0, 200) });
+        return undefined;
+      });
+      if (plan) {
+        if (!run.userStored) store.addMessage(conv.id, "user", text, undefined, "refuse" in plan ? {} : { generation: { model: plan.model, mode: "text" } });
+        run.userStored = true;
+        if ("refuse" in plan) {
+          store.addMessage(conv.id, "assistant", plan.refuse);
+          await out.apply({ type: "text", text: plan.refuse });
+        } else await this.opts.imageGen.run(plan, out, signal);
+        this.answered(conv.id, run);
+        return;
+      }
+    }
     const routed = this.opts.route ? this.opts.route(bot.id, model) : model;
     // 只有能看图的模型才收到图片本身；其余模型只看到文字里的“[图片 …]”
-    const seen = acceptsImages(routed) ? images : [];
+    const canSee = await this.sees(routed);
+    const seen = canSee ? images : [];
+    // 受理时核对过模型能看图；到这里条件变了（模型资料刚更新）就不发残缺的内容，说明原因
+    if (pre?.images.length && !canSee) {
+      const msg = `⚠️ ${t("attachments.changed")}`;
+      store.addMessage(conv.id, "assistant", msg);
+      await out.apply({ type: "text", text: msg });
+      this.answered(conv.id, run);
+      return;
+    }
 
     let note = "";
     if (agent?.available) {
       const place: ChatPlace = { channel: ev.channel, kind: ev.conversation.kind === "group" ? "group" : "dm" };
-      const handled = await this.handleAgent(agent, bot.id, conv.id, text, routed, place, out, seen, run, ev.sender.id);
+      const handled = await this.handleAgent(agent, bot.id, conv.id, text, routed, place, out, seen, run, ev.sender.id, !!pre?.images.length, this.turnFolder(ev.folder));
       if (handled === true) return;
       // 应用正在退出：代理进程没了不是该改用纯对话的时候，留给下次启动提醒
       if (this.closing) {
@@ -462,9 +567,9 @@ export class BotRuntime {
     const history = store.contextWindow(conv.id, this.opts.contextMessages, this.opts.contextChars);
     const messages: ChatMessage[] = [];
     if (bot.systemPrompt.trim()) messages.push({ role: "system", content: bot.systemPrompt });
-    for (const m of history) if (m.role !== "system") messages.push({ role: m.role, content: m.content });
+    messages.push(...this.withAttachments(bot.id, history.filter((m) => m.role !== "system"), canSee));
     const last = messages[messages.length - 1];
-    if (seen.length && last?.role === "user" && typeof last.content === "string") {
+    if (!pre && seen.length && last?.role === "user" && typeof last.content === "string") {
       last.content = [{ type: "text", text: last.content }, ...seen.map((i) => ({ type: "image_url" as const, image_url: { url: `data:${i.mimeType};base64,${i.data}` } }))];
     }
 
@@ -496,7 +601,9 @@ export class BotRuntime {
         return;
       }
       log.warn("model call failed", { model, status: err.status, message: err.message });
-      const msg = acc ? `${acc}\n\n${t("runtime.interrupted", { error: err.message })}` : t("runtime.modelFailed", { model, error: err.message });
+      // 带着图片的请求被上游拒绝：按真实原因说，不自动去掉图片或换接口重发
+      const imageRejected = !acc && !!pre?.images.length && imageRejection(err);
+      const msg = acc ? `${acc}\n\n${t("runtime.interrupted", { error: err.message })}` : imageRejected ? `⚠️ ${t("attachments.upstreamImage")}\n${err.message.slice(0, 300)}` : t("runtime.modelFailed", { model, error: err.message });
       await out.apply({ type: "stream.finish", text: msg });
     } finally {
       this.answered(conv.id, run);
@@ -674,6 +781,17 @@ export class BotRuntime {
    * 代理回合；返回 false 表示宿主不可用且尚无任何输出（调用方回退到纯对话），
    * "starting" 表示代理进程在等待时限内没有启动好（同样回退，启动在后台继续）。
    */
+  /**
+   * 消息绑定的工作文件夹 → 交给代理的那一份。这时（排队、等前一条之后，真要动文件之前）再核对一次：不在了、被换成别的同名目录、
+   * 没有权限都按不可用处理，不退回默认工作区、不去别处找。undefined（其他渠道）= 不动会话现在的绑定。
+   */
+  private turnFolder(b: FolderBinding | null | undefined): TurnFolder | undefined {
+    if (b === undefined) return undefined;
+    if (b === null) return null;
+    const r = this.opts.folders?.resolve(b) ?? { root: b.path };
+    return "root" in r ? { id: b.id, root: r.root, name: b.name } : { id: b.id, name: b.name, unavailable: true, reason: r.error };
+  }
+
   private async handleAgent(
     agent: AgentManager,
     botId: string,
@@ -685,6 +803,10 @@ export class BotRuntime {
     images: TurnImage[],
     inflight: Inflight,
     senderId?: string,
+    /** 这条消息带着用户附件里的图片：上游拒绝时按图片的原因说明 */
+    attachedImages = false,
+    /** 这条消息绑定的工作文件夹（回合开始时刚核对过；undefined = 默认工作区） */
+    folder?: TurnFolder,
   ): Promise<boolean | "starting"> {
     const { store } = this.opts;
     const signal = inflight.abort.signal;
@@ -787,6 +909,7 @@ export class BotRuntime {
         const turn = agent.runTurn(botId, {
           conversationId: convId,
           senderId,
+          ...(folder !== undefined ? { folder } : {}),
           text: input,
           model,
           ...(images.length ? { images } : {}),
@@ -867,7 +990,7 @@ export class BotRuntime {
         msg = paused.text;
         agent.tasks?.finishRuleActions(convId, paused.messageId);
       } else {
-        msg = turnFailedText(err, [...steps.values()]);
+        msg = attachedImages && !(err instanceof TurnStopped) && !steps.size && imageRejection(err) ? `⚠️ ${t("attachments.upstreamImage")}\n${err.message.slice(0, 300)}` : turnFailedText(err, [...steps.values()]);
         // 出错、中止之前说过的话和交付过的文件留在历史里（文件不再发到其它渠道）
         const messageId = store.addMessage(convId, "assistant", msg, [...steps.values()], { interim: said.interim, files: said.presented });
         agent.tasks?.finishRuleActions(convId, messageId);
@@ -1140,6 +1263,7 @@ export class BotRuntime {
         return help();
       case "/reset":
         this.opts.store.clearMessages(convId);
+        this.opts.attachments?.dropBot(botId, convId);
         this.opts.agent?.resetConversation(convId);
         return t("runtime.resetDone");
       case "/new": {
@@ -1207,6 +1331,14 @@ export function interactiveOp(row: ApprovalRow) {
     code: row.code,
     buttons: promptButtons(row),
   };
+}
+
+/** 上游报的错像是不接受这次的图片（请求形状、不支持图片输入），不是限流、余额或网络 */
+export function imageRejection(err: Error & { status?: number; detail?: string }): boolean {
+  const text = `${err.message} ${err.detail ?? ""}`;
+  if (/rate[ _-]?limit|quota|insufficient|balance|credit|billing|timeout|ECONN|network/i.test(text)) return false;
+  if (/image|vision|multi-?modal|content[ _-]?(type|part)|image_url|unsupported.*(input|content)/i.test(text)) return true;
+  return [400, 415, 422].includes(Number(err.status));
 }
 
 /** 消息里引用的那段（微信的引用）和用户自己写的（去掉引用） */

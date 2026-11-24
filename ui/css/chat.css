@@ -14,6 +14,8 @@
 .chat {
   --col: min(var(--col-w), calc(100% - 2 * var(--page-gutter)));
   --dock-pb: var(--space-4);      /* 输入框离主区下沿 */
+  /* 输入框底座占的高度：一行字时是 --composer-h；多行、带附件时用量出来的实际高度（--composer-live，lib/chat-view.js useFollowBottom） */
+  --composer-room: calc(var(--dock-pb) + max(var(--composer-h), var(--composer-live, 0px)));
   position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column;
 }
 
@@ -43,13 +45,14 @@ button.head-bot:active { background: var(--pill-press); }
    滚动条总是占着右边那一条（scrollbar-gutter），输入框的底座也留同样一条：对话列和输入框按同一个宽度居中，左右边对齐 */
 .chat-scroll {
   flex: 1; min-height: 0; overflow-y: auto; overflow-anchor: none; scroll-padding-top: var(--head-h); scrollbar-gutter: stable;
+  scroll-padding-bottom: calc(var(--composer-room) + var(--space-4));   /* 卡片把按钮滚到眼前时（scrollIntoView）停在输入框上方 */
   /* 输入框下面那一窄条：内容淡出，露出主区本身 */
   mask-image: linear-gradient(to top, transparent, var(--black) var(--space-4));
 }
 /* 下边距 = 输入框占的高度 + 48，最后一条消息滚到底时停在输入框上方 */
 .chat-col {
   width: var(--col); margin: 0 auto;
-  padding: calc(var(--head-h) + var(--space-6)) 0 calc(var(--dock-pb) + var(--composer-h) + var(--space-12)); display: flex; flex-direction: column;
+  padding: calc(var(--head-h) + var(--space-6)) 0 calc(var(--composer-room) + var(--space-12)); display: flex; flex-direction: column;
 }
 .chat-skel { display: grid; gap: var(--space-3-5); margin-top: var(--space-6); }
 .chat-skel .skel { height: 34px; border-radius: var(--r-bubble); }
@@ -168,7 +171,7 @@ button.act-head:active { background: var(--pill-hover); }
 .conv-divider + .msg-row, .conv-divider + .time-sep { margin-top: var(--space-4); }
 /* 对话底部的轻提示（已经是新对话了 / 代理没有启用 / 没能开始新对话）：输入框上方一颗深色胶囊，几秒后消失 */
 .chat-hint {
-  position: absolute; z-index: var(--z-float); left: 50%; bottom: calc(var(--dock-pb) + var(--composer-h) + var(--space-6)); translate: -50% 0;
+  position: absolute; z-index: var(--z-float); left: 50%; bottom: calc(var(--composer-room) + var(--space-6)); translate: -50% 0;
   max-width: min(480px, calc(100% - 2 * var(--page-gutter))); padding: var(--space-1-5) var(--ctl-px-md); border-radius: var(--r-ctl);
   background: var(--primary); color: var(--on-primary); font-size: var(--fs-sm); line-height: var(--lh-normal); text-align: center; overflow-wrap: anywhere;
   box-shadow: var(--shadow-float); pointer-events: none; animation: fade-in var(--dur-base) var(--ease-out);
@@ -306,7 +309,7 @@ a.file-card:active, .file-card:has(> .file-open:active) { background: var(--well
 
 /* —— 回到底部：玻璃小圆钮 —— */
 .to-bottom {
-  position: absolute; z-index: var(--z-float); left: 50%; bottom: calc(var(--dock-pb) + var(--composer-h) + var(--space-6)); translate: -50% 0;
+  position: absolute; z-index: var(--z-float); left: 50%; bottom: calc(var(--composer-room) + var(--space-6)); translate: -50% 0;
   width: var(--ctl-lg); height: var(--ctl-lg); border-radius: 50%; display: grid; place-items: center;
   background: var(--glass-float); backdrop-filter: var(--glass-filter-sm); color: var(--fg-2); box-shadow: var(--shadow-float);
   animation: fade-in var(--dur-base) var(--ease-out);
@@ -565,3 +568,181 @@ button.task-origin:hover { color: var(--fg); }
 .pair-steps .text { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--fs-xs); color: var(--muted); }
 .pair-step-list { margin: var(--space-1) 0 0; padding-left: var(--space-5); font-size: var(--fs-xs); color: var(--fg-2); display: grid; gap: var(--space-0-5); }
 .pair-foot { padding: var(--space-3) var(--space-5) var(--space-5); }
+
+@layer app {
+/* —— 消息附件（components/attachments.js）：待发区、已发消息里的附件组、拖入遮罩、图片放大预览。沿用现有的灰色，不新增配色 —— */
+.chat, .composer, .att-lightbox {
+  --att-thumb-h: 72px;       /* 缩略图的高（待发和已发一样） */
+  --att-thumb-max: 128px;    /* 缩略图最宽 */
+  --att-file-w: 236px;       /* 文件卡的宽（待发和已发一样宽，排起来整齐） */
+  --att-file-h: 56px;        /* 文件卡的高：两行字 + 上下留白，比图片缩略图矮一档 */
+  --att-type: 36px;          /* 文件卡左边的类型方块 */
+  --att-x: 20px;             /* 移除钮 */
+  --att-pop-edge: 24px;      /* 放大预览里图片离面板边 */
+  --att-pop-top: 48px;       /* 放大预览顶部留给关闭钮的一条 */
+}
+.folder-denied { margin-top: var(--space-2); }
+/* 待发区：按加入顺序排，窄了换行；最多两行，再多在区内滚动，不挤掉文字、模型和发送 */
+.att-tray {
+  display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: var(--space-2-5);
+  padding: var(--space-4) var(--space-4) 0; max-height: calc(var(--att-thumb-h) * 2 + var(--space-2-5) + var(--space-4) + var(--space-2));
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.att { position: relative; flex: none; }
+.att-open, .att-card {
+  display: flex; align-items: center; border: 0; padding: 0; margin: 0; color: var(--fg); font: inherit; text-align: left;
+  border-radius: var(--r-card); background: var(--surface-solid); box-shadow: inset 0 0 0 var(--hairline) var(--line);   /* 描边：浅白圆角卡的一道细边，把白卡和输入框的灰底分开 */
+}
+.att-open { justify-content: center; height: var(--att-thumb-h); min-width: var(--att-thumb-h); max-width: var(--att-thumb-max); overflow: hidden; cursor: zoom-in; color: var(--muted); }
+.att-open[aria-disabled="true"] { cursor: default; }
+.att-open img { display: block; height: var(--att-thumb-h); width: auto; max-width: var(--att-thumb-max); object-fit: cover; }
+/* 文件卡：左边灰底的类型方块，右边两行（文件名、类型和大小）；待发、已发同宽同高 */
+.att-card { gap: var(--space-3); width: var(--att-file-w); max-width: 100%; height: var(--att-file-h); padding: 0 var(--space-3) 0 var(--space-2-5); }
+.att-type {
+  flex: none; display: grid; place-items: center; width: var(--att-type); height: var(--att-type); border-radius: var(--r-item-sm);
+  background: var(--pill-hover); color: var(--fg-2);
+}
+.att-type .tag { font-size: var(--fs-2xs); font-weight: var(--fw-semibold); line-height: 1; }
+.att-type .ic { --ic-size: var(--ic-sm); }
+.att-text { display: grid; gap: var(--space-0-5); flex: 1; min-width: 0; }
+/* 文件名：太长时只省略前面那段，扩展名一直看得见 */
+.att-name { display: flex; min-width: 0; font-size: var(--fs-sm); line-height: var(--lh-tight); white-space: nowrap; }
+.att-name .stem { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.att-name .ext { flex: none; }
+.att-meta { font-size: var(--fs-xs); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 文件名省略后，聚焦时能看全名 */
+.att-card:focus-visible { height: auto; min-height: var(--att-file-h); padding-block: var(--space-2); }
+.att-card:focus-visible .att-name { white-space: normal; overflow-wrap: anywhere; }
+.att-card:focus-visible .att-name .stem { overflow: visible; }
+:is(.att-open, .att-card):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }   /* 微调：聚焦环离卡片 2 */
+.att.failed :is(.att-open, .att-card), .att.expired :is(.att-open, .att-card) { color: var(--muted); }
+.att.failed .att-meta, .att.expired .att-meta { color: var(--fg-2); }
+.att.failed .att-type, .att.expired .att-type { background: var(--pill); color: var(--fg-2); }
+.att.processing .att-type { background: var(--pill); }
+.att-x {
+  position: absolute; top: calc(var(--space-1) * -1); right: calc(var(--space-1) * -1); width: var(--att-x); height: var(--att-x);
+  display: grid; place-items: center; border: 0; padding: 0; border-radius: 50%; cursor: pointer;
+  background: var(--surface-solid); color: var(--fg-2); box-shadow: 0 0 0 var(--hairline) var(--line-strong);   /* 描边：移除钮压在缩略图角上，要一道边才分得出 */
+}
+.att-x:hover { color: var(--fg); background: var(--pill-hover); }
+.att-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }   /* 微调：聚焦环离移除钮 1 */
+/* 窄窗时先让计数收起，不挤掉模型和发送 */
+.att-count { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-xs); color: var(--muted); white-space: nowrap; padding: 0 var(--space-2); }
+/* 输入框上方的一句提示（同一个位置只显示最相关的一句）：浮在输入框上沿之上，不改变输入框的高度 */
+.composer-note {
+  position: absolute; left: 0; right: 0; bottom: calc(100% + var(--space-2)); padding: var(--space-2) var(--space-4); border-radius: var(--r-card);
+  background: linear-gradient(var(--pill), var(--pill)), var(--surface-solid); color: var(--fg); font-size: var(--fs-sm); line-height: var(--lh-normal);
+  overflow-wrap: anywhere; animation: fade-in var(--dur-base) var(--ease-out);
+}
+/* —— 用作生图参考（components/composer.js）：附件统计和开关是一组，窄了整组换到自己的一行，不挤权限、模型和发送 —— */
+.composer { container-type: inline-size; }
+.att-group { display: inline-flex; align-items: center; gap: var(--space-1); min-width: 0; flex: 0 1 auto; }
+.ref-toggle { display: inline-flex; align-items: center; gap: var(--space-1-5); flex: none; padding: 0 var(--space-1); font-size: var(--fs-xs); color: var(--fg-2); white-space: nowrap; }
+.ref-toggle label { cursor: pointer; }
+.ref-toggle .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }   /* 微调：聚焦环离开关 2 */
+.ref-hint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@container (max-width: 600px) {
+  .composer-bar:has(.att-group.with-ref) { flex-wrap: wrap; row-gap: var(--space-1); }
+  .att-group.with-ref { order: -1; flex-basis: 100%; padding-left: var(--space-1); }
+}
+/* 缩略图上的「参考1」：左下角一块小标，不挡移除钮 */
+.att-ref {
+  position: absolute; left: var(--space-1); bottom: var(--space-1); padding: 0 var(--space-1-5); border-radius: var(--r-ctl);
+  background: var(--surface-solid); color: var(--fg); font-size: var(--fs-2xs); line-height: 1.6; pointer-events: none;
+  box-shadow: 0 0 0 var(--hairline) var(--line-strong);   /* 描边：小标压在图片上，要一道边才分得出 */
+}
+.att-open { position: relative; }
+/* 校验条：圆角输入框外、紧贴上边缘（有工作文件夹时在它和输入框之间），占位推动布局，不浮在历史上；长了自然换行 */
+.ref-check {
+  pointer-events: auto; width: var(--col, auto); margin: 0 auto var(--space-1-5); box-sizing: border-box;
+  padding: var(--space-1-5) var(--space-4); border-radius: var(--r-card);
+  background: linear-gradient(var(--pill), var(--pill)), var(--surface-solid); color: var(--fg); font-size: var(--fs-sm); line-height: var(--lh-normal);
+  overflow-wrap: anywhere;
+}
+.ref-switch {
+  display: inline; border: 0; padding: 0; margin: 0; background: none; font: inherit; color: var(--accent); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.ref-switch:hover { color: var(--fg); }
+.ref-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 2px; }   /* 微调：聚焦环离文字 1 */
+/* 生图消息下面那行小字：当时用的型号和用途 */
+.msg-gen { align-self: flex-end; margin-top: var(--space-1); font-size: var(--fs-xs); color: var(--muted); }
+
+/* 已发消息：附件组在正文气泡上方，整组右对齐，按添加顺序从左到右、再换行 */
+.msg-atts { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2-5); max-width: 100%; }
+.msg-atts + .msg { margin-top: var(--space-2); }
+.msg-atts .att-open { cursor: zoom-in; }
+/* 已发的 ZIP：整张卡是一个按钮，点了保存原文件；悬停时右边出现下载图标 */
+.att-save { cursor: pointer; transition: background var(--t-fast); }
+.att-save:hover { background: linear-gradient(var(--pill), var(--pill)), var(--surface-solid); }
+.att-save:active { background: linear-gradient(var(--pill-hover), var(--pill-hover)), var(--surface-solid); }
+/* 悬停时类型方块里的字换成下载图标（不另占位置，文件名不被挤短） */
+.att-save .att-type { position: relative; }
+.att-save-ic { position: absolute; inset: 0; margin: auto; opacity: 0; transition: opacity var(--t-fast); }
+.att-save .att-type .tag { transition: opacity var(--t-fast); }
+.att-save:is(:hover, :focus-visible) .att-save-ic { opacity: 1; }
+.att-save:is(:hover, :focus-visible) .att-type .tag { opacity: 0; }
+.att.expired .att-save { cursor: default; }
+/* 拖入真实文件时的一层遮罩：盖住对话主区，不接收指针（投放落在主区上） */
+.att-drop {
+  position: absolute; z-index: var(--z-float); inset: var(--space-3); display: grid; place-items: center; pointer-events: none;
+  border-radius: var(--r-card-lg); background: var(--surface-solid);
+  outline: 2px dashed var(--line-strong); outline-offset: calc(var(--space-1) * -1);   /* 描边：虚线框说明这一整块都能放 */
+  animation: fade-in var(--dur-fast) var(--ease-out);
+}
+.att-drop-box { display: grid; justify-items: center; gap: var(--space-2); margin-bottom: var(--composer-room); text-align: center; }
+.att-drop-box b { font-size: var(--fs-2xl); font-weight: var(--fw-semibold); }
+.att-drop-badge { padding: var(--space-2) var(--space-5); border-radius: var(--r-card); background: var(--pill-hover); font-weight: var(--fw-semibold); margin-bottom: var(--space-3); }
+.att-drop-sub { font-size: var(--fs-sm); color: var(--muted); }
+.chat.dropping .composer-dock { z-index: calc(var(--z-float) + 1); }
+
+/* —— 输入框上方的工作文件夹（components/work-folder.js）：左侧一个胶囊，和输入框左边对齐；不占附件名额 —— */
+.folder-row {
+  --folder-row-h: calc(var(--ctl-md) + var(--space-2));
+  pointer-events: auto; width: var(--col, auto); margin: 0 auto; height: var(--folder-row-h);
+  display: flex; align-items: flex-start; padding-left: var(--space-2);
+}
+.folder-chip {
+  display: inline-flex; align-items: center; gap: var(--space-1-5); height: var(--ctl-md); max-width: min(320px, 100%); min-width: 0;
+  padding: 0 calc(var(--ctl-px-md) - var(--ctl-trail)) 0 var(--ctl-px-sm); border: 0; border-radius: var(--r-ctl);
+  background: transparent; color: var(--ctl-fg); font: inherit; font-size: var(--fs-sm); cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.folder-chip .v { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.folder-chip .ic { flex: none; --ic-size: var(--ic-xs); transition: transform var(--t-fast); }
+.folder-chip .ic.lead { --ic-size: var(--ic-sm); }
+.folder-chip:hover:not(:disabled) { background: var(--pill); color: var(--fg); }
+.folder-chip[aria-expanded="true"] { background: var(--pill-hover); color: var(--fg); }
+.folder-chip[aria-expanded="true"] .ic:last-child { transform: rotate(180deg); }
+.folder-chip.on { color: var(--fg); }
+.folder-chip.gone .ic.lead { color: var(--amber, var(--fg-2)); }
+.folder-chip:disabled { cursor: default; opacity: 0.7; }
+.folder-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }   /* 微调：聚焦环离胶囊 1 */
+.folder-hint { margin: 0; padding: var(--space-1) 0; font-size: var(--fs-xs); color: var(--muted); line-height: var(--lh-normal); white-space: normal; }
+/* 有工作文件夹这一行时，输入框上方的提示浮在它上面，不盖住选择位 */
+.folder-row + .composer { --folder-row-h: calc(var(--ctl-md) + var(--space-2)); }
+.folder-row + .composer .composer-note { bottom: calc(100% + var(--folder-row-h) + var(--space-1)); }
+/* 图片放大预览：当前窗口里的居中遮罩，最大约 90% 窗口；适应显示（小图不放大），双击或回车在适应和 100% 之间切换 */
+.att-lightbox {
+  position: fixed; z-index: var(--z-modal); inset: 0; display: grid; place-items: center; padding: var(--space-4);
+  background: var(--scrim); animation: fade-in var(--dur-fast) var(--ease-out);
+}
+.att-lightbox-panel {
+  position: relative; box-sizing: border-box; display: grid; max-width: min(90vw, 100%); max-height: min(90vh, 100%);
+  padding: var(--att-pop-top) var(--att-pop-edge) var(--att-pop-edge); border-radius: var(--r-card-lg); background: var(--surface-solid); box-shadow: var(--shadow-modal);
+}
+.att-lightbox-panel.zoom { width: min(90vw, 100%); height: min(90vh, 100%); }
+.att-lightbox-stage { display: grid; place-items: center; min-width: 0; min-height: 0; overflow: hidden; }
+.att-lightbox-stage img {
+  display: block; max-width: min(calc(90vw - 2 * var(--att-pop-edge)), 100%); max-height: calc(min(90vh, 100vh - 2 * var(--space-4)) - var(--att-pop-top) - var(--att-pop-edge));
+  object-fit: contain; cursor: zoom-in; user-select: none; -webkit-user-drag: none;
+}
+.att-lightbox-panel.zoom .att-lightbox-stage img { max-width: none; max-height: none; cursor: grab; touch-action: none; }
+.att-lightbox-panel.zoom .att-lightbox-stage img:active { cursor: grabbing; }
+.att-lightbox-stage img:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }   /* 微调：聚焦环画在图片边内 2 */
+.att-lightbox-close {
+  position: absolute; top: var(--space-2); right: var(--space-2); width: var(--ctl-md); height: var(--ctl-md); display: grid; place-items: center;
+  border: 0; padding: 0; border-radius: 50%; background: var(--pill); color: var(--fg); cursor: pointer;
+}
+.att-lightbox-close:hover { background: var(--pill-hover); }
+}

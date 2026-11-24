@@ -27,7 +27,7 @@ export interface AppConfig {
     pwshHintDismissed: boolean;
     /** 新手引导（上手清单）的进度，见 src/guide.ts */
     guide: GuideState;
-    /** 界面语言：system 跟随系统，或 zh-CN / en / ja / ko / ru / es / pt；托盘菜单和机器人发出的系统消息也用它（src/i18n） */
+    /** 界面语言：system 跟随系统，或 zh-CN / en / ja / ko / ru / es / pt / tr；托盘菜单和机器人发出的系统消息也用它（src/i18n） */
     lang: LangPref;
   };
   /**
@@ -54,7 +54,12 @@ export interface AppConfig {
    * pwsh（Windows）：auto = 系统里没有能用的 PowerShell 7 时用应用内置的（自动安装）；system = 改回系统默认，不用内置的。
    */
   /** maxBackground：所有机器人加起来最多同时跑几个后台任务 */
-  agent: { mode: "dsh" | "off"; turnTimeoutMs: number; idleTimeoutMs: number; approvalTtlMs: number; pwsh: "auto" | "system"; maxBackground: number };
+  /**
+   * allowLandlock：Linux 上 bubblewrap 用不了时，允许命令改用 DSH 的 Landlock 沙箱（只认环境变量 AMB_ALLOW_LANDLOCK=1，
+   * 不读 config.json）。那种沙箱只限制写文件：数据目录可读，回环管理接口的来源检查也拦不住它，所以默认不允许，
+   * 命令直接被拒绝。官方 Docker 镜像里打开（默认的容器建不了 bubblewrap 要的命名空间，见 Dockerfile）。
+   */
+  agent: { mode: "dsh" | "off"; turnTimeoutMs: number; idleTimeoutMs: number; approvalTtlMs: number; pwsh: "auto" | "system"; maxBackground: number; allowLandlock: boolean };
 }
 
 export function defaultDataDir(): string {
@@ -126,6 +131,7 @@ export function loadConfig(overrides: { dataDir?: string; env?: NodeJS.ProcessEn
       approvalTtlMs: num(env.AMB_APPROVAL_TTL_MS, file.agent?.approvalTtlMs ?? 10 * 60_000),
       pwsh: file.agent?.pwsh === "system" ? "system" : "auto",
       maxBackground: num(env.AMB_MAX_BACKGROUND, file.agent?.maxBackground ?? 4),
+      allowLandlock: env.AMB_ALLOW_LANDLOCK === "1",
     },
   };
 }

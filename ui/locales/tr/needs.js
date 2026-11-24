@@ -1,0 +1,23 @@
+// needs · tr
+export default {
+  title: "Seni bekliyor",
+  head: "{bot}: {what}",
+  headSpaced: "{bot}: {what}",
+  collapse: "Daralt",
+  viewTask: "Görevi gör",
+  viewRule: "Kuralı gör",
+  openChat: "Sohbeti aç",
+  reply: "Yanıtla…",
+  approveOnce: "Bir kez onayla",
+  deny: "Reddet",
+  stop: "Durdur",
+  relogin: "Yeniden tara",
+  answerPlaceholder: "Yanıtın",
+  send: "Gönder",
+  none: "Şu an seni bekleyen bir şey yok",
+  dismiss: "Bir daha gösterme",
+  continue: "Devam et",
+  raiseBudget: "Bütçeyi değiştir",
+  toAct: "Eyleme geç",
+  keepObserving: "Gözleme devam et",
+};

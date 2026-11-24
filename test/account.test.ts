@@ -18,6 +18,9 @@ import { normalizeSettings } from "../src/agent/settings.js";
 import { locateDshRuntime } from "../src/agent/host.js";
 import { findAppRoot } from "../src/magpie/supervisor.js";
 import { Store } from "../src/store/db.js";
+import { FeedbackService } from "../src/feedback/service.js";
+import { DraftStore } from "../src/feedback/drafts.js";
+import { t } from "../src/i18n/index.js";
 import { bareModel, isBotProviderModel, isGatewayGroupModel, resolveGroupModel, routeModel, skillHeader } from "../src/providers/modelflare.js";
 
 describe("回环 PKCE 登录", () => {
@@ -235,6 +238,120 @@ describe("AccountManager", () => {
     await until(() => manager.status().state === "signed_out");
     expect(manager.status().error).toBe("");
     expect(calls).toEqual([]);
+  });
+
+  describe("需求与反馈（src/feedback/ → connected-app /feedback，schema 2）", () => {
+    // 应用里用到的部分：有内置网关（magpie）才有 Modelflare 账户；草稿放在测试目录里
+    const service = (opts: { magpie?: boolean; timeout?: number } = {}) =>
+      new FeedbackService({ magpie: opts.magpie === false ? undefined : {}, account: manager, config: { dataDir: dir } } as never, { drafts: new DraftStore(path.join(dir, "feedback-drafts")), submitTimeoutMs: opts.timeout ?? 2000 });
+    const idea = { tab: "use_case" as const, source: "account_menu" as const, draft: { description: "我每周都要把多个表格整理成销售周报，希望复用同一套步骤。" }, contact: { consent: false } };
+
+    it("没登录或外部网关不建单，也不碰远端；登录后先确认工单服务支持 schema 2", async () => {
+      const external = await service({ magpie: false }).capabilities();
+      expect(external).toMatchObject({ gateway: "external", canSubmit: false, remote: "skipped" });
+      const signedOut = await service().capabilities();
+      expect(signedOut).toMatchObject({ gateway: "builtin", signedIn: false, canSubmit: false, remote: "skipped" });
+      await signIn();
+      const caps = await service().capabilities();
+      expect(caps).toMatchObject({ canSubmit: true, remote: "ok", contactPolicyVersion: "2026-11-19", identity: { emailAvailable: true, email: "ada@example.com" } });
+      // 旧版工单服务（没有能力接口）：阻止新版建单，不降级成旧协议
+      mf.s.feedbackServer = "v1";
+      const old = service();
+      expect(await old.capabilities()).toMatchObject({ canSubmit: false, remote: "unsupported" });
+      const preview = await old.preview(idea);
+      expect(await old.submit(preview.snapshotId)).toEqual({ status: "unsupported" });
+      expect(mf.s.feedbackPosts).toBe(0);
+    });
+
+    it("发出去的就是预览冻结的那一份；同意留联时带上渠道和值，结构化字段和正文一致", async () => {
+      await signIn();
+      const svc = service();
+      await svc.capabilities();
+      const p = await svc.preview({ ...idea, contact: { consent: true, channel: "wechat", value: "wx_sales_01" } });
+      expect(p.body).toContain("[contact_consent:true]");
+      expect(p.body).toContain("[contact_method:wechat] wx_sales_01");
+      expect(p.notIncluded).not.toContain("contact");
+      const r = await svc.submit(p.snapshotId);
+      expect(r).toMatchObject({ status: "created", tab: "use_case", draftCleared: true, receipt: { ticketId: "41", supportUrl: "https://modelflare.dev/support-tickets?ticket_id=41", replayed: false } });
+      expect(mf.s.feedback).toHaveLength(1);
+      const sent = mf.s.feedback[0] as Record<string, any>;
+      expect(sent).toMatchObject({ schema_version: 2, ticket_type: "use_case", kind: "suggestion", source: "account_menu", client_submission_id: p.clientSubmissionId, body: p.body });
+      expect(sent.contact).toEqual({ consent: true, channel: "wechat", purpose: "feedback_only", policy_version: "2026-11-19", value: "wx_sales_01" });
+      // 再点一次（双击、并发窗口）：同一份快照，不再发
+      expect(await svc.submit(p.snapshotId)).toMatchObject({ status: "created" });
+      expect(mf.s.feedbackPosts).toBe(1);
+    });
+
+    it("账号邮箱只来自当前身份：载荷只带身份版本；预览后邮箱变了就不能发，要重新检查", async () => {
+      await signIn();
+      const svc = service();
+      await svc.capabilities();
+      const p = await svc.preview({ ...idea, contact: { consent: true, channel: "account_email" } });
+      expect(p.body).toContain("[contact_method:account_email] ada@example.com");
+      mf.s.feedbackEmail = "new@example.com";
+      await svc.capabilities(true);
+      expect(await svc.submit(p.snapshotId)).toEqual({ status: "failed", code: "CONTACT_IDENTITY_CHANGED" });
+      expect(mf.s.feedback).toEqual([]);
+      mf.s.feedbackEmail = "";
+      await svc.capabilities(true);
+      await expect(svc.preview({ ...idea, contact: { consent: true, channel: "account_email" } })).rejects.toMatchObject({ errors: [{ field: "contact", code: "contact_email_unavailable" }] });
+    });
+
+    it("建单后断网：结果未知，按同一个提交 ID 查到原回执；本人用原请求重试也不重复建单、不换 ID", async () => {
+      await signIn();
+      const svc = service({ timeout: 150 });
+      await svc.capabilities();
+      const p = await svc.preview(idea);
+      mf.s.feedbackNext = ["store-then-hang"];
+      expect(await svc.submit(p.snapshotId)).toEqual({ status: "unknown", clientSubmissionId: p.clientSubmissionId });
+      expect(mf.s.feedback).toHaveLength(1);
+      // 查询：查到原回执
+      expect(await svc.lookup(p.clientSubmissionId)).toMatchObject({ status: "created", receipt: { ticketId: "41", replayed: true } });
+      // 另一份：没建成就超时，查不到；本人重试用同一个 ID 和同一份载荷
+      const q = await svc.preview({ ...idea, draft: { description: "另一件事：希望周报能自动发给团队群。" } });
+      mf.s.feedbackNext = ["hang"];
+      expect(await svc.submit(q.snapshotId)).toMatchObject({ status: "unknown" });
+      expect(await svc.lookup(q.clientSubmissionId)).toEqual({ status: "not_found", clientSubmissionId: q.clientSubmissionId });
+      const retry = await svc.submit(q.snapshotId);
+      expect(retry).toMatchObject({ status: "created", receipt: { clientSubmissionId: q.clientSubmissionId } });
+      expect(mf.s.feedback.map((f) => f.client_submission_id)).toEqual([p.clientSubmissionId, q.clientSubmissionId]);
+    });
+
+    it("HTML 200、500、202、工单地址不合格都不算成功；429 保留快照和草稿", async () => {
+      await signIn();
+      const svc = service();
+      await svc.capabilities();
+      const p = await svc.preview(idea);
+      mf.s.feedbackNext = ["html200"];
+      expect(await svc.submit(p.snapshotId)).toMatchObject({ status: "unknown" });
+      mf.s.feedbackNext = ["500"];
+      expect(await svc.submit(p.snapshotId)).toMatchObject({ status: "unknown" });
+      mf.s.feedbackNext = ["202"];
+      expect(await svc.submit(p.snapshotId)).toMatchObject({ status: "processing" });
+      expect(mf.s.feedback).toEqual([]);
+      const q = await svc.preview({ ...idea, draft: { description: "第二件事：希望能导出成 PDF 再发出去。" } });
+      mf.s.feedbackNext = ["badurl"];
+      expect(await svc.submit(q.snapshotId)).toMatchObject({ status: "unknown" });
+      const r = await svc.preview({ ...idea, draft: { description: "第三件事：希望能按客户分组整理周报。" } });
+      mf.s.feedbackNext = ["429"];
+      expect(await svc.submit(r.snapshotId)).toEqual({ status: "rate_limited" });
+      expect(svc.draft().draft?.tabs.use_case?.description).toBe("第三件事：希望能按客户分组整理周报。");
+    });
+
+    it("迟到的成功只清和快照同版本的草稿：发出后又改过，新的输入留着；其他分类不动", async () => {
+      await signIn();
+      const svc = service({ timeout: 150 });
+      await svc.capabilities();
+      svc.saveDraft({ bug: { description: "预览文件时按关闭标签快捷键，整个窗口关掉了。" } });
+      const p = await svc.preview(idea);
+      mf.s.feedbackNext = ["store-then-hang"];
+      expect(await svc.submit(p.snapshotId)).toMatchObject({ status: "unknown" });
+      svc.saveDraft({ use_case: { description: "发出去以后又写的新内容，不能被清掉。" } }, ["use_case"]);
+      expect(await svc.lookup(p.clientSubmissionId)).toMatchObject({ status: "created", draftCleared: false });
+      const left = svc.draft().draft!;
+      expect(left.tabs.use_case?.description).toBe("发出去以后又写的新内容，不能被清掉。");
+      expect(left.tabs.bug?.description).toBe("预览文件时按关闭标签快捷键，整个窗口关掉了。");
+    });
   });
 
   it("登录后签发本机 Key 并接到内置网关；refresh token 只存在 600 权限的账户文件里", async () => {

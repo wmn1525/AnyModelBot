@@ -1,0 +1,53 @@
+// botapp · tr: katalog botları (Keşfet, özel arayüz, kenar çubuğu grupları)
+export default {
+  sidebar: { discover: "Keşfet", mine: "Benimkiler", latest: "Yeni", new: "Yeni" },
+  discover: {
+    title: "Keşfet",
+    lead: "İşinize yarayan araçları bulun, iş akışlarınızı nasıl bağlayacağınızı da konuşalım.",
+    featured: "Öne çıkanlar",
+    latest: "Yeni",
+    empty: "Eşleşme yok",
+  },
+  app: {
+    sample: "Örnek",
+    placeholder: "Bir şey söyle, görünüm güncellensin",
+    uiFailed: "Görünüm açılamadı. Sohbetten devam edebilirsin.",
+    openUrlTitle: "Bu sayfa açılsın mı?",
+    openUrlConfirm: "Aç",
+    removed: "Bu bot katalogdan kaldırıldı. Verilerin hâlâ burada.",
+    removedSecurity: "Bu bot güvenlik nedeniyle kaldırıldı ve becerileri kapatıldı. Verilerin hâlâ burada.",
+  },
+  info: { what: "Ne işe yarar", skills: "Kullanılan beceriler", perms: "İzinler" },
+  perm: {
+    "workspace-write": "Kendi klasörünü okur ve yazar",
+    network: "İnterneti kullanır",
+    "channel-send": "Sohbet kanallarına kendiliğinden mesaj gönderir",
+    "computer-use": "Bilgisayarını kullanır",
+    accounts: "Bağladığın hesapları kullanır",
+  },
+  intro: {
+    hello: "Merhaba, ben {name}.",
+    try: "Şunlardan birini dene",
+    note: "Ya da ne istediğini söyle. İlk mesajından sonra çalışmaya başlarım; o zamana kadar buradakiler örnek.",
+  },
+  tip: { kept: "{name} Benimkiler içinde kalır. Yarın da burada olur." },
+  remove: {
+    title: "{name} kaldırılsın mı?",
+    body: "Kenar çubuğundan çıkar; sohbetleri, görevleri ve kuralları silinir. Keşfet üzerinden yeniden ekleyebilirsin.",
+    confirm: "Kaldır",
+    keep: "Yeniden ekleyince sürdürebilmen için dosyalarını ve çalışma alanını tut",
+    done: "{name} kaldırıldı. Keşfet üzerinden yeniden ekleyebilirsin",
+  },
+  errors: {
+    catalog_not_found: "Bu bot bulunamadı.",
+    catalog_removed: "Bu bot katalogdan kaldırıldı.",
+    catalog_download_failed: "Bu botun dosyaları yüklenemedi. Yeniden dene.",
+    catalog_failed: "Bir şeyler ters gitti. Yeniden dene.",
+    file_not_found: "Bu dosya bulunamadı.",
+    inbox_too_large: "Bu dosya çok büyük.",
+    skill_conflict: "Bu güncellemedeki bir beceri, içe aktarılmış bir beceriyle çakışıyor. Önce içe aktarılan beceriyi kaldır veya yeniden adlandır.",
+    reserved_skill: "Bu botun beceri adı geçersiz olduğu için kurulamıyor.",
+    dev_invalid: "Bu klasör geçerli bir bot paketi değil.",
+    dev_loopback_only: "Yerel klasörler yalnızca uygulama bu bilgisayarda çalışırken yüklenebilir.",
+  },
+};

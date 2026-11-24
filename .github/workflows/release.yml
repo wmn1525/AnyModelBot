@@ -105,6 +105,7 @@ jobs:
             CHANGELOG_ru.md
             CHANGELOG_es.md
             CHANGELOG_pt.md
+            CHANGELOG_tr.md
             ui/locales/manifest.json
             scripts/release-notes.mjs
           sparse-checkout-cone-mode: false
@@ -458,6 +459,7 @@ jobs:
             CHANGELOG_ru.md
             CHANGELOG_es.md
             CHANGELOG_pt.md
+            CHANGELOG_tr.md
             ui/locales/manifest.json
             scripts/release-notes.mjs
           sparse-checkout-cone-mode: false

@@ -2,6 +2,7 @@
 // 标题、简介、触发方式在 ui/locales/<语言>/skillItems.json。只展示和导航：没有安装按钮，不下载、保存或转发技能文件；
 // 「复制安装指令」复制一句话，用户发给机器人，由应用在对话里出确认卡片（src/skills/installs.ts）。
 import { getLang, has, t } from "./i18n.js";
+import { fold } from "./text-fold.js";
 
 let cache = null;
 let loading = null;
@@ -49,11 +50,11 @@ export const installPrompt = (s) => (getLang() === "zh-CN" ? `帮我安装这个
 
 /** 搜索：名称、标题、简介、触发方式、作者（昵称两种写法和 GitHub 账号）、标记，不区分大小写 */
 export function matchesSkill(s, q, lib) {
-  const needle = q.trim().toLowerCase();
+  const needle = fold(q.trim());
   if (!needle) return true;
   const a = lib.authors[s.author];
   const hay = [s.id, skillText(s, "title"), skillText(s, "summary"), skillText(s, "try"), a?.name, a?.nameEn, s.author, ...s.marks.map((m) => t(`skills.marks.${m}`))];
-  return hay.some((x) => x && String(x).toLowerCase().includes(needle));
+  return hay.some((x) => x && fold(x).includes(needle));
 }
 
 /** 复制到剪贴板；不可用或被拒绝时抛错（调用方展开指令让用户手动复制） */

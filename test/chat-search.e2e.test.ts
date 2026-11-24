@@ -6,7 +6,7 @@ import { createRequire } from "node:module";
 import { App } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 import { groupPeer } from "../src/store/db.js";
-import { listen } from "./helpers.js";
+import { listen, signIn } from "./helpers.js";
 
 const require = createRequire(import.meta.url);
 let chromium: any;
@@ -89,6 +89,7 @@ describe("chat search API", () => {
 describe.skipIf(!browserAvailable)("chat search UI", () => {
   const pageFor = async (width = 1200, lang = "zh-CN", theme = "light") => {
     const page = await browser.newPage({ viewport: { width, height: 820 }, locale: lang, colorScheme: theme });
+    await signIn(page, base);
     page.setDefaultTimeout(5000);
     page.on("pageerror", (e: Error) => console.error("Search browser error:", e.message));
     await page.route("**/amb/api/settings", async (route: any) => {
@@ -308,7 +309,7 @@ describe.skipIf(!browserAvailable)("chat search UI", () => {
     await page.close();
   });
 
-  it.each(["zh-CN", "en", "ja", "ko", "ru", "es", "pt"])("renders %s search with working filters", async (lang) => {
+  it.each(["zh-CN", "en", "ja", "ko", "ru", "es", "pt", "tr"])("renders %s search with working filters", async (lang) => {
     const page = await pageFor(1200, lang, lang === "en" ? "dark" : "light");
     await page.keyboard.press("Control+Shift+f");
     const results = page.locator('[data-screen="message-search"]');

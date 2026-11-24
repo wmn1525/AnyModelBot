@@ -47,7 +47,13 @@ export function computerRoutes(ctx: WebContext): Route {
         return send(res, 200, perms.view());
       }
       if (seg[2] === "open" && m === "POST") {
-        perms.openSettings(kind((await readJson(req)).kind));
+        const wanted = (await readJson(req)).kind;
+        // 文件和文件夹（系统禁止访问桌面时）：和电脑操作的两项权限是两回事
+        if (wanted === "files") {
+          perms.openFolderSettings();
+          return send(res, 200, perms.view());
+        }
+        perms.openSettings(kind(wanted));
         return send(res, 200, perms.view());
       }
       if (seg[2] === "blocked" && seg[3] && m === "DELETE") {

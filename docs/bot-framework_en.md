@@ -85,7 +85,7 @@ A Discover card opens with a cover image: `cover/light.png` and `cover/dark.png`
 | `permissions` | See below |
 | `skills` | Imported skills: `name`, `source`, `sha256` (from `amb-bot hash`), `author`, `license`, `url`. Your own skills aren't listed |
 
-Text fields are `{ "zh-CN": …, "en": … }`, both required. The framework requires these two; `ja`, `ko`, `ru`, `es` and `pt` fall back to `en`. Bots listed in this repository need all seven languages, including text, UI and sample data, and `test/bot-catalog-site.unit.test.ts` checks this.
+Text fields are `{ "zh-CN": …, "en": … }`, both required. The framework requires these two; `ja`, `ko`, `ru`, `es`, `pt` and `tr` fall back to `en`. Bots listed in this repository need all eight languages, including text, UI and sample data, and `test/bot-catalog-site.unit.test.ts` checks this.
 
 ### Permissions
 

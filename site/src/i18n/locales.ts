@@ -1,6 +1,6 @@
 import manifest from "./manifest.json";
 /** Shared by static routes, metadata and the browser language selector. */
-export const LANGS = ["zh", "en", "ja", "ko", "ru", "es", "pt"] as const;
+export const LANGS = ["zh", "en", "ja", "ko", "ru", "es", "pt", "tr"] as const;
 export type Lang = (typeof LANGS)[number];
 export const READY_LANGS = manifest.locales.filter((l) => l.ready).map((l) => l.siteCode as Lang);
 export const LOCALES = {
@@ -11,6 +11,7 @@ export const LOCALES = {
   ru: { name: "Русский", tag: "ru", og: "ru_RU", hint: "Эта страница доступна на русском языке", action: "Перейти на русский" },
   es: { name: "Español", tag: "es", og: "es_LA", hint: "Esta página también está disponible en español", action: "Cambiar a español" },
   pt: { name: "Português (Brasil)", tag: "pt-BR", og: "pt_BR", hint: "Esta página também está disponível em português", action: "Mudar para português" },
+  tr: { name: "Türkçe", tag: "tr", og: "tr_TR", hint: "Bu sayfa Türkçe olarak da sunuluyor", action: "Türkçeye geç" },
 } as const;
 
 export function normalizeLang(value: string): Lang | undefined {

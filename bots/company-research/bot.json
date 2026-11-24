@@ -9,7 +9,8 @@
     "ko": "기업 리서치",
     "ru": "Исследование компаний",
     "es": "Análisis de empresas",
-    "pt": "Pesquisa de empresas"
+    "pt": "Pesquisa de empresas",
+    "tr": "Şirket araştırması"
   },
   "summary": {
     "zh-CN": "在你的电脑上做公司尽调，生成可追溯的简报和 PDF。",
@@ -18,7 +19,8 @@
     "ko": "내 컴퓨터에서 기업을 실사하고 출처가 있는 브리핑과 PDF를 만듭니다.",
     "ru": "Изучает компании на вашем компьютере: сводки и PDF со ссылками на источники.",
     "es": "Investiga empresas en tu computadora: resúmenes con fuentes e informes en PDF.",
-    "pt": "Pesquisa empresas no seu computador, com resumos e PDFs que citam as fontes."
+    "pt": "Pesquisa empresas no seu computador, com resumos e PDFs que citam as fontes.",
+    "tr": "Bilgisayarında şirket araştırması: kaynaklı özetler ve PDF raporlar."
   },
   "about": {
     "zh-CN": [
@@ -55,6 +57,11 @@
       "Segue o fluxo de pesquisa e a exportação em PDF do projeto de código aberto Company Research Agent",
       "Os relatórios e as fontes ficam no seu dispositivo; comece em um canal de chat e o resultado volta para lá",
       "Apenas para fins informativos e de aprendizado, não é recomendação de investimento"
+    ],
+    "tr": [
+      "Açık kaynak Company Research Agent araştırma akışını ve PDF dışa aktarmayı izler",
+      "Raporlar ve kaynaklar senin cihazında kalır; bir sohbet kanalında başlatırsan sonuç oraya döner",
+      "Yalnızca bilgi ve öğrenme içindir, yatırım tavsiyesi değildir"
     ]
   },
   "avatar": "dossier",
@@ -97,6 +104,11 @@
       "Apresente o que a Stripe faz e quem atende em uma página. Consulte apenas 1–2 páginas oficiais, sem pesquisa completa.",
       "Faça uma due diligence completa da Stripe e gere um relatório",
       "Abra as fontes e a curadoria do relatório mais recente"
+    ],
+    "tr": [
+      "Stripe ne yapar ve kime hizmet eder, bir sayfada anlat. Yalnızca resmi siteden 1–2 sayfa kullan, tam inceleme yapma.",
+      "Stripe için tam inceleme yap ve bir rapor oluştur",
+      "En son raporun kaynaklarını ve seçimini aç"
     ]
   },
   "skills": []

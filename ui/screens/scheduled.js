@@ -7,6 +7,7 @@ import { libraryFrom, openLibrary } from "../lib/routines.js";
 import { RoutineSuggestions, TryLibrary } from "./routines.js";
 import { sideLayout, keyOfBot } from "../lib/sections.js";
 import { t, useLang } from "../lib/i18n.js";
+import { fold } from "../lib/text-fold.js";
 import { BotAvatar } from "../components/avatar.js";
 
 export const newRule = () => window.dispatchEvent(new Event("amb-new-rule"));
@@ -45,7 +46,7 @@ export function NewRuleHost({ bots }) {
   if (chosen) return html`<${RuleEditor} key=${editing?.id || chosen} botId=${chosen} rule=${editing} onClose=${() => setOpen(false)} onSaved=${() => setOpen(false)} />`;
   const keys = layout?.sections?.flatMap((s) => s.items) || [];
   const position = (bot) => { const i = keys.indexOf(keyOfBot(bot)); return i < 0 ? keys.length : i; };
-  const ordered = [...bots].sort((a, b) => position(a) - position(b)).filter((b) => b.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+  const ordered = [...bots].sort((a, b) => position(a) - position(b)).filter((b) => fold(b.name).includes(fold(query.trim())));
   const move = (e) => {
     if (!["ArrowDown", "ArrowUp"].includes(e.key) || e.isComposing) return;
     const buttons = [...list.current.querySelectorAll("button")];

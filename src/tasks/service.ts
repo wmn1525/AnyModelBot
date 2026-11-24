@@ -129,7 +129,9 @@ export interface TaskHost {
    * 把一条输入交给任务会话：第一次建会话（工作目录是任务文件夹），之后在新的代理进程里先 resume。返回 DSH 的收件 id。
    * resume 失败（会话记录丢了）抛 ResumeFailed（host.ts）。
    */
-  prompt(botId: string, o: { sessionId: string; folder: string; model: string; text: string; resume: boolean }): Promise<string>;
+  prompt(botId: string, o: { sessionId: string; folder: string; model: string; text: string; resume: boolean; root?: string }): Promise<string>;
+  /** 发起 task_start 的聊天会话这一轮绑定的工作文件夹（任务继承它）；没有返回 undefined */
+  folderOf?(botId: string, sessionId: string): string | undefined;
   /** 并进正在进行的一轮（agent.steer）；会话空闲时返回 false */
   steer(botId: string, sessionId: string, id: string, text: string): Promise<boolean>;
   /** 停掉这个会话：取消这一轮、它的子代理和后台命令，之后的工具调用一律拒绝 */
@@ -252,6 +254,8 @@ export interface TaskView {
   question?: { text: string; note?: string };
   /** 正在跑的那个 run：开始时间与步数 */
   live?: { runId: string; since: number; steps: number; current?: ActivityStep };
+  /** 别的机器人发来的事（tasks.handoff_id）：谁发来的。花费（spentUsd）含重做、补充和「继续」再给的额度，和「机器人协作」页这对机器人的累计同一个算法 */
+  from?: { botId: string; name: string };
 }
 
 /** 一个在跑（或收尾中）的 run 的内存状态（任务的，或规则的：ruleId 不空、taskId 是空的） */
@@ -505,7 +509,7 @@ export class TaskService {
   // ---------- 建任务、追加、停止 ----------
 
   /** 新任务（聊天代理的 task_start）：用户原话、说明、最近的对话、附件和记忆快照作为第一条输入，排进队列 */
-  create(o: { botId: string; conversationId: string; title: string; brief: string; budgetUsd?: number; anytime?: boolean }): { task?: TaskRow; error?: string } {
+  create(o: { botId: string; conversationId: string; title: string; brief: string; budgetUsd?: number; anytime?: boolean; root?: string }): { task?: TaskRow; error?: string } {
     const conv = this.store.getConversation(o.conversationId);
     const bot = this.store.getBot(o.botId);
     if (!conv || !bot) return { error: "conversation not found" };
@@ -539,6 +543,7 @@ export class TaskService {
       permission: st.permission,
       budgetUsd: o.budgetUsd && o.budgetUsd > 0 ? Math.min(o.budgetUsd, 100) : TASK_BUDGET_USD,
       anytime: !!o.anytime,
+      ...(o.root ? { root: o.root } : {}),
       createdAt: now,
       updatedAt: now,
     });
@@ -549,7 +554,7 @@ export class TaskService {
       recent,
       attachments: attachmentsOf(origin?.content ?? ""),
       memory: st.memory.enabled ? this.o.host.memoryPrefix(o.botId, conv.id) : undefined,
-      folder,
+      folder: o.root || folder,
     });
     this.addInput(task.id, "brief", text, true);
     this.enqueue(task, "launch");
@@ -871,7 +876,7 @@ export class TaskService {
       let id: string;
       try {
         fs.mkdirSync(folder, { recursive: true });
-        id = await this.o.host.prompt(l.botId, { sessionId: l.sessionId, folder, model, text, resume: task ? this.store.taskPrompted(task.id) : false });
+        id = await this.o.host.prompt(l.botId, { sessionId: l.sessionId, folder, model, text, resume: task ? this.store.taskPrompted(task.id) : false, ...(task?.root ? { root: task.root } : {}) });
       } catch (e) {
         if (!(e instanceof ResumeFailed) || !task) throw e;
         // 会话记录恢复不了：换一个新会话，从宿主记下的任务重新交代
@@ -885,7 +890,7 @@ export class TaskService {
         this.store.updateRun(l.runId, { sessionId });
         const brief = this.store.listInputs(task.id).find((i) => i.kind === "brief")?.text ?? task.brief;
         const again = rebrief(brief, task.report?.message || task.report?.summary);
-        id = await this.o.host.prompt(task.botId, { sessionId, folder, model, text: `${again}\n\n${text}`, resume: false });
+        id = await this.o.host.prompt(task.botId, { sessionId, folder, model, text: `${again}\n\n${text}`, resume: false, ...(task.root ? { root: task.root } : {}) });
       }
       if (this.live.get(l.runId) !== l) {
         // 交出去的时候任务被停了（规则被删了、超时了）：输入已经到了会话里，再停一次（插件拒绝它之后的工具调用）
@@ -1432,12 +1437,14 @@ export class TaskService {
           return {
             error: `This bot's Okinto budget is almost used up (about ${usdText(low.remainUsd)} of ${stepText(low.limitUsd)} left) and the rest is kept for chat, so no background task can start. Tell the user in one sentence; they can raise the bot's budget in its settings.`,
           };
-        const r = this.create({ botId, conversationId: conv.id, title: String(a.title ?? ""), brief: String(a.brief ?? ""), budgetUsd: Number(a.budget_usd) || undefined, anytime: a.anytime === true });
+        // 这一轮绑定了工作文件夹：任务在那个文件夹里做（PRD R2「派生工作」）
+        const root = this.o.host.folderOf?.(botId, String(b?.sessionId ?? ""));
+        const r = this.create({ botId, conversationId: conv.id, title: String(a.title ?? ""), brief: String(a.brief ?? ""), budgetUsd: Number(a.budget_usd) || undefined, anytime: a.anytime === true, ...(root ? { root } : {}) });
         if (!r.task) return { error: r.error };
         if (this.paused(botId))
           return { text: `Queued background task ${r.task.id} 「${r.task.title}」, but background work is paused, so it starts only when the user resumes it. Tell the user so in one sentence. Do not do the task yourself.` };
         return {
-          text: `Started background task ${r.task.id} 「${r.task.title}」 in folder ${r.task.folder}. In your reply, tell the user in one sentence what now runs in the background and that they will hear back when it is done; they can keep chatting. Do not do the task yourself.`,
+          text: `Started background task ${r.task.id} 「${r.task.title}」 in folder ${r.task.root || r.task.folder}. In your reply, tell the user in one sentence what now runs in the background and that they will hear back when it is done; they can keep chatting. Do not do the task yourself.`,
         };
       }
       case "message": {
@@ -1895,9 +1902,18 @@ export class TaskService {
       spentUsd: task.spentUsd,
       budgetUsd: task.budgetUsd,
       cleanupAt: task.cleanupAt,
+      ...this.handoffFrom(task),
       ...this.openQuestion(task),
       ...(l && run ? { live: { runId: run.id, since: run.startedAt, steps: l.activity.steps.length, current: l.activity.steps.findLast((s) => s.status === "running") } } : {}),
     };
+  }
+
+  /** 别的机器人发来的事：发来的那个机器人（已删除的用记下的 id） */
+  private handoffFrom(task: TaskRow): Pick<TaskView, "from"> {
+    if (!task.handoffId) return {};
+    const h = this.store.collab.get(task.handoffId);
+    if (!h) return {};
+    return { from: { botId: h.fromBot, name: this.store.getBot(h.fromBot)?.name ?? h.fromBot } };
   }
 
   /** 任务问用户的、还没回答的那个问题（最新的；预算的那个不算，它有自己的阶段） */
@@ -1908,11 +1924,14 @@ export class TaskService {
     return { question: { text: questionsOf(row)[0]?.question ?? row.detail, ...(note ? { note } : {}) } };
   }
 
-  /** 任务列表：进行中、等你的在前，再按新旧；group 只要这几组的（GET /tasks?group=，3f）。归档了的不列 */
-  list(o: { botId?: string; conversationId?: string; limit?: number; since?: number; group?: StageGroup[] } = {}): TaskView[] {
+  /**
+   * 任务列表：进行中、等你的在前，再按新旧；group 只要这几组的（GET /tasks?group=，3f）。归档了的不列。
+   * handoffs：连别的机器人发来的事一起列（右侧面板「任务」里看这个机器人的花费明细）；不给时只列用户自己发起的
+   */
+  list(o: { botId?: string; conversationId?: string; limit?: number; since?: number; group?: StageGroup[]; handoffs?: boolean } = {}): TaskView[] {
     const rank = { working: 0, needs: 1, ended: 2 } as const;
     return this.store
-      .listTasks({ botId: o.botId, conversationId: o.conversationId, limit: 200, handoffs: false })
+      .listTasks({ botId: o.botId, conversationId: o.conversationId, limit: 200, handoffs: o.handoffs ? undefined : false })
       .map((t) => this.view(t))
       .filter((v) => !o.group?.length || o.group.includes(v.stage.group))
       .filter((v) => !o.since || v.stage.group !== "ended" || v.updatedAt >= o.since)

@@ -9,7 +9,8 @@
     "ko": "PPT 마스터",
     "ru": "Мастер PPT",
     "es": "PPT Master",
-    "pt": "PPT Master"
+    "pt": "PPT Master",
+    "tr": "PPT Master"
   },
   "summary": {
     "zh-CN": "把文档或主题做成可编辑的 PPT，也能改现有的演示文稿。",
@@ -18,7 +19,8 @@
     "ko": "문서나 주제를 편집 가능한 슬라이드로 만들고, 기존 발표 자료도 수정합니다.",
     "ru": "Делает редактируемые слайды из документов и тем, правит готовые презентации.",
     "es": "Crea diapositivas editables a partir de documentos o temas, o edita las tuyas.",
-    "pt": "Transforma documentos e temas em slides editáveis ou edita suas apresentações."
+    "pt": "Transforma documentos e temas em slides editáveis ou edita suas apresentações.",
+    "tr": "Belge ve konuları düzenlenebilir slayt yapar; mevcut sunumu da düzenler."
   },
   "about": {
     "zh-CN": [
@@ -55,6 +57,11 @@
       "Baseado no fluxo de trabalho e nas ferramentas de exportação do projeto de código aberto PPT Master (hugohe3/ppt-master)",
       "Os arquivos do projeto e as apresentações ficam no seu dispositivo; o conteúdo dos documentos é enviado ao modelo que você escolher",
       "Os slides são exportados como formas nativas que você pode continuar editando no PowerPoint; a qualidade depende do modelo escolhido"
+    ],
+    "tr": [
+      "Açık kaynak PPT Master (hugohe3/ppt-master) iş akışı ve dışa aktarma araçları üzerine kuruludur",
+      "Proje dosyaları ve sunumlar senin cihazında kalır; belge içeriği seçtiğin modele gider",
+      "Slaytlar, PowerPoint içinde düzenlemeye devam edebileceğin yerel şekiller olarak dışa aktarılır; kalite seçilen modele bağlıdır"
     ]
   },
   "avatar": "slides",
@@ -98,6 +105,11 @@
       "Esboce 3 slides sobre uma boa reunião de 30 minutos: título e três tópicos por slide. Só texto, sem arquivos.",
       "Faça rapidamente uma apresentação 16:9 com 5 slides sobre como melhorar as reuniões semanais remotas, sem precisar confirmar",
       "Faça uma apresentação de lançamento de produto com 8 slides e me mostre o plano antes"
+    ],
+    "tr": [
+      "İyi bir 30 dakikalık ekip toplantısı için 3 slaytlık taslak yaz: her slaytta bir başlık ve üç madde. Yalnızca metin, dosya yok.",
+      "Uzaktan haftalık toplantıları iyileştirmek için 16:9 biçiminde 5 slaytlık bir sunumu hızlıca yap, onay gerekmez",
+      "8 slaytlık bir ürün lansman sunumu yap ve önce planı göster"
     ]
   },
   "skills": [

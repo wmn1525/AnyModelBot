@@ -56,8 +56,15 @@ import { NewApiAccountManager } from "./account/newapi.js";
 import { parsePlaygroundModel, type NewApiDesktop } from "./providers/newapi.js";
 import { AccountVault, type LegacySecretBox } from "./account/vault.js";
 import { gatewayModelInfo, loadModelInfo, type ModelInfo, type Rates } from "./account/model-info.js";
+import { Attachments } from "./attachments/service.js";
+import { FolderService } from "./folders/service.js";
+import { acceptsImages } from "./llm/client.js";
 import { loadQualitySnapshot } from "./account/model-quality.js";
 import { MediaService, pickDefault } from "./tools/media/index.js";
+import { ModelCapabilities, capsFor, pureImageModel, type CapsSnapshot, type ModelCaps } from "./tools/media/capabilities.js";
+import { ImageGeneration, verdictText, type GenerationPlan } from "./imagegen/generate.js";
+import { modelVerdict } from "./imagegen/reference.js";
+import { sniffImage } from "./attachments/sniff.js";
 import { SearchService, loadWebSearch, saveWebSearch, type SearchProvider, type WebSearchSettings, type WebSearchView } from "./tools/search.js";
 import { ConnectionService } from "./tools/accounts/connections.js";
 import { AppService } from "./tools/apps/service.js";
@@ -99,6 +106,8 @@ export interface DesktopHooks {
    * 把磁盘上的原文件复制过去。取消返回 { canceled: true }；复制失败抛错
    */
   saveFileAs?(src: string, name: string): Promise<{ canceled: true } | { canceled?: false; path: string; folder: string }>;
+  /** 输入框上方的「选择文件夹…」：弹出系统的目录选择器，返回选中的路径；取消返回 undefined（folders/service.ts） */
+  pickFolder?(): Promise<string | undefined>;
   /** 右侧预览 HTML 的「在浏览器中打开」：用系统默认浏览器打开本机网页（.html 的默认程序可能是编辑器） */
   openFileInBrowser?(p: string): Promise<void>;
   openInBrowser(): void;
@@ -238,6 +247,14 @@ export class App {
   readonly skillInstalls: SkillInstalls;
   /** 对话里「存成技能」的草稿卡：确认后存进「我的技能」（skills/drafts.ts、skills/mine.ts） */
   readonly skillDrafts: SkillDrafts;
+  /** 网页对话的消息附件（粘贴图片、拖入文件）的受管副本 */
+  readonly attachments: Attachments;
+  /** 输入框上方选择的工作文件夹（folders/service.ts） */
+  readonly folders: FolderService;
+  /** 登录账户的型号能力（生图、参考图、限制；tools/media/capabilities.ts） */
+  readonly modelCaps: ModelCapabilities;
+  /** 网页单聊里宿主直接执行的生图（参考图、纯图片型号的纯文字；imagegen/generate.ts）；没有内置网关时为空 */
+  readonly imageGen: ImageGeneration | undefined;
   web: WebServer | undefined;
   private catalogSweep: NodeJS.Timeout | undefined;
   desktop: DesktopHooks | undefined;
@@ -280,6 +297,21 @@ export class App {
     const freshData = !fs.existsSync(path.join(config.dataDir, "anymodel.db"));
     this.store = new Store(path.join(config.dataDir, "anymodel.db"));
     this.cuPermissions.bindStore(this.store);
+    this.attachments = new Attachments(this.store, path.join(config.dataDir, "attachments"));
+    // ZIP 默认解压到机器人工作区里的 extracted/（受管处理空间，随附件到期回收）
+    this.attachments.managedRoot = (botId) => path.join(config.dataDir, "workspaces", botId, "extracted");
+    // 型号能力只认账号登录：账户摘要按 isolationKey（登录前后不变，换账户就变）；没登录、只填 Key 时为空
+    this.modelCaps = new ModelCapabilities({
+      account: () => this.capsAccount(),
+      line: () => this.config.modelflare.line,
+      fetch: (line) => this.account.modelCapabilities(line),
+    });
+    this.folders = new FolderService({
+      store: this.store,
+      dataDir: config.dataDir,
+      segmentOf: (c) => this.attachments.segmentOf(c),
+      picker: () => this.desktop?.pickFolder,
+    });
     // "更新了什么"：全新安装第一次启动不弹，直接记成当前版本；升级上来的（库已经在）还没有记录时弹一次这一版
     if (freshData && !this.store.getKV(WHATS_NEW_SEEN) && appVersion()) this.store.setKV(WHATS_NEW_SEEN, appVersion());
     // 旧版仅有默认会话的库仍需补齐默认机器人；用户删光机器人时会话也已删除，不重新创建。
@@ -340,6 +372,7 @@ export class App {
       },
     });
     this.agent = new AgentManager({
+      attachments: this.attachments,
       store: this.store,
       dataDir: config.dataDir,
       runtimeDir: config.agent.mode === "dsh" ? locateDshRuntime(findAppRoot()) : undefined,
@@ -348,6 +381,7 @@ export class App {
       turnTimeoutMs: config.agent.turnTimeoutMs,
       idleTimeoutMs: config.agent.idleTimeoutMs,
       approvalTtlMs: config.agent.approvalTtlMs,
+      allowLandlock: config.agent.allowLandlock,
       // 上下文长度来自 OKINTO 的模型资料（和模型选择器里显示的一致）；内置兜底表跟不上新模型
       contextWindow: async (model) => (await this.infoOf(model))?.context,
       // 桌面版：代理执行的命令用系统代理（环境里没设代理时）；命令行、Docker 只认环境变量
@@ -357,7 +391,7 @@ export class App {
       apiInfo: async (model) => {
         if (!this.magpie) return undefined;
         const info = await this.infoOf(model);
-        return info && { endpoints: info.endpoints, reasoning: info.reasoning };
+        return info && { endpoints: info.endpoints, reasoning: info.reasoning, vision: info.vision };
       },
       effort: () => this.config.llm.reasoningEffort,
       // 服务端压缩：价格目录列出压缩端点只是提示，bridge 用之前会探测
@@ -385,9 +419,12 @@ export class App {
             defaults: () => ({ image: this.config.media.imageModel, video: this.config.media.videoModel }),
             pricingUrl: () => `${modelflareIssuer()}/api/pricing`,
             available: async (kind) => this.account instanceof NewApiAccountManager && this.account.active ? this.account.mediaModels(kind) : undefined,
+            sniff: (data) => sniffImage(data),
           })
         : undefined,
       mediaReady: () => !!this.magpie?.modelflareInfo().connected,
+      // 账号登录时自然语言生图也只用这条会话当前选的精确型号（PRD 2026-11-23 R4）；自定义 Key 照旧
+      imageGate: (botId, conversationId, requested) => this.imageGate(botId, conversationId, requested),
       // install_skill 工具：卡片出在这个对话里；渠道里只有主人能装
       skillInstalls: this.skillInstalls,
       ownsConversation: (conversationId) => this.access.ownsConversation(conversationId),
@@ -484,6 +521,19 @@ export class App {
     this.agent.approvals.listen(() => this.attention.kick());
     // 出站队列的变化（结果留着等微信、发出去了、放弃了）：任务的"未送达"随之出现、消失
     this.delivery.onChange(() => this.attention.kick());
+    this.imageGen = this.agent.media
+      ? new ImageGeneration({
+          store: this.store,
+          media: this.agent.media,
+          caps: this.modelCaps,
+          attachments: this.attachments,
+          approvals: this.agent.approvals,
+          workspace: (botId) => path.join(config.dataDir, "workspaces", botId),
+          account: () => this.capsAccount(),
+          confirm: (botId) => this.agent.settings(botId).media.confirm,
+          approvalTtlMs: config.agent.approvalTtlMs,
+        })
+      : undefined;
     this.runtime = new BotRuntime({
       agent: this.agent,
       store: this.store,
@@ -502,7 +552,106 @@ export class App {
       recoverKey: () => (this.account?.signedIn ? this.account.repairKeys(15_000) : Promise.resolve(false)),
       skillInstalls: this.skillInstalls,
       skillDrafts: this.skillDrafts,
+      vision: (model) => this.visionOf(model),
+      attachments: this.attachments,
+      folders: this.folders,
+      // 右下角选的是纯图片生成型号：纯文字消息由宿主直接走图片接口（不当聊天模型调用）
+      imageGen: this.imageGen && {
+        plan: (botId, conversationId, model, text, web) => this.textImagePlan(botId, conversationId, model, text, web),
+        run: (plan, out, signal) => this.imageGen!.run(plan, out, signal),
+      },
     });
+  }
+
+  /** 型号能力绑定的账户摘要：账号登录（不是只填 Key）时才有 */
+  capsAccount(): string {
+    if (!this.magpie || !this.account?.signedIn) return "";
+    const k = this.account.isolationKey;
+    return k && k !== "local" ? k : "";
+  }
+
+  /** 这个会话实际会用的模型（会话选的 → 机器人默认 → 全局默认），不去读列表 */
+  conversationModel(botId: string, conversationId: string): string {
+    return this.store.getConversation(conversationId)?.model || this.store.getBot(botId)?.defaultModel || this.config.llm.defaultModel || "";
+  }
+
+  /**
+   * 参考图生图的上下文（PRD 2026-11-23 R1）：当前型号是不是走这个账户授权的 ModelFlare 线路（账号登录、不是官方 API 的自定义 Key），
+   * 它在能力快照里的样子。waitMs 内取不到能力就先回 loading（界面不闪「不支持」）；force = 从原选择器重新打开时的只读重试。
+   */
+  async referenceContext(botId: string, conversationId: string, o: { waitMs?: number; force?: boolean } = {}): Promise<{ model: string; bare: string; accountLogin: boolean; account: string; snap: CapsSnapshot | undefined; caps: ModelCaps | undefined }> {
+    let model = this.conversationModel(botId, conversationId);
+    if (!model) model = (await this.runtime.listModels().catch(() => [] as string[]))[0] ?? "";
+    const account = this.capsAccount();
+    const accountLogin = !!account && !!model && !officialOf(model);
+    const bare = bareModel(model);
+    const snap = accountLogin ? await this.modelCaps.within(o.waitMs ?? 4000, o.force) : undefined;
+    return { model, bare, accountLogin, account, snap, caps: snap ? capsFor(snap, bare) : undefined };
+  }
+
+  /**
+   * 选了纯图片生成型号时的一条纯文字消息（R4）：只在网页单聊里由宿主直接生图；渠道里说明原因。不是纯图片型号返回 undefined（照常对话）。
+   */
+  private async textImagePlan(botId: string, conversationId: string, model: string, text: string, web: boolean): Promise<GenerationPlan | { refuse: string } | undefined> {
+    const account = this.capsAccount();
+    if (!account || officialOf(model)) return undefined;
+    const bare = bareModel(model);
+    // 每条消息都会经过这里：能力还没取到时只等一小会儿（纯图片型号是在原选择器里选的，那时能力已经取过）
+    const snap = await this.modelCaps.within(3000);
+    const m = capsFor(snap, bare);
+    if (!pureImageModel(m)) return undefined;
+    if (!web) return { refuse: t("media.directNotHere") };
+    const v = modelVerdict(snap, m);
+    if (v.code === "ref_unauthorized" || v.code === "ref_loading" || v.code === "ref_caps_failed" || v.code === "ref_caps_stale") return { refuse: `⚠️ ${verdictText(v)}` };
+    if (!m!.generationEndpoint) return { refuse: `⚠️ ${t("attachments.err_gen_adapter")}` };
+    if (!text.trim()) return { refuse: `⚠️ ${verdictText({ code: "ref_no_text" })}` };
+    return {
+      botId, conversationId, operationId: `gen-${crypto.randomBytes(9).toString("base64url")}`, account, model: bare, line: m!.line,
+      mode: "text", encoding: m!.generationEndpoint, prompt: text.trim(), refs: [], capsRevision: snap.revision,
+    };
+  }
+
+  /**
+   * 代理的 generate_image（自然语言生图）在账号登录时的门槛：只能用这条会话当前选的精确型号，它得明确能生图；
+   * 不沿默认生图型号或别的供应商暗换。自定义 Key（没登录、官方 API 的型号）返回 undefined，原有行为不变。
+   */
+  private async imageGate(botId: string, conversationId: string, requested: string): Promise<{ model: string } | { error: string } | undefined> {
+    const account = this.capsAccount();
+    const model = this.conversationModel(botId, conversationId);
+    if (!account || !model || officialOf(model)) return undefined;
+    const bare = bareModel(model);
+    if (requested && bareModel(requested) !== bare) return { error: t("media.agentWrongModel", { model: bare }) };
+    const snap = await this.modelCaps.within(8000);
+    const m = capsFor(snap, bare);
+    const v = modelVerdict(snap, m);
+    if (snap.status !== "ok") return { error: t("media.agentCapsUnknown", { reason: verdictText(v) }) };
+    if (v.code === "ref_unauthorized") return { error: verdictText(v) };
+    if (m!.generation === "unsupported") return { error: t("media.agentNoGeneration", { model: bare }) };
+    if (m!.generation !== "supported") return { error: t("media.agentCapsUnknown", { reason: verdictText({ code: "ref_caps_unknown" }) }) };
+    return { model: bare };
+  }
+
+  /**
+   * 这个模型看不看图，三态：模型资料明确写了的照资料（supported / unsupported）；没有资料时按模型名判断，
+   * 认得出的算 supported，认不出的是 unknown（不拿私人图片去试探）。附件核验、输入框提示和实际请求都用这一个结果。
+   * 只填了官方 Key 时资料来自本机网关的模型目录，不为这件事访问 Modelflare（见 modelInfo）。
+   */
+  async visionOf(model: string): Promise<"supported" | "unsupported" | "unknown"> {
+    const known = this.magpie ? await Promise.race([this.infoOf(model).catch(() => undefined), new Promise<undefined>((r) => setTimeout(() => r(undefined), 3000).unref?.())]) : undefined;
+    if (known?.vision !== undefined) return known.vision ? "supported" : "unsupported";
+    return acceptsImages(model) ? "supported" : "unknown";
+  }
+
+  /** 模型资料里的上下文长度（tokens）；没有可信资料返回 undefined（附件按保守预算核算） */
+  async contextOf(model: string): Promise<number | undefined> {
+    if (!this.magpie) return undefined;
+    const info = await Promise.race([this.infoOf(model).catch(() => undefined), new Promise<undefined>((r) => setTimeout(() => r(undefined), 3000).unref?.())]);
+    return Number(info?.context) > 0 ? Number(info!.context) : undefined;
+  }
+
+  /** 这个机器人现在能不能把图片本身交给模型：代理进程的图片输入关着时（Linux 桌面版、带图回合崩过）是 closed */
+  imageChannel(botId: string): "open" | "closed" {
+    return this.agent.available && !this.agent.host(botId).imageInput ? "closed" : "open";
   }
 
   /** 渠道登录过期了（微信 -14）："需要你"里一行，去重新扫码 */
@@ -869,6 +1018,8 @@ export class App {
     // 「我的技能」保留（保存它的机器人删了也留着），只从打开名单里去掉
     this.userSkills.mine.dropBot(botId);
     this.skillDrafts.dropBot(botId);
+    this.attachments.dropBot(botId);
+    this.folders.dropBot(botId);
     if (bot?.settings.budget.enabled && this.account.signedIn) {
       await this.account.setBotBudget(botId, bot.name, { ...bot.settings.budget, enabled: false }).catch((e) => log.warn("remove bot key failed", { message: (e as Error).message }));
     }
@@ -952,6 +1103,7 @@ export class App {
     this.agent.start();
     this.skillInstalls.start();
     this.skillDrafts.start();
+    this.attachments.start();
     this.cuPermissions.start((botId, pending) => this.runtime.resumePermission(botId, pending));
     this.apps.start();
     this.ensureAccount();
@@ -1045,6 +1197,7 @@ export class App {
 
   async stop(): Promise<void> {
     this.cuPermissions.stop();
+    this.attachments.stop();
     this.skillInstalls.stop();
     this.skillDrafts.stop();
     this.catalog.stop();

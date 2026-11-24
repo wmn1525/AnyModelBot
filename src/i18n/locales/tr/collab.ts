@@ -1,0 +1,21 @@
+import type { TranslatedCatalog } from "../../index.js";
+export default {
+  msgPoints: "Arka plan:",
+  msgFiles: "Dosyalar:",
+  msgAskOnly: "Bir şey yapmana gerek yok. Yalnızca yanıtla.",
+  msgDoneWhen: "Bitti sayılır: {criteria}",
+  msgRedo: "{issue}. Düzelt lütfen. (Yeniden {n}/{limit})",
+  msgAdds: "Kullanıcı ekliyor: {text}",
+  whyUser: "durdurmasını sen istedin",
+  whyTimeout: "{limit} aşıldı",
+  whyBudget: "{budget} tükendi",
+  whyError: "bir sorun oldu: {reason}",
+  hours: { one: "{count} saat", other: "{count} saat" },
+  minutes: { one: "{count} dakika", other: "{count} dakika" },
+  noText: "(özet yok)",
+  fallbackReply: "{bot} mesajı:\n\n{text}",
+  fallbackStopped: "{bot} durdu ({why}). {text}",
+  droppedExpired: "{bot} 24 saat içinde başlamadı, bu yüzden bu istek düşürüldü.",
+  droppedModel: "{bot} senin kendi API anahtarındaki bir modele geçti, kuyruktaki bu istek iptal edildi.",
+  deleted: "{bot} silindi, bu yüzden bu durdu.",
+} satisfies TranslatedCatalog["collab"];

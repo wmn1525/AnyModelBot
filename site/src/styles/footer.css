@@ -42,7 +42,7 @@
   .footer__badges::after { content: ""; flex: 999 0 0; }
   html.js .footer__featured:not(.is-open) .footer__badges { max-height: calc(var(--badge-rows) * var(--badge-h) + (var(--badge-rows) - 1) * var(--badge-gap-y) + 2 * var(--badge-ring)); }
 
-  .footer__badge { position: relative; flex: none; display: grid; place-items: center; width: calc(var(--badge-h) * var(--r, 3.6)); height: var(--badge-h); filter: grayscale(1); opacity: .78; transition: filter var(--dur-fast), opacity var(--dur-fast); }
+  .footer__badge { position: relative; flex: none; display: grid; place-items: center; width: calc(var(--badge-h) * var(--r, 3.6)); max-width: 100%; height: var(--badge-h); filter: grayscale(1); opacity: .78; transition: filter var(--dur-fast), opacity var(--dur-fast); }
   .footer__badge:hover, .footer__badge:focus-within { filter: none; opacity: 1; }
   [data-theme="dark"] .footer__badge[data-on="light"], [data-theme="light"] .footer__badge[data-on="dark"] { display: none; }
   .footer__badge a { display: flex !important; align-items: center; justify-content: center; border-radius: 6px; }

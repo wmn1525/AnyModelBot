@@ -43,6 +43,12 @@
       "siteCode": "pt",
       "name": "Português (Brasil)",
       "ready": true
+    },
+    {
+      "code": "tr",
+      "siteCode": "tr",
+      "name": "Türkçe",
+      "ready": true
     }
   ]
 }

@@ -30,6 +30,25 @@
 .discover-text .title { font-size: var(--fs-lg); font-weight: var(--fw-medium); color: var(--fg); line-height: var(--lh-tight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .discover-card.big .discover-text .title { font-size: var(--fs-xl); }
 .discover-text .summary { font-size: var(--fs-sm); color: var(--muted); line-height: var(--lh-snug); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+/* 企业应用与场景（发现页里工具之后、模板入口之前）：一块 --well 底的分区，里面六张场景卡片（3×2，窄窗两列或一列）。
+   卡片是浅一层的面，不画描边；只是咨询入口，没有品牌、连接状态或授权按钮。 */
+.discover-biz { gap: var(--space-4); padding: var(--space-5); border-radius: var(--r-card-lg); background: var(--well); }
+.discover-biz-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-3) var(--space-4); }
+.discover-biz-text { display: grid; gap: var(--space-1-5); min-width: 0; flex: 1 1 20rem; }
+.discover-biz-title { margin: 0; font-size: var(--fs-xl); font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); }
+.discover-biz-text p { margin: 0; color: var(--muted); }
+.discover-biz-action { flex: 0 0 auto; }
+.discover-biz-grid { --discover-col: 220px; --discover-cols: 3; --discover-gap: var(--space-4); display: grid; gap: var(--discover-gap); grid-template-columns: repeat(auto-fill, minmax(min(100%, max(var(--discover-col), calc((100% - (var(--discover-cols) - 1) * var(--discover-gap)) / var(--discover-cols)))), 1fr)); }
+.discover-biz-card { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: var(--space-1-5); align-content: start; min-width: 0; padding: var(--space-4); border-radius: var(--r-card); background: var(--surface-solid); }
+.discover-biz-card { position: relative; }
+.discover-biz-card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--pill-hover); opacity: 0; transition: opacity var(--t-fast); pointer-events: none; }
+.discover-biz-card:hover::after { opacity: 1; }
+.discover-biz-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.discover-biz-card .title { font-size: var(--fs-lg); font-weight: var(--fw-medium); color: var(--fg); line-height: var(--lh-snug); overflow-wrap: anywhere; }
+.discover-biz-card .desc { font-size: var(--fs-sm); color: var(--fg-2); line-height: var(--lh-snug); overflow-wrap: anywhere; }
+.discover-biz-card .keywords { font-size: var(--fs-xs); color: var(--muted); line-height: var(--lh-snug); overflow-wrap: anywhere; }
+.discover-biz-card .ask { margin-top: var(--space-1); font-size: var(--fs-sm); color: var(--fg); }
+.discover-biz-scope { margin: 0; }
 
 /* 专业 Bot 的页面（screens/bot-app.js）：有实例时主区就是对话页（.chat），这里只管还没有实例时的那一页（.botapp）和右侧面板里的工作台（.work-app）。
    还没有实例：顶栏 + Bot 的开场白和示例（可滚动）+ 底部输入区。输入区和对话页是同一列：--col、--dock-pb 和 chat.css 的 .chat 同一个算法，

@@ -35,7 +35,11 @@ RUN node scripts/prepare-dsh.mjs && npm cache clean --force
 
 # ---- 运行时 ----
 FROM node:22-bookworm-slim
-# bubblewrap：DSH 的 bash 沙箱（容器内若禁止 user namespace，DSH 自动回退到 Landlock）
+# bubblewrap：DSH 的 bash 沙箱。按默认参数 docker run 时它建不了命名空间
+# （0.1.43 镜像实测：bwrap: No permissions to create new namespace），这时命令改用 Landlock，
+# 由下面的 AMB_ALLOW_LANDLOCK=1 明确放行；不放行的话命令会被拒绝（src/agent/host.ts 的 sandboxPatchLines）。
+# Landlock 只限制写文件：数据目录对命令可读，回环管理接口的来源检查也拦不住它，这时容器本身才是边界。
+# 容器能创建命名空间时 bwrap 可用，会优先用它；-e AMB_ALLOW_LANDLOCK=0 则在 bwrap 用不了时拒绝执行命令。
 RUN apt-get update && apt-get install -y --no-install-recommends bubblewrap python3 git ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
@@ -43,6 +47,7 @@ ENV NODE_ENV=production \
     AMB_DATA_DIR=/data \
     AMB_UI_HOST=0.0.0.0 \
     AMB_UI_PORT=3600 \
+    AMB_ALLOW_LANDLOCK=1 \
     AMB_MAGPIE_BIN=/app/bin/magpie
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force

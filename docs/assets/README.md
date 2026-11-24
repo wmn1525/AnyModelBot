@@ -16,6 +16,7 @@
 | 3 | `brand/wordmark-light.svg` | SVG（文字转曲线） | viewBox 520×96 | — | — | 12 KB | 脚本 |
 | 4 | `brand/wordmark-dark.svg` | SVG（文字转曲线） | viewBox 520×96 | — | — | 12 KB | 脚本 |
 | 5 | `brand/social-preview.png` | PNG | 1280×640 | — | — | 400 KB | 脚本 |
+| 5b | `brand/github-social-preview-{zh,en}.jpg` | JPG | 1280×640（2:1） | — | — | 1 MB | GitHub 链接分享封面（Social preview）：官网 Hero 的真实画面裁切，中文、英文各一版（205,199 / 218,208 字节），实底背景。画面里的星标、优惠等数字是截图当时的快照。一个仓库只有一个封面图位，不按访客语言切换；这里只交付素材，要用哪一版由维护者在仓库 Settings → Social preview 里手动上传 |
 | 6 | `hero/hero-demo.gif` | GIF | 960×656 | 20 s | 12 | 5 MB | 录制脚本 G1（`_src/record`） |
 | 7 | `modelflare/modelflare-logo.png` | PNG | 512×512 | — | — | 40 KB | 历史第三方品牌图标，当前 README 不使用 |
 | 7b | `modelflare/modelflare-banner-{zh,en}.webp` | 静态 WebP（质量 88） | 2080×540（显示为整行宽） | — | — | 150 KB | 历史第三方推广横幅，当前 README 不使用；其中活动规则不适用于 okinto 中转 |

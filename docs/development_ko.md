@@ -1,13 +1,14 @@
 # 개발 안내
 
+> 0.1.48 · 업스트림 0.1.41–0.1.47 반영: 터키어, 피드백, 첨부, ZIP, 작업 폴더와 이미지 생성 참고. Okinto 계정과 그룹 라우팅 유지.
 
-> 0.1.40 · 업스트림 0.1.37–0.1.40의 내 정보, 봇 협업, 작업 라이브러리, 파일 미리 보기 및 수정을 포함합니다. Okinto 로그인, 모델 그룹, 잔액과 7개 언어 브랜드 검사를 유지합니다.
+
 > 앱 연결과 사용자 지정 MCP, 사이드바 그룹, 오른쪽 탭, 스페인어 및 포르투갈어(브라질)를 지원합니다. Okinto 로그인, 잔액, 모델 그룹과 이미지 생성을 유지합니다.
 > 새 업데이트 안내와 정보 페이지의 변경 기록을 추가했습니다. 버전 확인, 다운로드 및 업데이트 설명은 이 저장소를 사용합니다.
 
 [简体中文](./development.md) | [English](./development_en.md) | [日本語](./development_ja.md) | 한국어 | [Русский](./development_ru.md) | [Español](./development_es.md) | [Português (Brasil)](./development_pt.md)
 
-소스에서 AnyModelBot을 실행하거나 패키징하고 기여하려는 분을 위한 안내입니다. 앱을 사용하기만 하려면 [릴리스](https://github.com/modelflare-ai/AnyModelBot/releases)에서 설치 파일을 받으세요. [README](../README_ko.md#-다운로드-및-실행)를 참고하세요.
+소스에서 AnyModelBot을 실행하거나 패키징하고 기여하려는 분을 위한 안내입니다. 앱을 사용하기만 하려면 [릴리스](https://github.com/wmn1525/AnyModelBot/releases)에서 설치 파일을 받으세요. [README](../README_ko.md#-다운로드-및-실행)를 참고하세요.
 
 - 봇은 역할, 기본 모델, 기억으로 구성됩니다. 계정은 전역 설정(설정 › 채팅 채널)으로 관리하며 모든 봇이 공유합니다. 서비스별 계정 수는 자유롭게 추가할 수 있습니다. 한 사람이 개인적으로 사용하는 환경을 대상으로 합니다.
 - 모델은 Okinto 계정 또는 내 공식 API 키로 사용합니다. [Okinto](https://api.okinto.com/?utm_source=anymodelbot&utm_campaign=amb_readme)에서 제공합니다. 처음 실행할 때 로그인하거나 가입하면 모델 목록이 자동으로 나타납니다. 요청은 내장 [magpie](https://github.com/yetone/magpie) 게이트웨이를 거칩니다.
@@ -45,7 +46,7 @@ ui/              콘솔 화면(Preact+htm, 별도 빌드 없음)
   design/        디자인 시스템: tokens/, base/, components/, 봇 캐릭터 bots/
   locales/       화면 문구: zh-CN/, en/ 등 언어별·네임스페이스별 파일
   css/ lib/ components/ screens/ assets/ main.js
-dsh-runtime/     DSH 에이전트 런타임 의존성 및 AnyModelBot 플러그인(plugins/)
+dsh-runtime/     DSH 에이전트 런타임 의존성 및 okbot 플러그인(plugins/)
 scripts/         setup / build-magpie / fetch-cua-driver / prepare-dsh / bundle-dsh / electron-smoke / check-readme 등
 vendor/          Git 서브모듈: magpie(빌드 시 컴파일), deepseek-harness, kimi-computer-use
 site/            웹사이트(Astro 정적 사이트), site/README.md 참조
@@ -65,6 +66,8 @@ npm start            # 게이트웨이+봇+http://127.0.0.1:3600/ 콘솔 시작
 
 기본 데이터 폴더는 `./data`이며 `AMB_DATA_DIR`로 변경할 수 있습니다. 다른 환경 변수는 `.env.example`을 확인하세요.
 
+콘솔은 접근 토큰이 있어야 열립니다. `AMB_UI_TOKEN`을 설정하지 않으면 자동으로 만들어 데이터 폴더의 `ui-token`에 저장하며, 터미널에서 시작하면 토큰이 포함된 주소를 한 번 출력합니다. Linux에서 에이전트가 실행하는 명령은 bubblewrap 샌드박스 안에서만 실행됩니다(Debian/Ubuntu: `apt install bubblewrap`). bubblewrap을 사용할 수 없으면 명령은 다른 샌드박스에서 실행되지 않고 거부됩니다. 쓰기만 제한하는 Landlock밖에 쓸 수 없다면 `AMB_ALLOW_LANDLOCK=1`을 설정하세요.
+
 ## 데스크톱 앱(Electron)
 
 ```bash
@@ -76,7 +79,7 @@ npm run test:dsh-bundle  # 패키징된 build/dsh의 실제 DSH 통합 테스트
 ```
 
 - DSH 에이전트 런타임: `scripts/prepare-dsh.mjs`가 대상 플랫폼에 맞게 `dsh-runtime/`을 설치하고 `scripts/bundle-dsh.mjs`가 `resources/dsh/dsh.asar`(모든 JavaScript를 한 파일로)와 `resources/dsh/node_modules/`(네이티브 패키지만, 약 55개 파일)로 묶습니다. Electron 메인 프로세스와 `ELECTRON_RUN_AS_NODE` 자식 프로세스는 asar를 직접 읽으며 첫 실행 때 압축을 풀지 않습니다. 설치 프로그램이 수백 개의 파일만 풀면 되므로 Windows의 압축 해제와 파일별 백신 검사로 인한 지연을 줄입니다. 개발 중에는 `dsh-runtime/`을 직접 사용합니다.
-- Windows 에이전트 명령용 PowerShell: 샌드박스에서 Windows PowerShell 5.1은 명령당 20~30초, PowerShell 7은 약 1초가 걸립니다. 선택 순서는 시스템의 사용 가능한 PowerShell 7(DSH와 같은 방식으로 백그라운드에서 한 번 시험하며 다운로드하지 않음) → 앱 전용 PowerShell 7 → Windows PowerShell 5.1입니다. 사용 가능한 7이 없고 에이전트 모드가 켜져 있으면 공식 PowerShell 7.6.9(LTS) zip을 백그라운드에서 `%LOCALAPPDATA%\AnyModelBot\pwsh\`로 다운로드합니다. 관리자 권한, 레지스트리 쓰기, PATH 변경이 필요 없으며 기존 PowerShell에도 영향을 주지 않습니다. 버전과 x64/arm64 zip의 SHA256은 `src/tools/pwsh/private.ts`에 고정합니다(`node scripts/pwsh-hashes.mjs <version>`으로 갱신). 다운로드 후 해시, 압축 해제 후 Microsoft Authenticode 서명을 확인하고 DSH 방식의 시험 실행(버전, 임시 파일 읽기·쓰기, 외부 프로그램 실행)을 통과해야 사용합니다. 실패하거나 미완료된 설치는 사용하지 않고 다음 실행 시 정리합니다. 설치 중에는 대화 화면, 설정 → 일반, `/status`에 진행 상황을 표시하며 준비될 때까지 5.1을 사용합니다. 대기 중인 에이전트는 앱 재시작 없이 전환됩니다. 실행 중 시작할 수 없게 되면(삭제·백신 격리·정책 차단) 이전 선택지로 돌아가고 이유를 안내합니다. 설정 → 문제 해결에서 설치·재설치·시스템 기본값 복귀가 가능합니다. Windows 10 1607 / Server 2016보다 오래된 시스템에서는 다운로드하지 않습니다. 데스크톱 앱은 Chromium 네트워크 스택으로 시스템 프록시를 사용하고 명령줄은 Node fetch를 사용합니다(최근 Node에서는 `NODE_USE_ENV_PROXY=1`일 때 `HTTPS_PROXY` 적용). `AMB_PWSH_MIRROR`로 미러 접두사를 지정해도 해시와 서명은 검사하며 `AMB_PWSH_AUTO_INSTALL=0`으로 자동 설치를 끕니다.
+- Windows 에이전트 명령용 PowerShell: 샌드박스에서 Windows PowerShell 5.1은 명령당 20~30초, PowerShell 7은 약 1초가 걸립니다. 선택 순서는 시스템의 사용 가능한 PowerShell 7(DSH와 같은 방식으로 백그라운드에서 한 번 시험하며 다운로드하지 않음) → 앱 전용 PowerShell 7 → Windows PowerShell 5.1입니다. 사용 가능한 7이 없고 에이전트 모드가 켜져 있으면 공식 PowerShell 7.6.9(LTS) zip을 백그라운드에서 `%LOCALAPPDATA%\okbot\pwsh\`로 다운로드합니다. 관리자 권한, 레지스트리 쓰기, PATH 변경이 필요 없으며 기존 PowerShell에도 영향을 주지 않습니다. 버전과 x64/arm64 zip의 SHA256은 `src/tools/pwsh/private.ts`에 고정합니다(`node scripts/pwsh-hashes.mjs <version>`으로 갱신). 다운로드 후 해시, 압축 해제 후 Microsoft Authenticode 서명을 확인하고 DSH 방식의 시험 실행(버전, 임시 파일 읽기·쓰기, 외부 프로그램 실행)을 통과해야 사용합니다. 실패하거나 미완료된 설치는 사용하지 않고 다음 실행 시 정리합니다. 설치 중에는 대화 화면, 설정 → 일반, `/status`에 진행 상황을 표시하며 준비될 때까지 5.1을 사용합니다. 대기 중인 에이전트는 앱 재시작 없이 전환됩니다. 실행 중 시작할 수 없게 되면(삭제·백신 격리·정책 차단) 이전 선택지로 돌아가고 이유를 안내합니다. 설정 → 문제 해결에서 설치·재설치·시스템 기본값 복귀가 가능합니다. Windows 10 1607 / Server 2016보다 오래된 시스템에서는 다운로드하지 않습니다. 데스크톱 앱은 Chromium 네트워크 스택으로 시스템 프록시를 사용하고 명령줄은 Node fetch를 사용합니다(최근 Node에서는 `NODE_USE_ENV_PROXY=1`일 때 `HTTPS_PROXY` 적용). `AMB_PWSH_MIRROR`로 미러 접두사를 지정해도 해시와 서명은 검사하며 `AMB_PWSH_AUTO_INSTALL=0`으로 자동 설치를 끕니다.
 - 에이전트 명령은 네트워크에 접근하며 프록시를 사용합니다(샌드박스는 쓰기만 제한). `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` / `NO_PROXY`와 소문자 형태, 인증서·패키지 인덱스 변수(`SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `NODE_EXTRA_CA_CERTS`, `PIP_INDEX_URL`, `npm_config_registry`, `GOPROXY` 등)를 앱 환경에서 전달합니다. 환경에 프록시가 없으면 데스크톱 앱이 에이전트 시작마다 시스템 설정과 PAC를 조회해 `http://host:port` 형태로 전달합니다(`src/agent/proxy-env.ts`). 루프백(`127.0.0.1`, `localhost`, `::1`)은 항상 `NO_PROXY`에 추가하며 프록시를 거치지 않습니다.
 - 데이터 폴더: `<userData>/data`(macOS `~/Library/Application Support/anymodel bot/data`, Windows `%APPDATA%\anymodel bot\data`, Linux `~/.config/anymodel bot/data`). 로그는 데이터 폴더의 `logs/app.log`에 있습니다.
 - 단일 인스턴스로 실행합니다. 창을 닫으면 기본적으로 트레이에 숨깁니다(설정 → 일반에서 종료하도록 변경 가능). 트레이 메뉴: 열기 / 브라우저에서 열기 / 로그인 시 실행(macOS, Windows) / 데이터 폴더 열기 / 종료.
@@ -84,7 +87,7 @@ npm run test:dsh-bundle  # 패키징된 build/dsh의 실제 DSH 통합 테스트
 - 콘솔은 127.0.0.1에서만 수신 대기하고 시작마다 임의 접근 토큰을 생성하여 다른 로컬 프로그램의 관리 API 직접 호출을 막습니다.
 - 종료 시 채널을 먼저 중지하고 magpie를 종료합니다. 이전 실행이 강제 종료되어 magpie가 남았다면 다음 실행에서 정리합니다(Linux/macOS).
 
-릴리스: `CHANGELOG.md`, `CHANGELOG_en.md`, `CHANGELOG_ja.md`, `CHANGELOG_ko.md`, `CHANGELOG_ru.md`, `CHANGELOG_es.md`, `CHANGELOG_pt.md`에 해당 버전의 변경 사항을 작성합니다(웹사이트나 내부 구현보다 사용자가 느끼는 변경 중심, 영문 사이트는 WeChat·Feishu가 언급된 줄 제외). `package.json`의 `version`을 올리고 커밋한 뒤 `v<version>` 태그를 푸시합니다. 변경 내역이 없으면 릴리스 워크플로가 처음에 실패합니다. 있으면 GitHub Release 노트와 사이트 변경 내역에 반영됩니다. 앱의 ‘업데이트 내용’ 대화상자도 같은 변경 내역을 읽습니다. `CHANGELOG*.md`는 설치 파일과 Docker 이미지에 포함되며(`src/changelog.ts`), 아직 설치하지 않은 새 버전의 내용은 사용자가 열 때 해당 버전 태그에서 읽어 옵니다. `.github/workflows/release.yml`이 6개 OS/아키텍처 러너에서 빌드하고 설치 파일과 `SHA256SUMS`를 GitHub Release에 게시합니다. 서명·공증에 필요한 저장소 비밀 값은 해당 파일 상단 주석을 확인하세요. 같은 태그가 `.github/workflows/docker.yml`도 실행하여 x64+arm64 이미지를 `ghcr.io/modelflare-ai/anymodel-bot`에 `<version>`, `latest` 태그로 게시합니다. 태그로 배포할 때 macOS 설치 파일은 Developer ID 서명과 공증이 필수이며, 패키징 후 .app과 DMG 안의 .app을 `spctl` 등으로 검사해 통과하지 못하면 실패합니다. 정식 빌드는 개발자 도구를 끕니다. 디버그 빌드가 필요하면 `npm run dist:debug`를 쓰거나 Release를 수동 실행할 때 `debug_build`를 선택합니다(파일 이름에 `-debug-`가 붙고, 태그에서는 거부되며, `scripts/check-build-flavor.mjs`가 패키지 결과를 확인합니다).
+릴리스: `CHANGELOG.md`, `CHANGELOG_en.md`, `CHANGELOG_ja.md`, `CHANGELOG_ko.md`, `CHANGELOG_ru.md`, `CHANGELOG_es.md`, `CHANGELOG_pt.md`, `CHANGELOG_tr.md`에 해당 버전의 변경 사항을 작성합니다(웹사이트나 내부 구현보다 사용자가 느끼는 변경 중심, 영문 사이트는 WeChat·Feishu가 언급된 줄 제외). `package.json`의 `version`을 올리고 커밋한 뒤 `v<version>` 태그를 푸시합니다. 변경 내역이 없으면 릴리스 워크플로가 처음에 실패합니다. 있으면 GitHub Release 노트와 사이트 변경 내역에 반영됩니다. 앱의 ‘업데이트 내용’ 대화상자도 같은 변경 내역을 읽습니다. `CHANGELOG*.md`는 설치 파일과 Docker 이미지에 포함되며(`src/changelog.ts`), 아직 설치하지 않은 새 버전의 내용은 사용자가 열 때 해당 버전 태그에서 읽어 옵니다. `.github/workflows/release.yml`이 6개 OS/아키텍처 러너에서 빌드하고 설치 파일과 `SHA256SUMS`를 GitHub Release에 게시합니다. 서명·공증에 필요한 저장소 비밀 값은 해당 파일 상단 주석을 확인하세요. 같은 태그가 `.github/workflows/docker.yml`도 실행하여 x64+arm64 이미지를 `ghcr.io/wmn1525/okbot`에 `<version>`, `latest` 태그로 게시합니다. 태그로 배포할 때 macOS 설치 파일은 Developer ID 서명과 공증이 필수이며, 패키징 후 .app과 DMG 안의 .app을 `spctl` 등으로 검사해 통과하지 못하면 실패합니다. 정식 빌드는 개발자 도구를 끕니다. 디버그 빌드가 필요하면 `npm run dist:debug`를 쓰거나 Release를 수동 실행할 때 `debug_build`를 선택합니다(파일 이름에 `-debug-`가 붙고, 태그에서는 거부되며, `scripts/check-build-flavor.mjs`가 패키지 결과를 확인합니다).
 
 버전을 배포할 때마다 공식 사이트, 관련 문서와 모든 언어의 README를 함께 업데이트합니다. `npm --prefix site run sync`로 사이트 내용을 동기화하고 GitHub Release와 Docker 이미지 게시 후 [사이트 배포 안내](../site/README.md)에 따라 운영 사이트를 갱신합니다. `/download`, `/changelog`, `/bots`의 버전, 다운로드 링크와 설명이 일치하는지 확인하며 운영 사이트까지 반영되어야 배포가 완료됩니다.
 
@@ -92,7 +95,7 @@ npm run test:dsh-bundle  # 패키징된 build/dsh의 실제 DSH 통합 테스트
 
 ## Docker
 
-사용자는 게시된 이미지로 실행합니다: `docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/modelflare-ai/anymodel-bot`. 소스에서 직접 빌드하려면:
+사용자는 게시된 이미지로 실행합니다: `docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/wmn1525/okbot`. 소스에서 직접 빌드하려면:
 
 ```bash
 git submodule update --init --depth 1 vendor/magpie
@@ -101,11 +104,11 @@ docker run -d --name amb -p 3600:3600 -v amb-data:/data anymodel-bot
 docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열기
 ```
 
-컨테이너 내부 콘솔은 0.0.0.0에서 수신 대기하므로 토큰 접근이 필수입니다. 3600 포트를 인터넷에 직접 노출하지 마세요. WeChat QR 로그인은 설정 › 채팅 채널에 있습니다.
+컨테이너 내부 콘솔은 0.0.0.0에서 수신 대기하므로 토큰 접근이 필수입니다. 3600 포트를 인터넷에 직접 노출하지 마세요. WeChat QR 로그인은 설정 › 채팅 채널에 있습니다. 이미지는 기본으로 `AMB_ALLOW_LANDLOCK=1`을 설정합니다. 기본 옵션으로 시작한 컨테이너는 bubblewrap에 필요한 네임스페이스를 만들 수 없어 명령이 Landlock을 사용합니다(명령이 데이터 폴더를 읽을 수 있으므로 컨테이너 자체가 경계가 됩니다). bubblewrap을 사용할 수 없을 때 명령을 거부하려면 `-e AMB_ALLOW_LANDLOCK=0`을 추가하세요.
 
 ## 모델(Okinto)
 
-- 첫 화면의 ‘Okinto 로그인 / 회원가입’을 누르면 시스템 브라우저에서 로그인·가입하고 계속 버튼으로 접근을 허용합니다. 앱으로 돌아오면 이 컴퓨터 전용 API 키를 발급·연결하고 기본 모델을 선택한 뒤 대화를 시작합니다. Docker·원격 배포는 브라우저 콜백을 받을 수 없으므로, 로그인 후 이동하는 열리지 않는 `127.0.0.1` 주소의 링크를 첫 화면에 붙여 넣습니다(`POST /amb/api/account/login/complete`, state와 PKCE 검증은 동일). 이전 버전에서 API 키를 입력하고 로그인하지 않은 경우 업그레이드할 때 키를 기기에서 제거하므로 로그인해야 합니다. 브라우저 콜백 페이지는 먼저 ‘로그인을 완료하는 중’을 보여 주고, 토큰 교환·계정 조회·기기 전용 키 발급·게이트웨이 연결이 모두 성공한 뒤에야 ‘로그인 성공’을 표시합니다(실패하면 이유 표시). 데스크톱 앱은 `anymodelbot://` 링크를 등록하고, 페이지는 열릴 때 한 번 앱을 열어 보며 ‘AnyModelBot 열기’로 다시 시도할 수 있습니다. 앱이 실제로 그 링크를 받았을 때만 ‘돌아갔습니다’를 표시합니다. 직접 API 키를 쓰는 화면에서도 Okinto 계정으로 바로 로그인할 수 있습니다. 처음 연결할 때 전역 기본 모델이 비어 있으면 `src/account/first-model.ts`의 규칙(도구 호출 지원, 1회 선점 금액과 대표 작업 비용이 체험 한도 안, DeepSeek 우선)으로 첫 사용 모델을 한 번 고릅니다. 맞는 모델이 없으면 미리 고르지 않고 사용자가 고릅니다.
+- 첫 화면의 ‘Okinto 로그인 / 회원가입’을 누르면 시스템 브라우저에서 로그인·가입하고 계속 버튼으로 접근을 허용합니다. 앱으로 돌아오면 이 컴퓨터 전용 API 키를 발급·연결하고 기본 모델을 선택한 뒤 대화를 시작합니다. Docker·원격 배포는 브라우저 콜백을 받을 수 없으므로, 로그인 후 이동하는 열리지 않는 `127.0.0.1` 주소의 링크를 첫 화면에 붙여 넣습니다(`POST /amb/api/account/login/complete`, state와 PKCE 검증은 동일). 이전 버전에서 API 키를 입력하고 로그인하지 않은 경우 업그레이드할 때 키를 기기에서 제거하므로 로그인해야 합니다. 브라우저 콜백 페이지는 먼저 ‘로그인을 완료하는 중’을 보여 주고, 토큰 교환·계정 조회·기기 전용 키 발급·게이트웨이 연결이 모두 성공한 뒤에야 ‘로그인 성공’을 표시합니다(실패하면 이유 표시). 데스크톱 앱은 `anymodelbot://` 링크를 등록하고, 페이지는 열릴 때 한 번 앱을 열어 보며 ‘okbot 열기’로 다시 시도할 수 있습니다. 앱이 실제로 그 링크를 받았을 때만 ‘돌아갔습니다’를 표시합니다. 직접 API 키를 쓰는 화면에서도 Okinto 계정으로 바로 로그인할 수 있습니다. 처음 연결할 때 전역 기본 모델이 비어 있으면 `src/account/first-model.ts`의 규칙(도구 호출 지원, 1회 선점 금액과 대표 작업 비용이 체험 한도 안, DeepSeek 우선)으로 첫 사용 모델을 한 번 고릅니다. 맞는 모델이 없으면 미리 고르지 않고 사용자가 고릅니다.
 - 로그인 방식은 RFC 8252의 네이티브 앱에 맞춘 OIDC 인증 코드+PKCE(RFC 7636)입니다. 공개 클라이언트(`client_id`: `anymodel-bot`)로서 클라이언트 비밀 값이 없고 필요하지도 않습니다. 결과는 `127.0.0.1`의 임시 포트로 전달됩니다. Okinto 프로필의 인증된 앱에서 권한을 취소하면 앱이 이를 감지해 로그인 화면으로 돌아옵니다.
 - 갱신 토큰은 데이터 폴더의 `modelflare-account.json`(권한 600)에 저장하며, 내장 게이트웨이의 API 키처럼 파일 권한으로만 보호하고 시스템 키체인은 쓰지 않습니다(0.1.30 이하 데스크톱 앱이 암호화한 파일은 처음 읽을 때 평문으로 다시 씁니다). 화면에는 계정 이름만 전달합니다. 로그아웃하면 컴퓨터의 권한을 취소하고 Okinto가 로그인 시 컴퓨터·봇에 발급한 키를 삭제합니다.
 - 잔액은 설정 → 모델 상단에 Bot 크레딧과 남은 비율과 함께 바로 표시됩니다. 사이드바의 잔액 링과 호버 카드는 없습니다. 충전은 Okinto를 열고, 설정 진입과 앱 복귀 시 잔액을 갱신하며 수동 새로고침도 지원합니다. 설정한 알림 기준 아래가 되면 앱에서 알리고 채팅으로도 보낼 수 있습니다.
@@ -114,6 +117,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 - 추론 강도: 모델 선택 패널 또는 설정 → 모델에서 고릅니다(자동 / 낮음 / 보통 / 높음). 전역 설정 하나이며 다음 턴부터 적용됩니다. 자동이면 매개변수를 보내지 않고 모델 기본값을 씁니다. 지원하는 모델에만 적용됩니다. Responses API의 추론 모델, 모델 프로필에 추론으로 표시된 Chat 및 Claude입니다(Claude 4.6 이상은 adaptive와 `output_config.effort`, 이전 모델은 `budget_tokens`).
 - 이미지·동영상 생성: 에이전트에 `media_models`(모델·기본값·매개변수 범위·참고 가격), `media_docs`(docs.api.okinto.com에서 요청 형식 실시간 조회), `generate_image`, `generate_video`와 내장 미디어 스킬을 제공합니다. 모델마다 형식이 달라 문서를 보고 요청 본문을 작성합니다. 작업 공간의 참고 이미지는 `workspace:path`로 지정합니다. 키는 앱을 벗어나지 않습니다. 앱이 봇 키로 Okinto를 호출하고 작업 공간 `media/`에 결과를 저장해 대화로 전달합니다.
 - 생성 전 확인: 기본적으로 즉시 생성합니다. 기본 모델이 아니거나 요청이 모호하다는 이유만으로 묻지 않고 합리적으로 해석한 뒤 결과에서 사용한 내용을 한 줄로 설명합니다. 예상 비용이 $0.5를 넘을 때만 프롬프트·매개변수·참고 가격·확인 이유와 함께 모델을 묻습니다(이미지 수, 동영상 길이·해상도 등으로 계산하며 비용을 추정할 수 없는 동영상도 포함). 승인·모델 변경·취소가 가능하며 WeChat에서는 번호나 모델 이름으로, Feishu/웹에서는 클릭으로 답합니다. 10분 내 답이 없으면 생성하지 않습니다. 항상 확인하려면 봇 설정 → 이미지와 동영상 → 생성 전에 확인 → 항상 확인을 선택하세요.
+- 이미지 생성 참고(계정 로그인 시. `src/tools/media/capabilities.ts`, `src/imagegen/`, `ui/components/composer.js`): 웹 1:1 대화에 이미지가 있으면 첨부 개수 옆에 「이미지 생성 참고로 사용」 스위치(기본 꺼짐)가 나타납니다. 켜면 메시지의 모든 이미지가 표시 순서대로 참고 이미지가 되고, 오른쪽 아래에서 고른 정확한 모델로 호스트가 직접 요청을 만듭니다(`images_json` → `/v1/images/edits` JSON, `images_multipart` → multipart, `gemini_native` → `generateContent` 콘텐츠 블록). 먼저 대화 모델을 호출하지 않습니다. 이미지 생성 전용 모델을 고른 경우 글만으로 바로 이미지를 생성합니다. 기능 정보는 `GET /api/connected-app/model-capabilities?line=<line>`만 씁니다(`schema_version: 1`, 모델별 `authorized`, `available`, `capabilities.{chat,vision,image_generation,reference_images}`, `image_generation.endpoint`, `reference_images.{encoding,max_images,formats,max_image_bytes,max_request_bytes,dimensions}`; 세 가지 상태는 `supported` / `unsupported` / `unknown`, 제한은 숫자나 `"none"`, `expires_in`은 초). 정보가 없거나 알 수 없거나 만료됐거나 읽지 못하면 보내지 않으며 모델 이름으로 추측하지 않습니다. 조건이 맞지 않으면 입력창 바깥 위쪽의 확인 막대가 가장 우선인 이유 하나만 보여 주고, 「모델을 바꿔 주세요」는 원래 선택기만 엽니다. 보낼 때 계정, 정확한 모델과 회선, 순서가 있는 내용 버전, 기능 정보 수정 번호를 고정하고 제출 전에 다시 확인합니다. 요청 전에 `media/.jobs/ref-<메시지 ID>.json`을 쓰며 결과를 알 수 없으면 자동으로 다시 시도하지 않습니다. 로그인 중에는 에이전트의 `generate_image`도 선택한 모델만 쓰고, 직접 입력한 키의 동작은 그대로입니다.
 - 웹 검색: `web_search`는 DeepSeek 키가 필요한 자체 검색을 쓰지 않고 `amb-web-search` 플러그인을 통해 앱에 위임합니다. 기본 검색은 무료이며 Exa 공개 MCP, Bing, DuckDuckGo를 순서대로 시도하되 최근 성공한 것을 우선합니다. 실패한 제공업체(요청 제한, 봇 검사, 무관한 Bing 결과)는 10분간 건너뜁니다. 설정 → 네트워크 및 접근 → 웹 검색에서 Tavily, Exa, Bocha, Zhipu(키 필요), 자체 SearXNG를 지정하면 우선 사용하고 실패 시 무료 검색으로 대체합니다. 키는 채널 토큰처럼 로컬 DB에 저장하며 에이전트에 전달하지 않습니다. 데스크톱은 시스템 프록시, 명령줄은 Node fetch(`NODE_USE_ENV_PROXY=1`이면 `HTTPS_PROXY` 적용)를 사용합니다.
 - 채팅 채널 계정(`src/core/routes.ts`): WeChat, Feishu, Telegram, Slack, Discord도 전역 계정입니다. 설정 › 채팅 채널에서 추가하고 별칭을 지정합니다. 메시지 수신 봇은 사용자가 `/bot`으로 선택한 봇 → 계정 기본 봇 → 첫 번째 봇 순서입니다. `/bot`은 목록, `/bot name`은 전환 후 선택 저장입니다. 각 봇의 시스템 프롬프트에 다른 봇과 전환법을 넣어 관련 질문에 답하게 합니다. 소유자·허용 목록은 계정에 속하므로 허용된 사용자는 모든 봇과 대화할 수 있습니다. 계정 키는 네임스페이스이며 기존 채널은 이전 봇 ID를 유지해 로그인·한도·허용 목록·대기열과 기본 봇이 그대로 남습니다. 봇 삭제는 계정에 영향을 주지 않습니다.
 - 앱 연결(`src/tools/apps/service.ts`): 전역 목록 하나(아바타 메뉴 › 앱과 스킬)입니다. 기본적으로 모든 봇이 연결된 앱을 사용할 수 있고, 봇별·도구별로 좁힐 수 있습니다(봇 설정 › 앱). 앱은 앱 페이지에서 카드 하나로 표시되며 여러 계정을 가질 수 있습니다. 어떤 봇에게든 ‘첫 번째 Feishu와 두 번째 Feishu 확인해 줘’라고 할 수 있고, 계정은 도구의 `account` 인수(번호 또는 이름)로 고릅니다.
@@ -191,8 +195,9 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> 열�
 
 - **작업 공간 쓰기**(기본): 샌드박스에서 명령을 실행하고 해당 봇의 작업 공간만 변경합니다. 외부 작업은 대화에서 먼저 확인합니다.
 - **읽기 전용:** 파일을 바꾸지 않으며 명령도 읽기 전용 샌드박스에서 실행합니다.
-- **전체 접근:** 위험을 이해하고 잦은 승인이 불편한 사용자를 위한 설정입니다. **샌드박스 없이** 내 사용자 권한으로 실행하고 외부 작업도 묻지 않습니다. DB·채널 토큰·키 등 AnyModelBot 데이터 폴더를 포함한 모든 파일을 읽고 바꿀 수 있습니다. **재귀 삭제**만 기존 승인 흐름(WeChat 번호 응답, Feishu·웹 카드)으로 확인합니다. 대상은 `rm -r`/`-rf`/`--recursive`(`sudo`, `xargs`, `sh -c` 내부 포함), `find -delete`, `git clean`, `rsync --delete`, PowerShell `Remove-Item`/`rm`/`del`/`rd`/`rmdir`의 `-Recurse` 및 축약, cmd `rd /s`, `del /s`, `robocopy /MIR`, Python `shutil.rmtree`, Node `fs.rm(…, { recursive })` 등이며 명령이 참조하는 스크립트 파일도 검사합니다. 선택 전 확인하며 버튼·설정에 빨간색으로 표시합니다.
+- **전체 접근:** 위험을 이해하고 잦은 승인이 불편한 사용자를 위한 설정입니다. **샌드박스 없이** 내 사용자 권한으로 실행하고 외부 작업도 묻지 않습니다. DB·채널 토큰·키 등 okbot 데이터 폴더를 포함한 모든 파일을 읽고 바꿀 수 있습니다. **재귀 삭제**만 기존 승인 흐름(WeChat 번호 응답, Feishu·웹 카드)으로 확인합니다. 대상은 `rm -r`/`-rf`/`--recursive`(`sudo`, `xargs`, `sh -c` 내부 포함), `find -delete`, `git clean`, `rsync --delete`, PowerShell `Remove-Item`/`rm`/`del`/`rd`/`rmdir`의 `-Recurse` 및 축약, cmd `rd /s`, `del /s`, `robocopy /MIR`, Python `shutil.rmtree`, Node `fs.rm(…, { recursive })` 등이며 명령이 참조하는 스크립트 파일도 검사합니다. 선택 전 확인하며 버튼·설정에 빨간색으로 표시합니다.
   - 이는 실수 삭제 방지 장치이며 보안 경계가 아닙니다. 명령 텍스트를 검사하므로 실행 중 조합한 명령(`eval "$(…)"`, `curl … | sh`)이나 `make clean`, `npm run clean` 같은 빌드 스크립트의 내부 동작은 알 수 없습니다. 불확실하면 확인합니다. 현재 모델과 작업을 신뢰할 때만 켜세요.
+- **작업 폴더**(데스크톱 앱, 입력창 위): 각 메시지는 보낼 때 고른 폴더에 묶입니다. 그 턴에서는 이 폴더가 에이전트의 작업 디렉터리이자 유일하게 쓸 수 있는 곳입니다(`amb-workfolder` 플러그인이 샌드박스 정책의 작업 공간 루트를 바꾸며, 파일 도구와 Linux bubblewrap, macOS Seatbelt, Windows ACL 명령 샌드박스가 모두 이를 따릅니다). 그 턴 동안 기본 작업 공간은 읽기 전용입니다. 폴더를 고르지 않으면 기본 작업 공간을 씁니다. 데이터 폴더와 그 상위 폴더, 디스크 루트, 홈 폴더 자체는 고를 수 없습니다. ZIP 첨부는 호스트가 `zip_list` / `zip_extract`로만 목록을 보고 안전하게 풉니다(`src/attachments/unzip.ts`: Stored / Deflate만 지원하며 암호화, 분할, 경로 이탈, 링크, 한도 초과는 거부). 기본으로 작업 공간의 `extracted/`에 풀고, 첨부가 만료되면 함께 지웁니다. Windows에서는 쓰기 가능한 루트로 쓴 폴더마다 DSH 명령 샌드박스가 상시 쓰기 ACE를 추가합니다.
 
 ## 봇을 사용할 수 있는 사람
 

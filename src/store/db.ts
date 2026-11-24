@@ -8,6 +8,7 @@ import type { Schedule } from "../domain/schedule.js";
 import { usedSummary, type ActivityStep, type UsedItem } from "../domain/activity.js";
 import { ChatSearch } from "./chat-search.js";
 import { CollabStore } from "./collab.js";
+import type { MessageAttachment } from "../domain/attachments.js";
 
 /**
  * SQLite 存储（node:sqlite，无原生模块，Electron 下也无需 rebuild）。
@@ -110,6 +111,15 @@ export interface Message {
   ruleSource?: { ruleId: string; title: string; dueAt: number; late: boolean; timeZone: string };
   permissionWait?: boolean;
   errorContext?: { model: string; groupId: string; input: string };
+  /** 用户随这条消息发的附件（图片、文本文件）的引用；内容在受管副本里（attachments/service.ts） */
+  attachments?: MessageAttachment[];
+  /** 这条用户消息是一次生图（imagegen/）：当时实际用的精确型号和用途（reference 参考图 / text 纯文字），之后换选择器不改写 */
+  generation?: MessageGeneration;
+}
+
+export interface MessageGeneration {
+  model: string;
+  mode: "reference" | "text";
 }
 
 /** 一条助手消息除了正文之外的东西：回合中间说的话、交付的文件 */
@@ -119,6 +129,8 @@ export interface MessageExtra {
   ruleSource?: Message["ruleSource"];
   permissionWait?: boolean;
   errorContext?: Message["errorContext"];
+  attachments?: MessageAttachment[];
+  generation?: MessageGeneration;
 }
 
 export interface WeixinAccount {
@@ -340,6 +352,8 @@ export interface TaskRow {
   handoffId: string;
   /** 每次运行最长多久；0 = 任务的默认上限（4 小时） */
   capMs: number;
+  /** 继承的工作文件夹（真实路径）；空 = 在工作区里的任务文件夹做。清理任务文件夹时从不碰它 */
+  root: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -637,6 +651,10 @@ CREATE INDEX IF NOT EXISTS run_inputs_run ON run_inputs(run_id, taken_at);
 CREATE TABLE IF NOT EXISTS bot_groups (
   id TEXT PRIMARY KEY, name TEXT NOT NULL, members TEXT NOT NULL DEFAULT '[]', last_bot TEXT NOT NULL DEFAULT '',
   created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+-- 右侧预览里打开过的文件（按会话；real 是真实路径，同一个文件只留一行；path 是最近一次打开时的写法，标签按它认）
+CREATE TABLE IF NOT EXISTS preview_opens (
+  conversation_id TEXT NOT NULL, real TEXT NOT NULL, path TEXT NOT NULL, at INTEGER NOT NULL,
+  PRIMARY KEY (conversation_id, real));
 `;
 
 /** 旧库补列（CREATE TABLE IF NOT EXISTS 不会改已有表）。 */
@@ -688,11 +706,17 @@ const COLUMNS: Array<[string, string, string]> = [
   ["messages", "rule_source", "TEXT NOT NULL DEFAULT ''"],
   ["messages", "permission_wait", "INTEGER NOT NULL DEFAULT 0"],
   ["messages", "error_context", "TEXT NOT NULL DEFAULT ''"],
+  // 用户消息带的附件引用（JSON 数组，见 attachments/service.ts）
+  ["messages", "attachments", "TEXT NOT NULL DEFAULT ''"],
+  // 生图消息（imagegen/）：实际型号和用途（JSON）；空 = 普通消息
+  ["messages", "generation", "TEXT NOT NULL DEFAULT ''"],
   // 保留与清理（3f）：任务文件夹定在什么时候清理
   ["tasks", "cleanup_at", "INTEGER NOT NULL DEFAULT 0"],
   // 机器人之间发消息（collab/）：别的机器人发来的这件事（handoffs.id）；这件事每次运行最长多久（0 = 任务的默认上限）
   ["tasks", "handoff_id", "TEXT NOT NULL DEFAULT ''"],
   ["tasks", "cap_ms", "INTEGER NOT NULL DEFAULT 0"],
+  // 工作文件夹（PRD R2「派生工作」）：从绑定了工作文件夹的聊天里开始的任务，在那个文件夹里做；空 = 任务文件夹
+  ["tasks", "root", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 export class Store {
@@ -844,6 +868,7 @@ export class Store {
     const convs = this.db.prepare("SELECT id FROM conversations WHERE bot_id = ?").all(id) as Row[];
     for (const c of convs) this.db.prepare("DELETE FROM messages WHERE conversation_id = ?").run(String(c.id));
     this.db.prepare("DELETE FROM agent_segments WHERE conversation_id IN (SELECT id FROM conversations WHERE bot_id = ?)").run(id);
+    this.db.prepare("DELETE FROM preview_opens WHERE conversation_id IN (SELECT id FROM conversations WHERE bot_id = ?)").run(id);
     this.db.prepare("DELETE FROM conversations WHERE bot_id = ?").run(id);
     for (const g of this.listGroups()) if (g.members.includes(id)) this.updateGroup(g.id, { members: g.members.filter((m) => m !== id) });
     // 渠道账号（登录态、名单）是全局的，不跟着机器人删；这个机器人原来的账号改由别的机器人回复（core/routes.ts）
@@ -988,6 +1013,7 @@ export class Store {
       this.db.prepare("DELETE FROM messages WHERE conversation_id = ?").run(c.id);
       this.db.prepare("DELETE FROM agent_segments WHERE conversation_id = ?").run(c.id);
       this.db.prepare("DELETE FROM agent_sessions WHERE conversation_id = ?").run(c.id);
+      this.db.prepare("DELETE FROM preview_opens WHERE conversation_id = ?").run(c.id);
       this.db.prepare("DELETE FROM conversations WHERE id = ?").run(c.id);
       this.db.prepare("DELETE FROM kv WHERE key = ?").run(`group-seen:${id}:${c.botId}`);
     }
@@ -1004,7 +1030,7 @@ export class Store {
     const replies = convs.length ? ` OR (conversation_id IN (${convs.map(() => "?").join(", ")}) AND role = 'assistant')` : "";
     const rows = this.db
       .prepare(
-        `SELECT * FROM (SELECT id, conversation_id, role, content, created_at, interim, files, rule_source, permission_wait, error_context, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps, ${USES_SQL} FROM messages WHERE id > ? AND (conversation_id = ?${replies}) ORDER BY id DESC LIMIT ?) ORDER BY id`,
+        `SELECT * FROM (SELECT id, conversation_id, role, content, created_at, interim, files, rule_source, permission_wait, error_context, attachments, generation, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps, ${USES_SQL} FROM messages WHERE id > ? AND (conversation_id = ?${replies}) ORDER BY id DESC LIMIT ?) ORDER BY id`,
       )
       .all(afterId, groupPeer(groupId), ...convs.map((c) => c.id), limit) as Row[];
     return rows.map((r) => ({ ...this.toMessage(r), botId: botOf.get(String(r.conversation_id)) ?? "" }));
@@ -1027,8 +1053,8 @@ export class Store {
     const now = Date.now();
     const json = (a: unknown[] | undefined) => (a?.length ? JSON.stringify(a) : "");
     const res = this.db
-      .prepare("INSERT INTO messages(conversation_id, role, content, created_at, activity, interim, files, rule_source, permission_wait, error_context) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .run(conversationId, role, content, now, json(activity), json(extra.interim), json(extra.files), extra.ruleSource ? JSON.stringify(extra.ruleSource) : "", extra.permissionWait ? 1 : 0, extra.errorContext ? JSON.stringify(extra.errorContext) : "");
+      .prepare("INSERT INTO messages(conversation_id, role, content, created_at, activity, interim, files, rule_source, permission_wait, error_context, attachments, generation) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(conversationId, role, content, now, json(activity), json(extra.interim), json(extra.files), extra.ruleSource ? JSON.stringify(extra.ruleSource) : "", extra.permissionWait ? 1 : 0, extra.errorContext ? JSON.stringify(extra.errorContext) : "", json(extra.attachments), extra.generation ? JSON.stringify(extra.generation) : "");
     this.db.prepare("UPDATE conversations SET updated_at = ? WHERE id = ?").run(now, conversationId);
     return Number(res.lastInsertRowid);
   }
@@ -1052,7 +1078,7 @@ export class Store {
   listMessages(conversationId: string, limit = 500): Message[] {
     const rows = this.db
       .prepare(
-        `SELECT * FROM (SELECT id, conversation_id, role, content, created_at, interim, files, rule_source, permission_wait, error_context, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps, ${USES_SQL} FROM messages WHERE conversation_id = ? ORDER BY id DESC LIMIT ?) ORDER BY id ASC`,
+        `SELECT * FROM (SELECT id, conversation_id, role, content, created_at, interim, files, rule_source, permission_wait, error_context, attachments, generation, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps, ${USES_SQL} FROM messages WHERE conversation_id = ? ORDER BY id DESC LIMIT ?) ORDER BY id ASC`,
       )
       .all(conversationId, limit) as Row[];
     return rows.map((r) => this.toMessage(r));
@@ -1073,6 +1099,8 @@ export class Store {
       ...(r.rule_source ? { ruleSource: parseJson<Message["ruleSource"]>(r.rule_source) } : {}),
       ...(Number(r.permission_wait) ? { permissionWait: true } : {}),
       ...(r.error_context ? { errorContext: parseJson<Message["errorContext"]>(r.error_context) } : {}),
+      ...(r.attachments ? { attachments: parseJson<MessageAttachment[]>(r.attachments) ?? [] } : {}),
+      ...(r.generation ? { generation: parseJson<MessageGeneration>(r.generation) } : {}),
     };
   }
   /** 全部历史中的新手事实；不依赖界面曾加载过哪一页，也不把错误或命令回复算成对话。 */
@@ -1118,20 +1146,44 @@ export class Store {
   }
   clearMessages(conversationId: string): void {
     this.db.prepare("DELETE FROM messages WHERE conversation_id = ?").run(conversationId);
+    this.db.prepare("DELETE FROM preview_opens WHERE conversation_id = ?").run(conversationId);
+  }
+
+  /** 右侧预览打开了这个会话里的一个文件：记下（同一个文件只留一行，更新时间和写法）；每个会话最多留 200 个 */
+  notePreviewOpen(conversationId: string, real: string, input: string, at = Date.now()): void {
+    this.db
+      .prepare("INSERT INTO preview_opens (conversation_id, real, path, at) VALUES (?, ?, ?, ?) ON CONFLICT(conversation_id, real) DO UPDATE SET path = excluded.path, at = excluded.at")
+      .run(conversationId, real, input, at);
+    this.db
+      .prepare("DELETE FROM preview_opens WHERE conversation_id = ? AND real NOT IN (SELECT real FROM preview_opens WHERE conversation_id = ? ORDER BY at DESC LIMIT 200)")
+      .run(conversationId, conversationId);
+  }
+  /** 这些会话里在右侧预览打开过的文件，最近打开的在前（按真实路径去重）：预览的空状态和「+」菜单 */
+  previewOpens(conversationIds: string[]): Array<{ conversationId: string; path: string; real: string; at: number }> {
+    const out = new Map<string, { conversationId: string; path: string; real: string; at: number }>();
+    const q = this.db.prepare("SELECT conversation_id, real, path, at FROM preview_opens WHERE conversation_id = ? ORDER BY at DESC LIMIT 200");
+    for (const conversationId of conversationIds) {
+      for (const r of q.all(conversationId) as Row[]) {
+        const row = { conversationId, path: String(r.path), real: String(r.real), at: Number(r.at) || 0 };
+        const had = out.get(row.real);
+        if (!had || had.at < row.at) out.set(row.real, row);
+      }
+    }
+    return [...out.values()].sort((a, b) => b.at - a.at);
   }
 
   /**
    * 滑动窗口上下文：从最新往回取，直到条数或字符数超限；保证以 user 消息开头。
    */
-  contextWindow(conversationId: string, maxMessages: number, maxChars: number): Array<Pick<Message, "role" | "content">> {
+  contextWindow(conversationId: string, maxMessages: number, maxChars: number): Array<Pick<Message, "role" | "content" | "attachments">> {
     const recent = this.listMessages(conversationId, maxMessages);
-    const picked: Array<Pick<Message, "role" | "content">> = [];
+    const picked: Array<Pick<Message, "role" | "content" | "attachments">> = [];
     let chars = 0;
     for (let i = recent.length - 1; i >= 0; i--) {
       const m = recent[i];
       if (picked.length > 0 && chars + m.content.length > maxChars) break;
       chars += m.content.length;
-      picked.unshift({ role: m.role, content: m.content });
+      picked.unshift({ role: m.role, content: m.content, ...(m.attachments?.length ? { attachments: m.attachments } : {}) });
     }
     while (picked.length > 1 && picked[0].role !== "user") picked.shift();
     return picked;
@@ -1599,17 +1651,18 @@ export class Store {
       cleanupAt: Number(r.cleanup_at ?? 0),
       handoffId: String(r.handoff_id ?? ""),
       capMs: Number(r.cap_ms ?? 0),
+      root: String(r.root ?? ""),
       createdAt: Number(r.created_at),
       updatedAt: Number(r.updated_at),
     };
   }
-  insertTask(t: Omit<TaskRow, "spentUsd" | "report" | "endedAt" | "endReason" | "stoppedBy" | "anytime" | "cleanupAt" | "handoffId" | "capMs"> & { anytime?: boolean; handoffId?: string; capMs?: number }): TaskRow {
+  insertTask(t: Omit<TaskRow, "spentUsd" | "report" | "endedAt" | "endReason" | "stoppedBy" | "anytime" | "cleanupAt" | "handoffId" | "capMs" | "root"> & { anytime?: boolean; handoffId?: string; capMs?: number; root?: string }): TaskRow {
     this.db
       .prepare(
-        `INSERT INTO tasks(id, bot_id, conversation_id, origin_message_id, origin_ref, title, brief, session_id, folder, model, permission, budget_usd, anytime, handoff_id, cap_ms, created_at, updated_at)
-         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO tasks(id, bot_id, conversation_id, origin_message_id, origin_ref, title, brief, session_id, folder, model, permission, budget_usd, anytime, handoff_id, cap_ms, root, created_at, updated_at)
+         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(t.id, t.botId, t.conversationId, t.originMessageId, t.originRef, t.title, t.brief, t.sessionId, t.folder, t.model, t.permission, t.budgetUsd, t.anytime ? 1 : 0, t.handoffId ?? "", t.capMs ?? 0, t.createdAt, t.updatedAt);
+      .run(t.id, t.botId, t.conversationId, t.originMessageId, t.originRef, t.title, t.brief, t.sessionId, t.folder, t.model, t.permission, t.budgetUsd, t.anytime ? 1 : 0, t.handoffId ?? "", t.capMs ?? 0, t.root ?? "", t.createdAt, t.updatedAt);
     return this.getTask(t.id)!;
   }
   getTask(id: string): TaskRow | undefined {

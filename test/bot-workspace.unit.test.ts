@@ -10,7 +10,7 @@ import { parseBlocks } from "../bots/us-stock-research/ui/md.js";
 import { dragPosition, fitCanvas } from "../bots/printfilm/ui/canvas-layout.js";
 
 const root = path.join(import.meta.dirname, "..");
-const languages = ["zh-CN", "en", "ja", "ko", "ru", "es", "pt"];
+const languages = ["zh-CN", "en", "ja", "ko", "ru", "es", "pt", "tr"];
 
 describe("Bot workspaces", () => {
   it.each(["printfilm", "us-stock-research", "company-research", "ppt-master"])("%s keeps its sandbox and localization contracts", (id) => {
@@ -39,6 +39,12 @@ describe("research charts", () => {
     expect(data.bars[0].cells[0].value).toBeCloseTo(lang === "zh-CN" ? 3658.17 : lang === "pt" ? 365817 : 365.817);
     expect(data.lines[0].cells.at(-1).value).toBeCloseTo(46.91);
     expect(new Set([...data.bars, ...data.lines].map((s: any) => s.color)).size).toBe(3);
+  });
+  it("reads a leading percent sign and Turkish comma decimals", () => {
+    const margin = chartsFrom([{ type: "table", head: ["Year", "Margin"], rows: [["2024", "%41,78"], ["2025", "%46,91"]] }], "tr");
+    expect(margin.lines[0].cells.map((cell: { value: number }) => cell.value)).toEqual([41.78, 46.91]);
+    const revenue = chartsFrom([{ type: "table", head: ["Year", "Revenue"], rows: [["2024", "365,817"], ["2025", "416,161"]] }], "tr");
+    expect(revenue.bars[0].cells[0].value).toBeCloseTo(365.817);
   });
   it("keeps losses visible below zero, including all-negative and zero-only periods", () => {
     for (const values of [[-50, 120, -20], [-50, -20], [0, 0]]) {

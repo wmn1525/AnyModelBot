@@ -1,6 +1,6 @@
 # Cómo contribuir
 
-[简体中文](./CONTRIBUTING.md) | [English](./CONTRIBUTING_en.md) | [日本語](./CONTRIBUTING_ja.md) | [한국어](./CONTRIBUTING_ko.md) | [Русский](./CONTRIBUTING_ru.md) | Español | [Português (Brasil)](./CONTRIBUTING_pt.md)
+[简体中文](./CONTRIBUTING.md) | [English](./CONTRIBUTING_en.md) | [日本語](./CONTRIBUTING_ja.md) | [한국어](./CONTRIBUTING_ko.md) | [Русский](./CONTRIBUTING_ru.md) | Español | [Português (Brasil)](./CONTRIBUTING_pt.md) | [Türkçe](./CONTRIBUTING_tr.md)
 
 Gracias por ayudar a mejorar AnyModelBot. Los reportes de errores, las correcciones, la documentación y las ideas son bienvenidos.
 

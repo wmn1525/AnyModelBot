@@ -372,6 +372,8 @@ button.thread:active { background: var(--side-press); }
    「已结束 3」里，点开才列出来。详情里每次运行是一行折叠的处理过程，不画分隔线、不再铺底 */
 .task-row .dot { flex: none; }
 .task-row > .text { flex: none; }
+/* 别的机器人发来的事：名称后一枚灰色小字「{A} 发来的」 */
+.task-row .task-from { margin-inline-start: var(--space-1-5); font-size: var(--fs-xs); font-weight: var(--fw-regular); color: var(--muted); white-space: nowrap; }
 .task-ended { width: 100%; text-align: left; }
 .task-ended .name { color: var(--muted); font-weight: var(--fw-regular); }
 .task-ended .chev { flex: none; color: var(--muted); transition: transform var(--t-fast); }

@@ -15,13 +15,14 @@ import { fmtSep } from "../lib/format.js";
 import { fill, refreshGuide, refreshGuideSoon } from "../lib/guide.js";
 import { prefs } from "../lib/prefs.js";
 import { t, useLang } from "../lib/i18n.js";
+import { fold } from "../lib/text-fold.js";
 import { notify, plainSnippet } from "../lib/notify.js";
 import { reducedMotion } from "../design/motion.js";
 import { ErrorNotice, MsgActions, PromptCard, WorkLine, addFile, errText, isError, shownText, withInstalls } from "./chat.js";
 import { SkillInstallCard } from "../components/skill-install-card.js";
 import { SkillDraftCard } from "../components/skill-draft-card.js";
 import { ConversationFind, HistoryBar, HistoryPageButton, useMessageHistory } from "../components/chat-search.js";
-import { chatView, saveChatView, useChatDraft } from "../lib/chat-view.js";
+import { chatView, saveChatView, useChatDraft, useFollowBottom } from "../lib/chat-view.js";
 import { AboutMeNotes, aboutMeByItem } from "../components/about-me.js";
 import { replyAfter } from "../lib/collab.js";
 
@@ -135,6 +136,8 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
   const { sendKey } = useStore(prefs);
   const scroller = useRef(null);
   const stick = useRef(savedView.current.atBottom);
+  // 内容自己长高、输入框变高时：在底部的再贴一次底（关于我的提示行、草稿卡不被输入框盖住）
+  useFollowBottom(scroller, stick);
   const history = useMessageHistory({ scope: { group: group.id }, scroller, stick, initialFocus, visible });
   const ta = useRef(null);
   const mounted = useRef(true);
@@ -250,9 +253,9 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
   // —— @ 成员 ——
   const mentionHits = useMemo(() => {
     if (!mention) return [];
-    const q = mention.query.toLowerCase();
+    const q = fold(mention.query);
     const options = [...members.map((b) => ({ id: b.id, name: b.name, bot: b })), { id: EVERYONE, name: t("group.everyone") }];
-    return options.filter((o) => o.name.toLowerCase().includes(q));
+    return options.filter((o) => fold(o.name).includes(q));
   }, [mention, members, lang]);
   const mentionOpen = mentionHits.length > 0;
   const readMention = (el) => {
@@ -418,9 +421,9 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged, in
 
   // 示例按真实成员生成（第 17 项）：名字里像"写作助手"的用起草的例子，否则用第一位成员的通用例子。
   // 只用在群里不重名的成员：填进去的 @名字 要能被服务端的点名解析（core/groups.ts mentionsIn）认成这个人
-  const nameKey = (b) => b.name.trim().toLowerCase();
+  const nameKey = (b) => fold(b.name.trim());
   const unique = members.filter((b) => b.name.trim() && members.filter((x) => nameKey(x) === nameKey(b)).length === 1);
-  const writerWords = t("firstUse.writerWords").split("|").map((w) => w.trim().toLowerCase()).filter(Boolean);
+  const writerWords = t("firstUse.writerWords").split("|").map((w) => fold(w.trim())).filter(Boolean);
   const writer = unique.find((b) => writerWords.some((w) => nameKey(b).includes(w)));
   // 第一条：有写作类成员就用起草的例子，否则是第一位不重名成员的通用例子。两位不重名成员出 2 条，三位及以上最多 3 条：
   // 第二条请下一位提修改建议，第三条请再下一位整理结论——一眼看出可以换人接着干。没有不重名成员时不出示例

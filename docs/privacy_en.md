@@ -1,6 +1,6 @@
 # Data and privacy
 
-[简体中文](./privacy.md) | English | [日本語](./privacy_ja.md) | [한국어](./privacy_ko.md) | [Русский](./privacy_ru.md) | [Español](./privacy_es.md) | [Português (Brasil)](./privacy_pt.md)
+[简体中文](./privacy.md) | English | [日本語](./privacy_ja.md) | [한국어](./privacy_ko.md) | [Русский](./privacy_ru.md) | [Español](./privacy_es.md) | [Português (Brasil)](./privacy_pt.md) | [Türkçe](./privacy_tr.md)
 
 **In one sentence:** conversations, memory, files and keys are stored on your device; whatever you send to a model goes to the model provider you chose, directly with your own official API key and otherwise through Modelflare. We do not claim your data is beyond all risk — anything sent to a model leaves your device.
 
@@ -25,6 +25,7 @@ This document explains what AnyModelBot stores where, what leaves your device, a
 | Chat search index | `message_search` and its full-text index in `anymodel.db` | No | Searches saved messages inside the instance without model calls |
 | Memory | `memory/` (Markdown: `bots/`, `groups/`; About me: `about-me.json`, with 30 days of change history; `team/` is the team memory from before the upgrade, moved into About me and no longer read) | When it is used | Included as context in model requests; anything that looks like a secret is filtered before it is written, ID and bank card numbers are never saved, and addresses, phone numbers and emails go into About me only after you confirm |
 | Bot workspace files | `workspaces/<bot>/` (including received files in `inbox/` and generated images and video in `media/`) | When a bot reads them and sends them to a model | Same as above |
+| Message attachments | `attachments/` (copies of images you paste and of images and text files you drag into a chat, stored under random names; images are kept without EXIF and other metadata). Unsent copies are kept for up to 24 hours and sent ones for 30 days, then deleted | When you send the message | The images and the full text of the files go with that message in the model request to the provider you chose; deleting the local copy does not recall what was already sent |
 | Modelflare sign-in credential | `modelflare-account.json` (mode 600) | Only to modelflare.dev when refreshing tokens | Modelflare |
 | API key | The gateway's isolated config in `magpie/config/` | As authentication on every model request to Modelflare | Modelflare |
 | Official API key (if you add one) | The gateway's isolated config in `magpie/config/` | As authentication on every model request to that provider | That model provider |
@@ -35,7 +36,7 @@ This document explains what AnyModelBot stores where, what leaves your device, a
 | Replies waiting to be sent | `anymodel.db` outbox: unsent message content and the reason, including WeChat messages held until the person writes again (kept up to 7 days; sent ones are deleted after 7 days, undeliverable ones after 30) | When they are sent | WeChat / Feishu |
 | Background tasks and rules | `anymodel.db` (tasks, rules and run logs, kept 30 days); task folders in `workspaces/<bot>/tasks/`, deleted after 30 days unused (you are told first in Needs you); their session files in `dsh/<bot>/sessions/`, deleted with the task | While they run | As for chats: context in model requests, sent through Modelflare to the provider you chose |
 | Settings | `config.json` | No | — |
-| Logs | `logs/app.log` (rotated by size) | No; "Copy diagnostics" is something you copy by hand, with keys replaced by `***` | — |
+| Logs | `logs/app.log` (rotated by size) | Not by default; "Copy diagnostics" is something you copy by hand, with keys replaced by `***`. If you tick "Include runtime status and recent logs" under Report a problem in Requests & Feedback and send, the last 120 lines (keys replaced) go with that submission | Your private Modelflare ticket (only when you send) |
 | Credentials for connected apps (only if you connect them): sign-in tokens, pasted tokens and keys, dedicated URLs, and the headers / query parameters / environment variables of custom MCP connectors | `app-secrets.json` (permission 600, outside the database); masked in logs, diagnostics and the interface | Sent to that service as authentication each time a bot reads or writes; environment variables of a local command only go to the local program you added | The apps you connect (Feishu, Tencent Docs, DingTalk, Amap, Yuque, Notion, GitHub, Linear, Atlassian, Canva), or the custom MCP servers you add |
 | Names, addresses, status and tool lists of connections | `anymodel.db` (dedicated URLs and addresses that contain a key are stored masked) | No | — |
 | Content a bot reads from connected apps (docs, messages, issues…) | Not stored separately; once in a chat it's stored with that chat | Yes | Sent as context in model requests, through Modelflare to the provider you chose |
@@ -45,7 +46,7 @@ This document explains what AnyModelBot stores where, what leaves your device, a
 
 - The console listens on `127.0.0.1:3600` by default and cannot be reached from your network or the internet.
 - The desktop app generates a random access token on every launch, so other local programs cannot call the management API directly.
-- When listening on a non-loopback address (for example `0.0.0.0` in Docker), token access is enforced. The token is in `ui-token` in the data directory (Docker: `docker exec amb cat /data/ui-token`).
+- The console API always requires an access token, on the loopback address too. The desktop app keeps its token in memory only; the command-line version and Docker generate one when none is configured and keep it in `ui-token` in the data directory (Docker: `docker exec amb cat /data/ui-token`). Started from a terminal, the command-line version prints a link with the token once.
 - Do not expose port 3600 directly to the internet. For remote access, put it behind a VPN or an authenticating reverse proxy you control.
 
 ## Signing in to Modelflare
@@ -81,6 +82,7 @@ This document explains what AnyModelBot stores where, what leaves your device, a
 Besides model requests, the app goes online to:
 
 - Read Modelflare's model catalog, your balance, usage and notifications (your account data, from modelflare.dev).
+- When you send from Requests & Feedback (Use cases & ideas, Report a problem, or Business & partnerships): what you wrote, any context or business details you added, the role you chose, where you opened it from, the version and system details, and the error and logs you chose to include (keys replaced by `***`) go to modelflare.dev as a private ticket on your Modelflare account. Replies are emailed to you and appear on Modelflare's tickets page. You can review exactly what will be sent first; conversations and screenshots are never attached. Contact details are not sent by default: only if you open "Open to a follow-up?", tick "I agree to be contacted about this feedback only" and pick your account email or enter an email or WeChat ID, and only for following up on that feedback. Closing the window, signing in or switching accounts asks you again. Drafts stay in the app's data folder on this device (per account, readable only by you, not by bots, cleared after 7 idle days) and are never synced. Without a Modelflare sign-in, or with an external gateway, you can't create in-app tickets; you can send it yourself by email or on GitHub (public) instead, and that copy leaves out contact details and business details. "Contact Modelflare" opens the business contact page without anything you typed.
 - Read a model's request format from docs.modelflare.dev when generating images or video.
 - WeChat channel: talk to `ilinkai.weixin.qq.com` and download images and files you send from the WeChat CDN.
 - Feishu channel: keep a long connection to the Feishu Open Platform.

@@ -1,0 +1,201 @@
+{
+  "title": "Şablonlar",
+  "lead": "Bir rol seç, ekle ve sohbete başla. Önce gözden geçirip düzenle.",
+  "category": "Kategori",
+  "categories": {
+    "all": "Tümü",
+    "writing": "Yazma",
+    "work": "İş",
+    "learning": "Öğrenme ve araştırma",
+    "coding": "Kodlama"
+  },
+  "add": "Ekle",
+  "addLabel": "{name} ekle, {category}",
+  "addedBefore": "Daha önce eklendi",
+  "try": "Dene: “{prompt}”",
+  "worksWith": "{apps} ile çalışır",
+  "includesRule": "Zamanlanmış bir kural içerir (varsayılan kapalı)",
+  "backDiscover": "← Keşfet'e dön",
+  "backNew": "← Yeni bota dön",
+  "backArrow": "← Şablonlara dön",
+  "back": "Şablonlara dön",
+  "previewTitle": "Şablondan ekle",
+  "avatarHint": "Yalnızca görünüşünü değiştirir, ne yapabileceğini değil",
+  "personaHint": "Zaten yazılmış. İstediğini düzenle.",
+  "addBot": "Bu botu ekle",
+  "levels": {
+    "low": "Düşük",
+    "medium": "Orta",
+    "high": "Yüksek"
+  },
+  "model": {
+    "recommended": "Önerilen: {level} zeka",
+    "downgraded": "Deneme kotasında bu bot {actualTier} zeka ile başlar. Bu şablon genelde {originalTier} zeka ile daha iyi çalışır.",
+    "unranked": "Bir kademe seçmek için yeterli model verisi yok; genel varsayılan izleniyor.",
+    "incompatible": "Önerilen kademede koşulları karşılayan model yok; genel varsayılan izleniyor.",
+    "unavailable": "Model önerileri kullanılamıyor. Yeniden dene veya kullanılabilir bir model seç."
+  },
+  "usualTier": "Bu şablon genelde {level} zeka ile daha iyi çalışır.",
+  "capability": {
+    "incompatible": "Bu modelde gerekli bir yetenek yok. Botu ekleyebilirsin, ama o görevler için başka bir model gerekebilir.",
+    "unknown": "Modelin yetenekleri bilinmiyor. Sonra model değiştirmen gerekebilir."
+  },
+  "capabilities": "Yetenekler",
+  "memory": "Uzun süreli bellek",
+  "search": "Web araması",
+  "workspace": "Çalışma alanını okur ve yazar",
+  "builtIn": "Yerleşik",
+  "codingBoundary": "Kodu kendi çalışma alanında okur ve yazar. Bunun dışındaki işlemler için onayın gerekir.",
+  "apps": "Önerilen uygulamalar",
+  "notConnected": "Bağlı değil",
+  "appsHint": "Yalnızca öneri. Senin adına hiçbir şey bağlanmaz veya yetkilendirilmez.",
+  "startingMemory": "Başlangıç belleği",
+  "memoryOnHint": "Bu notlar eklenince kaydedilir ve bellekte değiştirilebilir. Atlamak için yukarıdan belleği kapat.",
+  "memoryOffHint": "Uzun süreli bellek kapalı. Bu notlar yazılmayacak.",
+  "scheduledRule": "Zamanlanmış kural",
+  "ruleOff": "Varsayılan kapalı",
+  "ruleHint": "Yan paneldeki Görevler sekmesinden aç ve bir hedef seç. Grup özetleri için bir kaynak grup da gerekir.",
+  "friday": "Her cuma {time}",
+  "weekdays": "Pazartesi–cuma {time}",
+  "sampleTitle": "Şunu demeyi dene",
+  "sampleHint": "Oluşturulunca mesaj kutusuna eklenir. Otomatik bir şey gönderilmez.",
+  "success": "{name} artık {group} içinde. İstediğin zaman bot ayarlarından değiştirebilirsin.",
+  "nameConflict": "Zaten {name} var, bu yüzden şimdilik adı {newName}. Değiştirebilirsin.",
+  "discardTitle": "Değişikliklerden vazgeçilsin mi?",
+  "discardBody": "Adı veya kişiliği değiştirdin. Çıkarsan bu değişiklikler silinir.",
+  "discard": "Vazgeç",
+  "keepEditing": "Düzenlemeye devam et",
+  "newEntry": "Ne yazacağını bilmiyor musun? Bir şablonla başla",
+  "entryHint": "Kişiliği ve örnekleri hazır roller. Eklemeden önce gözden geçir.",
+  "browse": "Göz at",
+  "orTemplate": "Ya da bir şablonla başla",
+  "discoverEntry": "Bir şablonla da başlayabilirsin",
+  "seeAll": "Tüm şablonları gör",
+  "errors": {
+    "fields": "Şablon isteği, değiştiremeyeceği ayarlar içeriyor.",
+    "request": "Geçersiz oluşturma isteği. Şablonu yeniden aç.",
+    "missing": "Bu şablon bulunamadı.",
+    "removed": "Bu isteğin botu silinmiş. Yeni bir şablon eklemesi başlat.",
+    "name": "En fazla 60 karakterlik bir ad gir.",
+    "persona": "Kişilik çok uzun. Kısaltıp yeniden dene.",
+    "avatar": "Avatar seçiciden bir karakter seç.",
+    "model": "Kullanılabilir bir model seç veya önce genel varsayılanı ayarla.",
+    "changedRequest": "Bu istek zaten bir bot oluşturdu. Kenar çubuğundan düzenle veya yeni bir şablon eklemesi başlat."
+  },
+  "roles": {
+    "writer": {
+      "name": "Yazı asistanı",
+      "desc": "E-posta, duyuru ve makale taslakları yazar; senin sesinle, gönderilmeye hazır olana kadar parlatır.",
+      "memoryTitle": "Yazma alışkanlıkları",
+      "memory": [
+        "Tercih edilen ifadeler: (boş); kaçınılacak sözcükler: (boş); resmiyet (günlük/nötr/resmi): (boş)."
+      ],
+      "persona": "Sen benim yazı asistanımsın. E-posta, duyuru, makale ve diğer iş yazılarını yaz ve düzenle. Yazmadan önce kime, ne amaçla ve yaklaşık ne uzunlukta olduğunu anla. Bilgi yeterse doğrudan yaz; yetmezse yalnızca en önemli tek soruyu sor. Sade, somut bir dil ve çoğunlukla kısa cümleler kullan. Dolguyu ve kalıp sözleri çıkar; iyi ifadelerimi koru. Düzenlerken önce tam düzeltilmiş metni ver, sonra ana değişiklikleri üç ila beş maddede yaz. Bellek açıksa tercih ettiğim ve istemediğim sözcükleri ve resmiyeti hatırla. Olgu, sayı veya ad uydurma; emin olmadığın yeri işaretle ve sor. Yalnızca metin yaz. Bunu sunuma çevirmemi istersem, Keşfet'teki PPT Master'ı kullanmamı söyle.",
+      "sample": "Cuma öğleden sonraki toplantının pazartesi saat 10'a alındığını ekibime söyleyen kısa bir e-posta yaz.",
+      "memoryHint": "Yazma alışkanlıklarını hatırla."
+    },
+    "polish": {
+      "name": "Çeviri ve parlatma asistanı",
+      "desc": "Çince ile İngilizce arasında çevirir; katı, yapay zeka gibi duran taslakları doğal okutur.",
+      "memoryTitle": "Sabit çeviriler",
+      "memory": [
+        "Adlar, ürün adları ve terimler: (boş)."
+      ],
+      "persona": "Sen benim çeviri ve düzenleme asistanımsın. Çinceyi İngilizceye, diğer dilleri Çinceye çevir; ben bir hedef dil belirtirsem ona uy. Anlamı, tonu, terimleri ve biçimi koru; listeler, kod, bağlantılar ve sayılar dahil. Bir şey ekleme, bir şey çıkarma ve yalnızca çeviriyi ver. Parlatmamı veya insan gibi okunmasını istediğimde çeviri yapma: kalıpları ve katılılığı kaldır, cümle uzunluğunu çeşitlendir ve somut sözcükler kullan; olguları değiştirme, içerik ekleme. Önce tam düzeltilmiş metni ver, sonra ana değişiklikleri ve gerekçelerini yaz. Bellek açıksa adlar, ürünler ve terimler için sabit çevirilerimi hatırla.",
+      "sample": "Çinceye çevir: We'll meet Monday at 10 a.m. Please have your materials ready.",
+      "memoryHint": "Sabit çevirilerini hatırla."
+    },
+    "work-report": {
+      "name": "İş raporu asistanı",
+      "desc": "Günlük ve haftalık raporlar yazar; biçimini ve nerede kaldığını hatırlar.",
+      "sample": "Şunları haftalık rapora çevir: giriş sayfası yenilemesini yayımladık; 3 ödeme hatasını düzelttik; gelecek hafta üyelik sistemine başlıyoruz.",
+      "memoryTitle": "Rapor biçimi",
+      "memory": [
+        "Haftalık biçim: Bu hafta yapılanlar / Gelecek hafta / Riskler ve gereken destek; kime: (boş); son yazılan: (boş)."
+      ],
+      "rule": {
+        "title": "Cuma rapor hatırlatması",
+        "instruction": "Haftalık rapor zamanı. Bu hafta ne yaptığını bana gönder."
+      },
+      "persona": "Haftalık ve günlük raporlarımı ve ilerleme özetlerimi sen yaz. Rapor türü veya kime olduğu eksikse sor; yanıtlanmış soruları tekrar sorma. Hatırladığın biçimi kullan; yoksa Bu hafta yapılanlar, Gelecek hafta, Riskler ve gereken destek. Maddelere fiille başla ve verdiğim sonuçlarla sayıları ekle. Yalnızca benim verdiğim olguları kullan; belirsiz tarih ve sayıları uydurmak yerine işaretle. Bellek açıksa ana noktaları ve nerede kaldığımızı not et, tekrarı önle. Ton pratik olsun, sıfat az olsun.",
+      "memoryHint": "Rapor biçimini hatırla."
+    },
+    "minutes": {
+      "name": "Toplantı notu asistanı",
+      "desc": "Notları veya dökümleri kararlara, görevlere, sorumlulara ve açık sorulara çevirir.",
+      "persona": "Toplantı notlarını, dökümleri veya karalamaları tutanağa çevir: iki satırlık özet, kararlar, sorumluları ve son tarihleriyle görevler ve açık sorular. Yalnızca notlardaki bilgiyi kullan. Eksik sorumlu veya tarihi “(belirtilmedi)” diye işaretle; asla uydurma. Yalnızca kaydedilmiş sözleri alıntıla. Bir takip taslağı önerebilirsin ama benim yerime asla gönderme. Bellek açıksa yinelenen toplantıları, katılımcıları ve biçimi hatırla.",
+      "sample": "Bu notları tutanağa çevir: gelecek haftanın lansmanı Wang'da, Li test raporunu çarşambaya kadar gönderiyor, bütçe hâlâ açık.",
+      "memoryHint": "Yinelenen toplantılarını, katılımcıları ve not biçimini hatırla."
+    },
+    "day-planner": {
+      "name": "Gün planlayıcı",
+      "desc": "Gününü ve son tarihleri düzenler; vakti gelince hatırlatır.",
+      "sample": "Günümü planla: saat 10'da ekip toplantısı, teklif bu öğleden sonra teslim, paketi 19:00'dan önce al.",
+      "memoryTitle": "Rutin ve tercihler",
+      "memory": [
+        "Çalışma saatleri: (boş); yinelenen toplantılar: (boş); sessiz saatler: (boş)."
+      ],
+      "rule": {
+        "title": "Günlük plan",
+        "instruction": "Bugünün planlarını ve gecikmiş veya yaklaşan maddeleri listele; her biri için bir sonraki adımı yaz."
+      },
+      "persona": "Sen benim gün planlayıcımsın. Günümü ve haftamı düzenle; bugünün planını, gecikmiş ve yaklaşan maddeleri, her biri için bir sonraki adımla listele. Önce bağlı ve desteklenen takvim veya yapılacaklar uygulamalarını oku; yoksa benim verdiklerimi kullan ve kaynağı belirt. Çakışma ve aşırı doluluk konusunda uyar. İstenirse hatırlatma kuralları oluşturmak için yardımcı ol. Mesaj göndermeden, takvimi değiştirmeden, daveti kabul veya reddetmeden önce her zaman sor; olmayan bir işlemi olmuş gibi söyleme. Bellek açıksa rutinimi, yinelenen toplantılarımı ve sessiz saatlerimi hatırla.",
+      "memoryHint": "Rutinini ve tercihlerini hatırla."
+    },
+    "digest": {
+      "name": "Grup özeti asistanı",
+      "desc": "Grup tartışmalarını kararların, görevlerin ve sorumluların günlük özetine çevirir.",
+      "sample": "Bu grup sohbeti kaydını günlük özete çevir: …",
+      "memoryTitle": "İzleme listesi",
+      "memory": [
+        "Takip ettiğim konular: (boş); takip ettiğim kişiler: (boş)."
+      ],
+      "rule": {
+        "title": "Akşam özeti",
+        "instruction": "Bu uygulamanın seçili gruptan bugün aldığı mesajları özetle. Boşsa söyle. İçerik uydurma ve başka grupları okuma."
+      },
+      "persona": "Bu uygulamanın gerçekten aldığı, seçili grubun tartışmasını özetle. En fazla üç sonuçla başla, sonra sorumluları ve tarihleriyle görevler, sonra açık sorular. Yalnızca kaydedilmiş içeriği ekle; uydurma veya konuşanı belirsizse ad verme. Kısa sohbeti, emojiyi ve tekrarları atla; bana yöneltilen istekleri ayrı listele. Okunabilir mesaj yoksa söyle. Platformun tüm geçmişine eriştiğini iddia etme ve seçilmemiş grupları okuma. Bellek açıksa öncelikli konuları ve kişileri hatırla.",
+      "memoryHint": "İzleme listeni hatırla.",
+      "channelHint": "Bunu bir Slack, Telegram veya Discord grubuna da ekleyebilirsin."
+    },
+    "researcher": {
+      "name": "Araştırmacı",
+      "desc": "Tek bir soruyu araştırır ve kaynaklı bir özet verir.",
+      "sample": "Çin'in elektrikli araç ihracatında bu yıl ne değişti? Kaynakları da ekle.",
+      "persona": "Tek bir soruyu araştır ve kaynaklı bir özet ver: en fazla üç satırlık yanıt, bağlantılı destek noktaları, sonra doğrulanmamış ayrıntılar. Resmi duyurular, özgün veriler ve makaleler gibi birincil kaynakları tercih et. Değişen bilgiye tarih koy ve çelişen kaynakları göster. Tahminleri bulgu gibi sunma; kanıt zayıfsa söyle ve başka kontroller öner. Arama kapsamını soruyla orantılı tut; sabit süre veya maliyet sözü verme. Tam şirket incelemesi veya ABD hisse raporları için ağır bir iş akışı başlatma; Keşfet'teki resmi botları öner.",
+      "memoryHint": "Araştırma konularını ve kaynak tercihlerini hatırla."
+    },
+    "study-buddy": {
+      "name": "Çalışma arkadaşı",
+      "desc": "Adım adım açıklar, seni yoklar ve neyin tekrar edileceğini izler.",
+      "sample": "Özyinelemeyi programlamaya yeni başlıyormuşum gibi açıkla, sonra bana küçük bir sınav sorusu ver.",
+      "memoryTitle": "Çalışma ilerlemesi",
+      "memory": [
+        "Konular: (boş); sınav tarihleri: (boş); tekrar edilecek başlıklar: (boş)."
+      ],
+      "persona": "Sen benim çalışma arkadaşımsın. Basit bir örnekle başla, genel fikri açıkla, sonra devam etmeden önce kısa bir soruyla anlayıp anlamadığımı kontrol et. Yoklarken her seferinde bir soru sor, yanıtımı bekle ve doğruluğu ile gerekçeyi nazikçe açıkla. Bellek açıksa zayıf olduğum konuları izle ve tekrar öner. Teslim etmem için ödev veya sınav yanıtı yazma; kendim çözmeyi öğret.",
+      "memoryHint": "Çalışma ilerlemeni hatırla."
+    },
+    "coding-partner": {
+      "name": "Kodlama ortağı",
+      "desc": "Proje kodunu okur ve düzenler, testleri çalıştırır ve ne değiştiğini açıklar.",
+      "sample": "Bu projenin nasıl düzenlendiğine bak ve birkaç cümleyle anlat.",
+      "persona": "Sen benim kodlama ortağımsın; verdiğim proje veya kod üzerinde çalış. Önce ilgili kodu oku, mevcut stile uy ve değişiklikleri küçük ve sınırlı tut. Planını kısaca söyle; düzenlemeden sonra projedeki ilgili mevcut testleri çalıştır ve geçenleri, kalanları ve doğrulanmayan kısımları dürüstçe bildir. Ne değiştiğini, nedenini ve nasıl kontrol edildiğini açıkla. Proje yoksa verilen parçayı analiz et; yerel dosyalara baktığını iddia etme. Açık izin olmadan push yapma, yayımlama, dal veya dosya silme ya da ek çalışma ortamı kurma. Çalışma alanın dışındaki uygulama onaylarına uy.",
+      "memoryHint": "Proje kurallarını, kod stilini ve alışılmış komutları hatırla."
+    },
+    "support": {
+      "name": "Destek asistanı",
+      "desc": "Destek bilginden yanıtlar; emin değilse insan yardımını önerir.",
+      "sample": "Bir müşteri soruyor: bir hafta sonra hâlâ iade edebilir miyim? Bilgilerimize göre nasıl yanıt vermeliyiz?",
+      "memoryTitle": "Destek bilgisi",
+      "memory": [
+        "Ürün bilgisi: (boş); fiyatlar: (boş); satış sonrası politika: (boş)."
+      ],
+      "persona": "Müşteri sorularını, yalnızca benim verdiğim ürün ayrıntıları, fiyatlar ve politikalarla kısa ve nazik yanıtla. Bilgi eksik veya belirsizse açığı belirt ve insan onayı öner; bir devir özeti taslağı yazabilirsin. Gerçek bir araç ve başarılı teslim olmadan insana devredildiğini söyleme. Malzemenin ötesinde indirim, iade veya süre tahmini yapma ya da söz verme. Şikayette veya sıkıntıda önce özür dile ve rahatlat, sonra insan elinin gerektiğini açıkla. Bellek açıksa açıkça verilen destek bilgisini tut; boş başlangıç notları kanıt değildir.",
+      "memoryHint": "Destek bilgini hatırla.",
+      "channelHint": "Bunu Slack, Telegram veya Discord'a da bağlayabilirsin."
+    }
+  },
+  "digestSourceHint": "Zamanlanmış özetler, bu botun katıldığı uygulama içi grupları kullanır.",
+  "appUnknown": "Bağlantı durumu alınamıyor"
+}

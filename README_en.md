@@ -1,14 +1,12 @@
 <h1 align="center">okinto 中转</h1>
 
-> 0.1.40 · Includes upstream 0.1.37–0.1.40: About me, bot collaboration, the task library, richer file previews and fixes; preserves Okinto sign-in, model groups, balances and seven-language branding checks.
-> App connectors and custom MCP, sidebar groups, right-panel tabs, and Spanish and Portuguese (Brazil); preserves Okinto sign-in, balances, model groups and image generation.
-> Added a What’s new dialog and changelog in About. Version checks, update downloads and release notes all use this repository.
+> 0.1.48 · Syncs upstream 0.1.41–0.1.47: Turkish, in-app feedback, image and file attachments, ZIPs, work folders and image-generation references; keeps Okinto sign-in, model groups and balances.
 
 
 <p align="center"><b>A team of AI bots on your own computer. Any model, pay per use.</b></p>
 
 <p align="center">
-  <a href="https://api.okinto.com">Website</a> |
+  <a href="https://bot.okinto.com/en/">Website</a> |
   <a href="https://github.com/wmn1525/AnyModelBot/releases">Download</a> |
   <a href="./README.md">简体中文</a> |
   English |
@@ -89,7 +87,7 @@ On macOS use `shasum -a 256 <file>`; in Windows PowerShell use `Get-FileHash <fi
 
 ```bash
 git clone https://github.com/wmn1525/AnyModelBot.git
-cd AnyModelBot
+cd okbot
 git submodule update --init --depth 1 vendor/magpie
 docker build -t okbot .
 docker run -d --name amb -p 3600:3600 -v amb-data:/data okbot
@@ -102,10 +100,10 @@ Don't expose port 3600 directly to the internet.
 
 ```bash
 git clone https://github.com/wmn1525/AnyModelBot.git
-cd AnyModelBot
+cd okbot
 npm install
 npm run setup      # fetches and builds the bundled gateway
-npm start          # opens the local console at http://127.0.0.1:3600/
+npm start          # opens the local console at http://127.0.0.1:3600/ (first time: use the link with the token it prints)
 ```
 
 Requirements for building from source: Node.js 22.13+ and Go 1.26.8+. To build the Docker image yourself, see the [development guide](./docs/development_en.md).
@@ -130,6 +128,8 @@ A bot is more than a chat window: it has a persona, a default model, its own wor
 - **Group chats.** Create a group and add a few bots. Whoever you @ answers; with no @, the bot that answered last carries on. Bots can also @ another member to hand off. Each bot keeps its own model, workspace and memory, and costs are tracked per bot.
 - **Bots that message each other.** In the app, tell a bot "hand this to B": B works in the background with its own model, permissions and budget and replies when done, and the first bot checks the result before telling you. B asks for approvals in the same chat under its own name, and you can read their conversation any time. Requires signing in to Okinto, with both bots on Okinto models.
 - **Search chat history.** Search all messages saved on your device from the sidebar, filter by bot, conversation, channel or date, and jump to the original message. `Ctrl/Cmd+Shift+F` opens global search; `Ctrl/Cmd+F` searches the current chat. Searches do not call a model. Before you type, the search dialog lists recent chats by date.
+- **Work folders and ZIP files.** In the desktop app, choose a folder above the message box and the bot reads and edits the files in place (with Workspace access, changes inside that folder need no approval each time); drag a ZIP into a chat and the bot extracts it safely once you say what to do.
+- **Images as generation references.** Signed in to Okinto, add images to a chat and turn on “Use as image-generation references”: the model selected at the bottom right generates a new image from them. You can also pick an image-generation model and generate from a sentence. When something blocks it, a note above the message box says why.
 - **Slash commands** such as `/model` and `/reset` work in the app and in every chat channel. In a chat channel, `/bot` switches to another bot.
 
 ## 🧩 Ready-made bots
@@ -182,7 +182,7 @@ The full story, in Chinese: [okinto 中转 超级智能体](./docs/blog/superage
 
 ## 🔒 Local-first, and easy on the eyes
 
-- **Your data stays with you.** Conversations, memory, files and API keys are stored on your device. The local console listens on `127.0.0.1` only, and the desktop app generates a fresh access token on every launch.
+- **Your data stays with you.** Conversations, memory, files and API keys are stored on your device. The local console listens on `127.0.0.1` only and opens only with an access token (the desktop app generates a fresh one on every launch).
 - **It answers to you.** By default a bot replies only to its owner (the WeChat account that scanned the QR code; on Feishu, Telegram, Slack and Discord, the first person to message it after you connect it, which is you) and the people you allow. Anyone else gets a one-line notice and no model is called; you let them in from the info panel, or by replying `yes <code>` in chat.
 - **Replies are not lost.** A reply is saved locally before it is sent; network errors are retried, sending resumes after a restart, and when WeChat's 24-hour window has closed the reply waits and arrives with your next message.
 - **Telemetry kept off.** Telemetry in the bundled computer-use driver is switched off, and the built-in gateway runs with auto-update disabled.
@@ -328,4 +328,4 @@ okinto 中转 is released under the [MIT License](./LICENSE). Bundled third-part
 [ci-link]: https://github.com/wmn1525/AnyModelBot/actions/workflows/ci.yml
 [pricing-link]: https://api.okinto.com/pricing
 [okinto-link]: https://api.okinto.com
-> App connectors and custom MCP, sidebar groups, right-panel tabs, and Spanish and Portuguese (Brazil); preserves Okinto sign-in, balances, model groups and image generation.
+> 连接应用与自定义 MCP、侧栏分组、右侧标签面板，以及西班牙语和葡萄牙语（巴西）；保留 Okinto 登录、余额、模型分组及生图适配。

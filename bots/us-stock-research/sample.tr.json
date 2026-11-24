@@ -1,0 +1,75 @@
+{
+  "title": "ABD hisse araştırması",
+  "runs": [
+    {
+      "id": "sample-aapl",
+      "question": "Apple gelirini ve brüt kâr marjını beş yıl için araştırıp bir rapor yaz",
+      "status": "done",
+      "updatedAt": "2026-11-03T10:30:00Z",
+      "plan": [
+        {
+          "text": "Apple CIK numarasını bul",
+          "done": true
+        },
+        {
+          "text": "FY2021–FY2025 gelirini ve brüt kârını al",
+          "done": true
+        },
+        {
+          "text": "FY2025 10-K içinde brüt kâr marjı tartışmasını oku",
+          "done": true
+        },
+        {
+          "text": "Brüt kâr marjını hesapla ve ham veriyle karşılaştır",
+          "done": true
+        },
+        {
+          "text": "Raporu yaz",
+          "done": true
+        }
+      ],
+      "limitations": [
+        "FY2023 53 haftaydı, diğer yıllar 52 haftaydı",
+        "Segment marjları yalnızca FY2023 ile FY2025 arasını kapsar"
+      ],
+      "preview": "# Apple geliri ve brüt kâr marjı, FY2021–FY2025\n\n## Sonuç\n\nBeş mali yılda gelir %13,8 arttı: 365,817 milyar ABD dolarından 416,161 milyar ABD dolarına. Brüt kâr marjı 5,13 puan yükseldi: %41,78 düzeyinden %46,91 düzeyine. 10-K içindeki segment verileri, FY2023'ten beri kazancın büyük kısmının Hizmetler'den geldiğini gösteriyor: bu segmentin brüt kâr marjı %70,8'den %75,4'e çıktı; Ürünler ise yalnızca %36,5'ten %36,8'e geçti.\n\n## Veriler\n\nRakamlar milyar ABD doları cinsinden. Brüt kâr marjı tablodaki değerlerden hesaplanır.\n\n| Mali yıl | Bitiş | Gelir | Brüt kâr | Brüt kâr marjı |\n| --- | --- | ---: | ---: | ---: |\n| FY2021 | 2021-09-25 | 365,817 | 152,836 | %41,78 |\n| FY2022 | 2022-09-24 | 394,328 | 170,782 | %43,31 |\n| FY2023 | 2023-09-30 | 383,285 | 169,148 | %44,13 |\n| FY2024 | 2024-09-28 | 391,035 | 180,683 | %46,21 |\n| FY2025 | 2025-09-27 | 416,161 | 195,201 | %46,91 |\n\nFY2025 10-K belgesinin Item 7 bölümünden segment brüt kâr marjı:\n\n| | FY2023 | FY2024 | FY2025 |\n| --- | ---: | ---: | ---: |\n| Ürünler | %36,5 | %37,2 | %36,8 |\n| Hizmetler | %70,8 | %73,9 | %75,4 |\n\n## Analiz\n\n- Gelir FY2023'te %2,8 düştü, sonra iki yıl üst üste arttı.\n- FY2025 10-K, Ürünler marjının düşmesini esas olarak ürün karmasına ve gümrük maliyetlerine bağlıyor.\n- Aynı başvuru, Apple için brüt kâr marjlarının genel olarak oynaklık ve aşağı yönlü baskı görmesini beklediğini söylüyor.\n\n## Sınırlar\n\n- FY2023 53 haftaydı, diğer yıllar 52 haftaydı; bu, yıllık karşılaştırmaları biraz etkiler.\n- Segment marjları yalnızca FY2023 ile FY2025 arasını kapsar. Daha önceki yıllar okunmadı.\n- Bu örnek 2026-11-03 tarihinde alındı; EDGAR'daki en son yıllık rapor FY2025 idi.\n\n## Kaynaklar\n\n- XBRL verileri (accession numaraları): 0000320193-23-000106, 0000320193-24-000123, 0000320193-25-000079\n- FY2025 10-K: https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm\n\n> Bu rapor, yapay zeka tarafından kamuya açık verilerden, yalnızca öğrenme ve bilgi amaçlı oluşturuldu. Yatırım, vergi veya hukuk tavsiyesi değildir. Veriler eksik, hatalı veya güncel olmayabilir ve geçmiş performans gelecek sonuçları göstermez. Yatırım yapmadan önce lisanslı bir uzmana danış. Olası kayıplardan sen sorumlusun.",
+      "calls": [
+        {
+          "ts": "2026-11-03T10:25:58Z",
+          "tool": "lookup",
+          "target": "AAPL",
+          "url": "https://www.sec.gov/files/company_tickers.json",
+          "status": 200
+        },
+        {
+          "ts": "2026-11-03T10:25:59Z",
+          "tool": "concept",
+          "target": "0000320193 us-gaap/RevenueFromContractWithCustomerExcludingAssessedTax annual",
+          "url": "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/RevenueFromContractWithCustomerExcludingAssessedTax.json",
+          "status": 200
+        },
+        {
+          "ts": "2026-11-03T10:26:00Z",
+          "tool": "concept",
+          "target": "0000320193 us-gaap/GrossProfit annual",
+          "url": "https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/GrossProfit.json",
+          "status": 200
+        },
+        {
+          "ts": "2026-11-03T10:26:01Z",
+          "tool": "filings",
+          "target": "0000320193 10-K 1",
+          "url": "https://data.sec.gov/submissions/CIK0000320193.json",
+          "status": 200
+        },
+        {
+          "ts": "2026-11-03T10:26:02Z",
+          "tool": "read",
+          "target": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+          "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+          "status": 200
+        }
+      ]
+    }
+  ]
+}

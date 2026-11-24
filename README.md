@@ -1,14 +1,12 @@
 <h1 align="center">okinto 中转</h1>
 
-> 0.1.40 · 同步上游 0.1.37–0.1.40：关于我、机器人协作、任务库、文件预览增强及修复；保留 Okinto 登录、模型分组、余额和七语言品牌检查。
-> 连接应用与自定义 MCP、侧栏分组、右侧标签面板，以及西班牙语和葡萄牙语（巴西）；保留 Okinto 登录、余额、模型分组及生图适配。
-> 新增“更新了什么”弹窗与关于页更新日志，版本检测、更新下载和更新说明统一指向本仓库。
+> 0.1.48 · 同步上游 0.1.41–0.1.47：土耳其语、应用内反馈、图片与文件附件、ZIP、工作文件夹和生图参考；保留 Okinto 登录、模型分组与余额。
 
 
 <p align="center"><b>跑在你自己电脑上的 AI 机器人团队。任意模型，按量付费。</b></p>
 
 <p align="center">
-  <a href="https://api.okinto.com">官网</a> |
+  <a href="https://bot.okinto.com/">官网</a> |
   <a href="https://github.com/wmn1525/AnyModelBot/releases">下载</a> |
   简体中文 |
   <a href="./README_en.md">English</a> |
@@ -38,6 +36,8 @@
 [![QQ][qq-shield]][qq-link]
 [![Telegram][telegram-shield]][telegram-link]
 [![Discord][discord-shield]][discord-link]
+
+[![As seen on Open Source Alternatives](https://www.opensourcealternatives.to/badge-osa.svg)](https://www.opensourcealternatives.to)
 
 </div>
 
@@ -90,7 +90,7 @@ macOS 用 `shasum -a 256 <文件名>`，Windows PowerShell 用 `Get-FileHash <�
 
 ```bash
 git clone https://github.com/wmn1525/AnyModelBot.git
-cd AnyModelBot
+cd okbot
 git submodule update --init --depth 1 vendor/magpie
 docker build -t okbot .
 docker run -d --name amb -p 3600:3600 -v amb-data:/data okbot
@@ -103,10 +103,10 @@ docker exec amb cat /data/ui-token   # 然后打开 http://<主机>:3600/?token=
 
 ```bash
 git clone https://github.com/wmn1525/AnyModelBot.git
-cd AnyModelBot
+cd okbot
 npm install
 npm run setup      # 拉取并编译内置网关
-npm start          # 本地管理界面：http://127.0.0.1:3600/
+npm start          # 本地管理界面：http://127.0.0.1:3600/（首次用终端里打印的带令牌地址打开）
 ```
 
 从源码构建需要 Node.js 22.13+ 和 Go 1.26.8+。想自己构建 Docker 镜像，见[开发文档](./docs/development.md)。
@@ -131,6 +131,8 @@ npm start          # 本地管理界面：http://127.0.0.1:3600/
 - **群聊。** 建一个群，拉几个机器人进来。@ 谁谁回答，没 @ 时上一个回答的接着答；机器人也能 @ 别的成员请它接手。每个机器人用自己的模型、工作区和记忆，花费分开算。
 - **机器人之间发消息。** 在应用里对一个机器人说「交给 B」，B 用自己的模型、权限和预算在后台做完回消息，原来的机器人核对后告诉你；要批准时以 B 的名义在同一个对话里问你，两个机器人的往来随时能看。需要登录 Okinto，两边都用 Okinto 模型。
 - **聊天记录搜索。** 侧栏可搜索本机保存的全部消息，按机器人、会话、渠道和日期筛选，点击结果定位原消息。`Ctrl/Cmd+Shift+F` 打开全局搜索，`Ctrl/Cmd+F` 查找当前聊天；搜索不调用模型。没输入时，搜索弹窗按日期列出最近的对话。
+- **工作文件夹和 ZIP。** 桌面版在输入框上方选一个文件夹，机器人就在原位置读写（工作区权限下改这个文件夹不用逐次批准）；ZIP 拖进对话，说清要做什么后，机器人才会安全解压。
+- **图片用作生图参考。** 登录 Okinto 后，可在单聊里打开「用作生图参考」，让右下角所选模型根据图片生成；也可以直接选择图片生成模型。发送前会核实模型能力和图片限制，无法确认时不会发送。
 - **斜杠命令**，如 `/model`、`/reset`，在应用和各个聊天渠道里都能用；在聊天渠道里发 `/bot` 可以换机器人。
 
 ## 🧩 现成的 Bot
@@ -183,7 +185,7 @@ npm start          # 本地管理界面：http://127.0.0.1:3600/
 
 ## 🔒 本地优先，也好看
 
-- **数据留在你手里。** 对话、记忆、文件和 API Key 都存放在你的设备上。本地控制台只监听 `127.0.0.1`，桌面版每次启动都会生成新的访问令牌。
+- **数据留在你手里。** 对话、记忆、文件和 API Key 都存放在你的设备上。本地控制台只监听 `127.0.0.1`，并且要带访问令牌才能打开（桌面版每次启动都会生成新的令牌）。
 - **只听主人的。** 机器人默认只回应主人（扫码登录的微信；飞书、Telegram、Slack、Discord 连上后第一个给它发消息的人，也就是你）和你允许的人。其他人发消息只会收到一句提示，不会调用模型；你在信息面板里，或在聊天里回复「同意 编号」放行。
 - **回复不会丢。** 回复先存到本地再发；网络断了会自动重试，应用重启后接着发；你在微信里超过 24 小时没说话时，回复先留着，等你下次发消息时一起送到。
 - **遥测保持关闭。** 内置电脑操作驱动的遥测已关闭，内置网关以关闭自动更新的方式运行。

@@ -1,0 +1,33 @@
+// ui · tr
+export default {
+  state: {
+    disabled: "Kapalı",
+    connecting: "Bağlanıyor",
+    connected: "Bağlı",
+    error: "Hata",
+    expired: "Süresi doldu",
+    paused: "Duraklatıldı",
+    login_required: "Oturum açılmadı",
+    running: "Çalışıyor",
+    starting: "Başlıyor",
+    restarting: "Yeniden başlıyor",
+    failed: "Başarısız",
+    stopped: "Durduruldu",
+    wait: "Tarama bekleniyor",
+    scaned: "Tarandı",
+    need_verifycode: "Kod gerekli",
+    confirmed: "Onaylandı",
+    already_bound: "Bağlandı",
+    cancelled: "İptal edildi",
+    idle: "Boşta",
+    fetching: "Getiriliyor",
+    pending: "Beklemede",
+    allowed: "Onaylandı",
+    rejected: "Reddedildi",
+    answered: "Yanıtlandı",
+    denied: "Reddedildi",
+  },
+  /** "⋯" at the end of a row (MoreButton): hover hint and screen-reader name */
+  more: "Daha fazla",
+  moreFor: "{name} için daha fazla eylem",
+};

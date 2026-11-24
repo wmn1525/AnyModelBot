@@ -504,11 +504,12 @@
       "audience": "Quienes cambian divisas o compran oro",
       "steps": [
         "Revisa el precio público una vez al día",
-        "Solo envía una línea cuando llega a tu nivel",
+        "Solo envía una línea cuando llega a tu nivel, con una nota de que es solo de referencia",
+        "Si no consigue un precio fiable, escribe «No disponible» en vez de estimar",
         "No te avisa dos veces el mismo día"
       ],
-      "sample": "El USD/CNY está en 7.08 (sitio de cotizaciones, 10:02), por debajo de 7.10.",
-      "instruction": "Revisa el precio actual de {item}. Cuando esté {direction} {price}, dime en una oración el precio actual, la fuente y la hora; si no llegó a ese nivel, no envíes ningún mensaje. No me avises dos veces el mismo día (lleva el registro en alert.md en esta carpeta).",
+      "sample": "El USD/CNY está en 7.08 (sitio de cotizaciones, 10:02), por debajo de 7.10. Solo de referencia, no es asesoría de inversión.",
+      "instruction": "Revisa el precio actual de {item}. Cuando esté {direction} {price}, dime en una oración el precio actual, la fuente y la hora, y termina con «Solo de referencia, no es asesoría de inversión.»; si no llegó a ese nivel, no envíes ningún mensaje. Usa solo páginas públicas de cotizaciones fiables que encuentres; si no consigues un precio fiable, escribe solo «{item}: no disponible.». No estimes el precio ni lo cuentes como alcanzado (no lo anotes en alert.md y vuelve a revisar al día siguiente como siempre). No me avises dos veces el mismo día (lleva el registro en alert.md en esta carpeta).",
       "params": {
         "item": {
           "label": "Qué seguir",

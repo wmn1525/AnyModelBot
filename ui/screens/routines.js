@@ -10,6 +10,7 @@ import { formOf, scheduleOf, ScheduleFields, useSchedulePreview, DestinationPick
 import { api } from "../lib/api.js";
 import { failed, toast, useStore } from "../lib/store.js";
 import { t, useLang, getLang, locale } from "../lib/i18n.js";
+import { fold } from "../lib/text-fold.js";
 import { routines, routineDialog, loadRoutines, listed, recommended, usageOf, needsOf, appState, isNew, localPrefs, setLocal, openRoutine, startRoutine, closeRoutine, openLibrary, libraryFrom, CATEGORIES, MAX_RULES_PER_BOT } from "../lib/routines.js";
 import { appsStore, loadApps, openConnect, builtinName } from "../lib/apps.js";
 import { scheduled, ruleFocus, rulesChanged } from "../lib/scheduled.js";
@@ -100,8 +101,8 @@ export function RoutineLibraryPage() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
   const all = listed(data.tasks, local);
-  const needle = q.trim().toLowerCase();
-  const hits = all.filter((x) => (cat === "all" || x.category === cat) && (!needle || x.search.includes(needle) || x.title.toLowerCase().includes(needle)));
+  const needle = fold(q.trim());
+  const hits = all.filter((x) => (cat === "all" || x.category === cat) && (!needle || fold(x.search).includes(needle) || fold(x.title).includes(needle)));
   const grid = (list) => html`<div class="routine-grid library">${list.map((task) => html`<${RoutineCard} key=${task.id} task=${task} data=${data} apps=${apps} local=${local} variant="library" />`)}</div>`;
   return html`<section class="scheduled-page routine-library" data-screen="routine-library">
     <button type="button" class="text routine-back" onClick=${() => { location.hash = "/scheduled"; }}><${Icon} name="arrowLeft" size="sm" />${t("scheduled.title")}</button>
@@ -217,7 +218,7 @@ function BotSelect({ bots, value, onChange, template, counts }) {
   const [q, setQ] = useState("");
   const ref = useRef(null);
   const cur = bots.find((b) => b.id === value);
-  const list = bots.filter((b) => b.name.toLocaleLowerCase().includes(q.trim().toLocaleLowerCase()));
+  const list = bots.filter((b) => fold(b.name).includes(fold(q.trim())));
   const pick = (id) => { setOpen(false); onChange(id); };
   return html`<button type="button" class="pick block routine-bot-pick" ref=${ref} aria-haspopup="dialog" aria-expanded=${open} onClick=${() => setOpen(!open)}>
       <span class="v">${value === "template" ? html`<span>${t("routines.newFromTemplate", { template: template?.name || "" })}</span>` : cur ? html`<${BotAvatar} bot=${cur} size=${20} /><span>${cur.name}</span>` : t("routines.pickBot")}</span><${Icon} name="chevDown" /></button>

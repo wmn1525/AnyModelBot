@@ -49,6 +49,7 @@ export default {
   "costOf": "{budget} 중 약 {spent}",
   "costShort": "약 {spent}",
   "origin": "요청 출처",
+  "fromBot": "{bot}이(가) 보낸 일",
   "question": "질문",
   "originLine": "{where} · {when} ‘{text}’",
   "openConv": "대화 열기",

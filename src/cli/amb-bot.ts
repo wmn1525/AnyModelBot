@@ -54,7 +54,16 @@ function printIssues(issues: Issue[]): void {
 }
 
 const appUrl = () => (opt("app") || `http://127.0.0.1:${loadConfig().ui.port}`).replace(/\/$/, "");
-const token = () => process.env.AMB_UI_TOKEN || loadConfig().ui.token || undefined;
+/** 没配置令牌时 App 自己生成一个放在数据目录的 ui-token 里（web/server.ts），本机回环也要带 */
+const token = () => {
+  const cfg = loadConfig();
+  if (process.env.AMB_UI_TOKEN || cfg.ui.token) return process.env.AMB_UI_TOKEN || cfg.ui.token;
+  try {
+    return fs.readFileSync(path.join(cfg.dataDir, "ui-token"), "utf8").trim() || undefined;
+  } catch {
+    return undefined;
+  }
+};
 
 function vendorFiles(): Record<string, string> {
   const require = createRequire(import.meta.url);

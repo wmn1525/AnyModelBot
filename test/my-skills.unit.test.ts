@@ -16,6 +16,7 @@ import { TaskService, type TaskHost } from "../src/tasks/service.js";
 import { DEFAULT_SETTINGS } from "../src/domain/bot-settings.js";
 import { setLangPref } from "../src/i18n/index.js";
 import { mySkillsPrompt } from "../src/agent/prompts/my-skills.js";
+import { AgentManager } from "../src/agent/manager.js";
 
 const records = (o: Partial<SkillRecords> = {}): SkillRecords => ({ work: 3, blocked: [], apps: [], uses: [], ...o });
 const args = (o: Record<string, unknown> = {}) => ({
@@ -89,6 +90,24 @@ describe("草稿卡与「我的技能」", () => {
     expect(drafts.check(edited.draft!).secrets).toBe(1);
     expect(drafts.confirm(c.id, "save", "web").state).toBe("pending");
     expect(skills.mine.list()).toHaveLength(0);
+  });
+
+  it("编辑完成后个人信息还在、默认仍是运行时再问，「保留 / 运行时再问」还能改（修复四 R6）", () => {
+    const c = draft({ steps: ["把结果发给 test@example.com，电话 13800000000"] });
+    expect(c.draft!.personal).toHaveLength(2);
+    // 编辑框里是换好占位的那份
+    const text = drafts.instructions(c.id)!;
+    expect(text).toContain("{{邮箱}}");
+    const edited = drafts.edit(c.id, text.replace("把结果发给", "整理好以后发给"));
+    const d = edited.draft!;
+    expect(d.personal.map((p) => [p.kind, p.keep])).toEqual([["email", false], ["phone", false]]);
+    expect(drafts.finalText(d)).toContain("整理好以后发给 {{邮箱}}");
+    // 改成「保留」：原文回来
+    const kept = drafts.setPersonal(c.id, d.personal[0].id, true);
+    expect(drafts.finalText(kept.draft!)).toContain("整理好以后发给 test@example.com");
+    // 原文里删掉了的那一处（步骤里和「运行前先问」里都删了）不再算
+    const gone = drafts.edit(c.id, drafts.instructions(c.id)!.replace(/，电话 \{\{手机号\}\}/, "").replace(/\n- \{\{手机号\}\}/, ""));
+    expect(gone.draft!.personal.map((p) => p.kind)).toEqual(["email"]);
   });
 
   it("取消勾选的纠正不写进技能；保存后只在保存它的机器人上打开", () => {
@@ -322,3 +341,39 @@ describe("设成定时（R8）", () => {
 function fakeZip(name: string): Buffer {
   return zipFiles([{ path: `${name}/SKILL.md`, data: Buffer.from(`---\nname: ${name}\ndescription: test\n---\n\nbody\n`) }]);
 }
+
+describe("存成技能整理的是刚才做成的那件事（修复四 R2）", () => {
+  it("应用、技能只从最近那件事里认；模型给了原话时从那条消息算起；没给时是「存成技能」前面那条", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "amb-skill-scope-"));
+    const store = new Store(":memory:");
+    store.createBot({ id: "b1", name: "小助手" });
+    const conv = store.ensureConversation("b1", "web", "console", "控制台").id;
+    const mgr = new AgentManager({ store, dataDir: dir, runtimeDir: undefined, upstream: () => ({ baseUrl: "", apiKey: "" }), enabled: false, userSkills: new UserSkills(dir, store) });
+    try {
+      const u1 = store.addMessage(conv, "user", "列出工作区里的文件，做成可点击的链接");
+      store.addMessage(conv, "assistant", "这些是文件……", [
+        { id: "1", kind: "tool", title: "bash", input: "ls", status: "ok", at: 0 },
+        { id: "2", kind: "tool", title: "mcp__computer-use__click", status: "ok", at: 0 },
+      ]);
+      const u2 = store.addMessage(conv, "user", "用三步说明怎么泡茶");
+      store.addMessage(conv, "assistant", "1. 烧水 2. 放茶叶 3. 冲泡");
+      store.addMessage(conv, "user", "/skill");
+      // 正在进行的这一轮就是「存成技能」那条
+      (mgr as any).turnsInProgress.set(conv, { activity: { steps: [] } });
+      expect(mgr.skillTaskStart(conv, "")).toBe(u2);
+      expect(mgr.skillRecords("b1", conv, u2)).toMatchObject({ work: 0, blocked: [] });
+      // 整段对话仍有做过的事（「没有可存的事」按整段判断）
+      expect(mgr.skillRecords("b1", conv).work).toBe(2);
+      expect(mgr.skillRecords("b1", conv).blocked).toEqual(["computer"]);
+      // 用户点名要存前面那件事：模型给出原话，从那条算起
+      expect(mgr.skillTaskStart(conv, "列出工作区里的文件")).toBe(u1);
+      expect(mgr.skillTaskStart(conv, "找不到的话")).toBe(u2);
+      // 不在进行中的一轮里（例如出错后重试）：最后一条用户消息就是那件事的开头
+      (mgr as any).turnsInProgress.delete(conv);
+      expect(mgr.skillTaskStart(conv, "")).toBe(store.listMessages(conv).filter((m) => m.role === "user").at(-1)!.id);
+    } finally {
+      store.close();
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

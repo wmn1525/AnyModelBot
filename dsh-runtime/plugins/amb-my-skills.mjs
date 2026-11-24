@@ -25,11 +25,13 @@ export function apply(ctx) {
   ctx.tools.register(defineTool({
     name: 'save_skill',
     description:
-      'Show the user a draft card that saves what was done in this chat as a skill in their "My skills". Call it only when the user asks to save it as a skill ' +
+      'Show the user a draft card that saves what was just done in this chat as a skill in their "My skills". Call it only when the user asks to save it as a skill ' +
       '(e.g. "存成技能", "把刚才做的事存成技能", "save this as a skill"), or asks to change a draft you already showed: then call it again with the whole revised draft (the old card stops working). ' +
       'Never suggest or call it on your own. If you are in the middle of a task, finish it first. ' +
+      'By default save the most recent thing you finished for the user: their latest request you completed before asking to save, with any follow-up corrections to it, even if it used no tools. ' +
+      'Never skip it to save an earlier task from this chat, however much more work that one took; the title, file name, steps and when-to-use must all be about that latest thing. ' +
       'Write every field in the user\'s language, from what actually happened in this chat: the steps that worked in order (not the dead ends), the user\'s corrections turned into rules, and where it got stuck if the task did not finish. ' +
-      'If the user wants only part of it ("把步骤 3 存成技能"), include only that part. Refer to apps by the account names the user connected; give values as defaults. ' +
+      'If the user names the task or wants only part of it ("把步骤 3 存成技能", a passage they point to), save only that part. Refer to apps by the account names the user connected; give values as defaults. ' +
       'Never put API keys, tokens, passwords, verification codes or cookies in any field. The user reviews and saves on the card; never write skill files yourself.',
     parameters: {
       title: { type: 'string', required: true, description: 'Short name shown in the app, in the user\'s language, at most 20 characters, e.g. 整理周报.' },
@@ -65,6 +67,7 @@ export function apply(ctx) {
         },
       },
       same_as: { type: 'string', description: 'If this is the same task as one of the user\'s My skills (listed in your instructions), its file name, so the card offers to update it.' },
+      task_request: { type: 'string', description: 'The user\'s message in this chat that asked for the task you are saving, copied verbatim (its first sentence is enough). The app reads which apps and skills were used only from your replies from that message on.' },
     },
     output: TEXT_OUT,
     execute: async (args, exec) => {

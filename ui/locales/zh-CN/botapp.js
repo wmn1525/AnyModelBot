@@ -3,7 +3,7 @@ export default {
   sidebar: { discover: "发现", mine: "我的", latest: "上新", new: "有新的" },
   discover: {
     title: "发现",
-    lead: "备好的现成小工具，点开就能用，想改直接说。",
+    lead: "找到适合你的工具，也聊聊企业工作如何接入。",
     featured: "精选",
     latest: "上新",
     empty: "没有匹配的",

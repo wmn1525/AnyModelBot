@@ -4,6 +4,7 @@
  */
 import type { ActivityStep } from "../domain/activity.js";
 import { t, type MessageKey } from "../i18n/index.js";
+import type { FolderBinding } from "../folders/service.js";
 
 /** 同一套接法的聊天平台（channels/messenger）：填 token 连上，单聊，流式靠改消息 */
 export const MESSENGERS = ["telegram", "slack", "discord"] as const;
@@ -54,6 +55,21 @@ export interface InboundEvent {
   /** 飞书：这条是回复（或话题里的消息）时，回复链的根消息和直接回复的那条（message_id） */
   thread?: { rootId?: string; parentId?: string };
   receivedAt: number;
+  /**
+   * 网页对话随消息发的附件（web/routes/attachments.ts）：用户消息已经和附件一起原子存好，
+   * text 是交给模型的全文（文本文件的完整内容 + 用户的话），images 是规范化后的图片。
+   */
+  prepared?: { messageId: number; text: string; images: Array<{ data: string; mimeType: "image/png" | "image/jpeg" | "image/gif" | "image/webp" }> };
+  /**
+   * 网页对话：点发送那一刻输入框上方选的工作文件夹（folders/service.ts 的 bind），null = 没选（默认工作区）。
+   * 排队、等批准、重试都只认它，不读之后的选择；其他渠道没有（默认工作区）。
+   */
+  folder?: FolderBinding | null;
+  /**
+   * 网页单聊里由宿主直接执行的生图（参考图生图，imagegen/generate.ts）：受理时冻结的计划。用户消息已经存好（prepared），
+   * 不交给聊天模型或代理。
+   */
+  generate?: import("../imagegen/generate.js").GenerationPlan;
 }
 
 export type OutboundOp =

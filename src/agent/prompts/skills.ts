@@ -5,7 +5,7 @@
 /** Cua Driver 后端的技能说明（工具来自 trycua/cua 的 cua-driver，MIT）。 */
 export const CUA_SKILL = `---
 name: computer-use
-description: Operate native desktop apps on this computer (read windows, click, type, press keys, scroll, drag) through the bundled Cua Driver. Use when the user asks you to do something in a GUI application on their computer.
+description: Operate native desktop apps on this computer (read windows, click, type, press keys, scroll, drag) through the bundled Cua Driver. Use when the user asks you to do something in a GUI application on their computer. Not for organising, moving or renaming files: use file tools and shell commands for that.
 ---
 
 # Computer Use (Cua Driver)
@@ -22,7 +22,7 @@ Tools are named \`mcp__computer-use__<tool>\`. Actions run automatically; no app
 - Screenshots are for you to look at. Do not send them to the user unless they ask; if they do, save the image into the workspace and present that file.
 - Only apps installed on this computer are in scope; if a call says the app or resource is outside the capability manifest, tell the user instead of looking for a workaround.
 - Do not type passwords, payment details or other secrets unless the user explicitly gave them for this task. Do not confirm purchases, deletions or messages to other people without the user asking for exactly that.
-- On Linux, reading window contents needs AT-SPI; on Wayland only the foreground window can be driven. On macOS the app needs Accessibility and Screen Recording permission; if \`check_permissions\` reports them missing, tell the user how to grant them.
+- On Linux, reading window contents needs AT-SPI; on Wayland only the foreground window can be driven. On macOS do not check or explain permissions yourself: call the tool the task needs. If Accessibility or Screen Recording is missing, AnyModelBot pauses the turn and shows the user a permission card in this chat, and the app (not you) asks the system after the user clicks. Never say a system prompt has appeared, never send the user to bot settings or another settings page to find a switch, and never ask for these permissions for a task that only handles files.
 `;
 
 /**

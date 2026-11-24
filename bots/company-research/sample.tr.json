@@ -1,0 +1,161 @@
+{
+  "title": "Şirket araştırması",
+  "runtime": {
+    "mode": "auto",
+    "track": "b"
+  },
+  "jobs": [
+    {
+      "id": "job-sample-sprucefield",
+      "company": "Sprucefield Robotics",
+      "companyUrl": "https://example.com/sprucefield/about",
+      "industry": "Depo robotiği",
+      "hqLocation": "Suzhou",
+      "status": "completed",
+      "track": "b",
+      "currentStep": "editor",
+      "progress": 100,
+      "docCounts": {
+        "financial": 9,
+        "news": 7,
+        "industry": 8,
+        "company": 11
+      },
+      "nodes": {
+        "grounding": "done",
+        "financial_analyst": "done",
+        "news_scanner": "done",
+        "industry_analyst": "done",
+        "company_analyst": "done",
+        "collector": "done",
+        "curator": "done",
+        "enricher": "done",
+        "briefing": "done",
+        "editor": "done"
+      },
+      "curation": {
+        "total": 35,
+        "kept": 22,
+        "threshold": 0.4
+      },
+      "sample": true,
+      "updatedAt": "2026-11-03T02:10:00Z"
+    }
+  ],
+  "timeline": [
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:00:00Z",
+      "node": "grounding",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:01:00Z",
+      "node": "financial_analyst",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:02:00Z",
+      "node": "news_scanner",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:03:00Z",
+      "node": "industry_analyst",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:04:00Z",
+      "node": "company_analyst",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:05:00Z",
+      "node": "collector",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:06:00Z",
+      "node": "curator",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:07:00Z",
+      "node": "enricher",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:08:00Z",
+      "node": "briefing",
+      "status": "done"
+    },
+    {
+      "jobId": "job-sample-sprucefield",
+      "at": "2026-11-03T02:09:00Z",
+      "node": "editor",
+      "status": "done"
+    }
+  ],
+  "selectedJobId": "job-sample-sprucefield",
+  "view": "report",
+  "reportPreview": "# Sprucefield Robotics inceleme raporu\n\n> Bu, görünüm için bir örnektir. Şirket, rakamlar ve kaynaklar tümüyle kurgusaldır.\n\n## Özet\n\n- Sprucefield Robotics, özellikle bölgesel e-ticaret ve üçüncü taraf lojistik şirketleri için depo ayrıştırma robotları üretir ([şirket özeti](https://example.com/sprucefield/about)).\n- Mart 2026'da Pinestone Capital liderliğinde 60 milyon dolarlık Seri B turunu kapattı ([yatırım duyurusu](https://example.org/news/sprucefield-series-b)).\n- Kamuya açık kaynaklarda denetlenmiş bir gelir rakamı yok. Şirket, 2025 siparişlerinin yıllık bazda ikiye katlandığını söylüyor; bu **doğrulanmadı**.\n\n## Şirket ve iş\n\nŞirket 2019'da kuruldu ve merkezi Suzhou'da. Modüler ayrıştırma robotları ve zamanlama yazılımı satar ([şirket özeti](https://example.com/sprucefield/about)). Robotlar adet başına fiyatlanır; yazılım yıllık aboneliktir ([ürün sayfası](https://example.com/sprucefield/pricing)).\n\n## Sektör ve rekabet\n\nBir sektör raporu, küresel depo robotiği pazarını 2025'te yaklaşık 9 milyar dolar ve yıllık büyümeyi yaklaşık %15 olarak tahmin eder ([sektör raporu](https://example.net/reports/warehouse-robotics-2026)). Başlıca rakipler, daha büyük iki halka açık şirkettir. Sprucefield daha kısa kurulum süreleriyle yarışır ([sektör raporu](https://example.net/reports/warehouse-robotics-2026)).\n\n## Finans\n\n| Kalem | Rakam | Kaynak |\n| --- | --- | --- |\n| Seri B | 60 milyon dolar (Mart 2026) | [yatırım duyurusu](https://example.org/news/sprucefield-series-b) |\n| Toplam yatırım | Yaklaşık 95 milyon dolar | [yatırım veritabanı](https://example.org/data/sprucefield) |\n| 2025 geliri | Açıklanmadı | Yok |\n\n## Son haberler\n\n- Haziran 2026: bölgesel bir lojistik şirketiyle üç yıllık ortaklık imzaladı ([ortaklık haberi](https://example.org/news/sprucefield-partnership)).\n- Ağustos 2026: yeni bir finans direktörü (CFO) atadı ([yönetici haberi](https://example.org/news/sprucefield-cfo)).\n\n## Boşluklar ve doğrulanmayan maddeler\n\n- Denetlenmiş finansal veri bulunamadı.\n- Siparişlerin ikiye katlanması şirketin kendi ifadesidir; bağımsız kaynak yoktur.\n\n## Kaynaklar\n\n1. [Şirket özeti](https://example.com/sprucefield/about)\n2. [Ürün sayfası](https://example.com/sprucefield/pricing)\n3. [Yatırım duyurusu](https://example.org/news/sprucefield-series-b)\n4. [Yatırım veritabanı](https://example.org/data/sprucefield)\n5. [Sektör raporu](https://example.net/reports/warehouse-robotics-2026)\n6. [Ortaklık haberi](https://example.org/news/sprucefield-partnership)\n7. [Yönetici haberi](https://example.org/news/sprucefield-cfo)\n\n---\n\n**Sorumluluk reddi**: Bu rapor, yapay zeka tarafından kamuya açık kaynaklardan, yalnızca bilgi ve öğrenme amaçlı derlenmiştir. Yatırım, vergi veya hukuk tavsiyesi değildir. Kaynaklar güncel olmayabilir veya hatalı olabilir; onlara güvenmeden önce doğrula. Yazarlar ve AnyModelBot, bu rapora dayanarak alınan kararlar için sorumluluk kabul etmez.",
+  "sourcesPreview": [
+    {
+      "url": "https://example.com/sprucefield/about",
+      "title": "Şirket özeti",
+      "score": 0.95,
+      "domain": "company",
+      "used": true
+    },
+    {
+      "url": "https://example.org/news/sprucefield-series-b",
+      "title": "Yatırım duyurusu",
+      "score": 0.92,
+      "domain": "financial",
+      "used": true
+    },
+    {
+      "url": "https://example.net/reports/warehouse-robotics-2026",
+      "title": "Sektör raporu",
+      "score": 0.88,
+      "domain": "industry",
+      "used": true
+    },
+    {
+      "url": "https://example.org/data/sprucefield",
+      "title": "Yatırım veritabanı",
+      "score": 0.81,
+      "domain": "financial",
+      "used": true
+    },
+    {
+      "url": "https://example.org/news/sprucefield-partnership",
+      "title": "Ortaklık haberi",
+      "score": 0.77,
+      "domain": "news",
+      "used": true
+    },
+    {
+      "url": "https://example.com/sprucefield/pricing",
+      "title": "Ürün sayfası",
+      "score": 0.74,
+      "domain": "company",
+      "used": true
+    },
+    {
+      "url": "https://example.org/news/sprucefield-cfo",
+      "title": "Yönetici haberi",
+      "score": 0.62,
+      "domain": "news",
+      "used": true
+    }
+  ]
+}

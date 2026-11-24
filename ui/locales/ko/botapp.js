@@ -3,7 +3,7 @@ export default {
   sidebar: { discover: "둘러보기", mine: "내 봇", latest: "새로 나옴", new: "새 항목 있음" },
   discover: {
     title: "둘러보기",
-    lead: "바로 쓸 수 있는 도구입니다. 열어서 바로 쓰고, 바꾸고 싶은 건 말하면 됩니다.",
+    lead: "쓸 만한 도구를 찾고, 업무를 어떻게 연결할지도 함께 이야기해요.",
     featured: "추천",
     latest: "새로 나옴",
     empty: "일치하는 항목이 없습니다",

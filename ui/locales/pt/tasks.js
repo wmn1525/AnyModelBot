@@ -51,6 +51,7 @@ export default {
   "costOf": "Cerca de {spent} de {budget}",
   "costShort": "Cerca de {spent}",
   "origin": "Origem",
+  "fromBot": "De {bot}",
   "question": "Pergunta",
   "originLine": "{where} · {when} “{text}”",
   "openConv": "Abrir a conversa",

@@ -31,6 +31,8 @@ import type { TaskHost, TaskService } from "../tasks/service.js";
 import type { CollabService } from "../collab/service.js";
 import { DEFAULT_SETTINGS, type BotSettings, type MediaConfirm } from "./settings.js";
 import { t, tl, t as tr, TARGET_LANGS, lang as currentLang } from "../i18n/index.js";
+import type { Attachments } from "../attachments/service.js";
+import { zipTool } from "../attachments/zip-tools.js";
 import {
   HANDOFF_SYSTEM,
   REVIEW_SYSTEM,
@@ -59,16 +61,25 @@ export interface AgentManagerOptions {
   /** 代理已经在处理、却这么久没有任何进展（模型不回、工具不动、只在重试）就中止；等用户批准/回答不算 */
   idleTimeoutMs?: number;
   approvalTtlMs?: number;
+  /** Linux 上 bubblewrap 用不了时允许命令改用 Landlock 沙箱（config.agent.allowLandlock）；缺省不允许，命令被拒绝 */
+  allowLandlock?: boolean;
   /** 机器人和会话都没选模型时用的全局默认模型（关于我「不再记回」的判断用小模型） */
   defaultModel?: () => string;
   /** 后台小模型调用（管家判定、交接便条、记忆整理）；缺省则这些功能静默跳过。botId 用来把请求记到该机器人的 Key 上 */
   complete?: (botId: string, model: string, system: string, user: string) => Promise<string>;
   /** 回合后记忆整理的防抖延迟 */
   reviewDelayMs?: number;
+  /** 用户随消息发的附件（ZIP 的 zip_list / zip_extract 要核对归属、读原文件）；缺省时 zip 工具不可用 */
+  attachments?: Attachments;
   /** 生图 / 生视频（amb-media 插件经 bridge 调用）；缺省时工具返回不可用 */
   media?: MediaService;
   /** 生图 / 生视频现在能不能用（要连着 OKINTO：只填了官方 Key 时不能）。缺省 = 有 media 就能用 */
   mediaReady?: () => boolean;
+  /**
+   * 生图（generate_image）用哪个型号的门槛：账号登录时只能用这条会话当前选的精确型号（返回 { model }），
+   * 它不能生图、能力不明或代理要换型号时返回 { error }（不生成、不扣费）；undefined = 不管（自定义 Key 照旧）。
+   */
+  imageGate?: (botId: string, conversationId: string, requested: string) => Promise<{ model: string } | { error: string } | undefined>;
   /** 技能安装卡片（amb-skills 插件的 install_skill 经 bridge 调用）；缺省时工具返回不可用 */
   skillInstalls?: SkillInstalls;
   /** 这个会话是不是主人的（渠道里只有主人能装技能）；缺省都算 */
@@ -122,6 +133,9 @@ export interface TurnProgress {
   media: number;
   /** 模型在这一轮中间说过的话（信息面板里和步骤一起显示；步骤里不再重复这些文字） */
   interim: string[];
+  /** 这一轮绑定的工作文件夹（PRD R2）：id 用来判断后来的消息能不能并进来；root 是核对过的真实路径（不可用时没有） */
+  folderId?: string;
+  folderRoot?: string;
 }
 
 /** 生成确认里"取消"那一项（问题建好后界面语言可能变了：两种语言的都认） */
@@ -246,6 +260,7 @@ export class AgentManager {
       skills: (b) => this.skillOp(b),
       search: (b, signal) => this.searchOp(b, signal),
       apps: (b, signal) => this.appOp(b, signal),
+      zip: (b, signal) => this.zipOp(b, signal),
       cuPermission: async (b) => this.cuPermissionOp(b),
       // amb-control 插件按机器人取指令；不认识的机器人（已删除、已停止）让它别再来
       control: {
@@ -315,6 +330,7 @@ export class AgentManager {
         bridge: this.bridge,
         store: this.o.store,
         turnTimeoutMs: this.o.turnTimeoutMs,
+        allowLandlock: this.o.allowLandlock,
         settings: () => this.settings(botId),
         onNotice: this.o.onNotice,
         // 拉起进程时读：登录或退出 OKINTO 之后的新进程跟着变
@@ -452,7 +468,8 @@ export class AgentManager {
 
   private async track(botId: string, input: TurnInput & { onStep?: (step: ActivityStep) => void }, run: (input: TurnInput) => Promise<TurnResult>): Promise<TurnResult> {
     const conv = input.conversationId;
-    const t: TurnProgress = { botId, senderId: input.senderId, since: Date.now(), lastProgress: 0, activity: new ActivityLog(input.onStep, input.model, { chat: true, uses: this.usesFor(botId) }), abort: new AbortController(), tools: new Set(), jobs: new Set(), media: 0, interim: [] };
+    const t: TurnProgress = { botId, senderId: input.senderId, since: Date.now(), lastProgress: 0, activity: new ActivityLog(input.onStep, input.model, { chat: true, uses: this.usesFor(botId) }), abort: new AbortController(), tools: new Set(), jobs: new Set(), media: 0, interim: [],
+      ...(input.folder ? { folderId: input.folder.id, ...(input.folder.root ? { folderRoot: input.folder.root } : {}) } : {}) };
     this.turnsInProgress.set(conv, t);
     // 看门狗：代理已经在处理，却长时间没有进展（模型不回、只在重试），又不是在等用户批准或回答、
     // 也没有工具、命令或生成任务在跑（生视频、转到后台的长命令、子代理里的工具）→ 中止
@@ -1181,7 +1198,10 @@ export class AgentManager {
     if (!conv) return { error: "Couldn't find this conversation, so no draft card was shown." };
     const gate = this.saveSkillGate(botId, conv);
     if (gate) return { text: gate.say ? `No draft card was shown. ${gate.why} Reply to the user with exactly this sentence and nothing else: 「${gate.say}」` : `No draft card was shown here. ${gate.why}` };
-    const card = drafts.request({ botId, conversationId: conv, args: (b?.args ?? {}) as Record<string, unknown>, records: this.skillRecords(botId, conv), context: this.recentUserText(conv) });
+    const args = (b?.args ?? {}) as Record<string, unknown>;
+    // 应用、技能、做不了定时的步骤只从要存的那件事里认（不混进这段对话里更早的事）
+    const from = this.skillTaskStart(conv, typeof args.task_request === "string" ? args.task_request : "");
+    const card = drafts.request({ botId, conversationId: conv, args, records: this.skillRecords(botId, conv, from), context: this.recentUserText(conv) });
     await drafts.deliver(conv, card);
     const d = card.draft!;
     const lines = [`Draft card shown for "${d.title}" (${d.name}). The user saves, edits or cancels it on the card; nothing is saved until then.`];
@@ -1213,12 +1233,20 @@ export class AgentManager {
     return { why: "Nothing was done with tools in this chat yet.", say: tr("mySkills.nothing") };
   }
 
-  /** 这段对话（/new 之后）里的工具步骤：存成过的消息 + 正在进行的这一轮 */
-  private conversationSteps(conv: string): ActivityStep[] {
-    const since = this.o.store.listSegments(conv).filter((x) => x.reason === "manual").at(-1)?.endedAt ?? 0;
+  /** 这段对话（/new 之后）开始的时间 */
+  private segmentStart(conv: string): number {
+    return this.o.store.listSegments(conv).filter((x) => x.reason === "manual").at(-1)?.endedAt ?? 0;
+  }
+
+  /**
+   * 这段对话（/new 之后）里的工具步骤：存成过的消息 + 正在进行的这一轮。
+   * after：只要这条用户消息之后的回复（存成技能时只看要存的那件事）
+   */
+  private conversationSteps(conv: string, after?: number): ActivityStep[] {
+    const since = this.segmentStart(conv);
     const steps: ActivityStep[] = [];
     for (const m of this.o.store.listMessages(conv, 80)) {
-      if (m.role !== "assistant" || !m.steps || m.createdAt < since) continue;
+      if (m.role !== "assistant" || !m.steps || m.createdAt < since || (after !== undefined && m.id <= after)) continue;
       steps.push(...(this.o.store.getActivity(conv, m.id) as ActivityStep[]));
     }
     const live = this.turnsInProgress.get(conv);
@@ -1226,11 +1254,32 @@ export class AgentManager {
     return steps;
   }
 
-  /** 存成技能时宿主记下的：做事的工具调用有几次、定时运行做不了的步骤、用到的应用（按连接别名）和技能（带来源） */
-  skillRecords(botId: string, conv: string): SkillRecords {
+  /**
+   * 存成技能要存的那件事从哪条用户消息算起（返回它的 id，之后的回复都算这件事）：
+   * 模型给了用户提出这件事的原话（task_request）时，找这段对话里最近一条含它的用户消息；
+   * 没给、找不到时按最近做完的那件事算——正在进行的这一轮是说「存成技能」的那条，往前一条用户消息就是那件事的开头。
+   * 这段对话里没有更早的用户消息时 undefined（整段都算）
+   */
+  skillTaskStart(conv: string, quote: string): number | undefined {
+    const since = this.segmentStart(conv);
+    const users = this.o.store.listMessages(conv, 80).filter((m) => m.role === "user" && m.createdAt >= since);
+    const norm = (x: string) => x.replace(/\s+/g, " ").trim().toLowerCase();
+    const q = norm(quote).slice(0, 80);
+    if (q.length >= 2) {
+      const hit = users.findLast((m) => norm(m.content).includes(q));
+      if (hit) return hit.id;
+    }
+    return (this.turnsInProgress.has(conv) ? users.at(-2) : users.at(-1))?.id;
+  }
+
+  /**
+   * 存成技能时宿主记下的：做事的工具调用有几次、定时运行做不了的步骤、用到的应用（按连接别名）和技能（带来源）。
+   * after：只看这条用户消息之后的（要存的那件事）；不给时整段对话都算（「没有可存的事」按整段判断）
+   */
+  skillRecords(botId: string, conv: string, after?: number): SkillRecords {
     const apps = this.o.apps;
     const skills = this.o.userSkills;
-    return skillRecordsOf(this.conversationSteps(conv), {
+    return skillRecordsOf(this.conversationSteps(conv, after), {
       app: (key) => {
         const v = apps?.viewOf(key);
         if (!v) return undefined;
@@ -1279,9 +1328,20 @@ export class AgentManager {
           if (turn) turn.media--;
         }
       }
-      const plan = await media.prepare(botId, op, args);
       const sessionId = String(b?.sessionId ?? "");
       const conv = this.resolveConversation(botId, sessionId);
+      // 账号登录：只用当前所选的精确型号，确认时也不列别的型号让人换
+      let locked = false;
+      if (op === "image" && this.o.imageGate) {
+        const gate = await this.o.imageGate(botId, conv, String(args.model ?? ""));
+        if (gate && "error" in gate) return { error: gate.error };
+        if (gate) {
+          args.model = gate.model;
+          locked = true;
+        }
+      }
+      const plan = await media.prepare(botId, op, args);
+      if (locked) plan.candidates = [];
       const tool = plan.kind === "image" ? "generate_image" : "generate_video";
       let model = plan.model;
       const grant = conv ? this.mediaGrants.get(conv) : undefined;
@@ -1293,6 +1353,7 @@ export class AgentManager {
         const r = await this.confirmMedia(botId, conv, sessionId, plan, tool, why);
         if (r.cancel) return { text: "用户取消了这次生成（或没有及时确认），没有生成文件，也没有扣费。不要自行重试；需要的话问用户想怎么改。" };
         if (r.reply !== undefined) return { text: `用户没有确认，而是回复：「${r.reply}」。按用户的意思调整后再调用 ${tool}。` };
+        if (r.model && r.model.id !== model.id && locked) return { error: t("media.agentWrongModel", { model: model.id }) };
         if (r.model && r.model.id !== model.id) {
           if (plan.custom) {
             // 请求体是按原模型的文档写的，换了模型就得按新模型的文档重写；重写后的那一次不再确认
@@ -1441,8 +1502,9 @@ export class AgentManager {
             const hits = [...(about?.search(q).map((h) => `[关于我] ${h}`) ?? []), ...this.memory.search(scopes, q)];
             return { text: hits.length ? hits.join("\n") : `没有找到包含「${q}」的记忆` };
           }
+          // 不带关键词时给全文：关于我现在还在的句子（撤销、删掉的不在里面；空的写明是空的），机器人自己的记忆连同主题里的完整句子
           const mine = about?.text();
-          const text = [mine ? `## 关于我\n${mine}` : "", this.memory.snapshot(scopes)].filter(Boolean).join("\n\n");
+          const text = [about ? `## 关于我\n${mine || "（关于我是空的）"}` : "", this.memory.fullText(scopes)].filter(Boolean).join("\n\n");
           if (aboutOk) this.o.store.setKV(ABOUT_SEEN + conv!.id, String(this.aboutMe.seq));
           return { text: text || "长期记忆为空" };
         }
@@ -1618,6 +1680,7 @@ export class AgentManager {
       workspace: (botId) => this.host(botId).workspace,
       settings: (botId) => this.settings(botId),
       memoryPrefix: (botId, conv) => this.memoryPrefix(botId, conv),
+      folderOf: (botId, sessionId) => this.folderOf(botId, sessionId),
       prompt: (botId, o) => {
         if (!this.available) return Promise.reject(new Error(tr("agent.agentModeUnavailable")));
         return this.host(botId).promptTask(o);
@@ -1640,6 +1703,49 @@ export class AgentManager {
   /** 规则会话或它的子代理属于哪条规则、哪次运行 */
   private ruleOf(botId: string, sessionId: string) {
     return this.tasks?.ruleOfSession(sessionId, this.hosts.get(botId)?.taskRootOf(sessionId));
+  }
+
+  /**
+   * 发起这次调用的会话这一轮能写的工作文件夹（后台任务继承、zip 工具的「解压到工作文件夹」用）：
+   * 聊天会话看进行中那一轮绑定的目录，任务会话看宿主给它绑定的目录；没有就是 undefined（默认工作区）。
+   */
+  folderOf(botId: string, sessionId: string): string | undefined {
+    const direct = this.o.store.conversationForSession(sessionId);
+    if (direct) return this.turnsInProgress.get(direct)?.folderRoot;
+    const bound = this.hosts.get(botId)?.boundRoot(sessionId);
+    if (bound) return bound;
+    // 任务会话的子代理：看它所在的任务会话；聊天会话的子代理：落到它所属的会话
+    const root = this.hosts.get(botId)?.taskRootOf(sessionId);
+    if (root) return this.hosts.get(botId)?.boundRoot(root);
+    const conv = this.resolveConversation(botId, sessionId);
+    return conv ? this.turnsInProgress.get(conv)?.folderRoot : undefined;
+  }
+
+  /** amb-zip 插件：查看 / 安全解压用户随消息发的 ZIP（attachments/zip-tools.ts）；解到可写目录之外要先问用户 */
+  private zipOp(b: any, signal: AbortSignal): Promise<{ text?: string; error?: string }> {
+    const attachments = this.o.attachments;
+    if (!attachments) return Promise.resolve({ error: "ZIP attachments are not available here." });
+    return zipTool(
+      {
+        attachments,
+        dataDir: this.o.dataDir,
+        workspace: (botId) => this.host(botId).workspace,
+        // 目录 Bot 没声明写工作区：按只读（只能解到受管空间）
+        permission: (botId) => {
+          const ref = this.o.store.getBot(botId)?.app;
+          return ref && !ref.permissions.includes("workspace-write") ? "readonly" : this.settings(botId).permission;
+        },
+        conversationOf: (botId, sessionId) => this.resolveConversation(botId, sessionId),
+        folderOf: (botId, sessionId) => this.folderOf(botId, sessionId),
+        approve: async (botId, sessionId, detail, sig) => {
+          const ctx = this.askContext(botId, sessionId);
+          const row = this.approvals.create({ kind: "approval", botId, conversationId: ctx.conversationId, sessionId, tool: "zip_extract", detail, reason: "", ...ctx.fields });
+          return (await this.awaitRow(row.id, sig))?.status === "allowed";
+        },
+      },
+      b,
+      signal,
+    );
   }
 
   private resolveConversation(botId: string, sessionId: string): string {

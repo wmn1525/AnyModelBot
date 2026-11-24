@@ -16,14 +16,14 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ALLOW_MISSING = process.argv.includes("--allow-missing");
 
-const TARGET_READMES = { zh: "README.md", en: "README_en.md", ja: "README_ja.md", ko: "README_ko.md", ru: "README_ru.md", es: "README_es.md", pt: "README_pt.md" };
+const TARGET_READMES = { zh: "README.md", en: "README_en.md", ja: "README_ja.md", ko: "README_ko.md", ru: "README_ru.md", es: "README_es.md", pt: "README_pt.md", tr: "README_tr.md" };
 const checkAll = process.argv.includes("--all-languages");
 const locales = JSON.parse(fs.readFileSync(path.join(ROOT, "ui/locales/manifest.json"), "utf8")).locales;
 const codes = locales.filter((l) => checkAll || l.ready).map((l) => l.siteCode);
 const READMES = Object.fromEntries(Object.entries(TARGET_READMES).filter(([code]) => codes.includes(code)));
 const LINKED_DOCS = [
   ...Object.values(READMES),
-  ...["ja", "ko", "ru", "es", "pt"].filter((l) => codes.includes(l)).flatMap((l) => [`CONTRIBUTING_${l}.md`, `SECURITY_${l}.md`, `CHANGELOG_${l}.md`, `THIRD_PARTY_NOTICES_${l}.md`, `docs/development_${l}.md`, `docs/privacy_${l}.md`, `docs/skills_${l}.md`]),
+  ...["ja", "ko", "ru", "es", "pt", "tr"].filter((l) => codes.includes(l)).flatMap((l) => [`CONTRIBUTING_${l}.md`, `SECURITY_${l}.md`, `CHANGELOG_${l}.md`, `THIRD_PARTY_NOTICES_${l}.md`, `docs/development_${l}.md`, `docs/privacy_${l}.md`, `docs/skills_${l}.md`]),
   "CONTRIBUTING.md",
   "CONTRIBUTING_en.md",
   "SECURITY.md",
@@ -42,6 +42,7 @@ const LIMITS = [
   [/^docs\/assets\/brand\/logo-eyes\.svg$/, 2 * KB],
   [/^docs\/assets\/brand\/wordmark-(light|dark)\.svg$/, 12 * KB],
   [/^docs\/assets\/brand\/social-preview\.png$/, 400 * KB],
+  [/^docs\/assets\/brand\/github-social-preview-(zh|en)\.jpg$/, 1 * MB],
   [/^docs\/assets\/hero\/hero-demo\.gif$/, 5 * MB],
   [/^docs\/assets\/modelflare\/modelflare-logo\.png$/, 40 * KB],
   [/^docs\/assets\/modelflare\/modelflare-banner-(zh|en)\.webp$/, 150 * KB],
@@ -184,7 +185,8 @@ for (const readme of Object.values(READMES)) {
 if (gifTotal > GIF_TOTAL) err("docs/assets", `GIF 合计 ${fmtSize(gifTotal)} 超过 ${fmtSize(GIF_TOTAL)}`);
 
 // ---------- 2. 中英结构一致 ----------
-for (const translated of Object.values(READMES).filter((f) => f !== READMES.zh)) {
+// 只有中英文维护同一版式；其他语言允许使用更适合本地阅读的标题、图片和引用链接结构。
+for (const translated of [READMES.en].filter(Boolean)) {
   if (!exists(READMES.zh) || !exists(translated)) continue;
   const zh = read(READMES.zh);
   const en = read(translated);

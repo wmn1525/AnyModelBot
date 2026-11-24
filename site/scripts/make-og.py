@@ -24,6 +24,7 @@ COPY = {
     "ru": {"h1": ["Ваша команда ИИ-ботов", "на вашем компьютере."], "mark": "на вашем компьютере", "sub": "Любая модель. Разговоры хранятся у вас.", "chips": ["История у вас", "Приложение бесплатно", "Открытый код · MIT"]},
     "es": {"h1": ["Tu equipo de bots de IA,", "en tu computadora."], "mark": "en tu computadora", "sub": "Cualquier modelo y dispositivo. Tus datos, contigo.", "chips": ["Chats en local", "Pago por uso · App gratis", "Código abierto MIT"]},
     "pt": {"h1": ["Sua equipe de bots de IA,", "no seu computador."], "mark": "no seu computador", "sub": "Qualquer modelo e aparelho. Seus dados com você.", "chips": ["Chats locais", "Pague pelo uso · App grátis", "Código aberto MIT"]},
+    "tr": {"h1": ["Yapay zeka bot ekibin,", "kendi bilgisayarında."], "mark": "kendi bilgisayarında", "sub": "İstediğin model. Verilerin sende kalsın.", "chips": ["Sohbetler cihazda", "Kullandıkça öde · Uygulama ücretsiz", "MIT açık kaynak"]},
 }
 
 # Source fonts from google/fonts (SIL OFL), supplied at generation time. The website

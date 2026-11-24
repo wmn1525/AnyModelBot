@@ -6,6 +6,8 @@ export default {
   queued: "当前回复结束后整理技能",
   card: {
     title: "{bot}整理了一个技能，确认后保存",
+    savedTitle: "{bot}整理的技能已保存",
+    updatedTitle: "{bot}整理的技能已更新",
     drafting: "正在整理技能…",
     saving: "正在保存…",
     missing: "找不到这张卡片，可能已经删除。",
@@ -107,7 +109,7 @@ export default {
     restored: "已恢复上一版，从下一条消息起使用。",
     deleteTitle: "删除技能「{name}」？",
     deleteBody: "所有机器人都不能再用它。删除后无法恢复。",
-    deleteBodyRules: "所有机器人都不能再用它。引用它的 {count} 条规则会暂停。删除后无法恢复。",
+    deleteBodyRules: "所有机器人都不能再用它。引用它的 {count} 条规则会自动关闭。删除后无法恢复。",
     deleted: "已删除「{name}」",
     unverified: "未验证：这个技能是在任务没做完时存下的，用它成功做完一次后去掉这个标记。",
   },

@@ -161,7 +161,7 @@
       "needs": { "web": true }, "suggestedTemplate": "researcher", "titleParam": "symbols", "budget": { "runUsd": 0.2, "monthUsd": 4 }, "minVersion": "0.1.40"
     },
     {
-      "id": "price-alert", "version": 1, "category": "money", "rank": 20, "kind": "check", "resultStyle": "line", "quietWhenNothing": true, "icon": "banknotes",
+      "id": "price-alert", "version": 2, "category": "money", "rank": 20, "kind": "check", "resultStyle": "line", "quietWhenNothing": true, "icon": "banknotes",
       "schedule": { "kind": "daily", "time": "10:00" },
       "params": [
         { "key": "item", "type": "select", "required": true, "options": ["usd", "eur", "jpy", "hkd", "gold"] },

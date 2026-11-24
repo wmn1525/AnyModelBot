@@ -1,7 +1,7 @@
 export default {
   "facts": [
     {
-      "text": "Por padrão, o console escuta em 127.0.0.1 e verifica o cabeçalho Host; vincular um endereço que não seja de loopback exige um token de acesso.",
+      "text": "Por padrão, o console escuta em 127.0.0.1 e verifica o cabeçalho Host; até o acesso local exige um token de acesso.",
       "path": "src/web/server.ts"
     },
     {
@@ -9,7 +9,7 @@ export default {
       "path": "src/agent/bridge.ts · src/agent/host.ts"
     },
     {
-      "text": "Arquivos e comandos rodam em um espaço de trabalho isolado em sandbox, e qualquer coisa além dele exige aprovação; no Linux, o bubblewrap também oculta o diretório de dados.",
+      "text": "Arquivos e comandos rodam em um espaço de trabalho isolado em sandbox, e qualquer coisa além dele exige aprovação; no Linux, os comandos só rodam dentro do bubblewrap, que também oculta o diretório de dados, e são recusados quando ele não está disponível.",
       "path": "src/agent/host.ts"
     },
     {

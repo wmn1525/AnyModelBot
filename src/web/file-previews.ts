@@ -2,7 +2,12 @@
  * total size reported; CSV reads further. HTML gets a short-lived, directory-scoped
  * capability (renewed while the tab stays open) so an opaque sandbox can load its
  * assets without receiving the console's credentials; a small script reports link
- * clicks to the panel instead of navigating inside the frame. */
+ * clicks to the panel instead of navigating inside the frame.
+ *
+ * The page is untrusted (the agent may have written it from something it was sent, and
+ * files from chat peers land in the same workspace), and it can reach https: hosts for
+ * images, styles and scripts. So it may load what sits next to it, but its own code must
+ * not be able to read those files: see ASSETS and SCRIPT_READABLE. */
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -29,13 +34,21 @@ export const TEXT_EXT = new Set(
 const TEXT_NAMES = new Set(["dockerfile", "makefile"]);
 const CSV_EXT = new Set([".csv", ".tsv"]);
 const PREVIEW_IMAGES: Record<string, string> = { ...IMAGE_TYPES, ".svg": "image/svg+xml" };
+/** What a page may load from its directory. Data files (JSON …) are left out: only a script reading them could use them. */
 const ASSETS: Record<string, string> = {
   ...PREVIEW_IMAGES, ".html": "text/html; charset=utf-8", ".htm": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
-  ".json": "application/json", ".ico": "image/x-icon", ".avif": "image/avif",
+  ".ico": "image/x-icon", ".avif": "image/avif",
   ".woff": "font/woff", ".woff2": "font/woff2", ".ttf": "font/ttf", ".otf": "font/otf",
   ".mp4": "video/mp4", ".webm": "video/webm", ".mp3": "audio/mpeg", ".wav": "audio/wav",
 };
+/**
+ * The only assets served with CORS: from an opaque origin, ES modules and @font-face do not load without it.
+ * Everything else still displays (<img>, <link>, <video>, a link to a sibling page) but stays opaque to the
+ * page's code — no fetch(), no canvas read-back — so a page cannot pick up the files beside it and send
+ * them out in an https: image URL. fetch / XHR are also off in the CSP (connect-src 'none').
+ */
+const SCRIPT_READABLE = new Set([".js", ".mjs", ".woff", ".woff2", ".ttf", ".otf"]);
 /**
  * Injected into every page served through a grant: a plain link click is reported to the panel
  * (postMessage) instead of navigating the frame, so external links open in the system browser
@@ -213,18 +226,18 @@ export class FilePreviews {
     let workspace: string;
     try { workspace = fs.realpathSync(grant.scope.workspace); } catch { return fail(); }
     if (!inside(grant.entry, workspace) && file.path !== grant.entry) return fail();
-    const mime = ASSETS[path.extname(file.path).toLowerCase()];
+    const ext = path.extname(file.path).toLowerCase();
+    const mime = ASSETS[ext];
     if (!mime) return fail();
     const host = req.headers.host || "localhost";
     const sources = [`http://${host}${PREFIX}${key}/`, `https://${host}${PREFIX}${key}/`].join(" ");
     const headers: Record<string, string> = {
       "content-type": mime, "cache-control": "no-store",
       "x-content-type-options": "nosniff", "referrer-policy": "no-referrer",
-      // No cookies, console API access, parent access, popups, forms or nested frames.
-      "content-security-policy": `sandbox allow-scripts; default-src 'none'; script-src ${sources} https: 'unsafe-inline'; style-src ${sources} https: 'unsafe-inline'; img-src ${sources} https: data: blob:; font-src ${sources} https: data:; media-src ${sources} blob:; connect-src ${sources}; frame-src 'none'; object-src 'none'; base-uri ${sources}; form-action 'none'; frame-ancestors 'self'`,
-      // ES modules and fetch() inside the opaque sandbox use CORS without credentials.
-      "access-control-allow-origin": "*",
+      // No cookies, console API access, parent access, popups, forms, nested frames, fetch or XHR.
+      "content-security-policy": `sandbox allow-scripts; default-src 'none'; script-src ${sources} https: 'unsafe-inline'; style-src ${sources} https: 'unsafe-inline'; img-src ${sources} https: data: blob:; font-src ${sources} https: data:; media-src ${sources} blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri ${sources}; form-action 'none'; frame-ancestors 'self'`,
     };
+    if (SCRIPT_READABLE.has(ext)) headers["access-control-allow-origin"] = "*";
     if (mime.startsWith("text/html")) {
       fs.promises.readFile(file.path).then((body) => {
         const page = withLinkScript(body);

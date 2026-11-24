@@ -1,7 +1,7 @@
 // 装好的技能、连上的应用在对话里怎么用：加号菜单「技能与应用」、过程区「正在使用 / 已使用」、设置列表和成功提示里的「试试这样说」共用这一套——
 // 机器人的技能清单（显示名、简介、示例和生效状态由服务端算好，src/skills/display.ts）、应用的名字和示例、往输入框里填一句话。
 import { useEffect } from "preact/hooks";
-import { createStore, failed, successToast, toast, useStore } from "./store.js";
+import { createStore, failed, successToast, toast, toasts, updateToast, useStore } from "./store.js";
 import { api } from "./api.js";
 import { fill } from "./guide.js";
 import { appDisplayName, appsStore, loadApps } from "./apps.js";
@@ -45,6 +45,57 @@ export function useBotSkills(botId) {
     return () => clearInterval(timer);
   }, [botId, waiting]);
   return entry ? entry.skills : null;
+}
+
+// —— 生效状态 ——
+/** 装好、存好的技能在这个机器人上的生效状态：清单里还没有它时算加载中（加载完之前不说已经可用）；loading · waiting · active */
+export function skillReady(skill) {
+  if (!skill) return "loading";
+  return skill.state === "waiting" || skill.state === "loading" ? skill.state : "active";
+}
+
+const READY_WATCH_MS = 10 * 60_000;
+
+/**
+ * 卡片上的生效说法（存成技能、按链接安装）：这个技能还没生效（加载中、等当前任务结束）时每 2 秒刷新一次清单，生效了就停（最多看 10 分钟）。
+ * botId 为空时不看（还没装好、机器人已删除）、返回空串
+ */
+export function useSkillReady(botId, name) {
+  const skills = useBotSkills(botId);
+  const state = botId && name ? skillReady(skills?.find((x) => x.name === name)) : "";
+  useEffect(() => {
+    if (!state || state === "active") return;
+    const until = Date.now() + READY_WATCH_MS;
+    const timer = setInterval(() => (Date.now() > until ? clearInterval(timer) : loadBotSkills(botId).catch(() => {})), 2000);
+    return () => clearInterval(timer);
+  }, [botId, name, state]);
+  return state;
+}
+
+/**
+ * 导入技能后的成功提示：生效说法跟着真实状态走。textOf(state) 给出整句；还没生效时每 2 秒看一次清单，
+ * 状态变了就改提示里的说法（加载中 → 当前任务结束后 / 下一条消息起可用），生效了就停；提示关掉了、超过 10 分钟也停
+ */
+export function skillReadyToast(textOf, state, botId, name, example) {
+  const id = readyToast(textOf(state), botId, example);
+  if (state === "active" || !botId || !name) return id;
+  const until = Date.now() + READY_WATCH_MS;
+  let last = state;
+  const shown = () => toasts.get().some((x) => x.id === id && !x.leaving);
+  const tick = async () => {
+    if (!shown() || Date.now() > until) return;
+    let next = last;
+    try {
+      next = skillReady((await loadBotSkills(botId)).find((x) => x.name === name));
+    } catch {
+      /* 下次再看 */
+    }
+    if (next !== last && !updateToast(id, { text: textOf(next) })) return;
+    last = next;
+    if (next !== "active") setTimeout(tick, 2000);
+  };
+  setTimeout(tick, 2000);
+  return id;
 }
 
 // —— 名字 ——
@@ -213,7 +264,7 @@ export const inGroupChat = () => location.hash.startsWith("#/group/");
  * 按钮「填入输入框」（写进这个机器人的输入框并聚焦；群聊里不给）和「复制」
  */
 export function readyToast(text, botId, example) {
-  successToast({ text, example, onFill: inGroupChat() ? undefined : () => fillChat(botId, example), onCopy: () => copyExample(example) });
+  return successToast({ text, example, onFill: inGroupChat() ? undefined : () => fillChat(botId, example), onCopy: () => copyExample(example) });
 }
 
 /** 复制一句示例：成功、失败都给一句短提示 */

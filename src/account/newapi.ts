@@ -4,7 +4,7 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { AddressInfo } from "node:net";
 import { accountProfile, type AccountProfile } from "./profile.js";
-import { ApiError, type AppKey } from "./client.js";
+import { AccountRevokedError, ApiError, type AppKey, type RawApiResponse } from "./client.js";
 import type { AccountHooks, AccountStatus, AlertSettings, BotBudget, UsageSummary } from "./manager.js";
 import { startOfLocalDay, summarizeUsage } from "./manager.js";
 import { referencePrice, estimateRates, type PricingCatalog, type ModelInfo } from "./model-info.js";
@@ -13,6 +13,7 @@ import type { KeyBalance } from "../providers/modelflare.js";
 import { registerSecret } from "../log.js";
 import type { Store } from "../store/db.js";
 import { imageRoute, priceNote, unitPrice, sortModels, type Catalog, type MediaKind, type MediaModel } from "../tools/media/index.js";
+import type { CapsFetch } from "../tools/media/capabilities.js";
 import { logger } from "../log.js";
 
 const SESSION = "newapi.session";
@@ -64,6 +65,7 @@ export class NewApiAccountManager {
   }
   async restore(): Promise<void> { if (this.state === "signing_in") await this.refresh(); }
   get signedIn(): boolean { return this.state === "signed_in"; }
+  get isolationKey(): string { return this.ownerKey; }
   get ownerKey(): string {
     if (!this.signedIn) return "local";
     if (!this.bundle?.user.id) return "pending-account";
@@ -120,6 +122,50 @@ export class NewApiAccountManager {
     const body = await res.json().catch(() => ({})) as any;
     if (!res.ok || body.success === false || body.error) throw new ApiError(body.message || body.error?.message || `New API HTTP ${res.status}`, res.ok ? 502 : res.status);
     return body.data as T;
+  }
+
+  /** Raw OKINTO connected-app response, shared by feedback and model-capability discovery. */
+  private async connectedAppRaw(method: string, path: string, body: unknown, timeoutMs: number): Promise<RawApiResponse> {
+    let response: Response;
+    let text: string;
+    try {
+      response = await this.request(`/api/connected-app${path}`, {
+        method,
+        headers: { Accept: "application/json", ...(body !== undefined ? { "content-type": "application/json" } : {}) },
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      text = await response.text();
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError((error as Error).message || "OKINTO 请求失败", 0);
+    }
+    if (response.status === 401) throw new AccountRevokedError("OKINTO 登录已失效，请重新登录");
+    let json: unknown;
+    let isJson = false;
+    if (/^application\/json\b/i.test(response.headers.get("content-type") ?? "")) {
+      try { json = JSON.parse(text); isJson = true; } catch { /* invalid JSON */ }
+    }
+    return { status: response.status, isJson, json };
+  }
+
+  async modelCapabilities(line: string): Promise<CapsFetch> {
+    const response = await this.connectedAppRaw("GET", `/model-capabilities?line=${encodeURIComponent(line)}`, undefined, 10_000);
+    if ([404, 405, 501].includes(response.status)) return { ok: false, reason: "unsupported" };
+    if (response.status < 200 || response.status >= 300 || !response.isJson) return { ok: false, reason: "failed" };
+    return { ok: true, json: response.json };
+  }
+
+  feedbackCapabilities(): Promise<RawApiResponse> {
+    return this.connectedAppRaw("GET", "/feedback/capabilities", undefined, 10_000);
+  }
+
+  submitFeedback(payload: Record<string, unknown>, timeoutMs: number): Promise<RawApiResponse> {
+    return this.connectedAppRaw("POST", "/feedback", payload, timeoutMs);
+  }
+
+  feedbackSubmission(clientSubmissionId: string): Promise<RawApiResponse> {
+    return this.connectedAppRaw("GET", `/feedback/submissions/${encodeURIComponent(clientSubmissionId)}`, undefined, 10_000);
   }
 
   async startLogin(): Promise<string> {

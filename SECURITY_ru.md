@@ -1,6 +1,6 @@
 # Политика безопасности
 
-[English / 简体中文](./SECURITY.md) | [日本語](./SECURITY_ja.md) | [한국어](./SECURITY_ko.md) | Русский | [Español](./SECURITY_es.md) | [Português (Brasil)](./SECURITY_pt.md)
+[English / 简体中文](./SECURITY.md) | [日本語](./SECURITY_ja.md) | [한국어](./SECURITY_ko.md) | Русский | [Español](./SECURITY_es.md) | [Português (Brasil)](./SECURITY_pt.md) | [Türkçe](./SECURITY_tr.md)
 
 ## Сообщение об уязвимости
 

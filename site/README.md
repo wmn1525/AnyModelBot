@@ -1,6 +1,6 @@
 # okinto 中转官网（site/）
 
-基于现有 Astro 静态站维护，AI 服务为 okinto 中转。中文、英文、日文、韩文、俄文、西班牙语、葡萄牙语（巴西）一并维护。
+基于现有 Astro 静态站维护，AI 服务为 okinto 中转。中文、英文、日文、韩文、俄文、西班牙语、葡萄牙语（巴西）和土耳其语一并维护。
 
 ## 构建并导出 HTML
 
@@ -14,7 +14,7 @@ npm run package:html
 
 HTML 构建会读取 GitHub wmn1525/AnyModelBot 的最新 okbot Release（含安装包大小与 SHA-256）及 https://api.okinto.com/api/pricing 的公开快照。GitHub API 限流时自动从公开发布页读取。价格解析支持 New API 的固定倍率、线性上下文分档及 UTC 星期/小时价格表达式（按快照抓取时刻取价，价格页明确提示时段价格会变化）；无法识别的表达式会使构建失败，避免显示推测价格。价格单位为账户计费美元，不是充值现金价格，充值折算及缓存不计入估算。
 
-构建结果在 site/dist/；打包目录与 ZIP 在仓库 release/okbot-site-html-<版本>/ 和同名 .zip。静态包自带 Node.js 本地预览程序，解压后运行 preview.cmd 或 node preview.mjs，打开 http://127.0.0.1:4321。部署时把目录内的静态文件上传到域名根目录，无需 Astro 或 Node.js 服务端。实际替换线上文件后，需要检查首页版本条、七种语言下载页的版本链接、更新日志和服务功能说明；本地导出或官网 CI 通过不代表已部署。
+构建结果在 site/dist/；打包目录与 ZIP 在仓库 release/okbot-site-html-<版本>/ 和同名 .zip。静态包自带 Node.js 本地预览程序，解压后运行 preview.cmd 或 node preview.mjs，打开 http://127.0.0.1:4321。部署时把目录内的静态文件上传到域名根目录，无需 Astro 或 Node.js 服务端。实际替换线上文件后，需要检查首页版本条、八种语言下载页的版本链接、更新日志和服务功能说明；本地导出或官网 CI 通过不代表已部署。
 
 现有官网为 https://bot.okinto.com。正式部署时设置 SITE_DOMAIN=bot.okinto.com（不带 https://）后重新构建，确保 canonical 和 sitemap 使用正式域名；不设置时仍可导出通用静态包，但不输出 canonical 和公开 sitemap URL。GITHUB_URL 可覆盖下载仓库。默认不启用访问统计，不配置不存在的联系邮箱，联系入口使用项目 GitHub Issues。
 
@@ -285,8 +285,8 @@ docker compose -f site/deploy/compose.yml --env-file site/deploy/.env up -d --no
 
 ## 0.1.36 同步
 
-技能库、存成技能和七语言 Okinto 文案已与应用同步。旧的 API 路由、配置键和凭据文件名保留兼容；第三方许可证与来源声明保留原作者名称。
+技能库、存成技能和八种语言的 Okinto 文案已与应用同步。旧的 API 路由、配置键和凭据文件名保留兼容；第三方许可证与来源声明保留原作者名称。
 
-## 0.1.40 同步
+## 0.1.48 同步
 
-同步上游任务库、关于我、机器人协作和文件预览增强，保留 Okinto 账户、模型分组、余额和旧品牌防回退检查。正式下载元数据在安装包公开后从本仓库 Release 读取。官网部署和七语言路径须在线核验，静态构建通过不代表上线。
+同步上游 0.1.41–0.1.47：土耳其语、应用内反馈、附件、ZIP、工作文件夹和图片生成参考；保留 Okinto 登录、分组路由与余额。正式下载元数据在安装包公开后从本仓库 Release 读取。官网部署和八种语言路径须在线核验，静态构建通过不代表上线。

@@ -54,6 +54,24 @@ describe("MemoryStore", () => {
     }).toThrow(/已满/);
     expect(m.main(bot).length).toBeLessThanOrEqual(MEMORY_MAX);
   });
+  it("snapshot lists topics with their counts; fullText reads the sentences inside topics (fix 4 R10)", () => {
+    const m = new MemoryStore(dir);
+    m.remember(bot, "用户喜欢简短回答", { source: "t" });
+    m.remember(bot, "周一先整理周报，再发给团队", { source: "t", topic: "工作流程" });
+    m.remember(bot, "周报用表格", { source: "t", topic: "工作流程" });
+    const snap = m.snapshot([bot]);
+    expect(snap).toContain("工作流程（2 条）");
+    expect(snap).not.toContain("周一先整理周报");
+    const full = m.fullText([bot]);
+    expect(full).toContain("用户喜欢简短回答");
+    expect(full).toContain("### 主题：工作流程");
+    expect(full).toContain("- 周一先整理周报，再发给团队");
+    expect(full).toContain("- 周报用表格");
+    // 放不下的主题只列名字和条数
+    const tight = m.fullText([bot], 20);
+    expect(tight).not.toContain("周报用表格");
+    expect(tight).toContain("工作流程（2 条）");
+  });
   it("ambiguous forget lists candidates", () => {
     const m = new MemoryStore(dir);
     m.remember(bot, "喜欢猫", { source: "t" });

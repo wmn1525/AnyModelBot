@@ -1,11 +1,11 @@
 // 对话里的「存成技能」草稿卡（src/skills/drafts.ts）：生成中 → 等你确认 → 保存中 → 已保存 / 已更新；另有已取消、已过期、失败（带重试）。
 // 不点「保存」或「更新」不写任何文件。处理过的卡片只留结果、没有按钮，重启后不变。按钮都是原生按钮：Tab 聚焦、回车触发；状态变化经 aria-live 播报。
-import { useCallback, useEffect, useState } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { html, Button, Spinner } from "./ui.js";
 import { api } from "../lib/api.js";
 import { failed } from "../lib/store.js";
 import { getLang, t } from "../lib/i18n.js";
-import { copyExample, fillChat, useBotSkills } from "../lib/usage.js";
+import { copyExample, fillChat, useSkillReady } from "../lib/usage.js";
 import { manageMySkills, openSkillDetail, sendChatTo } from "../lib/my-skills.js";
 
 const FINAL = ["saved", "updated", "failed", "canceled", "expired"];
@@ -39,7 +39,16 @@ function Diff({ hunks }) {
   </div>`)}</div>`;
 }
 
+/** 把卡片底部的按钮行滚到眼前（停在输入框上方：.chat-scroll 的 scroll-padding-bottom 留了位置）；已经看得见时不动 */
+function revealActions(root) {
+  requestAnimationFrame(() => {
+    const el = root?.querySelector(".skill-card-foot, .actions");
+    el?.scrollIntoView({ block: "nearest" });
+  });
+}
+
 export function SkillDraftCard({ id }) {
+  const root = useRef(null);
   const [c, setC] = useState(null);
   const [gone, setGone] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -57,9 +66,17 @@ export function SkillDraftCard({ id }) {
     return () => clearInterval(timer);
   }, [c && c.state, load]);
   const done = !!c && (c.state === "saved" || c.state === "updated");
-  const botSkills = useBotSkills(done && c.botExists ? c.botId : null);
+  // 存好以后的生效说法：机器人空闲 / 在跑任务 / 加载中三选一，还没生效时自己刷新，生效了换成「下一条消息起可用」
+  const ready = useSkillReady(done && c.botExists && c.skill?.exists !== false ? c.botId : null, c?.result?.name);
+  // 刚整理好（生成中 → 等你确认）、改完原文：卡片变高了，把「编辑 / 取消 / 保存」那一行滚到输入框上方
+  const lastState = useRef("");
+  useLayoutEffect(() => {
+    const was = lastState.current;
+    lastState.current = c?.state || "";
+    if (was === "drafting" && c?.state === "pending") revealActions(root.current);
+  }, [c && c.state]);
   if (gone) return html`<div class="card skill-card done"><div class="q-detail">${t("mySkills.card.missing")}</div></div>`;
-  if (!c || c.state === "drafting") return html`<div class="card skill-card draft-card" aria-live="polite"><span class="skill-card-line"><${Spinner} />${t("mySkills.card.drafting")}</span></div>`;
+  if (!c || c.state === "drafting") return html`<div ref=${root} class="card skill-card draft-card" aria-live="polite"><span class="skill-card-line"><${Spinner} />${t("mySkills.card.drafting")}</span></div>`;
 
   const act = async (op, body = {}) => {
     setBusy(true);
@@ -91,13 +108,17 @@ export function SkillDraftCard({ id }) {
   const startEdit = async () => {
     try {
       setEditing(await instructions());
+      revealActions(root.current);
     } catch (e) {
       failed(e);
     }
   };
   const finishEdit = async () => {
     const next = await act("edit", { text: editing });
-    if (next) setEditing(null);
+    if (next) {
+      setEditing(null);
+      revealActions(root.current);
+    }
   };
 
   const d = c.draft;
@@ -105,17 +126,17 @@ export function SkillDraftCard({ id }) {
   const check = c.check;
   const fixes = d?.corrections || [];
   const askCount = (d?.personal || []).length;
-  const head = html`<div class="q">${t("mySkills.card.title", { bot: c.botName })}</div>`;
+  // 标题：等你确认时「…确认后保存」；存好、更新好以后换成已保存的说法
+  const head = html`<div class="q">${t(c.state === "saved" ? "mySkills.card.savedTitle" : c.state === "updated" ? "mySkills.card.updatedTitle" : "mySkills.card.title", { bot: c.botName })}</div>`;
 
   // —— 处理过的卡片：只留结果 ——
   if (done) {
     const r = c.result;
     const s = c.skill;
-    const mine = botSkills?.find((x) => x.name === r.name);
-    const state = !mine ? "loading" : mine.state === "waiting" || mine.state === "loading" ? mine.state : "active";
+    const state = ready || "loading";
     const example = r.example;
     const cant = s?.exists ? unschedulable(s) : t("mySkills.card.gone");
-    return html`<div class="card skill-card draft-card done" aria-live="polite">
+    return html`<div ref=${root} class="card skill-card draft-card done" aria-live="polite">
       ${head}
       <div class="skill-card-result">${[c.state === "saved" ? t("mySkills.card.saved", { bot: c.botName }) : t("mySkills.card.updated", { title: r.title }), s?.exists !== false ? t(`mySkills.card.ready.${state}`) : ""].filter(Boolean).join(/^(zh|ja)/.test(getLang()) ? "" : " ")}</div>
       ${example && html`<p class="skill-card-try">${t("chat.use.try", { example })}</p>`}
@@ -131,12 +152,12 @@ export function SkillDraftCard({ id }) {
     </div>`;
   }
   if (c.state === "canceled" || c.state === "expired") {
-    return html`<div class="card skill-card draft-card done" aria-live="polite">${head}<div class="skill-card-result">${t(c.state === "canceled" ? "mySkills.card.canceled" : c.superseded ? "mySkills.card.superseded" : "mySkills.card.expired")}</div></div>`;
+    return html`<div ref=${root} class="card skill-card draft-card done" aria-live="polite">${head}<div class="skill-card-result">${t(c.state === "canceled" ? "mySkills.card.canceled" : c.superseded ? "mySkills.card.superseded" : "mySkills.card.expired")}</div></div>`;
   }
   if (c.state === "failed") {
     const code = c.error?.code;
     const retry = () => (code === "draft_failed" ? sendChatTo(c.botId, "/skill") : act("retry"));
-    return html`<div class="card skill-card draft-card done" aria-live="polite">
+    return html`<div ref=${root} class="card skill-card draft-card done" aria-live="polite">
       ${head}
       <div class="skill-card-result warn">${t(code === "mine_full" ? "mySkills.card.full" : code === "draft_failed" ? "mySkills.card.draftFailed" : "mySkills.card.saveFailed")}</div>
       <div class="actions">
@@ -145,11 +166,11 @@ export function SkillDraftCard({ id }) {
       </div>
     </div>`;
   }
-  if (c.state === "saving") return html`<div class="card skill-card draft-card" aria-live="polite">${head}<span class="skill-card-line"><${Spinner} />${t("mySkills.card.saving")}</span></div>`;
+  if (c.state === "saving") return html`<div ref=${root} class="card skill-card draft-card" aria-live="polite">${head}<span class="skill-card-line"><${Spinner} />${t("mySkills.card.saving")}</span></div>`;
 
   // —— 编辑原文 ——
   if (editing !== null) {
-    return html`<div class="card skill-card draft-card" aria-live="polite">
+    return html`<div ref=${root} class="card skill-card draft-card" aria-live="polite">
       ${head}
       <label class="draft-edit"><span class="t-label">${t("mySkills.card.editTitle")}</span>
         <textarea class="field mono" rows="14" value=${editing} onInput=${(e) => setEditing(e.target.value)} spellcheck="false"></textarea></label>
@@ -171,7 +192,7 @@ export function SkillDraftCard({ id }) {
   const fullNew = c.full && !d.same;
   const canSave = !!check?.ok && !busy;
   const changes = (c.diff || []).length;
-  return html`<div class="card skill-card draft-card" aria-live="polite">
+  return html`<div ref=${root} class="card skill-card draft-card" aria-live="polite">
     ${head}
     ${d.unfinished && html`<p class="skill-card-hint draft-warn">${t("mySkills.card.unfinished", { step: d.unfinished })}</p>`}
     ${d.same && html`<div class="draft-same"><b>${t("mySkills.card.same", { title: d.same.title })}</b>${changes > 0 && html`<span class="hint">${t("mySkills.card.changes", { count: changes })}</span>`}${changes > 0 && html`<${Diff} hunks=${c.diff} />`}</div>`}

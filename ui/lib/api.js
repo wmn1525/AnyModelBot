@@ -103,14 +103,16 @@ async function readEvents(req, handlers) {
 
 /**
  * 流式对话。返回 Promise（结束或中止时 resolve）。handlers: text/typing/activity/prompt/file/stopping/done/error。
+ * 工作文件夹的选择和服务端对不上时抛 ApiError（data.code = "folderChanged"）。
  * 中止只是不再接收：消息在服务端照常处理（停止要调 /conversations/:id/stop），回来时用 attachChat 接上。
  */
-export function streamChat(botId, text, handlers, signal) {
+export function streamChat(botId, text, handlers, signal, folder) {
   return readEvents(
     fetch(`/amb/api/bots/${encodeURIComponent(botId)}/chat/stream`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-amb-lang": getLang() },
-      body: JSON.stringify({ text }),
+      // folder：点发送那一刻输入框上方选的工作文件夹 id（"" = 没选；不给 = 不带这个约束，命令、目录 Bot 的界面）
+      body: JSON.stringify(folder === undefined ? { text } : { text, folder }),
       signal,
     }),
     handlers,

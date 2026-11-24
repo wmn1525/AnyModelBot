@@ -149,16 +149,21 @@ export function chatRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
       // 交付的文件（web/files.ts）：GET file?path= 发给浏览器（图片、PDF、纯文本直接显示，其余下载）；
       // 桌面版 POST file/open 用系统的默认程序打开（打开就会运行的只在文件夹中显示），file/reveal 在文件夹中显示，file/save 另存为，
       // file/browser 用系统默认浏览器打开网页（.html 的默认程序可能是编辑器）。
-      // 只给这个会话交付过的文件和这个机器人工作区里的文件
-      if (seg[2] === "file" && (seg.length === 3 ? m === "GET" : seg.length === 4 && (seg[3] === "preview" ? m === "GET" : (seg[3] === "open" || seg[3] === "reveal" || seg[3] === "save" || seg[3] === "browser") && m === "POST"))) {
+      // 只给这个会话交付过的文件和这个机器人工作区里的文件。
+      // POST file/opened：右侧预览打开了这个文件（网页版、桌面版都有），记下来给预览的空状态和「+」菜单列「本对话打开过的文件」
+      if (seg[2] === "file" && (seg.length === 3 ? m === "GET" : seg.length === 4 && (seg[3] === "preview" ? m === "GET" : (seg[3] === "open" || seg[3] === "reveal" || seg[3] === "save" || seg[3] === "browser" || seg[3] === "opened") && m === "POST"))) {
         const conv = app.store.getConversation(decodeURIComponent(seg[1]));
         if (!conv) throw new HttpError(404, t("web.conversationNotFound"));
         const desktop = app.desktop;
-        if (m === "POST" && !desktop?.openPath) throw new HttpError(400, t("web.desktopOnly"));
+        if (m === "POST" && seg[3] !== "opened" && !desktop?.openPath) throw new HttpError(400, t("web.desktopOnly"));
         const input = m === "GET" ? url.searchParams.get("path") : (await readJson(req)).path;
         const ws = botWorkspace(cfg.dataDir, conv.botId);
         const f = ws ? resolveFile(String(input ?? ""), { workspace: ws, dataDir: cfg.dataDir, delivered: app.store.deliveredFiles(conv.id) }) : undefined;
         if (!f) throw new HttpError(404, t("web.fileNotFound"));
+        if (seg[3] === "opened") {
+          app.store.notePreviewOpen(conv.id, f.path, String(input));
+          return send(res, 200, { ok: true });
+        }
         if (m === "GET" && seg[3] === "preview") return send(res, 200, await previews.describe(f, { workspace: ws!, dataDir: cfg.dataDir, delivered: app.store.deliveredFiles(conv.id) }, { encoding: url.searchParams.get("encoding") || undefined }));
         if (m === "GET") return sendFile(req, res, f, undefined, url.searchParams.get("download") === "1");
         if (seg[3] === "save") {
@@ -179,10 +184,16 @@ export function chatRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
         return send(res, 200, { ok: true, revealed: true });
       }
     }
-    // 右侧预览：本对话（群聊是每个成员的会话）交付过的文件，新→旧，带交付时间；不在了的标 gone
+    // 本对话（群聊是每个成员的会话）交付过的文件，新→旧，带交付时间；不在了的标 gone
     if (seg.length === 1 && seg[0] === "delivered-files" && m === "GET") {
       const ids = url.searchParams.getAll("conv").filter((id) => app.store.getConversation(id)).slice(0, 32);
       return send(res, 200, { files: app.store.deliveredFileTimes(ids).slice(0, 200).map((d) => ({ ...describeFile(d.path), conv: d.conversationId, at: d.at })) });
+    }
+    // 右侧预览的空状态和「+」菜单：本对话里在预览中打开过的文件，最近打开的在前，带打开时间；path 是打开时的写法（标签按它认），
+    // 不在了的标 gone。不是本对话的会话不列
+    if (seg.length === 1 && seg[0] === "preview-files" && m === "GET") {
+      const ids = url.searchParams.getAll("conv").filter((id) => app.store.getConversation(id)).slice(0, 32);
+      return send(res, 200, { files: app.store.previewOpens(ids).slice(0, 200).map((d) => ({ ...describeFile(d.real, path.basename(d.path)), path: d.path, conv: d.conversationId, at: d.at })) });
     }
     // 右侧预览的 HTML 页还开着：续上它读取同目录资源的授权
     if (seg.length === 2 && seg[0] === "preview-grants" && seg[1] === "renew" && m === "POST") {

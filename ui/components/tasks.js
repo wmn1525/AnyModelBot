@@ -30,6 +30,8 @@ export function stageDot(stage) {
 /** 估算的花费到了一分钱才显示（之前什么都不写） */
 export const hasCost = (usd) => Number(usd) >= 0.005;
 export const money = (usd) => `$${Number(usd || 0).toFixed(2)}`;
+/** 别的机器人发来的事的花费：和「机器人协作」页每对机器人的累计同一种写法（不到一分钱写 <$0.01） */
+const handoffMoney = (usd) => (usd > 0 && usd < 0.005 ? "<$0.01" : money(usd));
 
 /** 运行一行：「第 1 次运行，用了 12 分钟」「第 2 次运行，已进行 3 分钟」「第 2 次运行，排队中」 */
 export function runLabel(r, i, now = Date.now()) {
@@ -57,7 +59,8 @@ function whenIn(at, now = Date.now()) {
  */
 export function taskSub(task, now = Date.now()) {
   const k = stageName(task.stage);
-  const spent = hasCost(task.spentUsd) ? money(task.spentUsd) : "";
+  // 别的机器人发来的事：花了就写（含重做、补充和「继续」），和「机器人协作」页的累计对得上
+  const spent = task.from ? (task.spentUsd > 0 ? handoffMoney(task.spentUsd) : "") : hasCost(task.spentUsd) ? money(task.spentUsd) : "";
   if (task.stage.group === "working") {
     if (k === "queued") return task.stage.label;
     const d = t("tasks.minutes", { count: Math.max(1, Math.round((now - task.createdAt) / 60_000)) });
@@ -150,13 +153,16 @@ export function TaskDetail({ task, onChanged, origin = true, question = true, on
       onChanged?.();
     });
   };
-  const o = origin && d?.origin;
-  const from = o && t("tasks.originLine", { where: channelName(o.channel), when: fmtSep(o.at), text: clip(o.text.replace(/\s+/g, " "), 60) });
-  const budget = hasCost(view.spentUsd) ? t("tasks.costOf", { spent: money(view.spentUsd), budget: money(view.budgetUsd) }) : money(view.budgetUsd);
+  // 别的机器人发来的事：来自写「{A} 发来的」；预算由发来的那件事定（超了在「需要你」里问「继续」），这里不改、不删
+  const handoff = !!view.from;
+  const o = origin && !handoff && d?.origin;
+  const from = handoff ? t("tasks.fromBot", { bot: view.from.name }) : o && t("tasks.originLine", { where: channelName(o.channel), when: fmtSep(o.at), text: clip(o.text.replace(/\s+/g, " "), 60) });
+  const budget = handoff && view.spentUsd > 0 ? t("tasks.costOf", { spent: handoffMoney(view.spentUsd), budget: money(view.budgetUsd) })
+    : hasCost(view.spentUsd) ? t("tasks.costOf", { spent: money(view.spentUsd), budget: money(view.budgetUsd) }) : money(view.budgetUsd);
   const asked = question && view.question;
   return html`<div class="task-detail">
     ${from && html`<div class="task-line"><span class="t-label">${t("tasks.origin")}</span>
-      ${onOpenConv ? html`<button type="button" class="v task-origin" title=${t("tasks.openConv")} onClick=${onOpenConv}>${from}</button>` : html`<span class="v selectable">${from}</span>`}</div>`}
+      ${onOpenConv && !handoff ? html`<button type="button" class="v task-origin" title=${t("tasks.openConv")} onClick=${onOpenConv}>${from}</button>` : html`<span class="v selectable">${from}</span>`}</div>`}
     ${asked && html`<div class="task-line"><span class="t-label">${t("tasks.question")}</span>
       <span class="v selectable">${asked.text}${asked.note && html`<span class="task-note">${asked.note}</span>`}</span></div>`}
     ${view.latest && html`<div class="task-line"><span class="t-label">${t("tasks.latest")}</span><span class="v selectable">${view.latest}</span></div>`}
@@ -166,7 +172,7 @@ export function TaskDetail({ task, onChanged, origin = true, question = true, on
               onInput=${(e) => setAmount(e.target.value)} onKeyDown=${(e) => (e.key === "Enter" && saveBudget(), e.key === "Escape" && (e.stopPropagation(), setEditing(false)))} />
             <button type="button" class="text accent" disabled=${!(Number(amount) > 0) || busy === "budget"} onClick=${saveBudget}>${t("common.save")}</button>
             <button type="button" class="text" onClick=${() => setEditing(false)}>${t("common.cancel")}</button></span>`
-        : html`<span class="v num">${budget}</span>${!ended && html`<button type="button" class="text" onClick=${() => (setAmount(String(view.budgetUsd)), setEditing(true))}>${t("tasks.change")}</button>`}`}
+        : html`<span class="v num">${budget}</span>${!ended && !handoff && html`<button type="button" class="text" onClick=${() => (setAmount(String(view.budgetUsd)), setEditing(true))}>${t("tasks.change")}</button>`}`}
     </div>`}
     ${view.folder && html`<div class="task-line"><span class="t-label">${t("tasks.folder")}</span>
       <span class="v mono selectable">${view.folder}</span>${d?.sizes?.folder > 0 && html`<span class="n num">${fmtSize(d.sizes.folder)}</span>`}
@@ -180,7 +186,7 @@ export function TaskDetail({ task, onChanged, origin = true, question = true, on
     <div class="task-actions">
       ${working && html`<button type="button" class="text danger" disabled=${busy === "stop"} onClick=${stop}>${busy === "stop" ? t("tasks.stopping") : t("tasks.stop")}</button>`}
       ${!data && html`<a class="text" href=${exportUrl("tasks", task.id)} download>${t("tasks.export")}</a>`}
-      ${!working && html`<button type="button" class="text danger" disabled=${busy === "del"} onClick=${del}>${t("common.delete")}</button>`}
+      ${!working && !handoff && html`<button type="button" class="text danger" disabled=${busy === "del"} onClick=${del}>${t("common.delete")}</button>`}
     </div>
   </div>`;
 }
@@ -218,7 +224,7 @@ export function TaskRow({ task, onChanged, open, onToggle, onOpenConv, data }) {
       onClick=${onToggle} onKeyDown=${(e) => (e.key === "Enter" || e.key === " ") && e.target === e.currentTarget && (e.preventDefault(), onToggle?.())}>
       <span class=${`dot ${stageDot(task.stage)}`} aria-hidden="true"></span>
       <div class="who">
-        <div class="name">${task.title}</div>
+        <div class="name">${task.title}${task.from && html`<span class="task-from">${t("tasks.fromBot", { bot: task.from.name })}</span>`}</div>
         <div class="sub">${taskSub(task)}</div>
       </div>
       ${working && !open && html`<button type="button" class="text danger" disabled=${stopping} onClick=${stop} onKeyDown=${(e) => e.stopPropagation()}>${stopping ? t("tasks.stopping") : t("tasks.stop")}</button>`}
@@ -235,7 +241,7 @@ const freshRule = (r, now = Date.now()) => r.state.key !== "done" || now - (r.la
  * 一次只展开一个任务或规则；onOpenConv(任务) 打开任务来自的那个会话。tasks / rules / ended 给了就不去取（样例页）。
  * 右侧面板的「任务」标签里：head=false 不画组名（标签就是组名），empty 是读完了什么都没有时的一行字
  */
-export function TaskGroup({ botId, onOpenConv, tasks: givenTasks, rules: givenRules, ended: givenEnded, details, head = true, empty = "" }) {
+export function TaskGroup({ botId, onOpenConv, tasks: givenTasks, rules: givenRules, ended: givenEnded, details, head = true, empty = "", handoffs = false }) {
   const [creating, setCreating] = useState(false);
   const focus = useStore(ruleFocus);
   const focused = useRef(0);
@@ -246,9 +252,11 @@ export function TaskGroup({ botId, onOpenConv, tasks: givenTasks, rules: givenRu
   const [openId, setOpenId] = useState("");
   const [showEnded, setShowEnded] = useState(false);
   const bot = encodeURIComponent(botId);
-  const loadTasks = () => api(`/tasks?bot=${bot}&group=working,needs&limit=20`).then((d) => setTasks(d.tasks)).catch(() => {});
+  // handoffs：连别的机器人发来的事一起列（右侧面板「任务」，标「{A} 发来的」、写花了多少）
+  const extra = handoffs ? "&handoffs=1" : "";
+  const loadTasks = () => api(`/tasks?bot=${bot}&group=working,needs&limit=20${extra}`).then((d) => setTasks(d.tasks)).catch(() => {});
   const loadRules = () => api(`/rules?bot=${bot}`).then((d) => setRules(d.rules)).catch(() => {});
-  const loadEnded = () => api(`/tasks?bot=${bot}&group=ended&limit=50`).then((d) => setEnded(d.tasks)).catch(() => {});
+  const loadEnded = () => api(`/tasks?bot=${bot}&group=ended&limit=50${extra}`).then((d) => setEnded(d.tasks)).catch(() => {});
   const reload = () => (loadTasks(), loadRules(), loadEnded());
   useEffect(() => {
     if (sample) return;

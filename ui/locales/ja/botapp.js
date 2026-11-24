@@ -3,7 +3,7 @@ export default {
   sidebar: { discover: "見つける", mine: "マイ", latest: "新着", new: "新着あり" },
   discover: {
     title: "見つける",
-    lead: "すぐ使えるツールです。開いてそのまま使えて、変えたいことは話すだけ。",
+    lead: "役立つツールを見つけ、業務をどうつなぐかも相談できます。",
     featured: "おすすめ",
     latest: "新着",
     empty: "一致するものはありません",

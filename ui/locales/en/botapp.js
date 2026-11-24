@@ -3,7 +3,7 @@ export default {
   sidebar: { discover: "Discover", mine: "Mine", latest: "New", new: "New" },
   discover: {
     title: "Discover",
-    lead: "Ready-made tools. Open one and use it, and just say what to change.",
+    lead: "Find useful tools and discuss how to connect your business workflows.",
     featured: "Featured",
     latest: "New",
     empty: "No matches",

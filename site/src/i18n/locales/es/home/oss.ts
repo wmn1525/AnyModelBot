@@ -1,7 +1,7 @@
 export default {
   "facts": [
     {
-      "text": "La consola escucha en 127.0.0.1 de forma predeterminada y verifica el encabezado Host; para vincularla a una dirección que no sea de loopback se requiere un token de acceso.",
+      "text": "La consola escucha en 127.0.0.1 de forma predeterminada y verifica el encabezado Host; incluso el acceso local requiere un token de acceso.",
       "path": "src/web/server.ts"
     },
     {
@@ -9,7 +9,7 @@ export default {
       "path": "src/agent/bridge.ts · src/agent/host.ts"
     },
     {
-      "text": "Los archivos y los comandos se ejecutan en un espacio de trabajo aislado, y todo lo que esté fuera requiere aprobación; en Linux, bubblewrap además oculta el directorio de datos.",
+      "text": "Los archivos y los comandos se ejecutan en un espacio de trabajo aislado, y todo lo que esté fuera requiere aprobación; en Linux, los comandos solo se ejecutan dentro de bubblewrap, que además oculta el directorio de datos, y se rechazan si no está disponible.",
       "path": "src/agent/host.ts"
     },
     {

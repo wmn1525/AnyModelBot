@@ -6,7 +6,7 @@ import { afterAll, beforeAll, expect, it } from "vitest";
 import { App } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 import { skillMd, skillZip } from "./skill-fixture.js";
-import { mockOpenAI } from "./helpers.js";
+import { mockOpenAI, signIn } from "./helpers.js";
 
 const require = createRequire(import.meta.url);
 let chromium: any;
@@ -67,6 +67,7 @@ it("错误 ZIP、缺失说明、错误开关、保留名称和不存在机器人
 it.skipIf(!browserAvailable)("浏览器：导入预览、取消、添加、查看、停用、替换、删除及窄屏布局", async () => {
   const browser = await chromium.launch({ executablePath: chrome, args: ["--no-sandbox"] });
   const page = await browser.newPage({ viewport: { width: 1100, height: 850 }, locale: "zh-CN" });
+  await signIn(page, app.web!.url);
   const errors: string[] = [];
   page.on("pageerror", (e: Error) => errors.push(e.message));
   page.setDefaultTimeout(8000);

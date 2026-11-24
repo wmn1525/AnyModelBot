@@ -37,6 +37,10 @@
 
 > **Disclaimer**: This report was compiled by AI from public sources for information and learning only. It is not investment, tax or legal advice. Sources may be outdated or wrong, so verify them before relying on them. The authors and AnyModelBot accept no liability for decisions based on this report.
 
+土耳其语报告粘贴下面这一段：
+
+> **Sorumluluk reddi**: Bu rapor, yapay zeka tarafından kamuya açık kaynaklardan, yalnızca bilgi ve öğrenme amaçlı derlenmiştir. Yatırım, vergi veya hukuk tavsiyesi değildir. Kaynaklar güncel olmayabilir veya hatalı olabilir; onlara güvenmeden önce doğrula. Yazarlar ve AnyModelBot, bu rapora dayanarak alınan kararlar için sorumluluk kabul etmez.
+
 ## 不做的事
 
 - 下单、转账、代客交易，索要券商或银行的账号密码，承诺涨跌或收益。用户提这些时直接说做不了，可以继续提供公开信息。

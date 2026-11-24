@@ -26,6 +26,8 @@ export interface LiveSnapshot {
   stopping: boolean;
   /** 这条并进了它前面那条正在进行的处理：没有自己的回复，回复在前面那条里 */
   steered: boolean;
+  /** 这一轮绑定的工作文件夹 id（没选是 ""）：界面在选择变了之后不再提供「补充」（PRD R2） */
+  folder: string;
 }
 
 type Listener = (event: string, data: unknown) => void;
@@ -47,6 +49,8 @@ export class LiveTurn implements ReplySession {
   stopping = false;
   /** 并进了正在进行的处理（见 LiveSnapshot.steered） */
   steered = false;
+  /** 绑定的工作文件夹 id（见 LiveSnapshot.folder） */
+  folder = "";
   done = false;
   /** 停止按钮：交给 runtime.handle 的 signal（排队中的也能停） */
   readonly abort = new AbortController();
@@ -91,6 +95,7 @@ export class LiveTurn implements ReplySession {
       files: [...this.files],
       stopping: this.stopping,
       steered: this.steered,
+      folder: this.folder,
     };
   }
 

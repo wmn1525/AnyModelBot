@@ -3,6 +3,7 @@
 import { createStore } from "./store.js";
 import { sendToChat } from "./guide.js";
 import { getLang } from "./i18n.js";
+import { fold } from "./text-fold.js";
 
 /** 技能列表超过这么多个时出搜索框和筛选胶囊 */
 export const LIST_SEARCH_AT = 10;
@@ -32,7 +33,10 @@ export function sortSkills(list, lang = getLang()) {
 }
 
 /** 搜索：文件名、标题和描述里有这段字（不分大小写） */
-export const matches = (s, q) => !q || [s.name, s.title, s.summary, s.description].some((f) => f && String(f).toLowerCase().includes(q));
+export const matches = (s, q) => {
+  const needle = fold(q);
+  return !needle || [s.name, s.title, s.summary, s.description].some((f) => f && fold(f).includes(needle));
+};
 
 /** 筛选胶囊：全部 / 我的技能 / GitHub / 本地 ZIP / 已关闭（一个技能可以同时在「已关闭」和它的来源里） */
 export const CHIPS = ["all", "mine", "github", "zip", "off"];

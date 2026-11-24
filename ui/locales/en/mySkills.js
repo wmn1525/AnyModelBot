@@ -6,6 +6,8 @@ export default {
   queued: "I'll put the skill together after this reply",
   card: {
     title: "{bot} put together a skill. Save it once it looks right",
+    savedTitle: "Skill from {bot} saved",
+    updatedTitle: "Skill from {bot} updated",
     drafting: "Putting the skill together…",
     saving: "Saving…",
     missing: "This card is gone. It may have been removed.",
@@ -123,8 +125,8 @@ export default {
     deleteTitle: "Delete the skill \"{name}\"?",
     deleteBody: "No bot will be able to use it. This can't be undone.",
     deleteBodyRules: {
-      one: "No bot will be able to use it. {count} routine that uses it will be paused. This can't be undone.",
-      other: "No bot will be able to use it. {count} routines that use it will be paused. This can't be undone.",
+      one: "No bot will be able to use it. {count} routine that uses it will be turned off. This can't be undone.",
+      other: "No bot will be able to use it. {count} routines that use it will be turned off. This can't be undone.",
     },
     deleted: "Deleted \"{name}\"",
     unverified: "Not verified: this skill was saved before the task finished. The mark goes away after it completes successfully once.",

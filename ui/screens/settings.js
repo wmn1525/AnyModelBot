@@ -23,12 +23,14 @@ import { TroubleshootPane } from "./troubleshoot.js";
 import { AboutMePane } from "../components/about-me.js";
 import { CommunityLinks } from "../components/community.js";
 import { QQ_GROUP } from "../lib/community.js";
+import { openFeedback } from "../lib/feedback.js";
 import { CollabPane } from "../components/collab.js";
 import { ConnectionSheets, connectionRows, useConnections } from "./connections.js";
 import { PwshHint } from "../components/pwsh-hint.js";
 import { OfficialKeyForm, officialName } from "../components/official-keys.js";
 import { AccountLogin, KeyForm, lineOptions } from "./onboarding.js";
 import { t, has, useLang, getLangPref, onLangChange, changeLang, LANGS, LANG_NAMES } from "../lib/i18n.js";
+import { fold } from "../lib/text-fold.js";
 import { fmtTimeOfDay } from "../lib/format.js";
 
 /** [id, 标题的文案键, 图标]；标题渲染时再 t()（tabLabel） */
@@ -494,7 +496,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       { tab: "modelflare", group: "models", id: "default-model", name: t("settings.rows.defaultModel.name"), sub: t("settings.rows.defaultModel.sub"), keys: t("settings.rows.defaultModel.keys"),
         ctl: html`<${PickModel} value=${s.defaultModel} models=${models} modelsError=${modelsError} reloadModels=${reloadModels} resetLabel=${t("settings.rows.defaultModel.auto")}
           onChange=${(m) => put({ defaultModel: m }, { defaultModel: m })} />` },
-      managed && acct?.capabilities?.media !== false && mf.connected && { tab: "modelflare", id: "image-model", name: t("settings.rows.imageModel.name"), sub: t("settings.rows.imageModel.sub"), keys: t("settings.rows.imageModel.keys"),
+      managed && acct?.capabilities?.media !== false && mf.connected && !signedIn && { tab: "modelflare", id: "image-model", name: t("settings.rows.imageModel.name"), sub: t("settings.rows.imageModel.sub"), keys: t("settings.rows.imageModel.keys"),
         ctl: html`<${PickModel} value=${s.imageModel} models=${media ? media.image : null} modelsError=${media && media.error} reloadModels=${loadMedia}
           resetLabel=${media && media.recommended.image ? t("settings.rows.autoModel", { model: shortModel(media.recommended.image) }) : t("common.auto")} label=${t("settings.rows.imageModel.name")}
           onChange=${(m) => put({ imageModel: m }, { imageModel: m })} />` },
@@ -573,6 +575,9 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       // 故障排查页是单独的面板（troubleshoot.js），这一行只给搜索用：搜"日志""测试模型"时能找到入口
       { tab: "troubleshoot", id: "troubleshoot", name: t("settings.tabs.troubleshoot"), sub: t("settings.rows.troubleshoot.sub"), keys: t("settings.rows.troubleshoot.keys"),
         go: () => { setQ(""); onTab?.("troubleshoot"); } },
+      // 需求与反馈：打开应用内的需求与反馈弹窗（components/feedback.js），默认在"使用场景与建议"
+      { tab: "about", id: "feedback", name: t("feedback.title"), sub: t("feedback.settingsSub"), keys: t("feedback.settingsKeys"),
+        ctl: html`<button type="button" class="btn sm" aria-haspopup="dialog" onClick=${() => openFeedback({ source: "about" })}>${t("feedback.settingsButton")}</button>` },
       // 社群（lib/community.js）：中文界面后面多一个 QQ 群号 + 复制（和监听地址、数据目录那几行一样）
       { tab: "about", id: "community", name: t("settings.rows.community.name"), sub: t("settings.rows.community.sub"), keys: t("settings.rows.community.keys"),
         ctl: html`<${CommunityLinks} />${lang === "zh-CN" && html`<span class="val">${QQ_GROUP}</span><${CopyButton} text=${QQ_GROUP} label=${t("settings.rows.community.copyQq")} />`}` },
@@ -581,8 +586,8 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
     ].filter(Boolean);
   }, [s, mf, mode, p, models, modelsError, cu, status, update, bots, acct, invite, unread, g, media, lang, langPref, conn.accounts, conn.channelAccounts, effort, official, leaving, balanceRefreshing]);
 
-  const needle = q.trim().toLowerCase();
-  const shown = needle ? rows.filter((r) => !r.custom && `${r.name} ${r.sub || ""} ${r.keys || ""}`.toLowerCase().includes(needle)) : rows.filter((r) => r.tab === tab && !r.searchOnly);
+  const needle = fold(q.trim());
+  const shown = needle ? rows.filter((r) => !r.custom && fold(`${r.name} ${r.sub || ""} ${r.keys || ""}`).includes(needle)) : rows.filter((r) => r.tab === tab && !r.searchOnly);
   // 搜索时按分页分段，平时按 group 分段
   const parts = needle ? TABS.map(([id, label]) => ({ label: tabLabel(label), rows: shown.filter((r) => r.tab === id) })).filter((x) => x.rows.length) : groupRows(shown);
   const acctRow = rows.find((r) => r.id === "account");

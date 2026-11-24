@@ -49,6 +49,7 @@ export default {
   "costOf": "{budget} のうち約 {spent}",
   "costShort": "約 {spent}",
   "origin": "依頼元",
+  "fromBot": "{bot} から",
   "question": "質問",
   "originLine": "{where} · {when}「{text}」",
   "openConv": "会話を開く",

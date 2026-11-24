@@ -504,11 +504,12 @@
       "audience": "Quem troca moeda ou compra ouro",
       "steps": [
         "Confere o preço público uma vez por dia",
-        "Só envia uma frase quando chega ao seu nível",
+        "Só envia uma frase quando chega ao seu nível, com um aviso de que é apenas para referência",
+        "Se não achar um preço confiável, escreve \"Não encontrado\" em vez de estimar",
         "Não avisa duas vezes no mesmo dia"
       ],
-      "sample": "O USD/CNY está em 7,08 agora (site de cotações, 10:02), abaixo de 7,10.",
-      "instruction": "Confira o preço atual de {item}. Quando estiver {direction} {price}, me diga em uma frase o preço atual, a fonte e o horário; se não chegou a esse nível, não envie mensagem. Não me avise duas vezes no mesmo dia (registre em alert.md nesta pasta).",
+      "sample": "O USD/CNY está em 7,08 agora (site de cotações, 10:02), abaixo de 7,10. Apenas para referência, não é recomendação de investimento.",
+      "instruction": "Confira o preço atual de {item}. Quando estiver {direction} {price}, me diga em uma frase o preço atual, a fonte e o horário, e termine com \"Apenas para referência, não é recomendação de investimento.\"; se não chegou a esse nível, não envie mensagem. Use só páginas públicas de cotação confiáveis que encontrar; se não conseguir um preço confiável, escreva só \"{item}: não encontrado.\". Não estime o preço nem conte como atingido (não registre em alert.md e confira de novo no dia seguinte, como sempre). Não me avise duas vezes no mesmo dia (registre em alert.md nesta pasta).",
       "params": {
         "item": {
           "label": "O que acompanhar",

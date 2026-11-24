@@ -490,11 +490,16 @@ export class SkillDrafts {
     return this.save({ ...c, draft: { ...c.draft, personal }, updatedAt: this.now() });
   }
 
-  /** 「编辑」完成：以改过的原文为准；还在原文里的个人信息保留各自的选择，手机号、邮箱、路径重新标 */
+  /**
+   * 「编辑」完成：以改过的原文为准；还在原文里的个人信息保留各自的选择，手机号、邮箱、路径重新标。
+   * 编辑框里是换好占位的那份（「运行时再问」的已经是 {{占位}}）：先把这些占位换回原文再存，
+   * 之后照旧按卡片上的「保留 / 运行时再问」换，编辑完这两个选项还在、还能改
+   */
   edit(id: string, text: string): DraftCard {
     const c = this.editable(id);
     if (c.state !== "pending" || !c.draft) return c;
-    const raw = String(text ?? "").replace(/\r\n/g, "\n").slice(0, 64 * 1024);
+    let raw = String(text ?? "").replace(/\r\n/g, "\n").slice(0, 64 * 1024);
+    for (const p of c.draft.personal) if (!p.keep) raw = raw.split(`{{${p.label}}}`).join(p.text);
     const fm = readFrontmatter(raw);
     const kept = c.draft.personal.filter((p) => raw.includes(p.text));
     const added = findPersonal(raw).filter((p) => !kept.some((k) => k.text === p.text || k.text.includes(p.text)));

@@ -197,7 +197,10 @@ function BotOverview({ bot, onOpenChat, onOpenConnections }) {
     ${viewing && html`<${ConversationSheet} conv=${viewing} onClose=${() => setViewing(null)} />`}`;
 }
 
-/** 「任务」标签：这个机器人的任务和规则（components/tasks.js 的 TaskGroup）。任务来自的会话：网页的就是中间的对话，微信、飞书的在会话记录里看 */
+/**
+ * 「任务」标签：这个机器人的任务和规则（components/tasks.js 的 TaskGroup）。任务来自的会话：网页的就是中间的对话，微信、飞书的在会话记录里看。
+ * 别的机器人发来的事也列在这里（标「{A} 发来的」和花了多少），这个机器人的花费明细一眼看全；主对话和侧栏不因此多出条目
+ */
 export function TasksTab({ bot, onOpenChat }) {
   const [viewing, setViewing] = useState(null);
   const openConv = (task) => {
@@ -206,7 +209,7 @@ export function TasksTab({ bot, onOpenChat }) {
       .then((d) => setViewing((d.conversations || []).find((c) => c.id === task.conversationId) || null))
       .catch(failed);
   };
-  return html`<${TaskGroup} key=${bot.id} botId=${bot.id} onOpenConv=${openConv} head=${false} empty=${t("info.noTasks")} />
+  return html`<${TaskGroup} key=${bot.id} botId=${bot.id} onOpenConv=${openConv} head=${false} empty=${t("info.noTasks")} handoffs />
     ${viewing && html`<${ConversationSheet} conv=${viewing} onClose=${() => setViewing(null)} />`}`;
 }
 

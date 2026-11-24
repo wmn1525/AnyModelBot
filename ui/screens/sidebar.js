@@ -29,6 +29,7 @@ import { AccountLogin } from "./onboarding.js";
 import { CommunityLinks } from "../components/community.js";
 import { previewText } from "../lib/errors.js";
 import { appsStore } from "../lib/apps.js";
+import { openFeedback } from "../lib/feedback.js";
 import { ScheduledButton } from "./scheduled.js";
 import { GroupAvatars } from "./group.js";
 
@@ -36,7 +37,7 @@ const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 
 /**
  * 左下角账户区（第 12、10、19 项）：
- * - 头像 + 昵称常驻，整行可点，向上展开菜单：设置、连接应用、意见和反馈、检查更新。
+ * - 头像 + 昵称常驻，整行可点，向上展开菜单：设置、连接应用、意见和反馈（应用内弹窗，components/feedback.js）、检查更新。
  *   退出登录放在设置 › 常规底部的账户区域；设置入口还有 ⌘, 快捷键，账户行旁边不再单独摆齿轮。
  *   菜单贴着整个账户区往上开、和账户区一样宽。
  * - 余额和 Bot 额度在设置 › 模型中的 Modelflare 账户区 顶部直接展示，账户行只保留头像、昵称和菜单入口。
@@ -145,8 +146,8 @@ export function AccountButton({ account, onSettings, update, onUpdateChanged }) 
           <span class="menu-icon"><${Icon} name="gear" size="md" /></span><span class="menu-label">${t("sidebar.settings")}</span><kbd>${isMac ? "⌘," : "Ctrl+,"}</kbd></button>
         <button type="button" role="menuitem" onClick=${() => { setOpen(false); onApps?.(); }}>
           <span class="menu-icon"><${Icon} name="link" size="md" /></span><span class="menu-label">${t("apps.menu")}</span>${appsAttention && html`<span class="dot warn" title=${t("apps.attention")}></span>`}</button>
-        <a role="menuitem" href="https://github.com/wmn1525/AnyModelBot/issues/new/choose" target="_blank" rel="noopener noreferrer" onClick=${() => setOpen(false)}>
-          <span class="menu-icon"><${Icon} name="chat" size="md" /></span><span class="menu-label">${t("firstUse.feedback")}</span><${Icon} name="ext" size="xs" class="menu-trail" /></a>
+        <button type="button" role="menuitem" aria-haspopup="dialog" onClick=${() => { setOpen(false); openFeedback({ source: "account_menu" }); }}>
+          <span class="menu-icon"><${Icon} name="chat" size="md" /></span><span class="menu-label">${t("feedback.title")}</span></button>
         <div class="account-community" role="group" aria-label=${t("firstUse.community")}>
           <span class="menu-icon"><${Icon} name="chats" size="md" /></span><span class="menu-label">${t("firstUse.community")}</span>
           <${CommunityLinks} icons role="menuitem" onPick=${() => setOpen(false)} /></div>

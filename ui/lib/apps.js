@@ -3,6 +3,7 @@
 import { createStore } from "./store.js";
 import { api } from "./api.js";
 import { getLang, has, t } from "./i18n.js";
+import { fold } from "./text-fold.js";
 
 const EMPTY = { loaded: false, error: "", catalog: [], apps: [], attention: false, customCount: 0, maxCustom: 20 };
 export const appsStore = createStore(EMPTY);
@@ -133,7 +134,7 @@ export function repairActions(state, { custom = false, method = "" } = {}) {
 
 /** 搜索：应用名、中英文别名、用途词、已连接账号的别名 */
 export function matchesApp(q, { entry, view, lang }) {
-  const needle = String(q || "").trim().toLowerCase();
+  const needle = fold(String(q || "").trim());
   if (!needle) return true;
   const hay = [];
   if (entry) hay.push(entry.name.zh, entry.name.en, entry.id, ...(entry.keywords || []));
@@ -143,7 +144,7 @@ export function matchesApp(q, { entry, view, lang }) {
   }
   if (entry && has(`apps.catalog.${entry.id}.desc`)) hay.push(t(`apps.catalog.${entry.id}.desc`));
   void lang;
-  return hay.some((x) => String(x || "").toLowerCase().includes(needle));
+  return hay.some((x) => fold(x).includes(needle));
 }
 
 /** 内置应用的几步说明：apps.catalog.<id>.steps.<方式>.0、1、2… */

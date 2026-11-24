@@ -80,15 +80,18 @@ export function parseEntries(md: string): Entry[] {
   return out;
 }
 
+/** İ 的默认小写是 i 加组合符，主题名和去重都认不出。先换成 I，再做不随区域变化的小写。 */
+const foldLetters = (s: string) => s.replace(/İ/g, "I").toLowerCase();
+
 export function validTopic(topic: string): string {
-  const s = topic.trim().toLowerCase().replace(/\s+/g, "-");
+  const s = foldLetters(topic.trim()).replace(/\s+/g, "-");
   if (!/^[\p{L}\p{N}_-]{1,40}$/u.test(s)) throw new MemoryError(msg("agent.memTopicInvalid", { topic }));
   if (s === "memory" || s === "index") throw new MemoryError(msg("agent.memTopicReserved", { topic }));
   return s;
 }
 
 function squash(s: string): string {
-  return s.toLowerCase().replace(/\s+/g, "");
+  return foldLetters(s).replace(/\s+/g, "");
 }
 
 function today(): string {
@@ -252,17 +255,51 @@ export class MemoryStore {
     fs.rmSync(this.dir({ kind: "group", id: groupKey }), { recursive: true, force: true });
   }
 
-  /** 冻结快照：会话（段）开始时注入一次，之后整段不变以复用提示缓存。团队 → 机器人 → 群（群放最后）。 */
+  /**
+   * 冻结快照：会话（段）开始时注入一次，之后整段不变以复用提示缓存。团队 → 机器人 → 群（群放最后）。
+   * 主题只列名字和条数（主题里是完整的句子，不是空的），要用时 recall 带 topic 读全文
+   */
   snapshot(scopes: Scope[]): string {
     const parts: string[] = [];
     for (const s of scopes) {
       const es = this.entries(s);
-      const ts = this.topics(s);
+      const ts = this.topics(s).map((t) => ({ t, n: this.entries(s, t).length })).filter((x) => x.n > 0);
       if (!es.length && !ts.length) continue;
       parts.push(`## ${scopeLabel(s, FILE_LANG)}`, ...es.map((e) => `- ${e.text}`));
-      if (ts.length) parts.push(`（主题，用 recall 读取：${ts.join("、")}）`);
+      if (ts.length) parts.push(`（另有主题，里面是记下的完整句子；用到或被问到时用 recall 带 topic 读全文：${ts.map((x) => `${x.t}（${x.n} 条）`).join("、")}）`);
       parts.push("");
     }
+    return parts.join("\n").trim();
+  }
+
+  /**
+   * recall 不带关键词、不带主题时给的全文：主记忆的句子，加上每个主题里的句子（不只主题名）。
+   * 超过 max 字时后面的主题只列名字和条数，说明要带 topic 再读
+   */
+  fullText(scopes: Scope[], max = 12_000): string {
+    const parts: string[] = [];
+    let size = 0;
+    const later: string[] = [];
+    for (const s of scopes) {
+      const es = this.entries(s);
+      const ts = this.topics(s).map((t) => ({ t, es: this.entries(s, t) })).filter((x) => x.es.length > 0);
+      if (!es.length && !ts.length) continue;
+      const head = [`## ${scopeLabel(s, FILE_LANG)}`, ...es.map((e) => `- ${e.text}`)];
+      parts.push(...head);
+      size += head.join("\n").length;
+      for (const x of ts) {
+        const block = [`### 主题：${x.t}`, ...x.es.map((e) => `- ${e.text}`)];
+        const n = block.join("\n").length;
+        if (size + n > max) {
+          later.push(`${x.t}（${x.es.length} 条）`);
+          continue;
+        }
+        parts.push(...block);
+        size += n;
+      }
+      parts.push("");
+    }
+    if (later.length) parts.push(`（还有这些主题没放下，用 recall 带 topic 读：${later.join("、")}）`);
     return parts.join("\n").trim();
   }
 

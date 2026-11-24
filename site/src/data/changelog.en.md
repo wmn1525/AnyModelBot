@@ -1,8 +1,89 @@
 # Changelog
 
-[简体中文](./CHANGELOG.md) | English | [日本語](./CHANGELOG_ja.md) | [한국어](./CHANGELOG_ko.md) | [Русский](./CHANGELOG_ru.md) | [Español](./CHANGELOG_es.md) | [Português (Brasil)](./CHANGELOG_pt.md)
+[简体中文](./CHANGELOG.md) | English | [日本語](./CHANGELOG_ja.md) | [한국어](./CHANGELOG_ko.md) | [Русский](./CHANGELOG_ru.md) | [Español](./CHANGELOG_es.md) | [Português (Brasil)](./CHANGELOG_pt.md) | [Türkçe](./CHANGELOG_tr.md)
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/wmn1525/AnyModelBot/releases).
+
+## 0.1.48 - 2026-11-24
+
+### New
+
+- **Upstream 0.1.41–0.1.47:** adds Turkish UI, docs and website content, in-app feedback, image and file attachments, safe ZIP extraction, work folders, and image generation with reference images.
+- **Send images and files together:** paste an image or drop images and text files into a chat, send them with a prompt or on their own. ZIP files are safely inspected and extracted only after you describe the task; their contents are never run automatically. In the desktop app, choose a work folder so the bot can work with files in place.
+- **Reference images and direct image generation:** while signed in to Okinto, use chat images as generation references or pick an image-generation model directly in the model picker. The app checks the account, route, model capabilities and image limits before sending. Unknown capabilities block the request, and an uncertain result is never retried automatically.
+- **In-app requests and feedback:** save drafts, review the full submission and choose separately whether to include diagnostics or contact details. If the result is uncertain, the app checks the same submission instead of creating a duplicate.
+
+### Improvements and fixes
+
+- **Commands and the local console:** Linux agent commands run only when the bubblewrap sandbox is available, the command-line console now requires an access token, and web previews further isolate page scripts from other files.
+- **Okinto integration:** retains Okinto sign-in, model groups, balances, cost confirmations and direct official API keys, with the release notes and development guides updated in all eight README languages.
+
+## 0.1.47 - 2026-11-23
+
+### New
+
+- **Images as image-generation references:** when you're signed in to Okinto and add images in a one-on-one chat with a bot, a “Use as image-generation references” switch appears next to the attachment count, off by default. Turn it on and the images in that message become references in display order; the model selected at the bottom right generates the image and the result comes back to the same chat. Adding images alone never starts a paid generation. If the current model can't do it, its capabilities can't be verified yet, or the images exceed the model's count, format or size limits, a note above the message box explains why, and its “Switch models” link opens the usual model picker. Cost confirmation works as before (every time, or when the estimate is above $0.5), and an unconfirmed result is never retried automatically. Requires model capability information from Okinto; nothing is sent when it can't be verified. Not available with custom API keys yet.
+- **Pick image-generation models in the model picker:** when you're signed in, the model picker at the bottom right also lists the image-generation models your account can use. Select one and just describe the picture you want; no chat model is involved.
+
+### Improvements and fixes
+
+- **Image generation uses the selected model only:** when you're signed in and ask a bot in plain words for an image, it uses only the model selected at the bottom right. If that model can't generate images or its capabilities can't be verified, the bot says so and asks you to switch, instead of using a separate default image model (the “Default image model” setting is hidden while signed in). Nothing changes when you connect with an API key only.
+
+## 0.1.46 - 2026-11-22
+
+### New
+
+- **Work folder:** in the desktop app, choose a folder above the message box and the bot works on the files right where they are, without dragging them in one by one. With Workspace access the bot can edit files in that folder without asking each time; writing anywhere else still needs your approval. Each message keeps the folder chosen when it was sent, so switching folders while it is queued or waiting for approval never redirects it, and background tasks started from it work in the same folder. Your 10 most recent folders are one click away; the app's data folder, a disk root and your home folder itself can't be chosen. The web console shows the chosen folder, but you choose or change it in the desktop app on the bot's machine.
+- **ZIP attachments:** drag a ZIP (up to 50 MiB) into a chat and send it with images and files, or on its own. The bot only looks inside or extracts it after you say what to do, into its own workspace by default or into the work folder if you ask, and never runs anything from it on its own. Encrypted or split ZIPs, unsafe paths and archives that expand beyond 200 MiB or 2,000 entries are refused with the reason. Click a sent ZIP to save the original file. Needs agent mode.
+
+### Improvements and fixes
+
+- **Attachments:** when you drag in several files, the ones that can be added are added and the rest are listed in one line with the reason, instead of the whole batch being rejected. File cards show the file type and keep the extension visible on long names.
+
+## 0.1.45 - 2026-11-22
+
+### Improvements and fixes
+
+- **Command sandbox (Linux):** commands a bot runs now run only inside the bubblewrap sandbox. If bubblewrap is not installed, or the system does not let it create namespaces, the command is refused with the reason and how to fix it (install bubblewrap or allow it), instead of quietly falling back to a sandbox that only restricts writes and lets commands read the app's data directory. Bots with full access are not affected. The official Docker image still allows that fallback by default, because a container started with default options cannot create the namespaces bubblewrap needs; add `-e AMB_ALLOW_LANDLOCK=0` to turn it off.
+- **Access token for the command-line version:** when you run with `npm start`, the local console now needs an access token too. Started from a terminal, it prints a link with the token once; open it in your browser and the browser remembers it. The token is also saved in `ui-token` in the data directory, and `npm run bot` reads it automatically. The desktop app and Docker work as before.
+
+## 0.1.44 - 2026-11-20
+
+### Improvements and fixes
+
+- **Image attachments:** several kinds of images were rejected as an unsupported format when dragged or pasted into a chat and are now accepted: images whose extension does not match their real format (a PNG or WebP saved as .jpg, for example), phone JPEGs with extra data after the image and motion photos (only the still frame is used), and images with a .jfif or .jpe extension. An image that really cannot be added now asks you to convert it to PNG or JPG instead of telling you to use Markdown, HTML or TXT.
+- **Preview security:** when you preview a web page a bot generated, the page's scripts can no longer read the contents of other files in the same folder (fetch is blocked); styles, scripts, images and fonts load as before. Data files such as JSON are no longer served to previewed pages, so inline the data in the HTML or ship it as a script.
+- **In-app updates:** on macOS, the "AnyModelBot ran into a problem" window no longer appears during installation after you click Restart and update. The fix takes effect from 0.1.44 on: the window can still appear once while updating to 0.1.44 from an older version, and the update completes normally.
+
+## 0.1.43 - 2026-11-20
+
+### New
+
+- **Image and file attachments:** paste a screenshot or image into a chat, or drag in images and text files (Markdown, HTML, TXT, CSV, JSON, code and more), and send them with your message. You can also send attachments on their own. Images go to models that can see images, and the full text of files goes to the model to read; click a thumbnail to enlarge it. Each message takes up to 8 attachments, including up to 4 images, at up to 10 MiB each. If the current model does not support images, the app tells you. PDF, Office documents, archives, audio and video are not supported yet.
+- **Requests & Feedback:** Feedback is now Requests & Feedback, with three categories: Use cases & ideas, Problems, and Business & partnerships. Each keeps its own draft. Contact details are left out unless you tick the consent box for that submission, logs are included only if you tick them, and you can view everything that will be sent first. Discover has a new section for business scenarios.
+
+### Improvements and fixes
+
+- **Organising files on your computer:** asking a bot to tidy files on the Desktop or in other folders no longer asks for Accessibility or Screen Recording first; anything outside its workspace still needs your approval. When a task really needs to operate a desktop app and a system permission is missing, a permission card appears in the chat for you to turn it on.
+- **Preview:** with focus in the preview, Cmd+W / Ctrl+W closes only the current tab; the empty preview and the + menu list the files opened in this chat.
+- **Skills:** Save as skill drafts the most recently finished request by default; choices on the draft card survive editing; the import toast and cards no longer stay on "Loading".
+- **Chat and tasks:** the chat stays at the bottom when content or the composer grows, so notes and cards are not hidden behind the composer; a bot's Tasks tab lists work sent by other bots and says who sent it.
+
+## 0.1.42 - 2026-11-18
+
+### New
+
+- **In-app feedback:** open the feedback window from Feedback in the account menu, "Report this problem" under an error in chat, Settings → Troubleshooting or Settings → About. Choose Problem, Suggestion or Other, write a few lines and send. The version and system details are always included, and opening it from an error adds that error. Diagnostics are included only if you tick the box, you can preview the full text before sending, and conversations and screenshots are never attached. When you're signed in to Modelflare, your feedback becomes a support ticket on your account: replies are emailed to you and appear on Modelflare's tickets page, up to 3 a day. Without a sign-in you can send it on GitHub or by email, with the details filled in for you.
+
+### Improvements and fixes
+
+- **Email links:** in the desktop app, email links in chat now open your system's mail app. Before, clicking them did nothing.
+
+## 0.1.41 - 2026-11-16
+
+### New
+
+- **Turkish:** The interface, tray menu, system messages from bots, website and documentation are available in Turkish. Pick Türkçe during setup or in Settings → General → Language. If your system language is Turkish, the app uses it automatically. The percent sign comes before the number, and US Stock Research charts read that form. The homepage demo is still the English recording.
 
 ## 0.1.40 - 2026-11-15
 

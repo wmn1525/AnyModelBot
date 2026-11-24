@@ -9,7 +9,7 @@ export default {
     "What you send to the model (including screen content during computer use) travels through the okinto gateway to the provider you choose.",
     "Model requests pass through okinto. Log retention, caching and data handling follow the published okinto privacy policy and account settings.",
     "Messages in Slack, Telegram and Discord pass through those platforms' servers by nature.",
-    "If you add a Notion account, what bots read and write goes to Notion, and what they read also goes into model requests.",
+    "If you connect apps such as Notion or GitHub or add a custom MCP connector, bots' reads and writes go to those services and read content enters model requests. When the account service supports in-app feedback, the text, category, context, version and system details you submit go to Okinto as a private ticket; errors and logs are optional, keys are redacted, contact info needs consent, and chats or screenshots aren't attached.",
     "Windows installers and Linux AppImages download updates in the background by default; this can be disabled in Settings. Installation requires clicking Restart and update with no active tasks. Current macOS builds use manual downloads. Version 0.1.28 and earlier require a manual installation first. Update requests contain no account credentials or chat content."
   ],
   "guardsTitle": "Safeguards in the code",

@@ -65,7 +65,9 @@ export function CustomConnectorSheet({ id, apps, full, chatBot, onClose }) {
   const [json, setJson] = useState("");
   const [jsonError, setJsonError] = useState("");
   const [formWarning, setFormWarning] = useState(false);
-  const [showRequired, setShowRequired] = useState(false);
+  // 网址格式的提示：离开过已输入内容的地址栏，或点过「添加」之后才出现；来回切表单 / JSON 不算提交
+  const [urlLeft, setUrlLeft] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const jsonBase = useRef(null);
   const [advanced, setAdvanced] = useState(false);
   const [switched, setSwitched] = useState(false);
@@ -110,7 +112,6 @@ export function CustomConnectorSheet({ id, apps, full, chatBot, onClose }) {
     const r = jsonToDraft(json, draft, { partial: true });
     setFormWarning(!!r.error);
     if (!r.error) { setDraft(r.draft); jsonBase.current = r.draft; }
-    setShowRequired(true);
     setJsonError("");
     setTab("form");
   };
@@ -152,14 +153,12 @@ export function CustomConnectorSheet({ id, apps, full, chatBot, onClose }) {
       d = r.draft;
       setDraft(d);
     }
-    setShowRequired(true);
-    if (!d.name.trim()) {
-      if (tab === "json") setJsonError(t("apps.custom.jsonError.missing"));
-      return;
-    }
+    setSubmitted(true);
+    // 名称可以留空：保存时按地址 / 命令自动起名（服务端），不拦
     const bad = draftProblem(d);
     if (bad) {
-      // 表单里有问题的字段下面已经有提示；JSON 页把同一个问题写在编辑区下方
+      // 表单里有问题的字段下面已经有提示（地址、占位），不再在底部重复一遍；JSON 页把同一个问题写在编辑区下方
+      if (tab !== "json" && (bad === "url" || bad === "placeholder")) return;
       (tab === "json" ? setJsonError : setError)(bad === "placeholder" ? t("apps.custom.placeholder") : bad === "url" ? t("apps.custom.problem.url") : t(`apps.custom.jsonError.${bad === "command" ? "missing" : bad.replace("Empty", "")}`));
       return;
     }
@@ -272,15 +271,15 @@ export function CustomConnectorSheet({ id, apps, full, chatBot, onClose }) {
       ${tab === "form" && html`
         ${formWarning && html`<${Notice} tone="red">${t("welcome.jsonKept")}<//>`}
         <label class="set-field"><span class="k">${t("apps.custom.name")}</span>
-          <input class="field" maxlength="60" placeholder=${t(remote ? "apps.custom.namePlaceholder" : "apps.custom.namePlaceholderLocal")} value=${draft.name} onInput=${(e) => patch({ name: e.target.value })} />${showRequired && !draft.name.trim() && html`<span class="hint tone-danger">${t("welcome.required")}</span>`}</label>
+          <input class="field" maxlength="60" placeholder=${t(remote ? "apps.custom.namePlaceholder" : "apps.custom.namePlaceholderLocal")} value=${draft.name} onInput=${(e) => patch({ name: e.target.value })} /></label>
         <div class="set-field"><span class="k">${t("apps.custom.typeLabel")}</span>
           <${Seg} label=${t("apps.custom.typeLabel")} value=${draft.transport} onChange=${setType} options=${[["http", t("apps.custom.type.remote")], ["stdio", t("apps.custom.type.local")]]} />
           ${switched && html`<span class="hint">${t("apps.custom.switched")}</span>`}</div>
         ${remote && html`
           <label class="set-field"><span class="k">${t("apps.custom.url")} *</span>
             <input class=${`field mono${flagged.includes("url") ? " err" : ""}`} type=${draft.auth === "dedicatedUrl" && draft.url !== MASK ? "password" : "text"} autocomplete="off" spellcheck="false" placeholder=${t("apps.custom.urlPlaceholder")} value=${draft.url}
-              onInput=${(e) => patch({ url: e.target.value })} />
-            ${problem === "url" && (draft.url || showRequired) && html`<span class="hint tone-danger">${t("apps.custom.problem.url")}</span>`}</label>
+              onInput=${(e) => patch({ url: e.target.value })} onBlur=${(e) => setUrlLeft(!!e.target.value.trim())} />
+            ${problem === "url" && ((urlLeft && draft.url.trim()) || submitted) && html`<span class="hint tone-danger">${t("apps.custom.problem.url")}</span>`}</label>
           <div class="set-field"><span class="k">${t("apps.custom.auth")}</span>
             <${MenuButton} label=${t("apps.custom.auth")} value=${draft.auth} options=${authOptions} width=${340} align="left" onChange=${(v) => patch({ auth: v })} />
             <span class="hint">${t(`apps.custom.authNote.${draft.auth}`)}</span></div>

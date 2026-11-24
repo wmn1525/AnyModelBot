@@ -12,7 +12,7 @@ body:
     attributes:
       label: 版本 · Version
       description: 设置 → 关于。Settings → About.
-      placeholder: "0.1.13"
+      placeholder: "0.1.47"
     validations:
       required: true
   - type: dropdown
@@ -53,6 +53,9 @@ body:
         - 记忆 · Memory
         - 微信 · WeChat
         - 飞书 · Feishu
+        - Telegram / Slack / Discord
+        - 连接应用 · Connected apps
+        - 任务与定时 · Tasks and schedules
         - Modelflare 登录 / 余额 / 模型 · Modelflare sign-in, balance, models
         - 安装 / 更新 · Install / update
         - 其他 · Other

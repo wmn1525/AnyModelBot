@@ -56,7 +56,7 @@ describe("更新日志解析", () => {
     const versions = (lang: string) => readLocalChangelog(lang, root).map((e) => e.version);
     const zh = versions("zh-CN");
     expect(zh).toContain(appVersion());
-    for (const lang of ["en", "ja", "ko", "ru", "es", "pt"]) expect(versions(lang)).toEqual(zh);
+    for (const lang of ["en", "ja", "ko", "ru", "es", "pt", "tr"]) expect(versions(lang)).toEqual(zh);
   });
 
   it("读不到文件时回空列表", () => {

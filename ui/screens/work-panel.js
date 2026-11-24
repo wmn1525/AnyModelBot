@@ -64,7 +64,7 @@ function useTabsWrap(tabs) {
  * entry：目录 Bot 的条目（概览里的说明）；onHost(el)：工作台那块宿主挂上 / 卸下时调用（ref 回调）。
  */
 /**
- * 预览（resources）：resources 是这一套标签，onResources(fn) 改它；convs 是本对话的会话（「+」菜单列交付的文件）；desktop 桌面版。
+ * 预览（resources）：resources 是这一套标签，onResources(fn) 改它；convs 是本对话的会话（「+」菜单列在这些会话里打开过的文件）；desktop 桌面版。
  * 「预览」有标签时顶栏多一个「放大」（previewExpanded / onPreviewExpand）：铺满整个应用窗口，Esc 或再点一次退出。
  */
 export function WorkPanel({ bot, entry, tabs, tab, onTab, leaving, onClose, expanded, onExpand, onOpenBotSettings, onOpenChat, onOpenConnections, onOpenSettings, onHost, resources, onResources, convs, desktop, previewExpanded, onPreviewExpand }) {

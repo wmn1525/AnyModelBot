@@ -324,6 +324,9 @@ describe("接口与历史", () => {
     expect(csp).toContain("sandbox allow-scripts;");
     expect(csp).not.toContain("allow-same-origin");
     expect(csp).toContain("frame-ancestors 'self'");
+    // 页面不能 fetch / XHR：同目录的东西只能加载，读不到内容
+    expect(csp).toContain("connect-src 'none'");
+    expect(html.headers.get("access-control-allow-origin")).toBeNull();
     expect(html.headers.get("referrer-policy")).toBe("no-referrer");
     const page = await html.text();
     expect(page).toContain("<script>alert(1)</script>");
@@ -333,15 +336,22 @@ describe("接口与历史", () => {
     // 授权续期：开着的页面过了一小时仍能读同目录资源
     expect(await (await fetch(`${base}/preview-grants/renew`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: descriptor.url }) })).json()).toEqual({ ok: true });
     expect(await (await fetch(`${base}/preview-grants/renew`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: "/amb/file-preview/nope/x.html" }) })).json()).toEqual({ ok: false });
-    for (const asset of ["style.css", "app.js", "cover.png"]) {
+    // 只有脚本和字体带 CORS（ES 模块、@font-face 在不透明来源里没有它加载不了）；样式、图片、别的网页只能显示，页面脚本读不到
+    fs.writeFileSync(path.join(ws, "out", "font.woff2"), "wOF2");
+    fs.writeFileSync(path.join(ws, "out", "other.html"), "<p>another page</p>");
+    for (const [asset, cors] of [["style.css", null], ["cover.png", null], ["other.html", null], ["app.js", "*"], ["font.woff2", "*"]] as const) {
       const res = await fetch(new URL(asset, entry));
       expect(res.status).toBe(200);
-      expect(res.headers.get("access-control-allow-origin")).toBe("*");
+      expect(res.headers.get("access-control-allow-origin"), asset).toBe(cors);
       await res.arrayBuffer();
     }
-    for (const asset of ["run.bat", "report.docx", "%2e%2e%2fui-token", "%2fetc%2fpasswd", "%ZZ"]) expect((await fetch(new URL(asset, entry))).status).toBe(404);
+    // 数据文件不给：页面旁边的 JSON 读不到，也就发不出去（GHSA-7cfg-58gc-h8jx）
+    fs.mkdirSync(path.join(ws, "out", "data"), { recursive: true });
+    fs.writeFileSync(path.join(ws, "out", "private.json"), '{"private":true}');
+    fs.writeFileSync(path.join(ws, "out", "data", "nested.json"), '{"private":true}');
+    for (const asset of ["private.json", "data/nested.json", "run.bat", "report.docx", "%2e%2e%2fui-token", "%2fetc%2fpasswd", "%ZZ"]) expect((await fetch(new URL(asset, entry))).status, asset).toBe(404);
     expect((await fetch(new URL("/amb/file-preview/invalid/page.html", origin))).status).toBe(404);
-    if (tryLink(() => fs.symlinkSync(path.join(dataDir, "ui-token"), path.join(ws, "out", "secret.json")))) expect((await fetch(new URL("secret.json", entry))).status).toBe(404);
+    if (tryLink(() => fs.symlinkSync(path.join(dataDir, "ui-token"), path.join(ws, "out", "secret.css")))) expect((await fetch(new URL("secret.css", entry))).status).toBe(404);
   });
 
   it("桌面版：打开用系统程序（打开就会运行的只在文件夹中显示）；在文件夹中显示；越界的不碰；网页里没有这两个操作", async () => {
@@ -408,9 +418,9 @@ describe("preview authorization", () => {
       const ws = path.join(dataDir, "workspaces", "default");
       fs.mkdirSync(ws, { recursive: true });
       const file = path.join(dir, "delivered.html");
-      const sibling = path.join(dir, "other.json");
+      const sibling = path.join(dir, "other.css");
       fs.writeFileSync(file, "<h1>Delivered outside workspace</h1>");
-      fs.writeFileSync(sibling, '{"private":true}');
+      fs.writeFileSync(sibling, "body { color: red; }");
       const conv = app.store.ensureConversation("default", "web", "console", "Test");
       app.store.addMessage(conv.id, "assistant", "done", undefined, { files: [file, sibling] });
       const api = new URL(`/amb/api/conversations/${encodeURIComponent(conv.id)}/file/preview?path=${encodeURIComponent(file)}`, origin);
@@ -420,7 +430,8 @@ describe("preview authorization", () => {
       const asset = await fetch(entry); // The sandbox has no console cookie or token header.
       expect(asset.status).toBe(200);
       expect(await asset.text()).toContain("Delivered outside workspace");
-      expect((await fetch(new URL("other.json", entry))).status).toBe(404);
+      // 工作区外交付的网页只给入口文件：旁边的文件即使类型允许、也交付过，都不给
+      expect((await fetch(new URL("other.css", entry))).status).toBe(404);
       expect((await fetch(new URL("/amb/api/status", origin))).status).toBe(401);
       expect((await fetch(new URL(entry.pathname.replace(/file-preview\/[^/]+\//, "file-preview/wrong/"), origin))).status).toBe(404);
       const now = Date.now();

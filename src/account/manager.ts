@@ -10,10 +10,11 @@ import { t } from "../i18n/index.js";
 import type { Store } from "../store/db.js";
 import { MODELFLARE_CLIENT_ID, MODELFLARE_SCOPES, MODELFLARE_WEB, UTM, webUrl, type KeyBalance } from "../providers/modelflare.js";
 import { discover, OAuthError, revokeToken, startLogin, type LoginAttempt, type OidcEndpoints } from "./oauth.js";
-import { AccountRevokedError, AccountSession, ApiError, ROUTING_STRATEGIES, type AppKey, type ConnectedAccount, type RoutingStrategy, type UsageRow } from "./client.js";
+import { AccountRevokedError, AccountSession, ApiError, ROUTING_STRATEGIES, type AppKey, type ConnectedAccount, type RawApiResponse, type RoutingStrategy, type UsageRow } from "./client.js";
 import type { AccountRecord, AccountVault } from "./vault.js";
 
 import { accountProfile } from "./profile.js";
+import type { CapsFetch } from "../tools/media/capabilities.js";
 
 const log = logger("account");
 
@@ -503,6 +504,47 @@ export class AccountManager {
 
   notifications(): Promise<unknown> {
     return this.call((s) => s.notifications());
+  }
+
+  // ---------- 型号能力（消息图片用作生图参考，tools/media/capabilities.ts）----------
+
+  /**
+   * 当前账户在某条线路上可用型号的能力：只读，不发图、不收费。404 / 405 / 501 = 后台还没有这个接口（按未知处理），
+   * 其他非 2xx、不是 JSON 都算读取失败；网络错误抛出（调用方按失败处理）。
+   */
+  async modelCapabilities(line: string): Promise<CapsFetch> {
+    const r = await this.call((s) => s.raw("GET", `/model-capabilities?line=${encodeURIComponent(line)}`, undefined, 10_000));
+    if ([404, 405, 501].includes(r.status)) return { ok: false, reason: "unsupported" };
+    if (r.status < 200 || r.status >= 300 || !r.isJson) return { ok: false, reason: "failed" };
+    return { ok: true, json: r.json };
+  }
+
+  // ---------- 需求与反馈（src/feedback/）：schema 2 工单 ----------
+
+  /** 工单服务支持的反馈协议、限制和当前账户的联系身份（账号邮箱只来自当前登录身份） */
+  feedbackCapabilities(): Promise<RawApiResponse> {
+    return this.call((s) => s.raw("GET", "/feedback/capabilities", undefined, 10_000));
+  }
+
+  /** 提交冻结好的 schema 2 载荷；timeoutMs 内没有完整响应抛 ApiError(0)，调用方按"结果未知"处理 */
+  submitFeedback(payload: Record<string, unknown>, timeoutMs: number): Promise<RawApiResponse> {
+    return this.call((s) => s.raw("POST", "/feedback", payload, timeoutMs));
+  }
+
+  /** 按提交 ID 查本人那次提交的结果（只能查到自己的） */
+  feedbackSubmission(clientSubmissionId: string): Promise<RawApiResponse> {
+    return this.call((s) => s.raw("GET", `/feedback/submissions/${encodeURIComponent(clientSubmissionId)}`, undefined, 10_000));
+  }
+
+  /**
+   * 按账户隔离本机数据（需求与反馈的草稿）用的稳定标识：没登录是 "local"；登录了优先用 ID Token 的 sub
+   * （登录那一刻就有，读到账户资料前后不变），旧登录没有 sub 时用账户摘要；都没有时是空串（认不出是谁）。
+   */
+  get isolationKey(): string {
+    if (!this.signedIn || !this.session) return "local";
+    const rec = this.session.record;
+    if (rec.subject) return crypto.createHash("sha256").update(`${this.o.issuer}\nsub\n${rec.subject}`).digest("hex");
+    return rec.ownerKey ?? "";
   }
 
   async invite(): Promise<{ code: string; url: string }> {

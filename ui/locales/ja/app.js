@@ -30,7 +30,7 @@ export default {
     "themeDark": "テーマ：ダーク",
     "themeDarkKeys": "テーマ ダーク 夜 暗い",
     "lang": "言語：{name}",
-    "langKeys": "言語 日本語 英語 中国語 韓国語 ロシア語 スペイン語 ポルトガル語",
+    "langKeys": "言語 日本語 英語 中国語 韓国語 ロシア語 スペイン語 ポルトガル語 トルコ語 Türkçe",
     "switchBot": "「{name}」に切り替える"
   },
   "lowBalance": "Okinto New API の残高が ${amount} になりました",

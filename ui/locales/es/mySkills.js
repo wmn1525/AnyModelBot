@@ -6,6 +6,8 @@ export default {
   queued: "Armaré la habilidad cuando termine esta respuesta",
   card: {
     title: "{bot} armó una habilidad. Guárdala cuando se vea bien",
+    savedTitle: "Se guardó la habilidad que armó {bot}",
+    updatedTitle: "Se actualizó la habilidad que armó {bot}",
     drafting: "Armando la habilidad…",
     saving: "Guardando…",
     missing: "No se encontró esta tarjeta. Es posible que se haya eliminado.",
@@ -128,9 +130,9 @@ export default {
     deleteTitle: "¿Eliminar la habilidad «{name}»?",
     deleteBody: "Ningún bot podrá usarla. No se puede deshacer.",
     deleteBodyRules: {
-      one: "Ningún bot podrá usarla. Se pausará {count} rutina que la usa. No se puede deshacer.",
-      other: "Ningún bot podrá usarla. Se pausarán {count} rutinas que la usan. No se puede deshacer.",
-      many: "Ningún bot podrá usarla. Se pausarán {count} rutinas que la usan. No se puede deshacer.",
+      one: "Ningún bot podrá usarla. Se desactivará {count} rutina que la usa. No se puede deshacer.",
+      other: "Ningún bot podrá usarla. Se desactivarán {count} rutinas que la usan. No se puede deshacer.",
+      many: "Ningún bot podrá usarla. Se desactivarán {count} rutinas que la usan. No se puede deshacer.",
     },
     deleted: "Se eliminó «{name}»",
     unverified: "No verificada: se guardó antes de que terminara la tarea. La marca desaparece cuando se completa con éxito una vez.",

@@ -408,6 +408,15 @@ function probeLine(name: string, p: ProbeResult): string {
 
 /** 可复制的纯文本诊断报告：状态 + 最近的测试结果 + 日志尾部，整体再脱敏一遍。 */
 export function diagnosticsReport(app: App, lines = 200): string {
+  const { summary, logs } = diagnosticsReportParts(app, lines);
+  return redactText([summary, "", t("diag.report_log_tail", { count: lines }), ...logs].join("\n"));
+}
+
+/**
+ * 诊断报告拆成两段：运行状态摘要（不含日志）和最近的日志行，都已脱敏。
+ * 应用内反馈按正文余量分别裁剪这两段（src/feedback/），「复制诊断信息」用 diagnosticsReport 拼回整份。
+ */
+export function diagnosticsReportParts(app: App, lines = 200): { summary: string; logs: string[] } {
   const s = diagnosticsStatus(app) as any;
   const out: string[] = [];
   out.push(t("diag.report_title", { at: ts(s.at) }));
@@ -460,10 +469,7 @@ export function diagnosticsReport(app: App, lines = 200): string {
     out.push(t("diag.report_agent_test", { at: ts(ag.at), bot: ag.botId, model: ag.model || "-", result, ms: ag.ms }));
     for (const st of ag.stages) out.push(`  ${t(STAGE_LABEL[st.id])}: ${st.status}${st.ms !== undefined ? ` · ${st.ms} ms` : ""}${st.detail ? ` · ${st.detail}` : ""}`);
   }
-  out.push("");
-  out.push(t("diag.report_log_tail", { count: lines }));
-  out.push(...readLogTail(lines));
-  return redactText(out.join("\n"));
+  return { summary: redactText(out.join("\n")).trim(), logs: readLogTail(lines).map((l) => redactText(l)) };
 }
 
 /** 状态对象再过一遍脱敏（字段名像密钥的整项替换，字符串里的密钥原文替换） */

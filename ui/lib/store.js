@@ -78,6 +78,12 @@ export function successToast({ text, example, onFill, onCopy, scope = "" }) {
   promoteToasts();
   return id;
 }
+/** 改一条还在显示的提示（比如技能从「加载中」变成已生效时换掉生效说法）；已经关掉的不管 */
+export function updateToast(id, patch) {
+  if (!toasts.get().some((t) => t.id === id && !t.leaving)) return false;
+  toasts.set((l) => l.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  return true;
+}
 /** 收起某个区域里的提示（比如保存失败时，刚才那条"已保存"不能再留着） */
 export function clearToasts(scope) {
   for (const t of toasts.get()) if ((t.scope || "") === scope) dismissToast(t.id);

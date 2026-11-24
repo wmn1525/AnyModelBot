@@ -1,7 +1,7 @@
 export default {
   "facts": [
     {
-      "text": "The console listens on 127.0.0.1 by default and checks the Host header; binding a non-loopback address requires an access token.",
+      "text": "The console listens on 127.0.0.1 by default and checks the Host header; even local access requires an access token.",
       "path": "src/web/server.ts"
     },
     {
@@ -9,7 +9,7 @@ export default {
       "path": "src/agent/bridge.ts · src/agent/host.ts"
     },
     {
-      "text": "Files and commands run in a sandboxed workspace, with approval for anything beyond; on Linux, bubblewrap also hides the data directory.",
+      "text": "Files and commands run in a sandboxed workspace, with approval for anything beyond; on Linux, commands run only inside bubblewrap, which also hides the data directory, and are refused when it is unavailable.",
       "path": "src/agent/host.ts"
     },
     {

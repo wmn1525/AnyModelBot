@@ -31,6 +31,7 @@ import { BotAvatar, MAIN_CHAR } from "./components/avatar.js";
 import { Onboarding } from "./screens/onboarding.js";
 import { CoachMark } from "./components/guide.js";
 import { WhatsNewHost, openWhatsNew } from "./components/whats-new.js";
+import { FeedbackHost } from "./components/feedback.js";
 import { SkillDetailHost } from "./components/skill-detail.js";
 import { api } from "./lib/api.js";
 import { clearCatalogRemoved } from "./lib/catalog.js";
@@ -44,6 +45,11 @@ import { prefs, setPrefs } from "./lib/prefs.js";
 import { trailingThrottle } from "./lib/throttle.js";
 import { usePresence } from "./design/motion.js";
 import { t, useLang, adoptServerLang, changeLang, getLangPref, LANG_NAMES, LANGS } from "./lib/i18n.js";
+import { fold } from "./lib/text-fold.js";
+import { installDropGuard } from "./lib/attachments.js";
+
+// 带文件的拖动在整个窗口都不触发浏览器的打开 / 导航；只有对话主区接收（lib/attachments.js）
+installDropGuard();
 
 // —— 路由：#/chat/<bot> · #/group/<群> · #/new · #/needs · #/settings/<tab>[/<row>] · #/bot/<bot>/settings[/<section>] ——
 /** @returns {{view: string, botId?: string, groupId?: string, conversationId?: string, messageId?: number, query?: string, tab?: string, row?: string, section?: string, catalogId?: string}} */
@@ -125,9 +131,9 @@ function Palette({ commands, onClose }) {
   const ref = useRef(null);
   const input = useRef(null);
   useEffect(() => input.current?.focus(), []);
-  const needle = q.trim().toLowerCase();
+  const needle = fold(q.trim());
   // searchOnly：只在搜的时候出现（任务库里的每条任务）
-  const hits = commands.filter((c) => (!needle ? !c.searchOnly : `${c.label} ${c.keys || ""}`.toLowerCase().includes(needle)));
+  const hits = commands.filter((c) => (!needle ? !c.searchOnly : fold(`${c.label} ${c.keys || ""}`).includes(needle)));
   const run = (c) => {
     onClose();
     c.run();
@@ -359,7 +365,7 @@ function App() {
       previewToast(t("info.preview.expandHint"), "ok", 3000);
     }
   };
-  // 本对话的会话：「+」菜单和空状态列它们交付的文件（群聊是每个成员在群里的会话）
+  // 本对话的会话：「+」菜单和空状态列在它们里面打开过的文件（群聊是每个成员在群里的会话）
   const previewConvs = panelKind === "chat" && bot ? [`${bot.id}:web:console`]
     : panelKind === "app" ? (appBot ? [`${appBot.id}:web:console`] : [])
     : route.view === "group" ? ((groupsData?.groups || []).find((g) => g.id === route.groupId)?.members || []).map((id) => `${id}:web:group:${route.groupId}`)
@@ -797,6 +803,7 @@ function App() {
     <${PairChatHost} />
     <${RoutineHost} bots=${bots || []} models=${models} defaultModel=${settings?.defaultModel || ""} account=${managed ? account : null} onBotsChanged=${reloadBots} />
     <${AppDialogHost} bots=${bots || []} chatBot=${!searchOpen ? appChatTarget : null} onOpenSettings=${(tab) => openSettings(tab)} />
+    <${FeedbackHost} />
     <${DialogHost} />
   </div>`;
 }

@@ -8,6 +8,7 @@ import { normalizeSettings } from "../../agent/settings.js";
 import { scopeLabel } from "../../agent/memory.js";
 import { publicChange, publicLine, publicProposal } from "./about-me.js";
 import { t } from "../../i18n/index.js";
+import { FolderError, type FolderBinding } from "../../folders/service.js";
 import { HttpError, readJson, send, publicBot, publicMessage, CollectReply, webEvent, consoleConvId, publicApproval, accountCall, isLoopback, type Route, type WebContext } from "../http.js";
 
 /** 界面发回来的「以后都允许」只留下原来就有的（撤销可以，添加不行） */
@@ -27,6 +28,21 @@ function keepGranted(cur: Record<string, Record<string, string>>, next: unknown)
 export function botsRoutes(ctx: WebContext, previews = new FilePreviews()): Route {
   const { app, host, live, startLive, runLive, interceptWeb } = ctx;
   const templates = new TemplateCreator(app);
+  /**
+   * 一条网页消息绑定的工作文件夹（PRD R2）：界面带来点发送那一刻的选择 id（"" = 没选），必须和服务端现在的一致，
+   * 对不上返回 false（不受理）。命令不绑定目录。没带这个字段的旧调用方按现在的选择。
+   */
+  const folderOf = (botId: string, text: string, b: Record<string, unknown>): FolderBinding | null | undefined | false => {
+    if (text.startsWith("/")) return undefined;
+    const conv = consoleConvId(botId);
+    if (!("folder" in b)) return app.folders.current(conv) ?? null;
+    try {
+      return app.folders.bind(conv, b.folder);
+    } catch (e) {
+      if (e instanceof FolderError) return false;
+      throw e;
+    }
+  };
   return async (req, res, url, seg, p, m) => {
     if (seg[0] === "catalog" || (seg[0] === "bots" && seg[2] === "app")) {
       const handled = await botAppApi(req, res, url, seg, {
@@ -215,6 +231,12 @@ export function botsRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
       // started 带分隔线的时刻；already 已经是新对话；off 代理没有启用；failed 开新段本身出错（交接便条出错不算）
       if (sub === "chat/new" && m === "POST") {
         const r = await app.runtime.newConversation(id, consoleConvId(id));
+        // 开了新对话：上一段没发出的附件不带过来
+        if (r.status === "started") {
+          app.attachments.dropDraft(id, consoleConvId(id));
+          // 新分段不带入旧的工作文件夹（分段变了本来就不算，这里把记录也清掉）
+          app.folders.clear(consoleConvId(id));
+        }
         return send(res, 200, r);
       }
       // 控制台对话当前用的模型（空 = 跟着 Bot）：目录 Bot 的界面打开时读，不用把整段历史取回来
@@ -234,8 +256,12 @@ export function botsRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
         const ev = webEvent(id, text);
         const intercepted = interceptWeb(ev);
         if (intercepted.handled) return send(res, 200, { reply: intercepted.ack ?? "", prompts: [] });
+        const bound = folderOf(id, text, b);
+        if (bound === false) return send(res, 409, { error: t("folders.err_changed"), code: "folderChanged" });
+        ev.folder = bound;
         const out = new CollectReply();
         const lt = startLive(id, text);
+        lt.folder = bound?.id ?? "";
         await runLive(lt, ev, { apply: async (op) => (await lt.apply(op), await out.apply(op)) });
         return send(res, 200, { reply: out.text, prompts: out.prompts, files: out.files, conversationId: consoleConvId(id) });
       }
@@ -245,6 +271,10 @@ export function botsRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
         const text = String(b.text ?? "").trim();
         if (!text) throw new HttpError(400, t("web.emptyText"));
         const ev = webEvent(id, text);
+        // 点发送那一刻的工作文件夹：和服务端现在的选择对不上就不受理（不改用别的目录），界面提示发送条件变了
+        const bound = folderOf(id, text, b);
+        if (bound === false) return send(res, 409, { error: t("folders.err_changed"), code: "folderChanged" });
+        ev.folder = bound;
         const out = new SseReply(res);
         try {
           const intercepted = interceptWeb(ev);
@@ -256,6 +286,7 @@ export function botsRoutes(ctx: WebContext, previews = new FilePreviews()): Rout
           return out.end("error", { message: (e as Error).message });
         }
         const lt = startLive(id, text);
+        lt.folder = bound?.id ?? "";
         const off = lt.subscribe((e, d) => (e === "done" || e === "error" ? out.end(e, d) : out.send(e, d)));
         res.on("close", off);
         await runLive(lt, ev);

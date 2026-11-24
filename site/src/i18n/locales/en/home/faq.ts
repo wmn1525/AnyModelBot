@@ -60,6 +60,10 @@ export default {
     {
       "q": "Do you collect telemetry?",
       "a": "What we can confirm: telemetry in the computer-use driver (Cua) is turned off and magpie's auto-update is disabled. See the data-flow diagram for how model requests travel. The code is MIT-licensed — read it yourself."
-    }
+    },
+    {
+      "q": "Can I send files or use images as image-generation references?",
+      "a": "Yes. In a one-to-one web chat, attach images and text files, or send ZIPs for safe inspection after describing the task; the desktop app also lets you choose a work folder. Signed-in Okinto users can use chat images as generation references when the selected model capabilities and image limits can be verified. Custom API keys are not supported for image references yet."
+    },
   ]
 };

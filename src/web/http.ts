@@ -71,7 +71,9 @@ export function publicBot(b: NonNullable<ReturnType<App["store"]["getBot"]>>) {
 export function publicMessage(m: Message) {
   const { errorContext, ...message } = m;
   const result = { ...message, ...(errorContext ? { errorContext: { model: errorContext.model, groupId: errorContext.groupId } } : {}) };
-  return m.files ? { ...result, files: m.files.map((p) => describeFile(p)) } : result;
+  // 用户随消息发的附件：图片的原名只留在后台，不给界面
+  const shown = m.attachments?.length ? { ...result, attachments: m.attachments.map((a) => (a.kind === "image" ? { ...a, name: "" } : a)) } : result;
+  return m.files ? { ...shown, files: m.files.map((p) => describeFile(p)) } : shown;
 }
 
 /** 网页“测试对话”渠道：收集输出 */

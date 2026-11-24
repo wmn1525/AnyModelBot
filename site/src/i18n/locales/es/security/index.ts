@@ -9,7 +9,7 @@ export default {
     "Lo que envías al modelo (incluido el contenido de la pantalla durante el uso de la computadora) pasa por el gateway de OKINTO hasta el proveedor que elijas.",
     "Las solicitudes de modelos pasan por okinto; los registros, la cach? y la retenci?n dependen de su pol?tica de privacidad y de la configuraci?n de la cuenta.",
     "Por naturaleza, los mensajes de Slack, Telegram y Discord pasan por los servidores de esas plataformas.",
-    "Si conectas apps como Notion o GitHub, o agregas un conector MCP personalizado, lo que los bots leen y escriben llega a esos servicios, y lo que leen también se incluye en las solicitudes al modelo.",
+    "Si conectas apps como Notion o GitHub o agregas un conector MCP personalizado, lo que los bots leen y escriben llega a esos servicios, y lo que leen también se incluye en las solicitudes al modelo. Cuando el servicio de cuenta admite comentarios en la app, el texto, la categoría, el contexto, la versión y los datos del sistema se envían a Okinto como una consulta privada; los errores y registros son opcionales, las claves se ocultan, los datos de contacto requieren tu consentimiento y no se adjuntan conversaciones ni capturas.",
     "Los instaladores de Windows y las AppImages de Linux descargan actualizaciones en segundo plano; puedes desactivarlo en Ajustes. La instalaci?n requiere que pulses Reiniciar y actualizar y que no haya tareas en curso. Los paquetes actuales de macOS se actualizan manualmente. Las solicitudes no incluyen credenciales ni chats."
   ],
   "guardsTitle": "Protecciones en el código",

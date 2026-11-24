@@ -60,6 +60,10 @@ export default {
     {
       "q": "Vocês coletam telemetria?",
       "a": "O que podemos confirmar: a telemetria do driver de uso do computador (Cua) está desligada e a atualização automática do magpie está desativada. Veja o diagrama de fluxo de dados para entender o caminho das solicitações aos modelos. O código tem licença MIT — leia você mesmo."
-    }
+    },
+    {
+      "q": "Posso enviar arquivos ou usar imagens do chat como referências para gerar?",
+      "a": "Sim. Em um chat individual na web, você pode anexar imagens e arquivos de texto e enviar ZIP para inspeção segura depois de explicar a tarefa; o app de desktop também permite escolher uma pasta de trabalho. Com a conta Okinto conectada, imagens do chat podem servir de referência quando for possível verificar os recursos e os limites do modelo escolhido. Chaves de API próprias ainda não são compatíveis com esse recurso."
+    },
   ]
 };

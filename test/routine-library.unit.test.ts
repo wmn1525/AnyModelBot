@@ -1,5 +1,5 @@
 /**
- * 任务库（PRD 2026-11-15）：任务数据和七种语言的文案对得上；按参数写出名称、原话（[……] 没填就去掉、末尾统一追加的要求）；
+ * 任务库（PRD 2026-11-15）：任务数据和八种语言的文案对得上；按参数写出名称、原话（[……] 没填就去掉、末尾统一追加的要求）；
  * 参数校验；按参数定的时间表（每月几号提前几天、每年几月几日、按市场选）；任务卡的默认时间和每月次数；
  * 以及规则服务这边：「用起来」建开着 / 关着的规则（来源、结果样式、重复检测、改模板自带的那条）、「先试一次」
  * （关着也能跑、只读、不发、不算失败、记进本月花费、能停）、简报（保留多行、主模型只润色、渠道里超长截断）、
@@ -109,6 +109,11 @@ describe("任务库：名称、原话和参数", () => {
     expect(draft("birthday-reminder", { who: "妈妈", date: "03-15", advance: "3" }).message).toBe("3 天后是妈妈的生日，记得准备。");
     expect(draft("bill-reminder", { item: "房租", day: "last" }).message).toBe("房租：月底到期，记得处理。");
     expect(draft("price-alert", { item: "usd", direction: "below", price: "7.10" }).instruction).toContain("查美元兑人民币现在的价格。低于 7.1 时");
+    // 修复四 R7：到价提醒和收盘简报一样，命中时带免责说明；取不到价格写「没取到」，不估算、不算到价
+    const alert = draft("price-alert", { item: "usd", direction: "below", price: "7.10" }).instruction;
+    expect(alert).toContain("末尾写「仅供参考，不构成投资建议。」");
+    expect(alert).toContain("只写「美元兑人民币没取到。」，不要估算价格，也不算到价");
+    expect(draft("price-alert", { item: "gold", direction: "above", price: "600" }, "en").instruction).toContain("end with \"For reference only, not investment advice.\"");
     // 规则名称里的群名
     expect(draft("group-digest", { group: "g1" }, "zh-CN", [{ id: "g1", name: "产品群" }]).title).toBe("应用内群聊日报 · 产品群");
     // 原话保持建立时的语言

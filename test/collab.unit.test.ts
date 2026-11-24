@@ -338,6 +338,14 @@ describe("机器人之间发消息", () => {
     expect((await collab.request(A, CONV, { id: h.id, action: "continue" })).text).toMatch(/continues/);
     expect(store.getTask(task.id)!.budgetUsd).toBeCloseTo(2.2);
     expect(collab.usedToday()).toBe(used);
+    // 修复四 R11：B 的花费明细（右侧面板「任务」，handoffs）列出这件事，标是谁发来的；金额含补充和「继续」，和协作页这对机器人的累计一致
+    const mine = tasks.list({ botId: B, handoffs: true });
+    expect(mine.map((x) => x.id)).toEqual([task.id]);
+    expect(mine[0].from).toEqual({ botId: A, name: "产品研究员" });
+    expect(mine[0].spentUsd).toBeCloseTo(collab.pairs().find((p) => p.pairKey === h.pairKey)!.spentUsd);
+    // 用户自己发起的列表、对话里的胶囊仍不列它
+    expect(tasks.list({ botId: B })).toEqual([]);
+    expect(tasks.list({ conversationId: CONV })).toEqual([]);
   });
 
   it("退出登录：进行中的停下，两人对话里记一行；重新登录后不自动继续", async () => {

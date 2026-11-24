@@ -206,7 +206,7 @@ export default {
   "rows": {
     "language": {
       "sub": "화면, 트레이 메뉴, 봇의 시스템 메시지에 사용됩니다",
-      "keys": "언어 한국어 영어 중국어 일본어 러시아어 language"
+      "keys": "언어 한국어 영어 중국어 일본어 러시아어 튀르키예어 Türkçe language"
     },
     "sendKey": {
       "name": "보내기 단축키",

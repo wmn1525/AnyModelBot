@@ -1,5 +1,5 @@
-// 千分位和小数点两种写法都认：1,234.5 / 1.234,5 / 1 234,5 / 41,78%
-const NUM = /^[-+(]?\s*[$€¥£]?\s*\d(?:[\d.,\u00a0\u202f ]*\d)?\s*(%|pp|个百分点)?\s*\)?$/i;
+// 千分位和小数点两种写法都认：1,234.5 / 1.234,5 / 1 234,5 / 41,78% / %41,78（土耳其语百分号在数字前）
+const NUM = /^[-+(]?\s*[$€¥£₺]?\s*%?\s*\d(?:[\d.,\u00a0\u202f ]*\d)?\s*(%|pp|个百分点)?\s*\)?$/i;
 const MAX_ROWS = 12;
 const MAX_SERIES = 2;
 
@@ -7,7 +7,7 @@ function parseCell(raw) {
   const s = String(raw ?? "").replace(/\*\*/g, "").trim();
   if (!NUM.test(s)) return null;
   const neg = /^\(.*\)$/.test(s) || s.startsWith("-");
-  return { neg, digits: s.replace(/[^\d.,]/g, ""), pct: /%$/.test(s), text: /^\(.*\)$/.test(s) ? `−${s.slice(1, -1)}` : s };
+  return { neg, digits: s.replace(/[^\d.,]/g, ""), pct: /%/.test(s), text: /^\(.*\)$/.test(s) ? `−${s.slice(1, -1)}` : s };
 }
 
 /** 这一格能不能单独看出小数点："41,78" → ","；"1,234.5" → "."；"1.234.567" → ","；"365,817" 这种只有一个分隔符、后面正好三位的看不出 → null */

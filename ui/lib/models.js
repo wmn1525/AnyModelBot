@@ -1,4 +1,5 @@
 // 模型 ID 的显示与分组（不依赖界面，单元测试直接引入）。
+import { fold } from "./text-fold.js";
 
 /** 内置网关列出的模型带 "modelflare/" 前缀，OKINTO 直接列出的不带；两种写法都能调用，显示与比较时去掉它 */
 export const normModel = (m) => (m && m.startsWith("modelflare/") ? m.slice("modelflare/".length) : m || "");
@@ -92,12 +93,12 @@ function newerFirst(a, b) {
 
 /** 按模型族分组并按 q 筛选；返回 [族名, [[原始 id, 显示名]]]，族按固定顺序 */
 export function groupModels(models, q = "") {
-  const needle = q.trim().toLowerCase();
+  const needle = fold(q.trim());
   const groups = new Map();
   for (const m of models) {
     const selected = playgroundSelection(m);
     const n = selected ? `${selected.group}/${selected.model}` : normModel(m);
-    if (needle && !n.toLowerCase().includes(needle)) continue;
+    if (needle && !fold(n).includes(needle)) continue;
     const f = selected ? selected.group : modelFamily(m);
     if (!groups.has(f)) groups.set(f, []);
     // 官方 API 的模型写明是哪一家：同一个模型可能既有 OKINTO 的也有官方的，走的是两条路、两份账单

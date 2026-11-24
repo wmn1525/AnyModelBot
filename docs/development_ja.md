@@ -1,13 +1,14 @@
 # 開発ガイド
 
+> 0.1.48 · 上流 0.1.41～0.1.47 を同期：トルコ語、フィードバック、添付、ZIP、作業フォルダー、参照画像生成。Okinto アカウントとグループ経路を維持。
 
-> 0.1.40 · 上流 0.1.37–0.1.40 の「私について」、Bot 連携、タスクライブラリ、ファイルプレビューと修正を同期。Okinto のログイン、モデルグループ、残高と7言語のブランド検査を維持。
+
 > アプリ接続とカスタム MCP、サイドバーのグループ、右側タブ、スペイン語とポルトガル語（ブラジル）に対応。Okinto のログイン、残高、モデルグループと画像生成を維持。
 > 「更新内容」ダイアログとバージョン情報の更新履歴を追加。バージョン確認、ダウンロード、更新説明は本リポジトリを参照します。
 
 [简体中文](./development.md) | [English](./development_en.md) | 日本語 | [한국어](./development_ko.md) | [Русский](./development_ru.md) | [Español](./development_es.md) | [Português (Brasil)](./development_pt.md)
 
-ソースからの実行、パッケージ作成、開発への参加を考えている方のためのガイドです。アプリを使うだけなら [Releases](https://github.com/modelflare-ai/AnyModelBot/releases) からインストーラーを入手してください。[README](../README_ja.md#-ダウンロードと実行) に手順があります。
+ソースからの実行、パッケージ作成、開発への参加を考えている方のためのガイドです。アプリを使うだけなら [Releases](https://github.com/wmn1525/AnyModelBot/releases) からインストーラーを入手してください。[README](../README_ja.md#-ダウンロードと実行) に手順があります。
 
 - ボットは役割、既定のモデル、記憶から構成されます。アカウントは設定 › チャットチャネルで全体管理し、全ボットで共有します。サービスごとにいくつでも追加できます。一人での個人利用を想定しています。
 - モデルは Okinto アカウントまたは自分の公式 API キーで利用します。[Okinto](https://api.okinto.com/?utm_source=anymodelbot&utm_campaign=amb_readme) が提供します。初回起動でログインまたは登録するとモデル一覧が自動表示されます。リクエストは同梱の [magpie](https://github.com/yetone/magpie) ゲートウェイを通ります。
@@ -45,7 +46,7 @@ ui/              コンソール画面（Preact+htm、ビルド不要）
   design/        デザインシステム：tokens/、base/、components/、ボットのキャラクター bots/
   locales/       画面文言：zh-CN/、en/ など、名前空間ごとのファイル
   css/ lib/ components/ screens/ assets/ main.js
-dsh-runtime/     DSH ランタイムの依存関係と AnyModelBot プラグイン（plugins/）
+dsh-runtime/     DSH ランタイムの依存関係と okbot プラグイン（plugins/）
 scripts/         setup / build-magpie / fetch-cua-driver / prepare-dsh / bundle-dsh / electron-smoke / check-readme など
 vendor/          サブモジュール：magpie（ビルド時にコンパイル）、deepseek-harness、kimi-computer-use
 site/            Web サイト（Astro 静的サイト、site/README.md 参照）
@@ -65,6 +66,8 @@ npm start            # ゲートウェイ、ボット、http://127.0.0.1:3600/ �
 
 既定のデータ保存先は `./data` です（`AMB_DATA_DIR` で変更可能）。そのほかの環境変数は `.env.example` にあります。
 
+コンソールを開くにはアクセストークンが必要です。`AMB_UI_TOKEN` を設定していない場合は自動で作られ、データディレクトリの `ui-token` に保存されます。ターミナルから起動すると、トークン付きのアドレスを一度表示します。Linux では、エージェントが実行するコマンドは bubblewrap のサンドボックス内でのみ動きます（Debian / Ubuntu：`apt install bubblewrap`）。bubblewrap が使えない場合、コマンドは別のサンドボックスで実行されず拒否されます。書き込みだけを制限する Landlock しか使えない場合は `AMB_ALLOW_LANDLOCK=1` を設定してください。
+
 ## デスクトップアプリ（Electron）
 
 ```bash
@@ -76,7 +79,7 @@ npm run test:dsh-bundle  # build/dsh の実ランタイムを Electron でテス
 ```
 
 - DSH ランタイム：`scripts/prepare-dsh.mjs` が対象環境用の `dsh-runtime/` を用意し、`scripts/bundle-dsh.mjs` が `resources/dsh/dsh.asar`（全 JavaScript を 1 ファイル）と `resources/dsh/node_modules/`（ネイティブパッケージのみ、約 55 ファイル）にまとめます。Electron メインプロセスと `ELECTRON_RUN_AS_NODE` の子プロセスは asar を直接読み、初回展開はしません。インストール時の展開対象が数百ファイルに減り、Windows で時間のかかる展開とファイル別ウイルス検査を抑えます。開発時は `dsh-runtime/` を直接使います。
-- Windows のコマンド用 PowerShell：サンドボックスでは Windows PowerShell 5.1 が 1 コマンドに 20〜30 秒、PowerShell 7 が約 1 秒かかります。選択順は、システムの動作する PowerShell 7（DSH と同じ起動方法で一度バックグラウンドテストし、ダウンロードはしない）→アプリ専用の 7→5.1 です。使える 7 がなくエージェントが有効なら、公式 PowerShell 7.6.9（LTS）の zip を `%LOCALAPPDATA%\AnyModelBot\pwsh\` に取得します。管理者権限、レジストリ変更、PATH 変更は不要で、既存の PowerShell に影響しません。バージョンと x64・arm64 zip の SHA256 は `src/tools/pwsh/private.ts` で固定します（更新は `node scripts/pwsh-hashes.mjs <version>`）。取得後にハッシュ、展開後に Microsoft Authenticode 署名を検証し、DSH 形式の試運転（バージョン、仮ファイルの読み書き、外部プログラムの起動）を通過してから使います。失敗・未完了のものは使わず次回起動で掃除します。進捗は会話、設定 → 一般、`/status` に出し、準備が終わるまでは 5.1 を継続します。待機中のエージェントが裏で切り替わり、アプリ再起動は不要です。削除、ウイルス対策による隔離、ポリシーで起動不能になれば以前の選択肢に戻して理由を通知します。設定 → トラブルシューティングでインストール、再インストール、システム既定値への復帰が可能です。Windows 10 1607 / Server 2016 より古い環境では取得しません。デスクトップは Chromium のネットワーク機能でシステムプロキシを使い、CLI は Node fetch を使います（新しい Node は `NODE_USE_ENV_PROXY=1` で `HTTPS_PROXY` を反映）。`AMB_PWSH_MIRROR` はミラーの接頭辞を変えますがハッシュ・署名検証は維持し、`AMB_PWSH_AUTO_INSTALL=0` は自動取得を止めます。
+- Windows のコマンド用 PowerShell：サンドボックスでは Windows PowerShell 5.1 が 1 コマンドに 20〜30 秒、PowerShell 7 が約 1 秒かかります。選択順は、システムの動作する PowerShell 7（DSH と同じ起動方法で一度バックグラウンドテストし、ダウンロードはしない）→アプリ専用の 7→5.1 です。使える 7 がなくエージェントが有効なら、公式 PowerShell 7.6.9（LTS）の zip を `%LOCALAPPDATA%\okbot\pwsh\` に取得します。管理者権限、レジストリ変更、PATH 変更は不要で、既存の PowerShell に影響しません。バージョンと x64・arm64 zip の SHA256 は `src/tools/pwsh/private.ts` で固定します（更新は `node scripts/pwsh-hashes.mjs <version>`）。取得後にハッシュ、展開後に Microsoft Authenticode 署名を検証し、DSH 形式の試運転（バージョン、仮ファイルの読み書き、外部プログラムの起動）を通過してから使います。失敗・未完了のものは使わず次回起動で掃除します。進捗は会話、設定 → 一般、`/status` に出し、準備が終わるまでは 5.1 を継続します。待機中のエージェントが裏で切り替わり、アプリ再起動は不要です。削除、ウイルス対策による隔離、ポリシーで起動不能になれば以前の選択肢に戻して理由を通知します。設定 → トラブルシューティングでインストール、再インストール、システム既定値への復帰が可能です。Windows 10 1607 / Server 2016 より古い環境では取得しません。デスクトップは Chromium のネットワーク機能でシステムプロキシを使い、CLI は Node fetch を使います（新しい Node は `NODE_USE_ENV_PROXY=1` で `HTTPS_PROXY` を反映）。`AMB_PWSH_MIRROR` はミラーの接頭辞を変えますがハッシュ・署名検証は維持し、`AMB_PWSH_AUTO_INSTALL=0` は自動取得を止めます。
 - エージェントのコマンドはネットワークを使えます（サンドボックスは書き込みを制限）。`HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` / `NO_PROXY` と小文字版、証明書・パッケージ取得先の変数（`SSL_CERT_FILE`、`REQUESTS_CA_BUNDLE`、`NODE_EXTRA_CA_CERTS`、`PIP_INDEX_URL`、`npm_config_registry`、`GOPROXY` など）をアプリから引き継ぎます。環境変数にプロキシがなければ、デスクトップはエージェント起動ごとにシステム設定と PAC を調べ、`http://host:port` で渡します（`src/agent/proxy-env.ts`）。ループバックの `127.0.0.1`、`localhost`、`::1` は常に `NO_PROXY` に追加し、プロキシを通しません。
 - データ保存先：`<userData>/data`（macOS `~/Library/Application Support/anymodel bot/data`、Windows `%APPDATA%\anymodel bot\data`、Linux `~/.config/anymodel bot/data`）。ログはその中の `logs/app.log` です。
 - 単一インスタンスで動作し、閉じると既定ではトレイに入ります（設定 → 一般で終了に変更可能）。トレイには開く、ブラウザーで開く、ログイン時に起動（macOS・Windows）、データフォルダーを開く、終了があります。
@@ -84,7 +87,7 @@ npm run test:dsh-bundle  # build/dsh の実ランタイムを Electron でテス
 - コンソールは 127.0.0.1 のみで待ち受け、毎回ランダムなトークンを作り、他のローカルプログラムによる管理 API の直接利用を防ぎます。
 - 終了はチャネルを先に止め、その後 magpie を止めます。強制終了で残った magpie は次の起動時に処理します（Linux/macOS）。
 
-リリースでは `CHANGELOG.md`、`CHANGELOG_en.md`、`CHANGELOG_ja.md`、`CHANGELOG_ko.md`、`CHANGELOG_ru.md`、`CHANGELOG_es.md`、`CHANGELOG_pt.md` に当該版の項目を書きます。対象はユーザーが気付くアプリの変更であり、サイトや内部実装ではありません。英語サイトでは WeChat・Feishu に言及する行を除外します。`package.json` の `version` を更新、コミットし、`v<version>` タグをプッシュします。変更履歴がないとワークフローは最初に失敗し、あれば GitHub Release のノートとサイトに反映します。アプリの「更新内容」ダイアログも同じ変更履歴を読みます。`CHANGELOG*.md` はインストーラーと Docker イメージに同梱され（`src/changelog.ts`）、未インストールの新バージョンの内容は、ユーザーが開いたときにそのバージョンのタグから読み込みます。`.github/workflows/release.yml` は OS・アーキテクチャ別の 6 ランナーでビルドし、インストーラーと `SHA256SUMS` を公開します。署名・公証用のシークレットは同ファイル冒頭のコメントを参照してください。同じタグで `.github/workflows/docker.yml` も動き、x64+arm64 イメージを `ghcr.io/modelflare-ai/anymodel-bot` に `<version>`、`latest` タグで公開します。 タグでのリリースでは macOS 版に Developer ID 署名と公証が必須で、パッケージ後に .app と DMG 内の .app を `spctl` などで検証し、通らなければ失敗します。正式版では開発者ツールを無効にしています。デバッグ版が必要なときは `npm run dist:debug`、または Release を手動実行するときに `debug_build` を選びます（ファイル名に `-debug-` が付き、タグでは使えず、`scripts/check-build-flavor.mjs` がパッケージ結果を確認します）。
+リリースでは `CHANGELOG.md`、`CHANGELOG_en.md`、`CHANGELOG_ja.md`、`CHANGELOG_ko.md`、`CHANGELOG_ru.md`、`CHANGELOG_es.md`、`CHANGELOG_pt.md`、`CHANGELOG_tr.md` に当該版の項目を書きます。対象はユーザーが気付くアプリの変更であり、サイトや内部実装ではありません。英語サイトでは WeChat・Feishu に言及する行を除外します。`package.json` の `version` を更新、コミットし、`v<version>` タグをプッシュします。変更履歴がないとワークフローは最初に失敗し、あれば GitHub Release のノートとサイトに反映します。アプリの「更新内容」ダイアログも同じ変更履歴を読みます。`CHANGELOG*.md` はインストーラーと Docker イメージに同梱され（`src/changelog.ts`）、未インストールの新バージョンの内容は、ユーザーが開いたときにそのバージョンのタグから読み込みます。`.github/workflows/release.yml` は OS・アーキテクチャ別の 6 ランナーでビルドし、インストーラーと `SHA256SUMS` を公開します。署名・公証用のシークレットは同ファイル冒頭のコメントを参照してください。同じタグで `.github/workflows/docker.yml` も動き、x64+arm64 イメージを `ghcr.io/wmn1525/okbot` に `<version>`、`latest` タグで公開します。 タグでのリリースでは macOS 版に Developer ID 署名と公証が必須で、パッケージ後に .app と DMG 内の .app を `spctl` などで検証し、通らなければ失敗します。正式版では開発者ツールを無効にしています。デバッグ版が必要なときは `npm run dist:debug`、または Release を手動実行するときに `debug_build` を選びます（ファイル名に `-debug-` が付き、タグでは使えず、`scripts/check-build-flavor.mjs` がパッケージ結果を確認します）。
 
 リリースごとに、公式サイト、関連ドキュメント、全言語の README を更新します。`npm --prefix site run sync` でサイトの内容を同期し、GitHub Release と Docker イメージの公開後、[サイトのデプロイ手順](../site/README.md)に従って本番サイトを更新します。`/download`、`/changelog`、`/bots` のバージョン、ダウンロードリンク、説明が一致していることを確認し、本番サイトの更新まで完了して初めてリリース完了とします。
 
@@ -92,7 +95,7 @@ npm run test:dsh-bundle  # build/dsh の実ランタイムを Electron でテス
 
 ## Docker
 
-利用者向けコマンドは `docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/modelflare-ai/anymodel-bot` です。ソースからビルドする場合：
+利用者向けコマンドは `docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/wmn1525/okbot` です。ソースからビルドする場合：
 
 ```bash
 git submodule update --init --depth 1 vendor/magpie
@@ -101,11 +104,11 @@ docker run -d --name amb -p 3600:3600 -v amb-data:/data anymodel-bot
 docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> を開く
 ```
 
-コンテナー内では 0.0.0.0 で待ち受けるためトークン必須です。ポート 3600 をインターネットへ直接公開しないでください。WeChat の QR ログインは設定 › チャットチャネルにあります。
+コンテナー内では 0.0.0.0 で待ち受けるためトークン必須です。ポート 3600 をインターネットへ直接公開しないでください。WeChat の QR ログインは設定 › チャットチャネルにあります。イメージでは既定で `AMB_ALLOW_LANDLOCK=1` を設定しています。既定のオプションで起動したコンテナーは bubblewrap に必要な名前空間を作れないため、コマンドは Landlock を使います（コマンドからデータディレクトリを読めるため、コンテナー自体が境界になります）。bubblewrap が使えないときにコマンドを拒否するには `-e AMB_ALLOW_LANDLOCK=0` を付けてください。
 
 ## モデル（Okinto）
 
-- 初回は Okinto へのログイン・登録ボタンを表示します。標準ブラウザーでログインまたは登録して認可し、アプリに戻ると専用 API キーを発行・接続します。既定モデルを選べば会話を始められます。Docker・リモート環境はブラウザーのコールバックを受けられないため、ログイン後に移動する開けない `127.0.0.1` アドレスのリンクを初回画面に貼り付けます（`POST /amb/api/account/login/complete`、state と PKCE の検証は同じ）。以前のバージョンで API キーを入力しログインしていない場合、アップグレード時にキーを端末から削除し、ログインが必要になります。 ブラウザーのコールバックページは最初に「ログインを完了しています」と表示し、トークン交換・アカウント読み取り・専用キー発行・ゲートウェイ接続がすべて成功してから「ログインしました」を表示します（失敗時は理由を表示）。デスクトップ版は `anymodelbot://` リンクを登録し、ページは読み込み時に一度アプリを開こうとします。「AnyModelBot を開く」で再試行でき、アプリが実際にそのリンクを受け取ったときだけ「戻りました」と表示します。自分の API キーのページからも Okinto アカウントで直接ログインできます。初回接続でグローバルの既定モデルが空のときは、`src/account/first-model.ts` の規則（ツール呼び出し対応、1 回の予約額と代表的なタスクの費用がお試し枠内、DeepSeek 優先）で初回用モデルを一度だけ選びます。該当がなければ選ばず、ユーザーが選びます。
+- 初回は Okinto へのログイン・登録ボタンを表示します。標準ブラウザーでログインまたは登録して認可し、アプリに戻ると専用 API キーを発行・接続します。既定モデルを選べば会話を始められます。Docker・リモート環境はブラウザーのコールバックを受けられないため、ログイン後に移動する開けない `127.0.0.1` アドレスのリンクを初回画面に貼り付けます（`POST /amb/api/account/login/complete`、state と PKCE の検証は同じ）。以前のバージョンで API キーを入力しログインしていない場合、アップグレード時にキーを端末から削除し、ログインが必要になります。 ブラウザーのコールバックページは最初に「ログインを完了しています」と表示し、トークン交換・アカウント読み取り・専用キー発行・ゲートウェイ接続がすべて成功してから「ログインしました」を表示します（失敗時は理由を表示）。デスクトップ版は `anymodelbot://` リンクを登録し、ページは読み込み時に一度アプリを開こうとします。「okbot を開く」で再試行でき、アプリが実際にそのリンクを受け取ったときだけ「戻りました」と表示します。自分の API キーのページからも Okinto アカウントで直接ログインできます。初回接続でグローバルの既定モデルが空のときは、`src/account/first-model.ts` の規則（ツール呼び出し対応、1 回の予約額と代表的なタスクの費用がお試し枠内、DeepSeek 優先）で初回用モデルを一度だけ選びます。該当がなければ選ばず、ユーザーが選びます。
 - 認証方式：RFC 8252 に沿うネイティブアプリの OIDC 認可コード+PKCE（RFC 7636）。公開クライアント（`client_id` は `anymodel-bot`）で、クライアントシークレットは持たず不要です。結果は `127.0.0.1` の一時ポートへ返します。Okinto プロフィールの認可済みアプリから取り消すと、アプリが検知してログイン画面に戻ります。
 - リフレッシュトークンはデータ内の `modelflare-account.json`（モード 600）に保存し、内蔵ゲートウェイの API キーと同じくファイル権限だけで保護します。OS キーチェーンは使いません（0.1.30 以前のデスクトップ版が暗号化したファイルは、初回の読み込み時に平文で書き直します）。画面にはアカウント名だけを渡します。ログアウトは端末の認可を取り消し、ログイン時に端末とボットへ発行したキーを Okinto が削除します。
 - 残高は「設定 → モデル」の上部で直接確認でき、Botクレジットと残りの割合も表示します。サイドバーの残高リングとホバーカードはありません。チャージはOkintoを開き、設定を開いたときとアプリへ戻ったときに残高を更新します。手動更新にも対応します。通知基準を下回ると知らせ、設定に応じてチャットにも送れます。
@@ -114,6 +117,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> を�
 - ボットの予算（ログイン必須）：ボット設定 → 予算で有効にすると、指定額を上限とする専用キー（ゲートウェイの別 provider）を使い、無効にすると共有キーへ戻ります。
 - 画像・動画：エージェントに `media_models`（モデル、既定値、引数範囲、参考価格）、`media_docs`（docs.api.okinto.com からリクエスト形式を取得）、`generate_image`、`generate_video` と内蔵スキルを提供します。モデル別の形式を文書で確認してリクエスト本文を作り、ワークスペースの参考画像は `workspace:path` と表します。キーはアプリから出さず、アプリがボットのキーで呼び出し、結果を `media/` に保存して会話へ届けます。
 - 生成前の確認：既定では直ちに生成します。既定以外のモデルや曖昧な依頼を理由に質問せず、妥当に解釈して作成し、使った条件を一行で述べます。見積もりが 0.5 米ドルを超えるときだけ、モデル、プロンプト、条件、参考価格、確認理由を提示します。画像枚数、動画時間・解像度で計算し、費用不明の動画も確認対象です。承認・変更・中止ができ、WeChat は番号・モデル名、Feishu と Web はクリックで回答します。10 分応答がなければ生成しません。毎回確認するには、ボット設定 → 画像・動画 → 生成前に確認で常に確認する設定を選びます。
+- 画像生成の参照（アカウントでログイン時。`src/tools/media/capabilities.ts`、`src/imagegen/`、`ui/components/composer.js`）：Web の 1 対 1 チャットに画像があると、添付数の横に「画像生成の参照に使う」スイッチ（既定はオフ）が出ます。オンにするとメッセージ内の画像すべてが表示順に参照となり、右下で選んだ正確なモデルに対してホストがリクエストを組み立てます（`images_json` → `/v1/images/edits` の JSON、`images_multipart` → multipart、`gemini_native` → `generateContent` のコンテンツブロック）。先に会話モデルを呼ぶことはありません。画像生成専用モデルを選んでいるときは、文字だけで直接画像を生成します。機能情報は `GET /api/connected-app/model-capabilities?line=<line>` だけを使います（`schema_version: 1`。モデルごとの `authorized`, `available`, `capabilities.{chat,vision,image_generation,reference_images}`, `image_generation.endpoint`, `reference_images.{encoding,max_images,formats,max_image_bytes,max_request_bytes,dimensions}`。三状態は `supported` / `unsupported` / `unknown`、制限は数値か `"none"`、`expires_in` は秒）。欠落・不明・期限切れ・取得失敗のときは送信せず、モデル名から推測しません。条件を満たさないときは、入力欄の外側上部の確認バーが最優先の理由だけを示し、「モデルを切り替えてください」は元の選択欄を開くだけです。送信時にアカウント、正確なモデルと回線、順序付きの内容バージョン、機能情報のリビジョンを固定し、提出前に再確認します。リクエスト前に `media/.jobs/ref-<メッセージ ID>.json` を書き、結果が不明なら自動再試行しません。ログイン中はエージェントの `generate_image` も選択中のモデルだけを使い、独自キーの動作は変わりません。
 - Web 検索：`web_search` は DeepSeek キーが必要な内蔵検索を使わず、`amb-web-search` がアプリへ委譲します。初期設定不要で、Exa 公開 MCP、Bing、DuckDuckGo を試し、前回成功したものを優先します。失敗（制限、ボット確認、無関係な Bing 結果）したものは 10 分避けます。設定 → ネットワークとアクセス → Web 検索でキー付きの Tavily・Exa・Bocha・Zhipu、または独自 SearXNG を指定すると最初に使い、失敗時は無料検索へ戻します。キーはローカル DB に保存し、エージェントへ渡しません。デスクトップはシステムプロキシ、CLI は Node fetch（`NODE_USE_ENV_PROXY=1` なら `HTTPS_PROXY`）を使います。
 - チャネルアカウント（`src/core/routes.ts`）：WeChat、Feishu、Telegram、Slack、Discord も設定 › チャットチャネルで全体管理し、別名を付けられます。送信者が `/bot` で選んだボット→アカウントの既定→先頭のボットの順で決定します。`/bot` は一覧、`/bot name` は選択を記憶します。各ボットのシステムプロンプトに他のボットと切り替え方を載せ、質問に答えられるようにします。所有者・許可リストはアカウント単位なので、許可された人は全ボットと話せます。アカウントキーは名前空間で、旧チャネルは旧ボット ID を維持し、ログイン、上限、許可、キュー、既定ボットを引き継ぎます。ボット削除はアカウントに影響しません。
 - アプリを接続（`src/tools/apps/service.ts`）：グローバルに 1 つ（アバターメニュー › アプリとスキル）。既定ではすべてのボットが接続済みのアプリを使え、ボットごと・ツールごとに絞り込めます（ボット設定 › アプリ）。アプリはアプリページで 1 枚のカードになり、複数のアカウントを持てます。「1 つ目と 2 つ目の Feishu を調べて」と頼めて、アカウントはツールの `account` 引数（番号または名前）で選びます。
@@ -193,6 +197,7 @@ docker exec amb cat /data/ui-token     # http://<host>:3600/?token=<token> を�
 - **読み取り専用：** ファイルを変更せず、コマンドも読み取り専用のサンドボックスで実行します。
 - **フルアクセス：** 頻繁な確認を避けたい、リスクを理解している人向けです。**サンドボックスを使わず**ユーザーの権限で直接動かし、範囲外でも確認しません。DB、チャネルトークン、キーなどアプリ自体のデータを含む全ファイルを読み書きできます。**再帰的な削除**だけは従来どおり確認します（WeChat は番号回答、Feishu/Web はカード）。`rm -r` / `-rf` / `--recursive`（`sudo`、`xargs`、`sh -c` 内も）、`find -delete`、`git clean`、`rsync --delete`、PowerShell `Remove-Item` / `rm` / `del` / `rd` / `rmdir` の `-Recurse` と短縮形、cmd `rd /s`、`del /s`、`robocopy /MIR`、Python `shutil.rmtree`、Node `fs.rm(…, { recursive })` などを検査し、指定されたスクリプトファイルも読みます。選択時に確認し、権限ボタンと設定を赤で示します。
   - 誤削除防止であり、セキュリティ境界ではありません。コマンドの文字列を調べるので、実行中に組み立てる `eval "$(…)"`、`curl … | sh` や `make clean`、`npm run clean` 内の動作は見えません。判定に迷えば確認します。現在のモデルとタスクを信頼する場合だけ有効にしてください。
+- **作業フォルダー**（デスクトップ版、入力欄の上）：各メッセージは送信時に選んでいたフォルダーに結び付きます。そのターンではそれがエージェントの作業ディレクトリで、唯一の書き込み可能な場所です（`amb-workfolder` プラグインがサンドボックスポリシーのワークスペースルートを書き換え、ファイルツールと Linux の bubblewrap、macOS の Seatbelt、Windows の ACL によるコマンドサンドボックスがそれに従います）。そのターンでは既定のワークスペースは読み取り専用です。フォルダーを選ばなければ既定のワークスペースを使います。データフォルダーとその上位、ディスクのルート、ホームフォルダーそのものは選べません。ZIP の添付はホストが `zip_list` / `zip_extract` 経由でのみ一覧・安全な展開を行います（`src/attachments/unzip.ts`：Stored / Deflate のみ。暗号化・分割・パスの逸脱・リンク・上限超過は拒否）。既定ではワークスペースの `extracted/` に展開し、添付の期限切れとともに削除します。Windows では、書き込み可能なルートとして使ったフォルダーに DSH のコマンドサンドボックスが常設の書き込み ACE を追加します。
 
 ## ボットを利用できる人
 

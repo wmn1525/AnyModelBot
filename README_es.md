@@ -1,11 +1,11 @@
 <h1 align="center">okbot</h1>
 
-> 0.1.40 · Incluye upstream 0.1.37–0.1.40: Acerca de mí, colaboración de bots, biblioteca de tareas, vistas previas y correcciones. Conserva el inicio de sesión de Okinto, grupos, saldos y comprobaciones en siete idiomas.
+> 0.1.48 · Sincroniza upstream 0.1.41–0.1.47: turco, comentarios en la app, adjuntos, ZIP, carpetas de trabajo y referencias para generar imágenes; mantiene Okinto, grupos y saldos.
 
 <p align="center"><b>Un equipo de bots de IA en tu propia computadora. Cualquier modelo, pago por uso.</b></p>
 
 <p align="center">
-  <a href="https://github.com/wmn1525/AnyModelBot">Sitio web</a> |
+  <a href="https://bot.okinto.com/es/">Sitio web</a> |
   <a href="https://github.com/wmn1525/AnyModelBot/releases">Descargar</a> |
   <a href="./README.md">简体中文</a> |
   <a href="./README_en.md">English</a> |
@@ -89,7 +89,7 @@ En macOS usa `shasum -a 256 <file>`; en PowerShell de Windows, `Get-FileHash <fi
 **Ejecútalo en Docker en un NAS o un servidor** (la imagen sirve tanto para x64 como para arm64)
 
 ```bash
-docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/wmn1525/AnyModelBot
+docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/wmn1525/okbot
 docker exec amb cat /data/ui-token   # luego abre http://<host>:3600/?token=<token>
 ```
 
@@ -102,7 +102,7 @@ git clone https://github.com/wmn1525/AnyModelBot.git
 cd okbot
 npm install
 npm run setup      # descarga y compila el gateway integrado
-npm start          # abre la consola local en http://127.0.0.1:3600/
+npm start          # abre la consola local en http://127.0.0.1:3600/ (la primera vez, usa el enlace con token que muestra)
 ```
 
 Requisitos para compilar desde el código fuente: Node.js 22.13+ y Go 1.26.8+. Para compilar tú mismo la imagen de Docker, consulta la [guía de desarrollo](./docs/development_es.md).
@@ -151,6 +151,8 @@ Un bot es más que una ventana de chat: tiene una personalidad, un modelo predet
 - **Chats grupales.** Crea un grupo y agrega algunos bots. Responde el bot al que mencionas con @; si no mencionas a ninguno, continúa el último que respondió. Los bots también pueden mencionar con @ a otro miembro para pasarle el relevo. Cada bot conserva su propio modelo, espacio de trabajo y memoria, y los costos se registran por bot.
 - **Bots que se envían mensajes.** En la app, dile a un bot «pásale esto a B»: B trabaja en segundo plano con su propio modelo, permisos y presupuesto y responde al terminar, y el primer bot revisa el resultado antes de avisarte. B pide aprobaciones en el mismo chat con su nombre, y puedes leer su conversación cuando quieras. Requiere iniciar sesión en Okinto y que ambos bots usen modelos de Okinto.
 - **Búsqueda en el historial de chats.** Desde la barra lateral, busca en todos los mensajes guardados en tu dispositivo, filtra por bot, conversación, canal o fecha, y salta al mensaje original. `Ctrl/Cmd+Shift+F` abre la búsqueda global; `Ctrl/Cmd+F` busca en el chat actual. Las búsquedas no llaman a ningún modelo. Antes de que escribas, el cuadro de búsqueda muestra los chats recientes por fecha.
+- **Carpetas de trabajo y ZIP.** En la app de escritorio, elige una carpeta encima del cuadro de mensaje y el bot lee y edita los archivos donde están (con acceso de espacio de trabajo, los cambios dentro de esa carpeta no piden aprobación cada vez); arrastra un ZIP al chat y el bot lo extrae de forma segura cuando digas qué hacer.
+- **Imágenes como referencias para generar.** Con la sesión de Okinto iniciada, añade imágenes a un chat y activa «Usar como referencias para generar imágenes»: el modelo elegido abajo a la derecha genera una imagen nueva a partir de ellas. También puedes elegir un modelo de generación de imágenes y crear una imagen con una frase. Si algo lo impide, una nota encima del cuadro de mensaje explica por qué.
 - **Los comandos con barra**, como `/model` y `/reset`, funcionan en la app y en todos los canales de chat. En un canal de chat, `/bot` cambia a otro bot.
 
 
@@ -221,7 +223,7 @@ El entorno de ejecución está construido sobre [DeepSeek Harness](https://githu
 
 ## 🔒 Tus datos en local, y una interfaz agradable
 
-- **Tus datos se quedan contigo.** Las conversaciones, la memoria, los archivos y las claves de API se guardan en tu dispositivo. La consola local solo escucha en `127.0.0.1`, y la app de escritorio genera un token de acceso nuevo en cada inicio.
+- **Tus datos se quedan contigo.** Las conversaciones, la memoria, los archivos y las claves de API se guardan en tu dispositivo. La consola local solo escucha en `127.0.0.1` y solo se abre con un token de acceso (la app de escritorio genera uno nuevo en cada inicio).
 - **Responde ante ti.** De forma predeterminada, un bot solo responde a su propietario (la cuenta de WeChat que escaneó el código QR; en Feishu, Telegram, Slack y Discord, la primera persona que le escribe después de conectarlo, es decir, tú) y a las personas que autorices. Cualquier otra persona recibe un aviso de una línea y no se llama a ningún modelo; puedes darle acceso desde el panel de información o respondiendo `yes <code>` en el chat.
 - **Las respuestas no se pierden.** Cada respuesta se guarda localmente antes de enviarse; los errores de red se reintentan, el envío se reanuda después de un reinicio y, si la ventana de 24 horas de WeChat ya se cerró, la respuesta espera y llega junto con tu siguiente mensaje.
 - **Telemetría desactivada.** La telemetría del controlador de uso de la computadora incluido está desactivada, y el gateway integrado se ejecuta con la actualización automática deshabilitada.
@@ -356,7 +358,6 @@ Licencias y avisos completos: [THIRD_PARTY_NOTICES_es.md](./THIRD_PARTY_NOTICES_
 okbot se publica bajo la [licencia MIT](./LICENSE). El software de terceros incluido conserva sus propias licencias; consulta [THIRD_PARTY_NOTICES_es.md](./THIRD_PARTY_NOTICES_es.md) y la carpeta [`LICENSES/`](./LICENSES).
 
 <!-- link & badge references -->
-
 [release-shield]: https://img.shields.io/github/v/release/wmn1525/AnyModelBot?include_prereleases&label=release&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB4PSIzIiB5PSI5IiB3aWR0aD0iOTQiIGhlaWdodD0iODIiIHJ4PSIzNiIgZmlsbD0iI2Q3ZmYwMCIvPjxyZWN0IHg9IjI5IiB5PSIzNiIgd2lkdGg9IjEzIiBoZWlnaHQ9IjI4IiByeD0iNi41IiBmaWxsPSIjMTYxYTAwIi8+PHJlY3QgeD0iNTgiIHk9IjM2IiB3aWR0aD0iMTMiIGhlaWdodD0iMjgiIHJ4PSI2LjUiIGZpbGw9IiMxNjFhMDAiLz48L3N2Zz4=&style=flat-square&labelColor=161a00&color=d7ff00
 [downloads-shield]: https://img.shields.io/github/downloads/wmn1525/AnyModelBot/total?logo=github&logoColor=d7ff00&style=flat-square&labelColor=161a00&color=d7ff00
 [stars-shield]: https://img.shields.io/github/stars/wmn1525/AnyModelBot?logo=github&logoColor=d7ff00&style=flat-square&labelColor=161a00&color=d7ff00
@@ -368,9 +369,11 @@ okbot se publica bajo la [licencia MIT](./LICENSE). El software de terceros incl
 [win-badge]: https://img.shields.io/badge/Windows-161a00?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2Q3ZmYwMCI+PHJlY3QgeD0iMiIgeT0iMyIgd2lkdGg9IjkuNSIgaGVpZ2h0PSI4LjUiLz48cmVjdCB4PSIxMi41IiB5PSIzIiB3aWR0aD0iOS41IiBoZWlnaHQ9IjguNSIvPjxyZWN0IHg9IjIiIHk9IjEyLjUiIHdpZHRoPSI5LjUiIGhlaWdodD0iOC41Ii8+PHJlY3QgeD0iMTIuNSIgeT0iMTIuNSIgd2lkdGg9IjkuNSIgaGVpZ2h0PSI4LjUiLz48L3N2Zz4=
 [mac-badge]: https://img.shields.io/badge/macOS-161a00?style=for-the-badge&logo=apple&logoColor=d7ff00
 [linux-badge]: https://img.shields.io/badge/Linux-161a00?style=for-the-badge&logo=linux&logoColor=d7ff00
+
 [releases-link]: https://github.com/wmn1525/AnyModelBot/releases
 [stars-link]: https://github.com/wmn1525/AnyModelBot/stargazers
 [license-link]: https://github.com/wmn1525/AnyModelBot/blob/master/LICENSE
 [ci-link]: https://github.com/wmn1525/AnyModelBot/actions/workflows/ci.yml
 [pricing-link]: https://api.okinto.com/pricing
 [okinto-link]: https://api.okinto.com
+> 连接应用与自定义 MCP、侧栏分组、右侧标签面板，以及西班牙语和葡萄牙语（巴西）；保留 Okinto 登录、余额、模型分组及生图适配。

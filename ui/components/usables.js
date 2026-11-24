@@ -10,12 +10,16 @@ import { failed, useStore } from "../lib/store.js";
 import { ATTENTION, appLabel, appsStore, loadApps, setApps, stateText } from "../lib/apps.js";
 import { appExample, loadBotSkills, prefillOf, readyToast, useBotSkills } from "../lib/usage.js";
 import { has, t, useLang } from "../lib/i18n.js";
+import { fold } from "../lib/text-fold.js";
 
 /** 任一组超过这么多项时顶上出搜索框 */
 const SEARCH_AT = 10;
 
 const initial = (s) => [...String(s || "").replace(/^[^\p{L}\p{N}]+/u, "")][0]?.toUpperCase() || "?";
-const hit = (q, ...fields) => !q || fields.some((f) => f && String(f).toLowerCase().includes(q));
+const hit = (q, ...fields) => {
+  const needle = fold(q);
+  return !needle || fields.some((f) => f && fold(f).includes(needle));
+};
 
 /**
  * bot：当前对话的机器人；perm：它的文件权限（只读时不给写入类应用能力）。

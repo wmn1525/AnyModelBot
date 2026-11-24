@@ -35,17 +35,24 @@ export const brandCopy = {
     "issues": "GitHub Issues"
   },
   "es": {
-  "contact": "Para comentarios y colaboraci?n, contacta al proyecto mediante GitHub Issues.",
+  "contact": "Para comentarios y colaboración, contacta al proyecto mediante GitHub Issues.",
   "partnerTitle": "Contactar con okbot",
   "partnerLead": "Conecta okbot al servicio de IA de okinto usando tu cuenta y clave API.",
   "register": "Abrir okinto",
   "issues": "Comentarios del proyecto"
 },
   "pt": {
-  "contact": "Para sugest?es e colabora??o, entre em contato pelo GitHub Issues do projeto.",
+  "contact": "Para sugestões e colaboração, entre em contato pelo GitHub Issues do projeto.",
   "partnerTitle": "Fale com o okbot",
-  "partnerLead": "Conecte o okbot ao servi?o de IA da okinto usando sua conta e chave de API.",
+  "partnerLead": "Conecte o okbot ao serviço de IA da okinto usando sua conta e chave de API.",
   "register": "Abrir okinto",
   "issues": "Feedback do projeto"
-}
+  },
+  "tr": {
+    "contact": "Geri bildirim ve iş birliği için GitHub Issues üzerinden projeyle iletişime geçin.",
+    "partnerTitle": "okbot ile iletişim",
+    "partnerLead": "Hesabınız ve API Key'inizle okbot'u okinto AI hizmetine bağlayın.",
+    "register": "okinto'yu aç",
+    "issues": "Proje geri bildirimi"
+  }
 } as const;

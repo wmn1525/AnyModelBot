@@ -41,6 +41,7 @@ export interface Announcement {
   ru: BannerCopy;
   es: BannerCopy;
   pt: BannerCopy;
+  tr: BannerCopy;
 }
 
 /** 发版提示：版本号和下载地址取自 releases.json；按钮按访客的系统直接下载对应安装包（识别不出时去 /download）。 */
@@ -50,6 +51,16 @@ export const RELEASE = {
   days: 30,
   /** 各版本的一句话亮点（可选），没有就显示"okbot {version} 已发布" */
   highlights: {
+    "0.1.48": {
+      zh: "土耳其语、反馈、附件、工作文件夹与图片参考",
+      en: "Turkish, feedback, attachments, work folders and image references",
+      ja: "トルコ語、フィードバック、添付、作業フォルダー、画像参照",
+      ko: "터키어, 피드백, 첨부, 작업 폴더와 이미지 참고",
+      ru: "Турецкий язык, отзывы, вложения, рабочие папки и референсы",
+      es: "Turco, comentarios, adjuntos, carpetas y referencias de imagen",
+      pt: "Turco, feedback, anexos, pastas e referências de imagem",
+      tr: "Türkçe, geri bildirim, ekler, klasörler ve görsel referansları"
+    },
     "0.1.40": {
       zh: "任务库、文件预览与机器人协作",
       en: "Task library, file previews and bot collaboration",
@@ -58,6 +69,7 @@ export const RELEASE = {
       ru: "Библиотека задач, просмотр файлов и работа ботов",
       es: "Biblioteca de tareas, vistas previas y colaboración",
       pt: "Biblioteca de tarefas, prévias e colaboração",
+      tr: "Görev kitaplığı, dosya önizlemeleri ve bot iş birliği",
     },
     "0.1.39": {
       "zh": "新建对话立刻切换，设置里能点的一眼看得出",
@@ -66,7 +78,8 @@ export const RELEASE = {
       "ko": "새 대화가 바로 시작되고 설정 버튼이 더 잘 보여요",
       "ru": "Новый разговор начинается сразу, кнопки в настройках заметнее",
       "es": "Conversaciones nuevas al instante y botones más claros en la configuración",
-      "pt": "Conversas novas na hora e botões mais claros nas configurações"
+      "pt": "Conversas novas na hora e botões mais claros nas configurações",
+      "tr": "Yeni sohbet anında açılır, ayarlardaki düğmeler daha net"
     },
     "0.1.38": {
       "zh": "修复模型列表里的「auto/…」模型",
@@ -75,7 +88,8 @@ export const RELEASE = {
       "ko": "모델 목록의 \"auto/…\" 모델 수정",
       "ru": "Исправлены модели «auto/…» в списке",
       "es": "Corrige los modelos «auto/…» de la lista",
-      "pt": "Corrige os modelos «auto/…» da lista"
+      "pt": "Corrige os modelos «auto/…» da lista",
+      "tr": "Model listesindeki \"auto/…\" modellerini düzeltir"
     },
     "0.1.37": {
       "zh": "关于我，和机器人之间发消息",
@@ -84,7 +98,8 @@ export const RELEASE = {
       "ko": "내 정보와 봇끼리 메시지 보내기",
       "ru": "«Обо мне» и переписка ботов",
       "es": "Sobre mí y bots que se envían mensajes",
-      "pt": "Sobre mim e bots que trocam mensagens"
+      "pt": "Sobre mim e bots que trocam mensagens",
+      "tr": "Hakkımda ve birbirine mesaj atan botlar"
     },
     "0.1.36": {
       "zh": "技能库，把做成的事存成技能",
@@ -93,7 +108,8 @@ export const RELEASE = {
       "ko": "스킬 라이브러리와 한 일을 스킬로 저장",
       "ru": "Библиотека навыков и свои навыки",
       "es": "Biblioteca de habilidades y tus propias habilidades",
-      "pt": "Biblioteca de habilidades e suas próprias habilidades"
+      "pt": "Biblioteca de habilidades e suas próprias habilidades",
+      "tr": "Beceri kitaplığı ve işi beceri olarak kaydetme"
     },
     "0.1.35": {
       "zh": "更简洁的界面、余额展示与规则修复",
@@ -102,7 +118,8 @@ export const RELEASE = {
       "ko": "간결한 화면, 잔액 표시와 규칙 수정",
       "ru": "Лаконичный интерфейс, баланс и исправления правил",
       "es": "Interfaz más sencilla, saldo visible y reglas corregidas",
-      "pt": "Interface mais simples, saldo visível e regras corrigidas"
+      "pt": "Interface mais simples, saldo visível e regras corrigidas",
+      "tr": "Daha sade arayüz, görünen bakiye ve kural düzeltmeleri"
     },
     "0.1.34": {
       zh: "启动诊断与重复启动处理改进",
@@ -112,6 +129,7 @@ export const RELEASE = {
       ru: "Диагностика и обработка повторного запуска",
       es: "Diagnóstico y gestión del segundo inicio",
       pt: "Diagnóstico e tratamento da segunda inicialização",
+      tr: "Başlangıç tanısı ve ikinci açılışın işlenmesi",
     },
     "0.1.33": {
       zh: "定时规则、机器人模板和右侧预览",
@@ -121,6 +139,7 @@ export const RELEASE = {
       ru: "Расписание, шаблоны и просмотр ресурсов",
       es: "Reglas programadas, plantillas y vistas previas",
       pt: "Regras agendadas, modelos e prévias",
+      tr: "Zamanlanmış kurallar, bot şablonları ve önizlemeler",
     },
     "0.1.32": {
       zh: "新增西班牙语和葡萄牙语（巴西）界面",
@@ -130,6 +149,7 @@ export const RELEASE = {
       ru: "Теперь на испанском и португальском (Бразилия)",
       es: "Ahora en español y portugués (Brasil)",
       pt: "Agora em espanhol e português (Brasil)",
+      tr: "Artık İspanyolca ve Portekizce (Brezilya)",
     },
     "0.1.31": {
       zh: "连接应用：内置 10 个应用连接器，支持自定义 MCP",
@@ -139,6 +159,7 @@ export const RELEASE = {
       ru: "Подключение приложений: встроенные коннекторы и собственные MCP",
       es: "Conectar apps: conectores integrados y MCP personalizados",
       pt: "Conectar apps: conectores integrados e MCP personalizados",
+      tr: "Uygulama bağla: yerleşik bağlayıcılar ve özel MCP",
     },
     "0.1.30": {
       zh: "Bot 额度、更新说明和官方 Bot 工作台",
@@ -148,6 +169,7 @@ export const RELEASE = {
       ru: "Кредиты Bot, «Что нового» и рабочие пространства ботов",
       es: "Créditos de Bot, Novedades y espacios de trabajo de los bots oficiales",
       pt: "Créditos de Bot, Novidades e espaços de trabalho dos bots oficiais",
+      tr: "Bot kredisi, Yenilikler ve resmi bot çalışma alanları",
     },
     "0.1.24": {
       zh: "ZIP 技能导入和聊天记录搜索",
@@ -157,6 +179,7 @@ export const RELEASE = {
       ru: "Импорт навыков из ZIP и поиск по переписке",
       es: "Importa habilidades en ZIP y busca en el historial de chats",
       pt: "Importe habilidades em ZIP e pesquise no histórico de conversas",
+      tr: "ZIP becerilerini içe aktar ve sohbet geçmişinde ara",
     },
     "0.1.10": {
       zh: "机器人能收微信里的图片和文件了",
@@ -166,6 +189,7 @@ export const RELEASE = {
       ru: "Теперь боты могут просматривать отправленные изображения и файлы",
       es: "Los bots ya pueden ver las imágenes y los archivos que envías",
       pt: "Agora os bots conseguem ver as imagens e os arquivos que você envia",
+      tr: "Botlar artık gönderdiğin görselleri ve dosyaları görebiliyor",
     },
   } satisfies Record<string, Record<Lang, string>>,
 };
@@ -185,6 +209,7 @@ export const ANNOUNCEMENTS: Announcement[] = [
     ru: { tag: "Бесплатное приложение", text: "Моделей с одним ключом: {modelCount}", cta: { label: "Цены", href: "/pricing" } },
     es: { tag: "App gratis", text: "Una sola clave para {modelCount} modelos", cta: { label: "Precios", href: "/pricing" } },
     pt: { tag: "App grátis", text: "Uma só chave para {modelCount} modelos", cta: { label: "Preços", href: "/pricing" } },
+    tr: { tag: "Ücretsiz uygulama", text: "{modelCount} model için tek anahtar", cta: { label: "Fiyatlar", href: "/pricing" } },
   },
   // 社群开通（链接在 data/community.ts）：中文站主按钮去 QQ 群，其他语言去 Discord；次要链接都是 Telegram。只挂一个月
   {
@@ -199,6 +224,7 @@ export const ANNOUNCEMENTS: Announcement[] = [
     ru: { tag: "Сообщество", text: "Общайтесь с нами в Discord и Telegram", cta: { label: "Открыть Discord", href: COMMUNITY.discord.url }, link: { label: "Telegram", href: COMMUNITY.telegram.url } },
     es: { tag: "Comunidad", text: "Charla con nosotros en Discord o Telegram", cta: { label: "Unirme a Discord", href: COMMUNITY.discord.url }, link: { label: "Telegram", href: COMMUNITY.telegram.url } },
     pt: { tag: "Comunidade", text: "Converse com a gente no Discord ou no Telegram", cta: { label: "Entrar no Discord", href: COMMUNITY.discord.url }, link: { label: "Telegram", href: COMMUNITY.telegram.url } },
+    tr: { tag: "Topluluk", text: "Discord veya Telegram'da bizimle sohbet et", cta: { label: "Discord'a katıl", href: COMMUNITY.discord.url }, link: { label: "Telegram", href: COMMUNITY.telegram.url } },
   },
   // 公告示例（维护通知）：到点自动出现、过期自动消失，复制后改 id、时间和文案即可
   // {

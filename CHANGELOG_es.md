@@ -1,8 +1,89 @@
 # Registro de cambios
 
-[简体中文](./CHANGELOG.md) | [English](./CHANGELOG_en.md) | [日本語](./CHANGELOG_ja.md) | [한국어](./CHANGELOG_ko.md) | [Русский](./CHANGELOG_ru.md) | Español | [Português (Brasil)](./CHANGELOG_pt.md)
+[简体中文](./CHANGELOG.md) | [English](./CHANGELOG_en.md) | [日本語](./CHANGELOG_ja.md) | [한국어](./CHANGELOG_ko.md) | [Русский](./CHANGELOG_ru.md) | Español | [Português (Brasil)](./CHANGELOG_pt.md) | [Türkçe](./CHANGELOG_tr.md)
 
 Aquí se recogen los cambios que notarás en la app. Para versiones anteriores, consulta las [versiones publicadas en GitHub](https://github.com/wmn1525/AnyModelBot/releases).
+
+## 0.1.48 - 2026-11-24
+
+### Novedades
+
+- **Upstream 0.1.41–0.1.47:** interfaz, documentación y web en turco; comentarios desde la app, adjuntos de imágenes y archivos, extracción segura de ZIP, carpetas de trabajo y generación de imágenes con referencias.
+- **Imágenes, archivos y ZIP:** pega imágenes o arrastra imágenes y archivos de texto al chat para enviarlos junto con una pregunta o por separado. El bot solo examina o extrae un ZIP después de que le indiques qué hacer, y nunca ejecuta sus archivos automáticamente. En la app de escritorio puedes elegir una carpeta para trabajar con los archivos en su ubicación.
+- **Referencias para generar imágenes:** con la sesión de Okinto iniciada, usa imágenes del chat como referencia o elige directamente un modelo de generación de imágenes. Antes de enviar, la app comprueba la cuenta, la ruta, las capacidades del modelo y los límites de las imágenes. Si no puede verificarlos, bloquea la solicitud y nunca repite automáticamente un resultado incierto.
+- **Comentarios desde la app:** guarda borradores, revisa el contenido completo y elige por separado si incluyes diagnósticos o datos de contacto. Si no se sabe si el envío llegó, consulta el mismo envío en vez de crear un duplicado.
+
+### Mejoras y correcciones
+
+- Los comandos de los bots en Linux solo se ejecutan si está disponible bubblewrap; la consola local por línea de comandos requiere un token de acceso, y las vistas web aíslan mejor los scripts de los demás archivos.
+- Se mantienen el inicio de sesión de Okinto, los grupos de modelos, los saldos, la confirmación de costos y las claves API oficiales; los README y las guías de desarrollo se actualizan en los ocho idiomas.
+
+## 0.1.47 - 2026-11-23
+
+### Novedades
+
+- **Imágenes como referencias para generar imágenes:** con la sesión de Okinto iniciada, al añadir imágenes en un chat individual con un bot aparece junto al contador de adjuntos el interruptor «Usar como referencias para generar imágenes», apagado por defecto. Al activarlo, las imágenes de ese mensaje son referencias en el orden mostrado; el modelo elegido abajo a la derecha genera la imagen y el resultado vuelve al mismo chat. Añadir imágenes por sí solo nunca inicia una generación de pago. Si el modelo actual no puede hacerlo, sus capacidades aún no se pueden verificar o las imágenes superan sus límites de cantidad, formato o tamaño, una nota encima del cuadro de mensaje explica el motivo y su enlace «Cambia de modelo» abre el selector de siempre. La confirmación de costo funciona igual (siempre, o cuando la estimación supera $0.5) y un resultado sin confirmar nunca se reintenta solo. Requiere que Okinto proporcione la información de capacidades del modelo; si no se puede verificar, no se envía nada. Aún no disponible con claves de API propias.
+- **Elegir modelos de generación de imágenes en el selector:** con la sesión iniciada, el selector de modelos de abajo a la derecha también muestra los modelos de generación de imágenes que puede usar tu cuenta. Elige uno y describe la imagen que quieres; no interviene ningún modelo de chat.
+
+### Mejoras y correcciones
+
+- **La generación de imágenes usa solo el modelo elegido:** con la sesión iniciada, si pides una imagen a un bot con tus palabras, usa solo el modelo elegido abajo a la derecha. Si ese modelo no genera imágenes o no se pueden verificar sus capacidades, el bot lo dice y te pide cambiarlo, en lugar de usar otro modelo de imagen predeterminado (el ajuste «Modelo de imagen predeterminado» se oculta con la sesión iniciada). Si te conectas solo con una clave de API, nada cambia.
+
+## 0.1.46 - 2026-11-22
+
+### Novedades
+
+- **Carpeta de trabajo:** en la app de escritorio, elige una carpeta encima del cuadro de mensaje y el bot trabaja con los archivos donde están, sin arrastrarlos uno a uno. Con acceso de espacio de trabajo, el bot puede editar los archivos de esa carpeta sin pedir permiso cada vez; escribir en cualquier otro lugar sigue necesitando tu aprobación. Cada mensaje conserva la carpeta elegida al enviarlo: cambiar de carpeta mientras espera en cola o una aprobación no lo redirige, y las tareas en segundo plano que empiezan desde él trabajan en la misma carpeta. Tus 10 carpetas más recientes están a un clic; no se pueden elegir la carpeta de datos de la app, la raíz de un disco ni tu carpeta personal en sí. La consola web muestra la carpeta elegida, pero se elige o cambia en la app de escritorio del equipo donde se ejecuta el bot.
+- **Adjuntos ZIP:** arrastra un ZIP (hasta 50 MiB) al chat y envíalo con imágenes y archivos, o solo. El bot solo mira dentro o lo extrae después de que digas qué hacer, en su propio espacio de trabajo por defecto o en la carpeta de trabajo si lo pides, y nunca ejecuta nada de él por su cuenta. Los ZIP cifrados o divididos, con rutas no seguras o que al extraerse superan 200 MiB o 2.000 entradas se rechazan indicando el motivo. Haz clic en un ZIP enviado para guardar el archivo original. Requiere el modo agente.
+
+### Mejoras y correcciones
+
+- **Adjuntos:** al arrastrar varios archivos, se añaden los que se pueden y los demás aparecen en una línea con el motivo, en lugar de rechazar todo el lote. Las tarjetas de archivo muestran el tipo y mantienen visible la extensión en nombres largos.
+
+## 0.1.45 - 2026-11-22
+
+### Mejoras y correcciones
+
+- **Sandbox de comandos (Linux):** los comandos que ejecuta un bot ahora solo se ejecutan dentro del sandbox de bubblewrap. Si bubblewrap no está instalado, o el sistema no le permite crear espacios de nombres, el comando se rechaza indicando el motivo y cómo solucionarlo (instalar bubblewrap o permitirlo), en lugar de pasar en silencio a un sandbox que solo limita la escritura y deja que los comandos lean la carpeta de datos de la app. Los bots con acceso total no se ven afectados. La imagen oficial de Docker sigue permitiendo ese sandbox de forma predeterminada, porque un contenedor iniciado con las opciones predeterminadas no puede crear los espacios de nombres que necesita bubblewrap; añade `-e AMB_ALLOW_LANDLOCK=0` para desactivarlo.
+- **Token de acceso en la versión de línea de comandos:** al ejecutar con `npm start`, la consola local ahora también necesita un token de acceso. Si la inicias desde una terminal, muestra una vez un enlace con el token; ábrelo en el navegador y este lo recordará. El token también se guarda en `ui-token`, en la carpeta de datos, y `npm run bot` lo lee automáticamente. La app de escritorio y Docker funcionan igual que antes.
+
+## 0.1.44 - 2026-11-20
+
+### Mejoras y correcciones
+
+- **Imágenes adjuntas:** algunas imágenes se rechazaban como formato no compatible al arrastrarlas o pegarlas en el chat y ahora se aceptan: imágenes cuya extensión no coincide con su formato real (por ejemplo, un PNG o WebP guardado como .jpg), JPEG de móvil con datos adicionales después de la imagen y fotos en movimiento (solo se usa la imagen fija), e imágenes con extensión .jfif o .jpe. Si una imagen realmente no se puede añadir, ahora se te pide convertirla a PNG o JPG en lugar de usar Markdown, HTML o TXT.
+- **Seguridad de la vista previa:** al previsualizar una página web generada por un bot, los scripts de la página ya no pueden leer el contenido de otros archivos de la misma carpeta (fetch está bloqueado); los estilos, scripts, imágenes y fuentes se cargan como antes. Los archivos de datos como JSON ya no se sirven a las páginas en vista previa: incluye los datos en el HTML o entrégalos como script.
+- **Actualizaciones en la app:** en macOS, la ventana «AnyModelBot tuvo un problema» ya no aparece durante la instalación tras pulsar «Reiniciar y actualizar». La corrección se aplica a partir de 0.1.44: todavía puede aparecer una vez al actualizar a 0.1.44 desde una versión anterior, y la actualización termina con normalidad.
+
+## 0.1.43 - 2026-11-20
+
+### Novedades
+
+- **Adjuntos de imágenes y archivos:** pega una captura o una imagen en el chat, o arrastra imágenes y archivos de texto (Markdown, HTML, TXT, CSV, JSON, código y más), y envíalos junto con tu mensaje. También puedes enviar solo adjuntos. Las imágenes llegan a los modelos que pueden verlas y el texto completo de los archivos llega al modelo; haz clic en una miniatura para ampliarla. Cada mensaje admite hasta 8 adjuntos, de los cuales 4 imágenes como máximo, de hasta 10 MiB cada uno. Si el modelo actual no admite imágenes, la app te lo indica. PDF, documentos de Office, archivos comprimidos, audio y vídeo aún no son compatibles.
+- **Solicitudes y comentarios:** «Comentarios» pasa a ser «Solicitudes y comentarios», con tres categorías: Casos de uso e ideas, Problemas, y Empresas y alianzas. Cada una guarda su propio borrador. Los datos de contacto solo se incluyen si marcas el consentimiento para ese envío, los registros solo si los marcas, y puedes ver todo lo que se enviará antes de enviarlo. Descubrir tiene una nueva sección de escenarios para empresas.
+
+### Mejoras y correcciones
+
+- **Ordenar archivos de tu equipo:** al pedir a un bot que ordene archivos del Escritorio u otras carpetas ya no se pide antes Accesibilidad ni Grabación de pantalla; lo que quede fuera de su espacio de trabajo sigue necesitando tu aprobación. Cuando una tarea de verdad necesita manejar una app de escritorio y falta un permiso del sistema, aparece en el chat una tarjeta para activarlo.
+- **Vista previa:** con el foco en la vista previa, Cmd+W / Ctrl+W cierra solo la pestaña actual; la vista previa vacía y el menú + muestran los archivos abiertos en este chat.
+- **Habilidades:** «Guardar como habilidad» toma por defecto la última solicitud terminada; lo elegido en la tarjeta de borrador se conserva al editar; el aviso de importación y las tarjetas ya no se quedan en «Cargando».
+- **Chat y tareas:** el chat sigue al final cuando crece el contenido o el cuadro de mensaje, así las notas y tarjetas no quedan tapadas; la pestaña Tareas de un bot muestra el trabajo enviado por otros bots e indica quién lo envió.
+
+## 0.1.42 - 2026-11-18
+
+### Novedades
+
+- **Comentarios desde la app:** abre la ventana de comentarios desde Comentarios en el menú de la cuenta, «Informar de este problema» bajo un error en el chat, Ajustes → Solución de problemas o Ajustes → Acerca de. Elige Problema, Sugerencia u Otro, escribe unas líneas y envíalo. La versión y los datos del sistema se incluyen siempre, y si lo abres desde un error, también ese error. El diagnóstico solo se incluye si marcas la casilla, puedes ver el texto completo antes de enviarlo y nunca se adjuntan conversaciones ni capturas. Con sesión en Modelflare, tus comentarios se convierten en una consulta de soporte en tu cuenta: las respuestas te llegan por correo y aparecen en la página de consultas de Modelflare, hasta 3 al día. Sin sesión puedes enviarlos por GitHub o por correo, con los datos ya rellenados.
+
+### Mejoras y correcciones
+
+- **Enlaces de correo:** en la app de escritorio, los enlaces de correo del chat se abren en la app de correo del sistema. Antes no pasaba nada al pulsarlos.
+
+## 0.1.41 - 2026-11-16
+
+### Novedades
+
+- **Turco:** La interfaz, el menú de la bandeja, los mensajes del sistema de los bots, el sitio web y la documentación están en turco. Elige Türkçe durante el inicio o en Ajustes → General → Idioma. Si el idioma del sistema es turco, la app lo usa sola. El signo de porcentaje va delante del número, y los gráficos de investigación de acciones de EE. UU. leen esa forma. El video de demostración de la página de inicio sigue siendo la grabación en inglés.
 
 ## 0.1.40 - 2026-11-15
 

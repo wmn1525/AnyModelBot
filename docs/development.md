@@ -1,16 +1,17 @@
 # 开发文档
 
+> 0.1.48 · 同步上游 0.1.41–0.1.47：土耳其语、应用内反馈、附件、ZIP、工作文件夹与生图参考；保留 Okinto 账户和分组路由。
 
-> 0.1.40 · 同步上游 0.1.37–0.1.40：关于我、机器人协作、任务库、文件预览增强及修复；保留 Okinto 登录、模型分组、余额和七语言品牌检查。
+
 > 连接应用与自定义 MCP、侧栏分组、右侧标签面板，以及西班牙语和葡萄牙语（巴西）；保留 Okinto 登录、余额、模型分组及生图适配。
 > 新增“更新了什么”弹窗与关于页更新日志，版本检测、更新下载和更新说明统一指向本仓库。
 
 简体中文 | [English](./development_en.md) | [日本語](./development_ja.md) | [한국어](./development_ko.md) | [Русский](./development_ru.md) | [Español](./development_es.md) | [Português (Brasil)](./development_pt.md)
 
-这份文档给想从源码运行、打包或参与开发的人看。普通用户直接从 [Releases](https://github.com/modelflare-ai/AnyModelBot/releases) 下载安装包即可，见 [README](../README.md#-下载与运行)。
+这份文档给想从源码运行、打包或参与开发的人看。普通用户直接从 [Releases](https://github.com/wmn1525/AnyModelBot/releases) 下载安装包即可，见 [README](../README.md#-下载与运行)。
 
 - 一个机器人 = 人设 + 默认模型 + 记忆。账号是全局的（设置 › 连接），所有机器人共用，同一个服务可以加多个。定位：自用、单用户。
-- 默认网关是 **Okinto New API**。桌面版在隔离的 Electron session 分区登录 Okinto；复用 New API 游乐场的短期 Dashboard access token 自动刷新，并按所选分组经 `/pg/chat/completions` 调用。账户余额读取登录用户钱包，各可用分组的模型清单分别读取 `/api/user/models?group=…`；工具、多模态消息和分组字段透传。登录 cookie 留在 Chromium session，不保存账户密码、refresh cookie 或 access token 到 AnyModelBot 数据库。
+- 默认网关是 **Okinto New API**。桌面版在隔离的 Electron session 分区登录 Okinto；复用 New API 游乐场的短期 Dashboard access token 自动刷新，并按所选分组经 `/pg/chat/completions` 调用。账户余额读取登录用户钱包，各可用分组的模型清单分别读取 `/api/user/models?group=…`；工具、多模态消息和分组字段透传。登录 cookie 留在 Chromium session，不保存账户密码、refresh cookie 或 access token 到 okbot 数据库。
 - 模型内部 ID 保留分组，避免同名模型串组；筛选器按分组展示，同一模型的价格按各分组倍率计算。New API 登录模式支持生图：聊天格式的图片模型经 `/pg/chat/completions` 调用；Images API 与 Gemini 原生接口按需创建仅限所选分组和模型的临时令牌，调用完成或失败后撤销，最长 15 分钟过期，密钥只留在宿主内存。图片模型与价格取自当前账户可用分组及 `/api/pricing`，结果保存在机器人工作区 `media/`，通过 `present` 交付。站点须允许创建及读取令牌；机器人独立额度、通知、邀请和视频生成暂不可用。也可改用 API Key 直连模式。
 - New API 的 API Key 直连仍支持 OpenAI 兼容调用及站点余额接口。可用 `AMB_NEWAPI_BASE_URL` 覆盖站点地址（根地址或带 `/v1` 均可）；桌面开发版运行 `npm run electron:dev`。
 - 三种运行方式，同一套代码：**桌面版（Electron）**、**命令行 `npm start`**、**Docker**。
@@ -47,7 +48,7 @@ ui/              管理界面（Preact + htm，无构建步骤）
   design/        设计系统：tokens/、base/、components/、机器人形象 bots/
   locales/       界面文案：zh-CN/ 与 en/，每个命名空间一个文件
   css/ lib/ components/ screens/ assets/ main.js
-dsh-runtime/     DSH 代理运行时的依赖清单与 AnyModelBot 插件（plugins/）
+dsh-runtime/     DSH 代理运行时的依赖清单与 okbot 插件（plugins/）
 scripts/         setup / build-magpie / fetch-cua-driver / prepare-dsh / bundle-dsh / electron-smoke / check-readme 等
 vendor/          git 子模块：magpie（构建时编译）、deepseek-harness、kimi-computer-use
 site/            官网（Astro 静态站），说明见 site/README.md
@@ -67,6 +68,8 @@ npm start            # 启动全部：内置网关 + 机器人 + 管理界面 ht
 
 数据默认在 `./data`（`AMB_DATA_DIR` 可改）。其余环境变量见 `.env.example`。
 
+管理界面要带访问令牌才能打开：没设 `AMB_UI_TOKEN` 时自动生成并存在数据目录的 `ui-token`，在终端里启动时会打印一次带令牌的地址。Linux 上代理执行的命令只在 bubblewrap 沙箱里运行（Debian / Ubuntu：`apt install bubblewrap`），bubblewrap 用不了时命令被拒绝、不退到别的沙箱；确实只能用只限制写文件的 Landlock 时设 `AMB_ALLOW_LANDLOCK=1`。
+
 ## 桌面版（Electron）
 
 ```bash
@@ -78,7 +81,7 @@ npm run test:dsh-bundle  # 用 Electron 跑真实 DSH 集成测试，加载打�
 ```
 
 - DSH 代理运行时：`scripts/prepare-dsh.mjs` 按目标平台安装 `dsh-runtime/`，`scripts/bundle-dsh.mjs` 把它打成 `resources/dsh/dsh.asar`（全部 JS，一个文件）加上 `resources/dsh/node_modules/`（只有原生包，约 55 个文件）。Electron 主进程和 `ELECTRON_RUN_AS_NODE` 子进程直接读 asar，无需首启解压；安装包因此只需解出几百个文件（Windows 上解压与杀毒逐个扫描是安装慢的主因）。开发时仍直接用 `dsh-runtime/`。
-- Windows 上代理执行命令用的 PowerShell：经沙箱时 Windows PowerShell 5.1 每条命令要二三十秒，PowerShell 7 约 1 秒。应用按这个顺序选：系统里能用的 PowerShell 7（后台按 DSH 的方式试运行一次，什么都不下载）→ 应用内置的 PowerShell 7 → Windows PowerShell 5.1。没有能用的 7 且代理模式开着时，应用在后台自动下载官方 PowerShell 7.6.9（LTS）的 zip，装到 `%LOCALAPPDATA%\AnyModelBot\pwsh\`：不需要管理员权限，不写注册表、不改 PATH，不影响你自己的 PowerShell。版本和 x64 / arm64 两个 zip 的 SHA256 写死在 `src/tools/pwsh/private.ts`（升级用 `node scripts/pwsh-hashes.mjs <版本>`），下载后核对哈希、解压后核对微软 Authenticode 签名，再按 DSH 的方式试运行（版本、读写临时文件、拉起外部程序）通过才用；装失败或装了一半的不会被用，下次启动会清掉。装的时候对话页和 设置 → 常规 显示进度，`/status` 也有，装好之前命令照常用 5.1；装好后空闲的代理进程在后台换用它，不用重启应用。运行中代理拉不起它（被杀毒软件删除或隔离、被策略拦截）就自动退回上一种并提示原因；设置 → 故障排查 可以安装、重新安装、改回系统默认。Windows 10 1607 / Server 2016 以前的系统不下载。桌面版下载走系统代理（Chromium 网络栈）；命令行版用 Node 的 fetch（较新的 Node 设 `NODE_USE_ENV_PROXY=1` 后认 `HTTPS_PROXY`）；`AMB_PWSH_MIRROR` 可换成镜像前缀（照样核对哈希和签名），`AMB_PWSH_AUTO_INSTALL=0` 关掉自动安装。
+- Windows 上代理执行命令用的 PowerShell：经沙箱时 Windows PowerShell 5.1 每条命令要二三十秒，PowerShell 7 约 1 秒。应用按这个顺序选：系统里能用的 PowerShell 7（后台按 DSH 的方式试运行一次，什么都不下载）→ 应用内置的 PowerShell 7 → Windows PowerShell 5.1。没有能用的 7 且代理模式开着时，应用在后台自动下载官方 PowerShell 7.6.9（LTS）的 zip，装到 `%LOCALAPPDATA%\okbot\pwsh\`：不需要管理员权限，不写注册表、不改 PATH，不影响你自己的 PowerShell。版本和 x64 / arm64 两个 zip 的 SHA256 写死在 `src/tools/pwsh/private.ts`（升级用 `node scripts/pwsh-hashes.mjs <版本>`），下载后核对哈希、解压后核对微软 Authenticode 签名，再按 DSH 的方式试运行（版本、读写临时文件、拉起外部程序）通过才用；装失败或装了一半的不会被用，下次启动会清掉。装的时候对话页和 设置 → 常规 显示进度，`/status` 也有，装好之前命令照常用 5.1；装好后空闲的代理进程在后台换用它，不用重启应用。运行中代理拉不起它（被杀毒软件删除或隔离、被策略拦截）就自动退回上一种并提示原因；设置 → 故障排查 可以安装、重新安装、改回系统默认。Windows 10 1607 / Server 2016 以前的系统不下载。桌面版下载走系统代理（Chromium 网络栈）；命令行版用 Node 的 fetch（较新的 Node 设 `NODE_USE_ENV_PROXY=1` 后认 `HTTPS_PROXY`）；`AMB_PWSH_MIRROR` 可换成镜像前缀（照样核对哈希和签名），`AMB_PWSH_AUTO_INSTALL=0` 关掉自动安装。
 - 代理执行的命令能联网（沙箱只限制写文件），用的是你的代理：应用环境变量里的 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` / `NO_PROXY`（及小写）和证书、软件源变量（`SSL_CERT_FILE`、`REQUESTS_CA_BUNDLE`、`NODE_EXTRA_CA_CERTS`、`PIP_INDEX_URL`、`npm_config_registry`、`GOPROXY` 等）原样传下去；环境里没设代理时，桌面版每次拉起代理进程都问一次系统代理（系统设置和 PAC），按 `http://主机:端口` 传下去（见 `src/agent/proxy-env.ts`）。本机地址（`127.0.0.1`、`localhost`、`::1`）总是并进 `NO_PROXY`，永不走代理。
 - 数据目录：`<userData>/data`（macOS `~/Library/Application Support/anymodel bot/data`，Windows `%APPDATA%\anymodel bot\data`，Linux `~/.config/anymodel bot/data`）。日志在数据目录的 `logs/app.log`。
 - 启动诊断（自 0.1.34 起，协助排查 #71）：进入桌面主进程后、申请单实例锁之前，另写 `logs/startup-<时间>-<PID>.log`，记录实际数据目录、平台、版本、锁结果和启动阶段。每个进程单独写，主实例保留最近 20 份，不影响正常 `app.log`。数据目录无法写入时尝试系统临时目录下的 `anymodel-bot-startup-*`。带 `--diagnose-startup` 启动时，未获得单实例锁会显示日志位置；普通的第二次启动仍交给已有实例。
@@ -88,7 +91,7 @@ npm run test:dsh-bundle  # 用 Electron 跑真实 DSH 集成测试，加载打�
 - 界面只监听 127.0.0.1，且每次启动生成随机访问令牌，其他本机程序无法直接调用管理接口。
 - 退出时先停渠道、再停 magpie；若上次被强杀残留 magpie 进程，下次启动会自动清理（Linux/macOS）。
 
-发布：在 `CHANGELOG.md`、`CHANGELOG_en.md`、`CHANGELOG_ja.md`、`CHANGELOG_ko.md`、`CHANGELOG_ru.md`、`CHANGELOG_es.md` 和 `CHANGELOG_pt.md` 写好这个版本的更新日志（用户能感受到的变化，不写网站和内部改动。官网英文页不显示提到微信、飞书的行），改 `package.json` 的版本号并提交，推送 `v<版本>` 标签。这个版本没写更新日志时，发布流程开始就会失败；写了就作为 GitHub Release 的说明，官网更新日志页也显示它。应用里的「更新了什么」弹窗读的也是它：`CHANGELOG*.md` 随安装包和 Docker 镜像打包（`src/changelog.ts`），还没安装的新版本在用户点开时从那个版本标签下读取。`.github/workflows/release.yml` 会在六种系统 / 架构上各自打包，并把安装包和 `SHA256SUMS` 发到 GitHub Release。签名与公证所需的仓库密钥见该文件开头的注释。同一个标签还会触发 `.github/workflows/docker.yml`，把 x64 + arm64 镜像发布到 `ghcr.io/modelflare-ai/anymodel-bot`（`<版本>` 和 `latest` 两个标签）。 标签发版时 macOS 包必须带 Developer ID 签名并完成公证，打包后会对 .app 和 DMG 里的 .app 做 `spctl` 等校验，不通过就失败。正式包关闭开发者工具；需要调试包时用 `npm run dist:debug`，或在手动运行 Release 时勾选 `debug_build`（文件名带 `-debug-`，标签上不允许，`scripts/check-build-flavor.mjs` 会核对打包结果）。
+发布：在 `CHANGELOG.md`、`CHANGELOG_en.md`、`CHANGELOG_ja.md`、`CHANGELOG_ko.md`、`CHANGELOG_ru.md`、`CHANGELOG_es.md`、`CHANGELOG_pt.md` 和 `CHANGELOG_tr.md` 写好这个版本的更新日志（用户能感受到的变化，不写网站和内部改动。官网英文页不显示提到微信、飞书的行），改 `package.json` 的版本号并提交，推送 `v<版本>` 标签。这个版本没写更新日志时，发布流程开始就会失败；写了就作为 GitHub Release 的说明，官网更新日志页也显示它。应用里的「更新了什么」弹窗读的也是它：`CHANGELOG*.md` 随安装包和 Docker 镜像打包（`src/changelog.ts`），还没安装的新版本在用户点开时从那个版本标签下读取。`.github/workflows/release.yml` 会在六种系统 / 架构上各自打包，并把安装包和 `SHA256SUMS` 发到 GitHub Release。签名与公证所需的仓库密钥见该文件开头的注释。同一个标签还会触发 `.github/workflows/docker.yml`，把 x64 + arm64 镜像发布到 `ghcr.io/wmn1525/okbot`（`<版本>` 和 `latest` 两个标签）。 标签发版时 macOS 包必须带 Developer ID 签名并完成公证，打包后会对 .app 和 DMG 里的 .app 做 `spctl` 等校验，不通过就失败。正式包关闭开发者工具；需要调试包时用 `npm run dist:debug`，或在手动运行 Release 时勾选 `debug_build`（文件名带 `-debug-`，标签上不允许，`scripts/check-build-flavor.mjs` 会核对打包结果）。
 
 每次发版必须同步官网、相关文档和各语言的 README。先运行 `npm --prefix site run sync` 同步官网内容；GitHub Release 和 Docker 发布后，按[官网部署说明](../site/README.md)更新线上官网，确认 `/download`、`/changelog` 和 `/bots` 的版本、下载链接与说明一致。只有线上官网也同步完成，才算本次发布完成。
 
@@ -96,7 +99,7 @@ npm run test:dsh-bundle  # 用 Electron 跑真实 DSH 集成测试，加载打�
 
 ## Docker
 
-用户直接用已发布的镜像：`docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/modelflare-ai/anymodel-bot`。下面是从源码自己构建：
+用户直接用已发布的镜像：`docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/wmn1525/okbot`。下面是从源码自己构建：
 
 ```bash
 git submodule update --init --depth 1 vendor/magpie
@@ -105,11 +108,11 @@ docker run -d --name amb -p 3600:3600 -v amb-data:/data anymodel-bot
 docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令牌>
 ```
 
-容器内界面监听 0.0.0.0，因此强制令牌访问。不要把 3600 端口直接暴露到公网。微信扫码在 设置 › 聊天渠道 里完成。
+容器内界面监听 0.0.0.0，因此强制令牌访问。不要把 3600 端口直接暴露到公网。微信扫码在 设置 › 聊天渠道 里完成。镜像里默认设了 `AMB_ALLOW_LANDLOCK=1`：按默认参数启动的容器建不了 bubblewrap 要的命名空间，命令改用 Landlock（数据目录对命令可读，这时容器本身才是边界）；加 `-e AMB_ALLOW_LANDLOCK=0` 则在 bubblewrap 用不了时拒绝执行命令。
 
 ## 模型（Okinto）
 
-- 首次启动只有一个按钮「登录 / 注册 Okinto」：在系统浏览器里登录（没有账户可当场注册）并点「继续」授权，回到本程序后自动为这台电脑签发一把专用 API Key 并连接 → 选默认模型 → 开始对话。Docker 或远程部署收不到浏览器登录的回调：登录后浏览器会跳到打不开的 `127.0.0.1` 地址，把地址栏里的链接贴回首次启动页即可（`POST /amb/api/account/login/complete`，state 和 PKCE 校验不变）。旧版本填过 API Key、没有登录的，升级后 Key 会从本机移除，需要重新登录。 浏览器里的回调页先显示「正在完成登录」，换令牌、读账户、签发本机 Key、接入网关全部成功后才显示「登录成功」（失败时显示原因）；桌面版注册了 `anymodelbot://` 链接，成功页加载后自动尝试打开一次应用，「打开 AnyModelBot」按钮可以重试，只有应用确实收到这次的链接才显示「已返回」。用自己的 API Key 的页面下方也能直接用 Okinto 账号登录。第一次接入、全局默认模型还空着时，按 `src/account/first-model.ts` 的规则选一次首用模型（支持工具调用，单轮预占和一个代表性任务的花费都在体验额度内，优先 DeepSeek）；没有合适的就不预选，让用户自己选。
+- 首次启动只有一个按钮「登录 / 注册 Okinto」：在系统浏览器里登录（没有账户可当场注册）并点「继续」授权，回到本程序后自动为这台电脑签发一把专用 API Key 并连接 → 选默认模型 → 开始对话。Docker 或远程部署收不到浏览器登录的回调：登录后浏览器会跳到打不开的 `127.0.0.1` 地址，把地址栏里的链接贴回首次启动页即可（`POST /amb/api/account/login/complete`，state 和 PKCE 校验不变）。旧版本填过 API Key、没有登录的，升级后 Key 会从本机移除，需要重新登录。 浏览器里的回调页先显示「正在完成登录」，换令牌、读账户、签发本机 Key、接入网关全部成功后才显示「登录成功」（失败时显示原因）；桌面版注册了 `anymodelbot://` 链接，成功页加载后自动尝试打开一次应用，「打开 okbot」按钮可以重试，只有应用确实收到这次的链接才显示「已返回」。用自己的 API Key 的页面下方也能直接用 Okinto 账号登录。第一次接入、全局默认模型还空着时，按 `src/account/first-model.ts` 的规则选一次首用模型（支持工具调用，单轮预占和一个代表性任务的花费都在体验额度内，优先 DeepSeek）；没有合适的就不预选，让用户自己选。
 - 登录方式：OIDC 授权码 + PKCE（RFC 7636），按 RFC 8252 作为原生应用——本程序是公共客户端（`client_id` 为 `anymodel-bot`，没有也不需要客户端密钥），授权结果回调到本机 `127.0.0.1` 的临时端口。在 Okinto 网页个人资料页的「已授权的应用」里可以随时撤销；撤销后本程序会发现并回到登录页。
 - 账户凭据（refresh token）存在数据目录的 `modelflare-account.json`（权限 600），和内置网关的 API Key 一样只靠文件权限保护，不用系统钥匙串（0.1.30 及以前桌面版加密过的文件，第一次读到时改写成明文）；界面只拿到账户名称。「退出登录」会撤销这台电脑的授权，Okinto 同时删除登录时为它和各机器人签发的 Key。
 - 余额：在设置 → 模型 顶部直接显示账户余额、Bot 额度和剩余百分比；侧栏不再显示余额圆环或悬停卡片。「充值」打开 Okinto 网页，进入设置页和回到窗口时会刷新，也可手动刷新。余额低于提醒线（默认 1 美元，可改或关闭）时在应用里提醒一次，也可以设置让机器人发到你的微信 / 飞书。
@@ -118,6 +121,7 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 - 推理强度：在模型选择面板或 设置 → 模型 里选（自动 / 低 / 中 / 高），全局一个，下一轮生效。自动时不发任何参数，用模型默认。只对支持的模型生效：Responses 接口的推理模型、模型资料标了推理的 Chat 和 Claude（Claude 4.6 起用 adaptive + `output_config.effort`，更早的用 `budget_tokens`）。
 - 生图 / 生视频：代理模式下机器人有 `media_models`（可用模型、默认模型、参数范围、参考价）、`media_docs`（从 docs.api.okinto.com 实时读该模型的请求格式）、`generate_image`、`generate_video` 四个工具，并自带一份 media 技能说明。各模型的参数格式不同，机器人按文档写请求体，工作区里的参考图写成 `workspace:路径` 即可；Key 始终只在本程序里，由本程序带着该机器人用的 Key 调 Okinto，结果存进机器人工作区的 `media/`，再交付到聊天。
 - 生成前确认：直接生成，不打扰你。机器人选了不是默认的模型、要求没说清，都不问：它按最合理的理解生成，再说一句用了什么。只在预计花费超过 $0.5 时（按参考价、张数、视频时长和分辨率估算；视频估不出来也算）先在聊天里问你这次用哪个模型（附提示词、参数、参考价和为什么问）。可以确认、换成别的模型或取消；微信回复编号或模型名，飞书 / 网页点选。10 分钟内没回答就不生成。想每次都确认：机器人设置 → 生图 / 生视频 → 生成前确认 →「每次都问」。
+- 用作生图参考（账号登录；`src/tools/media/capabilities.ts`、`src/imagegen/`、`ui/components/composer.js`）：网页单聊里有图片时，附件统计旁出现默认关闭的「用作生图参考」开关。打开后本条全部图片按显示顺序作为参考，由宿主用右下角选的那个精确型号直接构建请求（`images_json` → `/v1/images/edits` JSON，`images_multipart` → multipart，`gemini_native` → `generateContent` 内容块），不先调用聊天模型；选了纯图片生成型号时，纯文字直接文生图。能力只认 `GET /api/connected-app/model-capabilities?line=<line>`（`schema_version: 1`，每个型号的 `authorized`, `available`, `capabilities.{chat,vision,image_generation,reference_images}`, `image_generation.endpoint`, `reference_images.{encoding,max_images,formats,max_image_bytes,max_request_bytes,dimensions}`；三态写 `supported` / `unsupported` / `unknown`，限制是数字或 `"none"`，`expires_in` 是秒数）。缺失、未知、过期或读不到时不放行，不按型号名猜。条件不满足时，输入框外上方的一条校验条只说最优先的原因，「切换模型」只打开原选择器。发送时绑定账户、精确型号与线路、有序的内容版本和能力修订，提交前再复核；先写 `media/.jobs/ref-<消息 id>.json` 再提交，结果未知不自动重试。账号登录时代理的 `generate_image` 也只能用当前所选型号；自定义 Key 原有行为不变。
 - 联网搜索：代理的 `web_search` 不用 DeepSeek 自带的搜索（它要 DeepSeek 的 Key），经 `amb-web-search` 插件交给本程序搜。默认免费、不用设置：依次试 Exa 的公开 MCP、必应、DuckDuckGo，上次成功的先试，出错的（限流、验证页、必应给出不相干的结果）跳过 10 分钟。设置 → 网络与访问 → 联网搜索 可以换成 Tavily、Exa、博查、智谱（填 Key）或自己的 SearXNG，填了就先用它，出错时退回免费的。Key 和渠道令牌一样存在本机数据库里，代理进程拿不到。桌面版搜索走系统代理；命令行版用 Node 的 fetch（设 `NODE_USE_ENV_PROXY=1` 后认 `HTTPS_PROXY`）。
 - 聊天渠道账号（`src/core/routes.ts`）：微信、飞书、Telegram、Slack、Discord 的账号也是全局的，在设置 › 聊天渠道里添加，可以起别名。消息交给哪个机器人：这个人用 `/bot` 选过的 → 账号的默认机器人 → 第一个机器人。`/bot` 列出机器人，发一次 `/bot 名字` 就切换并记住，之后这个会话一直和它聊。每个机器人的系统提示词里都有其他机器人的名单和切换方法，用户问起时答得上来。名单和主人跟着账号走，能用这个账号的人可以和任何机器人聊。账号的 key 是命名空间：升级前的渠道 key 就是原来的机器人 id，登录态、配额、名单、队列都不用搬，默认机器人也是原来那个。删除机器人不影响账号。
 - 连接应用（`src/tools/apps/service.ts`）：全局一份（头像菜单 › 应用与技能），默认所有机器人都能用，可以按机器人、按工具收窄（机器人设置 › 应用）。一个应用在应用页只有一张卡片，下面可以有多个账号，比如对任何机器人说「看我第一个飞书和第二个飞书的消息」，账号用工具的 `account` 参数选（序号或名字）。
@@ -132,7 +136,7 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 - 模型智能（模型选择器的第二个滑块）：在这个账户能用、又有 Artificial Analysis 数据的模型里，按智能指数（越高越好）和每次任务的花费（越低越好）取帕累托前沿，最多 5 档，最便宜的和最强的总在。智能取应用实际用的那一档：走 Responses 接口的推理模型默认发 medium，就用 AA 的 medium 那一行，其余用 AA 的默认那一行（`src/account/model-quality.ts`）。花费 = AA 的每次任务花费（官方定价）× 这个模型在当前性价比下的价格比例（可用公开分组的倍率 × 售价倍率：省钱取最低，质量取最高，均衡取居中；企业专用分组不算；没登录或不支持时按均衡估）。拖到哪一档就把模型换成那个；点模型名进完整列表，照样手动选，选了不在档上的模型时滑块显示「自定义」。前沿不到两档时选择器直接是列表。算法在 `ui/lib/frontier.js`。
 - AA 数据在仓库里：`assets/model-quality.json`（`updatedAt`、`source`、只留用得到的字段，已经按 Okinto 的模型 ID 对应好）。刷新：`node scripts/update-model-quality.mjs`，默认抓公开排行榜页面 https://artificialanalysis.ai/leaderboards/models 和 Okinto 的公开价格目录；设了 `AA_API_KEY` 时改用官方 API（字段还没有拿 Key 核对过）。`--html <文件>`、`--pricing <文件>` 用保存下来的页面和目录，`--dry-run` 只打印。页面结构变了（找不到列、行的形状不对、数字解析不出来、行数太少、对上的模型太少）时退出码为 1 并说明是哪一项，原来的快照不动。名字按规则对不上的模型写在脚本的 `OVERRIDES` 里。数据来自 Artificial Analysis，选择器底部注明出处。
 - 调用归因：经 Okinto 的请求都带 `X-Okinto-Skill: anymodel-bot/<版本>`，链接都带 `utm_source=anymodelbot&utm_campaign=amb_<位置>`（应用内 `amb_signup`、`amb_topup`、`amb_console` 等，README 与仓库文档 `amb_readme`，官网 `amb_homepage`；格式由 `test/utm.unit.test.ts` 固定）。
-- API 域名：`https://api.okinto.com/v1`、`https://origin.api.okinto.com/v1` 和 `https://cf.api.okinto.com/v1` 均可选择。在 设置 → 模型 → API 域名 中选择，也可手动测速。测速从运行 AnyModelBot 的设备发起，不带密钥访问三个域名的 `/v1/models`，显示三次探测的响应时间中位数和成功次数；401 表示已收到 API 响应，不代表密钥有效或模型生成速度。域名不会自动切换；历史配置 `auto` / `global` 仍指向主域名，`cn` 指向 origin，`cf` 指向 cf，兼容值不代表地域或质量差异。
+- API 域名：`https://api.okinto.com/v1`、`https://origin.api.okinto.com/v1` 和 `https://cf.api.okinto.com/v1` 均可选择。在 设置 → 模型 → API 域名 中选择，也可手动测速。测速从运行 okbot 的设备发起，不带密钥访问三个域名的 `/v1/models`，显示三次探测的响应时间中位数和成功次数；401 表示已收到 API 响应，不代表密钥有效或模型生成速度。域名不会自动切换；历史配置 `auto` / `global` 仍指向主域名，`cn` 指向 origin，`cf` 指向 cf，兼容值不代表地域或质量差异。
 - 设置 → 模型：账户、余额与充值、余额提醒、用量、通知、邀请；性价比、推理强度；默认模型、刷新模型列表。
 - 对话中输入框右侧的模型按钮可为当前会话切换模型（也可设为机器人默认）；`/model`、`/reset`、`/new`、`/status`、`/stop`、`/help` 照常可用。
 - 处理过程：代理回合的每一步（模型请求及用时与 tokens、工具调用及参数与输出、重试、子代理）折叠在回复上方的"用时"一行里，点开查看；微信 / 飞书会话在信息面板 → 最近会话里看，正在处理的那一轮实时显示并可中止。
@@ -174,7 +178,7 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 
 支持 Markdown（图片、任务列表、大纲、原文）、代码与纯文本（行号、着色、自动换行）、JSON（格式化、折叠）、CSV / TSV（表格、排序、搜索、编码切换）、HTML（预览 / 源码）、图片（缩放、拖动）、PDF 和网址。文本超过 2 MB 只显示前 2 MB（截到整行），CSV 读前 10 MB、表格最多显示 5 万行；文本按 UTF-8、带 BOM 的 UTF-8、GBK 自动识别，也能按指定编码重读。Office 等不支持的格式、空文件、超过 32 MB 的网页各有状态和按钮。着色用随界面打包的 highlight.js（只含约 30 种语言，`ui/vendor/hljs/`，由 `scripts/vendor-hljs.mjs` 从开发依赖复制）。外部网页使用隔离 iframe，网站可能禁止嵌入或要求登录，此时使用「在浏览器中打开 ↗」。不会通过反向代理绕过网站的嵌入限制。
 
-文件读取沿用 `resolveFile` 的工作区/已交付文件边界。`GET /amb/api/conversations/:id/file/preview?path=&encoding=` 返回预览描述（`kind`：text / html / image / pdf / empty / unsupported / tooLarge，文本带 `encoding`、`truncated`、`totalLines`），普通文件接口加 `download=1` 强制下载；桌面版 `POST …/file/save` 弹出系统保存对话框（`DesktopHooks.saveFileAs`），`POST …/file/browser` 用系统默认浏览器打开 HTML（`DesktopHooks.openFileInBrowser`）。`GET /amb/api/delivered-files?conv=` 列出本对话交付的文件；`GET /amb/api/preview-watch?t=` 是已打开标签的文件变化推送（`src/web/preview-watch.ts`：签名稳定 1 秒后才报，先删再写不报消失）。生成的 HTML 经 `src/web/file-previews.ts` 获得 1 小时有效的随机访问地址（标签开着时界面经 `POST /amb/api/preview-grants/renew` 续期）；无需控制台 Cookie，只能读取入口文件所在目录内的允许类型资源，单个资源上限 32 MB。目录外、跨机器人、符号链接越界、硬链接和可执行附件均不开放；工作区外已交付的 HTML 只开放入口文件。HTML 使用不透明来源沙箱，可以加载相对 CSS、JS、图片及 HTTPS 静态资源，但不能访问控制台 API、父页面、表单提交或子框架；页面里注入的小脚本把链接点击报给面板（同目录的网页新开标签，外部链接用系统浏览器 / 新标签页）。开发服务器、依赖后端接口的完整应用应通过外部网页入口访问。
+文件读取沿用 `resolveFile` 的工作区/已交付文件边界。`GET /amb/api/conversations/:id/file/preview?path=&encoding=` 返回预览描述（`kind`：text / html / image / pdf / empty / unsupported / tooLarge，文本带 `encoding`、`truncated`、`totalLines`），普通文件接口加 `download=1` 强制下载；桌面版 `POST …/file/save` 弹出系统保存对话框（`DesktopHooks.saveFileAs`），`POST …/file/browser` 用系统默认浏览器打开 HTML（`DesktopHooks.openFileInBrowser`）。`GET /amb/api/delivered-files?conv=` 列出本对话交付的文件；`GET /amb/api/preview-watch?t=` 是已打开标签的文件变化推送（`src/web/preview-watch.ts`：签名稳定 1 秒后才报，先删再写不报消失）。生成的 HTML 经 `src/web/file-previews.ts` 获得 1 小时有效的随机访问地址（标签开着时界面经 `POST /amb/api/preview-grants/renew` 续期）；无需控制台 Cookie，只能加载入口文件所在目录内的允许类型资源（网页、样式、脚本、图片、字体、音视频），单个资源上限 32 MB。预览的网页按不可信内容对待：只有脚本和字体带 CORS（ES 模块、`@font-face` 在不透明来源里没有它加载不了），其余资源只能显示，页面脚本读不到内容（`connect-src 'none'`，不能 `fetch` / XHR，画布读不回图片像素）；JSON 等数据文件不提供，页面要用的数据请内联进 HTML 或写成脚本。目录外、跨机器人、符号链接越界、硬链接和可执行附件均不开放；工作区外已交付的 HTML 只开放入口文件。HTML 使用不透明来源沙箱，可以加载相对 CSS、JS、图片及 HTTPS 静态资源，但不能访问控制台 API、父页面、表单提交或子框架；页面里注入的小脚本把链接点击报给面板（同目录的网页新开标签，外部链接用系统浏览器 / 新标签页）。开发服务器、依赖后端接口的完整应用应通过外部网页入口访问。
 
 预览状态与公共入口在 `ui/lib/resource-preview.js`，展示在 `ui/screens/resource-preview.js`（代码视图、CSV 表格、图片分别在 `ui/components/code-view.js`、`csv-view.js`、`image-view.js`，纯函数在 `ui/lib/preview-types.js`）。桌面版的 ⌘W / Ctrl+W 和内容缩放快捷键由 `electron/main.ts` 先问界面（焦点在预览面板时才处理）。专业 Bot 的 `openFile`、`openUrl` 也进入该面板，仍保留用户点击/地址确认约束，文件权限仍限于 `app/`。
 
@@ -213,8 +217,9 @@ docker exec amb cat /data/ui-token     # 打开 http://<主机>:3600/?token=<令
 
 - **工作区可写**（默认）：命令在沙箱里运行，只能改这个机器人的工作区；越界操作先在聊天里问你。
 - **只读**：不能改文件，命令在只读沙箱里运行。
-- **完全权限**：给熟悉风险、嫌审批太多的用户。命令**不经沙箱**，以你的用户身份直接运行，越界操作不再请求批准——它可以读取和修改你电脑上的任何文件，包括 AnyModelBot 自己的数据目录（数据库、渠道令牌、密钥）。只有**递归删除**仍会先问你（同一套审批：微信回复编号、飞书 / 网页卡片）：`rm -r` / `-rf` / `--recursive`（含 `sudo`、`xargs`、`sh -c` 里的）、`find -delete`、`git clean`、`rsync --delete`，PowerShell 的 `Remove-Item` / `rm` / `del` / `rd` / `rmdir` 加 `-Recurse`（及其缩写），cmd 的 `rd /s`、`del /s`，`robocopy /MIR`，以及 Python `shutil.rmtree`、Node `fs.rm(…, { recursive })` 等常见写法；命令里点名的脚本文件也会检查。选它时界面会先弹出确认，权限胶囊和设置页用红色标出。
+- **完全权限**：给熟悉风险、嫌审批太多的用户。命令**不经沙箱**，以你的用户身份直接运行，越界操作不再请求批准——它可以读取和修改你电脑上的任何文件，包括 okbot 自己的数据目录（数据库、渠道令牌、密钥）。只有**递归删除**仍会先问你（同一套审批：微信回复编号、飞书 / 网页卡片）：`rm -r` / `-rf` / `--recursive`（含 `sudo`、`xargs`、`sh -c` 里的）、`find -delete`、`git clean`、`rsync --delete`，PowerShell 的 `Remove-Item` / `rm` / `del` / `rd` / `rmdir` 加 `-Recurse`（及其缩写），cmd 的 `rd /s`、`del /s`，`robocopy /MIR`，以及 Python `shutil.rmtree`、Node `fs.rm(…, { recursive })` 等常见写法；命令里点名的脚本文件也会检查。选它时界面会先弹出确认，权限胶囊和设置页用红色标出。
   - 这是防误删的保险，不是安全边界：检查的是命令文字，运行时才拼出来的命令（`eval "$(…)"`、`curl … | sh`）和 `make clean`、`npm run clean` 这类构建脚本看不到；拿不准时宁可多问。只在你信任当前模型和任务时开启。
+- **工作文件夹**（桌面版，输入框上方）：每条消息绑定发送时选的文件夹，这一轮里它是代理的工作目录和唯一的可写位置（`amb-workfolder` 插件改写沙箱策略的工作区根，文件工具和 Linux bubblewrap、macOS Seatbelt、Windows ACL 的命令沙箱都按它），默认工作区在这一轮只读；不选时回到默认工作区。数据目录及其上层、磁盘根、主目录本身不能选。ZIP 附件只经 `zip_list` / `zip_extract` 由宿主查看和安全解压（`src/attachments/unzip.ts`：只认 Stored / Deflate，拒绝加密、分卷、越界路径、链接和超限），默认解到工作区的 `extracted/`，随附件到期回收。Windows 上 DSH 的命令沙箱会给用作可写根的文件夹加一条常驻的写权限 ACE。
 
 ## 谁能使用机器人
 

@@ -4,7 +4,8 @@ import { openGithub } from "./skill-library.js";
 import { api, uploadSkillZip } from "../lib/api.js";
 import { confirmSheet, failed, saved } from "../lib/store.js";
 import { t, has } from "../lib/i18n.js";
-import { fillChat, installedExample, loadBotSkills, readyToast, setBotSkills, useBotSkills } from "../lib/usage.js";
+import { fold } from "../lib/text-fold.js";
+import { fillChat, installedExample, loadBotSkills, setBotSkills, skillReady, skillReadyToast, useBotSkills } from "../lib/usage.js";
 import { CHIPS, LIST_FOLD_AT, LIST_SEARCH_AT, chipCounts, inChip, kindOf, matches, openSkillDetail, skillsFilter, sortSkills } from "../lib/my-skills.js";
 import { useLang } from "../lib/i18n.js";
 
@@ -96,10 +97,10 @@ export function Skills({ botId, botName = "", onBrowse }) {
     setError("");
     const added = r.skills.find((x) => x.name === detail.name);
     setDetail(null);
-    // 写明什么时候能用：已生效 / 当前任务结束后 / 加载中（加载完之前不说已经可用）；下面一行示例和「填入输入框」「复制」。
-    // 填入时切到这个机器人的对话（它最近的那条）再填
+    // 写明什么时候能用：已生效 / 当前任务结束后 / 加载中（加载完之前不说已经可用；变成已生效后提示里的说法跟着换）；
+    // 下面一行示例和「填入输入框」「复制」。填入时切到这个机器人的对话（它最近的那条）再填
     const name = added?.title || detail.name;
-    readyToast(t(`botSettings.skills.imported.${added?.state === "waiting" || added?.state === "loading" ? added.state : "active"}`, { name }), botId, installedExample(added || detail, name));
+    skillReadyToast((state) => t(`botSettings.skills.imported.${state}`, { name }), added ? skillReady(added) : "loading", botId, detail.name, installedExample(added || detail, name));
     setFresh(detail.name);
   });
   const toggle = (skill, enabled) => run(async () => {
@@ -125,7 +126,7 @@ export function Skills({ botId, botName = "", onBrowse }) {
   // —— 排序、搜索、筛选、折叠 ——
   const sorted = sortSkills(skills || [], lang);
   const searching = sorted.length > LIST_SEARCH_AT;
-  const needle = searching ? q.trim().toLowerCase() : "";
+  const needle = searching ? fold(q.trim()) : "";
   const counts = chipCounts(sorted, needle);
   // 选中的胶囊没了（数量为 0 不显示）：回到「全部」
   const cur = searching && chip !== "all" && counts[chip] > 0 ? chip : "all";

@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/ho
 import { html, Icon, tokenPx } from "./ui.js";
 import { numValue, numericColumns } from "../lib/preview-types.js";
 import { fmtNum, t } from "../lib/i18n.js";
+import { fold } from "../lib/text-fold.js";
 
 export const MAX_ROWS = 50_000;
 const MIN_W = 60;
@@ -29,8 +30,8 @@ export function tableModel(parsed, header) {
 /** 排序、搜索之后的行（下标） */
 export function visibleRows(model, sort, query) {
   let idx = model.rows.map((_, i) => i);
-  const q = String(query || "").trim().toLowerCase();
-  if (q) idx = idx.filter((i) => model.rows[i].some((v) => String(v ?? "").toLowerCase().includes(q)));
+  const q = fold(String(query || "").trim());
+  if (q) idx = idx.filter((i) => model.rows[i].some((v) => fold(v).includes(q)));
   if (sort && sort.dir) {
     const c = sort.col;
     const sign = sort.dir === "desc" ? -1 : 1;
@@ -65,12 +66,14 @@ function measureWidths(el, model, rows) {
 function marked(text, q) {
   if (!q) return text;
   const s = String(text);
-  const low = s.toLowerCase();
+  const low = fold(s);
+  const needle = fold(q);
   const out = [];
   let from = 0;
-  for (let i = low.indexOf(q); i !== -1 && out.length < 40; i = low.indexOf(q, i + q.length)) {
-    out.push(s.slice(from, i), html`<mark class="hit">${s.slice(i, i + q.length)}</mark>`);
-    from = i + q.length;
+  if (low.length !== s.length) return text;
+  for (let i = low.indexOf(needle); i !== -1 && out.length < 40; i = low.indexOf(needle, i + needle.length)) {
+    out.push(s.slice(from, i), html`<mark class="hit">${s.slice(i, i + needle.length)}</mark>`);
+    from = i + needle.length;
   }
   out.push(s.slice(from));
   return out;

@@ -9,7 +9,8 @@
     "ko": "미국 주식 리서치",
     "ru": "Анализ акций США",
     "es": "Acciones de EE. UU.",
-    "pt": "Ações dos EUA"
+    "pt": "Ações dos EUA",
+    "tr": "ABD hisse araştırması"
   },
   "summary": {
     "zh-CN": "查阅美股财报和申报文件，写出数据可追溯的研究报告。",
@@ -18,7 +19,8 @@
     "ko": "미국 상장사의 재무제표와 SEC 공시를 조사해 수치를 추적할 수 있는 보고서를 작성합니다.",
     "ru": "Изучает компании США по документам SEC, каждое число в отчёте можно проверить.",
     "es": "Analiza empresas de EE. UU. con documentos de la SEC; cada cifra es rastreable.",
-    "pt": "Pesquisa empresas dos EUA nos documentos da SEC, com cada número rastreável."
+    "pt": "Pesquisa empresas dos EUA nos documentos da SEC, com cada número rastreável.",
+    "tr": "SEC belgelerinden ABD şirketlerini araştırır; her rakam izlenebilir."
   },
   "about": {
     "zh-CN": [
@@ -55,6 +57,11 @@
       "Pesquisa empresas listadas nos EUA a partir dos documentos no SEC EDGAR: planeja, coleta, confere e depois escreve um relatório",
       "Os registros de coleta e os dados originais ficam no seu espaço de trabalho. Não tem cotações, índices P/L nem filtro de ações",
       "Inspirado no projeto de código aberto Dexter, sem nenhum código dele e sem vínculo com ele. Não é recomendação de investimento"
+    ],
+    "tr": [
+      "SEC EDGAR belgelerinden ABD'de işlem gören şirketleri araştırır: planlar, veri alır, kontrol eder, sonra rapor yazar",
+      "Alım kayıtları ve ham veriler çalışma alanında kalır. Fiyat, F/K oranı veya hisse tarayıcısı yoktur",
+      "Açık kaynak Dexter projesinden esinlenir; onun kodu yoktur ve bağı yoktur. Yatırım tavsiyesi değildir"
     ]
   },
   "avatar": "ticker",
@@ -97,6 +104,11 @@
       "Apresente os negócios da Apple em um parágrafo e três perguntas para ler o relatório anual. Só introdução, sem dados financeiros ou avaliação.",
       "Pesquise a evolução da receita e da margem bruta da NVIDIA em cinco anos e faça um relatório",
       "Compare a receita e a margem operacional da Microsoft e da Alphabet em três anos"
+    ],
+    "tr": [
+      "Apple ana işlerini bir paragrafta anlat ve yıllık raporu okurken düşünülecek üç soru listele. Yalnızca giriş; finansal veri veya değerleme yok.",
+      "NVIDIA gelirini ve brüt kâr marjını beş yıl için araştırıp bir rapor yaz",
+      "Microsoft ile Alphabet gelirini ve faaliyet marjını üç yıl için karşılaştır"
     ]
   },
   "skills": []
