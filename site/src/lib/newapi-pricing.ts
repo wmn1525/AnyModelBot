@@ -64,19 +64,55 @@ function calendarPredicate(expression: string, now: Date): boolean {
 }
 
 export function expressionTiers(expression: string, now = new Date()): Tier[] {
-  const m = /^len\s*(<=|>=|<|>)\s*(\d+)\s*\?\s*(tier\([^?]+\))\s*:\s*(tier\([^?]+\))$/.exec(expression.trim());
-  if (!m) {
-    const calendar = /^(.*?)\?\s*(tier\([^?]+\))\s*:\s*(tier\([^?]+\))$/.exec(expression.trim());
-    if (!calendar) return [linearTier(expression)];
+  const split = (value: string): { predicate: string; yes: string; no: string } | undefined => {
+    let depth = 0, quote = false, escaped = false, question = -1, nested = 0;
+    for (let i = 0; i < value.length; i++) {
+      const ch = value[i];
+      if (quote) {
+        if (escaped) escaped = false;
+        else if (ch === "\\") escaped = true;
+        else if (ch === '"') quote = false;
+        continue;
+      }
+      if (ch === '"') { quote = true; continue; }
+      if (ch === "(") { depth++; continue; }
+      if (ch === ")") { depth--; if (depth < 0) throw new Error("Invalid OKINTO pricing expression"); continue; }
+      if (depth !== 0) continue;
+      if (ch === "?") {
+        if (question < 0) question = i;
+        else nested++;
+      } else if (ch === ":" && question >= 0) {
+        if (nested) nested--;
+        else return { predicate: value.slice(0, question).trim(), yes: value.slice(question + 1, i).trim(), no: value.slice(i + 1).trim() };
+      }
+    }
+    if (depth !== 0 || quote || question >= 0) throw new Error("Invalid OKINTO pricing expression");
+    return undefined;
+  };
+  const cap = (tiers: Tier[], maximum: number): Tier[] => {
+    if (!tiers.length) throw new Error("Empty OKINTO pricing tier");
+    const last = tiers[tiers.length - 1];
+    const prior = last.conditions?.find((c) => c.metric === "input_context_tokens" && (c.operator === "<=" || c.operator === "<"))?.value;
+    last.conditions = [{ metric: "input_context_tokens", operator: "<=", value: prior == null ? maximum : Math.min(prior, maximum) }];
+    return tiers;
+  };
+  const parse = (value: string): Tier[] => {
+    const conditional = split(value);
+    if (!conditional) return [linearTier(value)];
+    const length = /^len\s*(<=|>=|<|>)\s*(\d+)$/.exec(conditional.predicate);
+    if (length) {
+      const operator = length[1];
+      const boundary = Number(length[2]) - (operator === "<" || operator === ">=" ? 1 : 0);
+      const yes = parse(conditional.yes), no = parse(conditional.no);
+      if (operator.startsWith("<")) return [...cap(yes, boundary), ...no];
+      return [...cap(no, boundary), ...yes];
+    }
     // Validate both branches even when the current time chooses only one.
-    const yes = linearTier(calendar[2]), no = linearTier(calendar[3]);
-    return [calendarPredicate(calendar[1], now) ? yes : no];
-  }
-  const first = linearTier(m[3]), second = linearTier(m[4]);
-  const [short, long] = m[1].startsWith("<") ? [first, second] : [second, first];
-  const threshold = Number(m[2]) - (m[1] === "<" || m[1] === ">=" ? 1 : 0);
-  short.conditions = [{ metric: "input_context_tokens", operator: "<=", value: threshold }];
-  return [short, long];
+    const yes = parse(conditional.yes), no = parse(conditional.no);
+    if (yes.length !== 1 || no.length !== 1) throw new Error("Unsupported OKINTO conditional pricing branches");
+    return [calendarPredicate(conditional.predicate, now) ? yes[0] : no[0]];
+  };
+  return parse(expression.trim());
 }
 
 export function normalizeNewApi(input: unknown, now = new Date()): RawPricing {

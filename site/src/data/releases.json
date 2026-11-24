@@ -1,30 +1,30 @@
 {
-  "version": "0.1.41",
-  "publishedAt": "2026-11-16",
+  "version": "0.1.48",
+  "publishedAt": "2026-11-24",
   "platforms": {
     "win-x64": {
-      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.40/okbot-0.1.40-win-x64.exe",
-      "sha256": "ba7c79a1f051fec87eda3ac2834f3ceefea7f21f4c3857ae91b2e809b7c02e0c",
-      "sizeMB": 187.9
+      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.48/okbot-0.1.48-win-x64.exe",
+      "sha256": "684d2673ae83835369d78396a73f1208a26fe55df79e719ec1e322d5a3e9d54b",
+      "sizeMB": 188.3
     },
     "mac-arm64": {
-      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.40/okbot-0.1.40-mac-arm64.dmg",
-      "sha256": "c1501acd0a1e9ecfdd6d5278771b562947d726be19e8360f1df503fa90b2096a",
-      "sizeMB": 217.5
+      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.48/okbot-0.1.48-mac-arm64.dmg",
+      "sha256": "9b7893ce34f45a4ae142ec9bafe9178845b7dc20b6633ca36d82af3ed277f5e2",
+      "sizeMB": 217.9
     },
     "mac-x64": {
-      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.40/okbot-0.1.40-mac-x64.dmg",
-      "sha256": "06c7c61b44892aec2574dd85099e006a742a17d03b0afa37920f9abd15a9f93f",
-      "sizeMB": 225.5
+      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.48/okbot-0.1.48-mac-x64.dmg",
+      "sha256": "268adda561986b66513b0705f78ea6dcfe03cedc06608676f77c0fb51210560d",
+      "sizeMB": 225.9
     },
     "linux-x64": {
-      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.40/okbot-0.1.40-linux-x86_64.AppImage",
-      "sha256": "27af3112630d6d1391fc141be3d8d3c4c0ca7046756b40f0926bbaef96801d50",
-      "sizeMB": 203.6
+      "url": "https://github.com/wmn1525/AnyModelBot/releases/download/v0.1.48/okbot-0.1.48-linux-x86_64.AppImage",
+      "sha256": "586d57412d8608c980642fc9fb91311933d1a7f360a9a2bc861164bb16c63d59",
+      "sizeMB": 204
     },
     "docker": {
-      "image": "ghcr.io/wmn1525/okbot:0.1.40",
-      "command": "docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/wmn1525/okbot:0.1.40"
+      "image": "ghcr.io/wmn1525/okbot",
+      "command": "docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/wmn1525/okbot"
     }
   }
 }

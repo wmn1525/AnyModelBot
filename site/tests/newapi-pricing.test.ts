@@ -29,6 +29,14 @@ describe("OKINTO pricing", () => {
     const parts = operator.toString().startsWith("<") ? [short, long] : [long, short];
     expect(expressionTiers('len ' + operator + ' 200000 ? ' + parts[0] + ' : ' + parts[1])[0].conditions?.[0].value).toBe(max);
   });
+  it("parses nested three-tier context pricing from the live catalog format", () => {
+    const tiers = expressionTiers('len <= 32000 ? tier("short", p * 1.2 + c * 6 + cr * 0.24 + cc * 1.5) : len <= 128000 ? tier("mid", p * 2.4 + c * 12 + cr * 0.48 + cc * 3) : tier("long", p * 3 + c * 15 + cr * 0.6 + cc * 3.75)');
+    expect(tiers.map((tier) => [tier.label, tier.conditions?.[0]?.value ?? null, tier.unit_prices.input, tier.unit_prices.output])).toEqual([
+      ["short", 32000, 1.2, 6],
+      ["mid", 128000, 2.4, 12],
+      ["long", null, 3, 15],
+    ]);
+  });
   it("samples UTC weekday/hour tariffs at the snapshot time, including exact boundaries", () => {
     const expr = 'weekday("UTC") >= 1 && weekday("UTC") <= 5 && ((hour("UTC") >= 1 && hour("UTC") < 4) || (hour("UTC") >= 6 && hour("UTC") < 10)) ? tier("peak", p * 0.3 + cr * 0.006 + c * 1.2) : tier("off_peak", p * 0.15 + cr * 0.003 + c * 0.6)';
     for (const [iso, input] of [["2026-11-12T01:00:00Z", 0.3], ["2026-11-12T03:59:59Z", 0.3], ["2026-11-12T04:00:00Z", 0.15], ["2026-11-12T06:00:00Z", 0.3], ["2026-11-12T10:00:00Z", 0.15], ["2026-11-14T02:00:00Z", 0.15]] as const) {
